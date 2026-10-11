@@ -14,6 +14,7 @@ import {
   SCENE_KEYS,
 } from '../src/modules/blockParty/renderOptions.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import checkWorkbenchPage from './lib/workbenchPage.mjs';
 
 const KERNEL_DIR = path.join(REPO_ROOT, 'src', 'modules', 'blockParty');
 const PRESETS = '/src/components/scenes/WebGPU/BlockParty/presets/presets.js';
@@ -30,7 +31,7 @@ const BARRELS = {
 };
 const PAGE_FIELDS = path.join(
   REPO_ROOT,
-  'src/dev/tools/blockParty/components/OptionSections.jsx'
+  'src/dev/tools/blockParty/BlockPartyWorkbenchPage.jsx'
 );
 const ALLOWED_KERNEL_IMPORTS = new Set([
   '@modules/flora',
@@ -250,15 +251,7 @@ async function checkHeadlessCalls(barrels) {
 }
 
 async function checkPageFields() {
-  const source = await readFile(PAGE_FIELDS, 'utf8');
-  const block = source.match(/const HANDLED = new Set\(\[([^\]]+)\]/u)?.[1];
-  check(block, 'OptionSections.jsx lost its HANDLED list.');
-  [...(block ?? '').matchAll(/'(\w+)'/gu)].forEach(([, key]) =>
-    check(
-      key in RENDER_OPTIONS,
-      `the workbench hand-lays "${key}", which is not in renderOptions.mjs.`
-    )
-  );
+  await checkWorkbenchPage(PAGE_FIELDS, RENDER_OPTIONS, check);
 }
 
 async function main() {

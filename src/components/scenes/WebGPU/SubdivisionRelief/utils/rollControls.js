@@ -1,18 +1,14 @@
+import { randomSeed } from '@modules/subdivision';
 import {
   RENDER_OPTIONS,
   SCENE_KEYS,
   facets,
-  randomSeed,
-  rollConfig,
-} from '@modules/subdivision';
-import { PALETTE_NAMES } from '@utils/gradientPalette';
+  rollReliefConfig,
+} from '@modules/subdivisionRelief';
+import { PALETTE_NAMES } from '@modules/subdivisionReliefRender';
 
-import { OMITTED_KEYS } from './controls';
-
-const PIECE_KEYS = SCENE_KEYS.filter(
-  (key) => !RENDER_OPTIONS[key].sceneOnly && !OMITTED_KEYS.includes(key)
-);
-const SEED_KEYS = ['splitSeed', 'fieldNoise', 'colorSeed'];
+const PIECE_KEYS = SCENE_KEYS.filter((key) => !RENDER_OPTIONS[key].sceneOnly);
+const SEED_KEYS = ['splitSeed', 'fieldNoise', 'colorSeed', 'heightSeed'];
 
 const pieceOf = (config) =>
   Object.fromEntries(PIECE_KEYS.map((key) => [key, config[key]]));
@@ -28,11 +24,11 @@ export default function rollControls(current, what) {
   const base = pieceOf(current);
   if (what === 'all') {
     return pieceOf(
-      rollConfig(randomSeed(), { base, paletteNames: PALETTE_NAMES })
+      rollReliefConfig(randomSeed(), { base, paletteNames: PALETTE_NAMES })
     );
   }
   return pieceOf(
-    rollConfig(current.seed, {
+    rollReliefConfig(current.seed, {
       base,
       keep: facets().filter((facet) => facet !== what),
       paletteNames: PALETTE_NAMES,

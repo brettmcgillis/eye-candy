@@ -4,18 +4,19 @@
 // `when` hides a control unless every named key holds one of the listed
 // values. Dependency-free `.mjs` so plain Node and Vite's config loader can
 // import it.
+import createOptionSchema, {
+  choice,
+  num,
+  rolled,
+  sceneOnly,
+} from '../optionSchema/index.mjs';
 import {
   COLOR,
   CONTOURS,
   FIELD,
   IMAGE,
   RIG,
-  checkSize,
-  choice,
-  createIsoSchema,
-  num,
-  rolled,
-  sceneOnly,
+  fieldKeysOf,
   sharedRender,
 } from './optionSpecs.mjs';
 
@@ -69,8 +70,16 @@ export const SURFACE_DEFAULTS = {
   workbench: { count: 6 },
 };
 
+const schema = createOptionSchema({
+  options: RENDER_OPTIONS,
+  sectionLabels: {
+    color: 'colour',
+    roll: 'rolling',
+  },
+  surfaceDefaults: SURFACE_DEFAULTS,
+});
+
 export const {
-  FIELD_KEYS,
   LEVA_KEYS,
   SCENE_KEYS,
   configFrom,
@@ -84,24 +93,6 @@ export const {
   sceneDefaults,
   sectionsFor,
   usageFor,
-} = createIsoSchema(RENDER_OPTIONS, {
-  sectionLabels: {
-    color: 'colour',
-    contours: 'contours',
-    field: 'field',
-    image: 'image',
-    motion: 'motion',
-    output: 'output',
-    post: 'post',
-    roll: 'rolling',
-    svg: 'svg',
-    video: 'video',
-  },
-  surfaceDefaults: SURFACE_DEFAULTS,
-  validate(kind, options, fail) {
-    if (kind === 'still' && !options.png && !options.webp && !options.svg) {
-      throw fail('Select at least one output format: PNG, WebP or SVG.');
-    }
-    checkSize(options, fail);
-  },
-});
+} = schema;
+
+export const FIELD_KEYS = fieldKeysOf(schema.keysWhere);

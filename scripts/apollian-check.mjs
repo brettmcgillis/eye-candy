@@ -19,6 +19,7 @@ import {
 } from '../src/modules/apollian/renderOptions.mjs';
 import { createHeadlessRenderer, loadThree } from './lib/headlessWebgpu.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import checkWorkbenchPage from './lib/workbenchPage.mjs';
 
 const KERNEL_DIR = path.join(REPO_ROOT, 'src', 'modules', 'apollian');
 const PRESETS = '/src/components/scenes/WebGPU/Apollian/presets/presets.js';
@@ -34,7 +35,7 @@ const BARRELS = {
 };
 const PAGE_FIELDS = path.join(
   REPO_ROOT,
-  'src/dev/tools/apollian/components/OptionSections.jsx'
+  'src/dev/tools/apollian/ApollianWorkbenchPage.jsx'
 );
 const ALLOWED_KERNEL_IMPORTS = new Set([
   '@modules/flora',
@@ -273,15 +274,7 @@ async function checkHeadlessCalls(barrels) {
 }
 
 async function checkPageFields() {
-  const source = await readFile(PAGE_FIELDS, 'utf8');
-  const block = source.match(/const HANDLED = new Set\(\[([^\]]+)\]/u)?.[1];
-  check(block, 'OptionSections.jsx lost its HANDLED list.');
-  [...(block ?? '').matchAll(/'(\w+)'/gu)].forEach(([, key]) =>
-    check(
-      key in RENDER_OPTIONS,
-      `the workbench hand-lays "${key}", which is not in renderOptions.mjs.`
-    )
-  );
+  await checkWorkbenchPage(PAGE_FIELDS, RENDER_OPTIONS, check);
 }
 
 const PARITY_CASES = {
@@ -305,10 +298,7 @@ async function checkRender({ apollian, look }, THREE, TSL) {
   const pipeline = new THREE.RenderPipeline(renderer);
   pipeline.outputNode = TSL.pass(scene, camera);
   const { device } = renderer.backend;
-  const draw = async () => {
-    await headless.readFrame(() => pipeline.render());
-    return headless.readFrame(() => pipeline.render());
-  };
+  const draw = () => headless.readFrame(() => pipeline.render());
 
   // eslint-disable-next-line no-restricted-syntax
   for (const family of FAMILIES) {

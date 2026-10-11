@@ -33,12 +33,14 @@ Codex).
 ## 2. Dev tool organization
 
 - Each independent tool lives under `src/dev/tools/<tool>/` (current tools:
-  `blockParty`, `brutalist`, `cataloggr`, `colors`, `darkroom`, `flora`, `fungi`, `gltfjsx`, `glyphs`, `hyperCubes`, `iconography`, `inventory`,
-  `isoLines`, `isoLinesRelief`, `kumiko`, `loaderPatterns`, `nestingBoxes`, `networkTest`, `projectionMapping`, `pushComesToShove`, `rorschach`,
+  `blockParty`, `brutalist`, `cataloggr`, `colors`, `darkroom`, `exhibitA`, `flora`, `fractalAutomata`, `fungi`, `gltfjsx`, `glyphs`, `hyperCubes`, `iconography`, `inventory`,
+  `isoLines`, `isoLinesRelief`, `kumiko`, `loaderPatterns`, `nestingBoxes`, `networkTest`, `printShop`, `projectionMapping`, `pushComesToShove`, `rorschach`,
   `subdivision`, `trucheterie3d`).
 - Every registered tool owns a colocated `todo.md` using the same canonical
-  TODO shape as scenes. Cataloggr discovers and edits these files alongside
-  scene TODOs so tool features and bugs remain attached to their owner.
+  TODO shape as scenes (`docs/scene-conventions.md` §15): scaffold it with
+  `npm run todo:new` and verify with `npm run todo:check`. Cataloggr discovers
+  and edits these files alongside scene TODOs so tool features and bugs remain
+  attached to their owner.
 - A tool owns its page entry, styles, components, hooks, utilities, and other
   implementation details.
 - **Tools must not import another tool's internals.** This is ESLint-enforced
@@ -48,12 +50,13 @@ Codex).
   `DevPageHeaderBar.jsx`, `DevPageTitle.jsx`, `DevTooltip.jsx`), or a clearly
   named shared folder under `src/dev` when it's non-shell dev-only behavior.
 - **Generative workbenches share `src/dev/renderWorkbench/`** (RorschachCLI,
-  FloraCLI, FungiCLI, KumikoCLI, BlockPartyCLI, BrutalistCLI, NestingBoxesCLI, HyperCubesCLI, NetworkTestCLI, IsoLinesCLI, IsoLinesReliefCLI, PushComesToShoveCLI, Trucheterie3DCLI, and Fauna next): `useRenderJobs(tool)`, `ResultsPanel`
-  (Saved / Transient / Jobs), `AssetGallery` with its `renderDetails` and
-  `selectionActions` slots, schema-bound `SchemaFields` + `usePins`, and
-  `renderWorkbench.css` (the `rw-` classes). A tool supplies only its form
-  layout, its preview details and its extra actions. The form fields bind to
-  an option table built with `src/modules/optionSchema` (see §5).
+  ExhibitACLI, FloraCLI, FractalAutomataCLI, FungiCLI, KumikoCLI, BlockPartyCLI, BrutalistCLI, NestingBoxesCLI, HyperCubesCLI, NetworkTestCLI, IsoLinesCLI, IsoLinesReliefCLI, PushComesToShoveCLI, RugPullCLI, SubdivisionCLI, SubdivisionReliefCLI, TrucheterieCLI, Trucheterie3DCLI, and Fauna next).
+  A facet-rolling generator's page is a `RollWorkbench` configuration — its
+  kernel barrel, nouns, palette choices and preview stats — and nothing else;
+  see `docs/render-workbench.md`. The parts it is built from (`useRenderJobs`,
+  `ResultsPanel`, `AssetGallery`, `SchemaSections`, `SchemaFields` +
+  `usePins`, `RollPreviewDetails`, `renderWorkbench.css`) stay available to
+  the bespoke pages (Flora, Trucheterie, Rorschach).
 - **Darkroom** (`src/dev/tools/darkroom/`) is the media-in tool: a still,
   clip, webcam or phone camera through one image-driven technique. It renders
   in the browser (live preview and frame-exact export alike) and only stages
@@ -63,6 +66,10 @@ Codex).
   `options`, `sections`, `presets`, `create(stage)`), discovered by glob —
   add a technique there rather than editing the page. Its lint block is
   case-sensitive so techniques may import a PascalCase scene's presets.
+- **PrintShop** (`src/dev/tools/printShop/`) exports scene pieces for 3D
+  printing. A printable is one folder, `printables/<id>/printable.js`,
+  discovered by glob — add one there rather than editing the page, the
+  worker or the CLI. See `docs/print-shop-pipeline.md`.
 - Keep a tool's route page at the tool root. Use `components/`, `hooks/`, and
   `utils/` subfolders only when the tool is large enough to benefit from them.
 - Do not create barrels unless an actual external consumer benefits from the
@@ -105,8 +112,7 @@ Codex).
 - Local-only Vite middleware and services live under
   `src/dev/server/<tool>/`, beside the dev subsystem rather than under a
   generic production `src/server` namespace.
-- Each server-backed tool owns its plugin and service implementation (e.g.
-  `src/dev/server/rorschach/plugin.js` + `jobService.js`).
+- Each server-backed tool owns its plugin (`src/dev/server/<tool>/plugin.js`).
 - **CLI-backed generators use `src/dev/server/renderJobs/`.**
   `createRenderJobService` spawns the tool's CLI per job (queued past
   `maxConcurrent`), tracks progress from the shared `scripts/lib/progress.mjs`
@@ -114,12 +120,16 @@ Codex).
   reads generation sidecars back by URL. `createRenderJobPlugin` serves the
   `/dev-api/<tool>/jobs|saved` surface plus any tool routes; `presetFile.js`
   splices an entry into a scene's preset object and formats it with prettier.
-  A tool's server is then configuration: roots, kinds, and a `prepare` that
-  validates options against its schema and builds argv.
+  A schema generator's plugin is one `createSchemaToolPlugin` call
+  (`renderJobs/schemaTool.js`, see `docs/render-workbench.md`); only a tool
+  with its own job shape (Flora's bouquets, Rorschach, Darkroom) writes a
+  `prepare`.
 - Headless generators share `scripts/lib/` — `headlessWebgpu.mjs` (Dawn
   bootstrap, render target, unpadded readback), `loadModules.mjs` (repo
   modules through Vite with the jsconfig aliases), `cliArgs.mjs`,
-  `progress.mjs`, `frameSink.mjs` and `videoMetadata.mjs`.
+  `progress.mjs`, `frameSink.mjs` and `videoMetadata.mjs`, all driven by
+  `generatorCli.mjs`'s `runStills` / `runVideo` (see
+  `docs/render-workbench.md` §5).
 - Register server plugins through `src/dev/server/devServerPlugins.js`
   (`vite.config.js` imports that one function); do not grow an import/plugin
   list directly in `vite.config.js`.

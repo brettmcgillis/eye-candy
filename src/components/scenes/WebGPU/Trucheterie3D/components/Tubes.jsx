@@ -18,8 +18,14 @@ function Tubes({ config }) {
   const driver = useMemo(createDriver, []);
   const client = useMemo(
     () =>
-      createTubeClient(({ field, mesh, tubes }) =>
-        rig.setTubes({ config: configRef.current, field, mesh, tubes })
+      createTubeClient(({ field, membrane, mesh, tubes }) =>
+        rig.setTubes({
+          config: configRef.current,
+          field,
+          membrane,
+          mesh,
+          tubes,
+        })
       ),
     [rig]
   );
@@ -46,7 +52,7 @@ function Tubes({ config }) {
   );
 
   useFrame((_, delta) => {
-    driver.step(configRef.current, delta, rig);
+    driver.step(configRef.current, delta, rig, gl);
   });
 
   return <primitive object={rig.group} />;

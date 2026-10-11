@@ -1,4 +1,4 @@
-import { button, folder } from 'leva';
+import { button } from 'leva';
 
 import {
   LEVA_KEYS,
@@ -8,6 +8,7 @@ import {
   randomSeed,
   rollRugConfig,
 } from '@modules/rugPull';
+import createSchemaFolders from '@modules/schemaControls';
 
 export const SCENE_LABEL = 'Rug Pull';
 
@@ -19,79 +20,15 @@ const FOLDERS = {
   palette: 'Palette',
   age: 'Age',
 };
-const OPEN = new Set(['room', 'design']);
+const OPEN = ['room', 'design'];
 
-const titleCase = (text) => text.charAt(0).toUpperCase() + text.slice(1);
-
-const pathOf = (key) => {
-  const { group, section } = RENDER_OPTIONS[key];
-  return [
-    SCENE_LABEL,
-    FOLDERS[section],
-    ...(group ? group.split('.') : []),
-    key,
-  ]
-    .filter(Boolean)
-    .join('.');
-};
-
-// Leva inputs straight from the option schema, so the scene's ranges,
-// defaults and labels cannot drift from the CLI's.
-function schemaControl(key, saved) {
-  const spec = RENDER_OPTIONS[key];
-  const value = saved[key] ?? spec.default;
-  const base = { label: spec.label };
-  if (spec.when) {
-    base.render = (get) =>
-      Object.entries(spec.when).every(([other, allowed]) =>
-        allowed.includes(get(pathOf(other)))
-      );
-  }
-  if (spec.type === 'enum') {
-    return {
-      ...base,
-      options: Object.fromEntries(
-        spec.choices.map((option) => [
-          spec.optionLabels?.[option] ?? titleCase(option),
-          option,
-        ])
-      ),
-      value,
-    };
-  }
-  if (spec.type === 'number') {
-    return { ...base, max: spec.max, min: spec.min, step: spec.step, value };
-  }
-  return { ...base, value };
-}
-
-function toFolders(node) {
-  return Object.fromEntries(
-    Object.entries(node).map(([name, entry]) =>
-      entry?.isGroup
-        ? [name, folder(toFolders(entry.children), { collapsed: true })]
-        : [name, entry]
-    )
-  );
-}
-
-function sectionControls(section, saved, extras) {
-  const root = {};
-  LEVA_KEYS.filter((key) => RENDER_OPTIONS[key].section === section).forEach(
-    (key) => {
-      const { group } = RENDER_OPTIONS[key];
-      let level = root;
-      (group ? group.split('.') : []).forEach((name) => {
-        if (!level[name]) level[name] = { children: {}, isGroup: true };
-        level = level[name].children;
-      });
-      Object.assign(level, extras[key]?.before ?? {});
-      level[key] = schemaControl(key, saved);
-      Object.assign(level, extras[key]?.after ?? {});
-    }
-  );
-  return folder(toFolders(root), { collapsed: !OPEN.has(section) });
-}
+const schemaFolders = createSchemaFolders({
+  label: SCENE_LABEL,
+  options: RENDER_OPTIONS,
+  keys: LEVA_KEYS,
+  folders: FOLDERS,
+  open: OPEN,
+});
 
 // Rolls `rolling` facets with the rest held, as the CLI's --keep does.
 export function rollFacets(current, rolling, context = {}) {
@@ -129,10 +66,5 @@ export default function sceneFolders(saved, { onPull, onRoll, onReweave }) {
     palette: { before: { 'Roll Palette': button(() => onRoll(['palette'])) } },
     rugMode: { after: { 'Pull The Rug!': button(() => onPull()) } },
   };
-  return Object.fromEntries(
-    Object.entries(FOLDERS).map(([section, name]) => [
-      name,
-      sectionControls(section, saved, extras),
-    ])
-  );
+  return schemaFolders(saved, extras);
 }

@@ -20,6 +20,7 @@ import {
 import { loadKernel } from './lib/brutalistRender.mjs';
 import { createHeadlessRenderer } from './lib/headlessWebgpu.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import checkWorkbenchPage from './lib/workbenchPage.mjs';
 
 const KERNEL_DIR = path.join(REPO_ROOT, 'src', 'modules', 'brutalist');
 const PRESETS = {
@@ -40,7 +41,7 @@ const BARRELS = {
 };
 const PAGE_FIELDS = path.join(
   REPO_ROOT,
-  'src/dev/tools/brutalist/components/OptionSections.jsx'
+  'src/dev/tools/brutalist/BrutalistWorkbenchPage.jsx'
 );
 const ALLOWED_KERNEL_IMPORTS = new Set(['@modules/flora']);
 const CAMERA_KEY = /^(camera|orbit|fixed|spline|operator)/u;
@@ -261,16 +262,7 @@ async function checkHeadlessCalls(barrels) {
 }
 
 async function checkPageFields() {
-  const source = await readFile(PAGE_FIELDS, 'utf8').catch(() => null);
-  check(source, 'the workbench lost OptionSections.jsx.');
-  const block = source?.match(/const HANDLED = new Set\(\[([^\]]*)\]/u)?.[1];
-  check(block != null, 'OptionSections.jsx lost its HANDLED list.');
-  [...(block ?? '').matchAll(/'(\w+)'/gu)].forEach(([, key]) =>
-    check(
-      key in RENDER_OPTIONS,
-      `the workbench hand-lays "${key}", which is not in renderOptions.mjs.`
-    )
-  );
+  await checkWorkbenchPage(PAGE_FIELDS, RENDER_OPTIONS, check);
 }
 
 // The rig must carve, compile to valid WGSL and draw something on both
@@ -312,7 +304,6 @@ async function checkRender(kernel) {
     camera.lookAt(...view.target);
     const { device } = renderer.backend;
     device.pushErrorScope('validation');
-    await headless.readFrame(() => renderer.render(scene, camera));
     const frame = await headless.readFrame(() =>
       renderer.render(scene, camera)
     );

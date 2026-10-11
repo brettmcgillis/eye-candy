@@ -4,7 +4,19 @@
 // inside it. `when` hides a control unless every named key holds one of the
 // listed values. Dependency-free `.mjs` so plain Node and Vite's config
 // loader can import it.
-import createOptionSchema from '../optionSchema/index.mjs';
+import createOptionSchema, {
+  color,
+  flag,
+  inFacet,
+  num,
+  render,
+  rigOf,
+  rolled,
+  sceneOnly,
+  spec,
+  standard,
+  video,
+} from '../optionSchema/index.mjs';
 
 export const VIEWS = ['front', 'left', 'right', 'high', 'low'];
 export const VIDEO_MODES = ['loop', 'run'];
@@ -20,47 +32,6 @@ export const VIEW_ANGLES = {
 };
 
 export const MAX_POINTS = 160000;
-
-function spec(type, section, group, label, value, extra = {}) {
-  return {
-    default: value,
-    group,
-    help: label,
-    label,
-    scene: true,
-    scope: 'shared',
-    section,
-    type,
-    ...extra,
-  };
-}
-
-const num = (section, group, label, value, min, max, step, extra = {}) =>
-  spec('number', section, group, label, value, {
-    max,
-    min,
-    placeholder: 'N',
-    step,
-    ...extra,
-  });
-const choice = (section, group, label, choices, value, extra = {}) =>
-  spec('enum', section, group, label, value, {
-    choices,
-    help: `${label}: ${choices.join(', ')}`,
-    ...extra,
-  });
-const flag = (section, group, label, value, extra = {}) =>
-  spec('boolean', section, group, label, value, extra);
-const color = (section, group, label, value, extra = {}) =>
-  spec('color', section, group, label, value, extra);
-
-const rolled = (facet, [min, max], item) => ({
-  ...item,
-  facet,
-  roll: { max, min, step: item.step },
-});
-const inFacet = (facet, item) => ({ ...item, facet });
-const sceneOnly = (item) => ({ ...item, sceneOnly: true });
 
 // One colour per target: the face, the rim and the cylinders each take a
 // single spot on the palette, and every wire draws its own at random.
@@ -305,15 +276,7 @@ const SOLVER = {
 // Owned by the lighting rig, which builds its own Leva controls; declared
 // here so a preset and a headless render carry them. Defaults are
 // pushComesToShoveRender's lighting.js.
-const rig = (item) => ({
-  facet: 'atmosphere',
-  group: null,
-  rig: true,
-  scene: true,
-  scope: 'shared',
-  section: 'light',
-  ...item,
-});
+const rig = rigOf({ facet: 'atmosphere', section: 'light' });
 const RIG = {
   lightKeyColor: rig({
     default: '#fff8ee',
@@ -372,112 +335,23 @@ const RIG = {
   }),
 };
 
-const output = (item) => ({ scope: 'shared', section: 'output', ...item });
-const still = (item) => ({ scope: 'still', section: 'output', ...item });
-const video = (item) => ({ scope: 'video', section: 'video', ...item });
-const render = (item) => ({ scope: 'shared', section: 'render', ...item });
-
 const RENDER = {
-  batch: output({
-    default: null,
-    help: 'Batch seed: names the generations (batch, batch-1…) and seeds the facet rolls. Omit for a random one',
-    label: 'Batch seed',
-    nullable: true,
-    placeholder: 'WORD',
-    text: true,
-    type: 'seed',
-  }),
-  out: output({
-    cliOnly: true,
-    default: 'output/push-comes-to-shove',
-    help: 'Output directory (stills) or file (video)',
-    placeholder: 'PATH',
-    type: 'string',
-  }),
-  width: output({
-    default: 1080,
-    help: 'Width',
-    label: 'Width',
-    max: 8192,
-    min: 64,
-    placeholder: 'PX',
-    step: 2,
-    type: 'number',
-  }),
-  height: output({
-    default: 1350,
-    help: 'Height',
-    label: 'Height',
-    max: 8192,
-    min: 64,
-    placeholder: 'PX',
-    step: 2,
-    type: 'number',
-  }),
-  pixelRatio: output({
-    choices: [1, 2, 3, 4],
-    default: 2,
-    help: 'Renders at width×ratio by height×ratio',
-    label: 'Pixel ratio',
-    max: 4,
-    min: 1,
-    type: 'number',
-  }),
-  count: output({
-    default: 1,
-    help: 'How many panels to roll',
-    label: 'Count',
-    max: 200,
-    min: 1,
-    placeholder: 'N',
-    step: 1,
-    type: 'number',
-  }),
-  png: still({
-    default: false,
-    help: 'Write PNG files',
-    label: 'PNG',
-    type: 'boolean',
-  }),
-  webp: still({
-    default: true,
-    help: 'Write lossless WebP files',
-    label: 'WebP',
-    type: 'boolean',
-  }),
-  svg: still({
-    default: false,
-    help: 'Write a plottable SVG per view: hole rims, wire centrelines and cylinder caps, hidden lines removed, one pen per colour',
-    label: 'SVG',
-    type: 'boolean',
-  }),
-  views: still({
-    default: 'front',
-    help: `Comma-separated views: ${VIEWS.join(', ')}`,
-    label: 'Views',
-    placeholder: 'LIST',
-    type: 'string',
-  }),
-  svgOcclusion: {
-    default: true,
-    help: 'Drop line work hidden behind the panel, cylinders and nearer wires (uses a depth pass)',
-    label: 'SVG hidden lines',
-    scope: 'still',
-    section: 'svg',
-    type: 'boolean',
-  },
-  svgStroke: {
-    default: 0.6,
-    help: 'Stroke width in output px; 0 draws hairlines',
-    label: 'SVG stroke',
-    max: 8,
-    min: 0,
-    placeholder: 'PX',
-    scope: 'still',
-    section: 'svg',
-    step: 0.1,
-    type: 'number',
-  },
+  batch: standard.batch(),
+  out: standard.out('push-comes-to-shove'),
+  width: standard.width(),
+  height: standard.height(),
+  pixelRatio: standard.pixelRatio(),
+  count: standard.count('panels'),
+  png: standard.png(),
+  webp: standard.webp(),
+  svg: standard.svg(
+    'Write a plottable SVG per view: hole rims, wire centrelines and cylinder caps, hidden lines removed, one pen per colour'
+  ),
+  views: standard.views(VIEWS, 'front'),
+  svgOcclusion: standard.svgOcclusion(
+    'Drop line work hidden behind the panel, cylinders and nearer wires (uses a depth pass)'
+  ),
+  svgStroke: standard.svgStroke(),
   framing: render({
     choices: FRAMINGS,
     default: 'field',
@@ -491,24 +365,12 @@ const RENDER = {
     label: 'Fit field to frame',
     type: 'boolean',
   }),
-  margin: render({
-    default: 0.04,
-    help: 'Inset (field framing) or padding (panel framing), as a share of the frame',
-    label: 'Margin',
-    max: 0.4,
-    min: 0,
-    step: 0.01,
-    type: 'number',
-  }),
-  fov: render({
-    default: 30,
-    help: 'Vertical field of view in degrees',
-    label: 'Field of view',
-    max: 90,
-    min: 10,
-    step: 1,
-    type: 'number',
-  }),
+  margin: standard.margin(
+    0.04,
+    'Inset (field framing) or padding (panel framing), as a share of the frame',
+    { label: 'Margin', max: 0.4 }
+  ),
+  fov: standard.fov(30, { help: 'Vertical field of view in degrees' }),
   warmup: render({
     default: 6,
     help: 'Seconds simulated before the first frame, so the wires have settled round the cylinders',
@@ -519,84 +381,19 @@ const RENDER = {
     step: 0.5,
     type: 'number',
   }),
-  samples: render({
-    choices: [0, 4],
-    default: 4,
-    help: 'MSAA samples',
-    label: 'MSAA',
-    max: 4,
-    min: 0,
-    type: 'number',
-  }),
-  shadows: render({
-    default: true,
-    help: 'Key light shadow map',
-    label: 'Shadows',
-    type: 'boolean',
-  }),
-  keep: {
-    default: '',
-    help: 'Comma-separated facets to hold while the rest roll: structure, color, motion, atmosphere',
-    label: 'Hold facets',
-    placeholder: 'LIST',
-    scope: 'shared',
-    section: 'roll',
-    type: 'string',
-  },
-  base: {
-    cliOnly: true,
-    default: null,
-    help: 'A panel config (or props.json path) the roll starts from',
-    nullable: true,
-    placeholder: 'JSON',
-    scope: 'shared',
-    section: 'roll',
-    type: 'json',
-  },
-  palettes: {
-    array: true,
-    cliOnly: true,
-    default: null,
-    help: 'Palette names the colour roll picks from (the CLI fills this from gradients.json)',
-    nullable: true,
-    placeholder: 'JSON',
-    scope: 'shared',
-    section: 'roll',
-    type: 'json',
-  },
-  mode: video({
-    choices: VIDEO_MODES,
-    default: 'loop',
-    help: 'loop: each panel runs for hold seconds and crossfades into the next, the last into the first, so the clip loops seamlessly; run: each panel runs for hold seconds, hard cuts between them',
-    label: 'Mode',
-    type: 'enum',
-  }),
-  view: video({
-    choices: VIEWS,
-    default: 'front',
-    help: 'Camera view for the clip',
-    label: 'View',
-    type: 'enum',
-  }),
-  fps: video({
-    choices: [24, 30, 60],
-    default: 30,
-    help: 'Frames per second',
-    label: 'FPS',
-    max: 60,
-    min: 24,
-    type: 'number',
-  }),
-  hold: video({
-    default: 8,
-    help: 'Seconds of footage per panel',
-    label: 'Hold',
-    max: 300,
-    min: 1,
-    placeholder: 'S',
-    step: 0.5,
-    type: 'number',
-  }),
+  samples: standard.samples(),
+  shadows: standard.shadows(),
+  keep: standard.keep(['structure', 'color', 'motion', 'atmosphere']),
+  base: standard.base('panel'),
+  palettes: standard.palettes('colour'),
+  mode: standard.mode(
+    VIDEO_MODES,
+    'loop',
+    'loop: each panel runs for hold seconds and crossfades into the next, the last into the first, so the clip loops seamlessly; run: each panel runs for hold seconds, hard cuts between them'
+  ),
+  view: standard.view(VIEWS, 'front'),
+  fps: standard.fps(),
+  hold: standard.hold(8, 'Seconds of footage per panel', { min: 1 }),
   fade: video({
     default: 1.5,
     help: 'Crossfade seconds between panels (loop mode); must stay under hold',
@@ -641,46 +438,13 @@ export const SURFACE_DEFAULTS = {
   workbench: { count: 6 },
 };
 
-export function resolveViews(list, fail = (message) => new Error(message)) {
-  const views = String(list)
-    .split(',')
-    .map((view) => view.trim())
-    .filter(Boolean);
-  const unknown = views.filter((view) => !VIEWS.includes(view));
-  if (views.length === 0 || unknown.length > 0) {
-    throw fail(`views must name only ${VIEWS.join(', ')}.`);
-  }
-  return views;
-}
-
 const schema = createOptionSchema({
   options: RENDER_OPTIONS,
   sectionLabels: {
-    cavity: 'cavity',
-    cylinders: 'cylinders',
-    light: 'light',
-    motion: 'motion',
-    output: 'output',
-    palette: 'palette',
-    panel: 'panel',
-    render: 'render',
     roll: 'rolling',
-    solver: 'solver',
-    svg: 'svg',
-    video: 'video',
-    wires: 'wires',
   },
   surfaceDefaults: SURFACE_DEFAULTS,
   validate(kind, options, fail) {
-    if (kind === 'still' && !options.png && !options.webp && !options.svg) {
-      throw fail('Select at least one output format: PNG, WebP or SVG.');
-    }
-    const longest = Math.max(options.width, options.height);
-    if (longest * options.pixelRatio > 8192) {
-      throw fail(
-        `width×pixelRatio must stay within 8192; the longest side would be ${longest * options.pixelRatio}.`
-      );
-    }
     if (
       kind === 'video' &&
       options.mode === 'loop' &&
@@ -688,48 +452,23 @@ const schema = createOptionSchema({
     ) {
       throw fail('The crossfade must be shorter than the hold.');
     }
-    if (kind === 'still') resolveViews(options.views, fail);
   },
+  views: VIEWS,
 });
 
 export const {
+  LEVA_KEYS,
+  SCENE_KEYS,
+  configFrom,
   defaultsFor,
   facets,
   keysInFacet,
   normalizeOptions,
   optionsFor,
+  optionsFromConfig,
+  presetFromConfig,
+  resolveViews,
+  sceneDefaults,
   sectionsFor,
   usageFor,
 } = schema;
-
-const keysWhere = (test) =>
-  Object.entries(RENDER_OPTIONS)
-    .filter(([, item]) => test(item))
-    .map(([key]) => key);
-
-export const SCENE_KEYS = keysWhere((item) => item.scene);
-export const LEVA_KEYS = keysWhere((item) => item.scene && !item.rig);
-
-export const sceneDefaults = () =>
-  Object.fromEntries(
-    SCENE_KEYS.map((key) => [key, RENDER_OPTIONS[key].default])
-  );
-
-export function configFrom(source) {
-  const flat = source?.preset ?? source ?? {};
-  return Object.fromEntries(
-    SCENE_KEYS.filter((key) => flat[key] != null).map((key) => [key, flat[key]])
-  );
-}
-
-export const optionsFromConfig = (config = {}) => configFrom(config);
-
-export function presetFromConfig(config = {}) {
-  const defaults = sceneDefaults();
-  return Object.fromEntries(
-    Object.entries(config).filter(
-      ([name, value]) =>
-        name in defaults && value != null && value !== defaults[name]
-    )
-  );
-}

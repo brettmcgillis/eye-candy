@@ -21,6 +21,7 @@ import {
 } from '../src/modules/networkTest/renderOptions.mjs';
 import { createHeadlessRenderer, loadThree } from './lib/headlessWebgpu.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import checkWorkbenchPage from './lib/workbenchPage.mjs';
 
 const KERNEL_DIR = path.join(REPO_ROOT, 'src', 'modules', 'networkTest');
 const PRESETS = '/src/components/scenes/WebGPU/NetworkTest/presets/presets.js';
@@ -36,7 +37,7 @@ const BARRELS = {
 };
 const PAGE_FIELDS = path.join(
   REPO_ROOT,
-  'src/dev/tools/networkTest/components/OptionSections.jsx'
+  'src/dev/tools/networkTest/NetworkTestWorkbenchPage.jsx'
 );
 const ALLOWED_KERNEL_IMPORTS = new Set([
   '@modules/flora',
@@ -425,15 +426,7 @@ async function checkHeadlessCalls(barrels) {
 }
 
 async function checkPageFields() {
-  const source = await readFile(PAGE_FIELDS, 'utf8');
-  const block = source.match(/const HANDLED = new Set\(\[([^\]]+)\]/u)?.[1];
-  check(block, 'OptionSections.jsx lost its HANDLED list.');
-  [...(block ?? '').matchAll(/'(\w+)'/gu)].forEach(([, key]) =>
-    check(
-      key in RENDER_OPTIONS,
-      `the workbench hand-lays "${key}", which is not in renderOptions.mjs.`
-    )
-  );
+  await checkWorkbenchPage(PAGE_FIELDS, RENDER_OPTIONS, check);
 }
 
 // The rig and its post chain must compile to valid WGSL and draw something
@@ -481,7 +474,6 @@ async function checkRender({ look, net, post }, THREE) {
     scene.background = new THREE.Color(background);
     rig.apply({ ...config, mood });
     device.pushErrorScope('validation');
-    await headless.readFrame(() => chain.pipeline.render());
     const frame = await headless.readFrame(() => chain.pipeline.render());
     const error = await device.popErrorScope();
     check(!error, `the rig fails validation (${mood}): ${error?.message}`);

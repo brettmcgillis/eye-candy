@@ -18,6 +18,7 @@ import {
 } from '../src/modules/hyperCubes/renderOptions.mjs';
 import { createHeadlessRenderer, loadThree } from './lib/headlessWebgpu.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import checkWorkbenchPage from './lib/workbenchPage.mjs';
 
 const KERNEL_DIR = path.join(REPO_ROOT, 'src', 'modules', 'hyperCubes');
 const PRESETS = '/src/components/scenes/WebGPU/HyperCubes/presets/presets.js';
@@ -34,7 +35,7 @@ const BARRELS = {
 };
 const PAGE_FIELDS = path.join(
   REPO_ROOT,
-  'src/dev/tools/hyperCubes/components/OptionSections.jsx'
+  'src/dev/tools/hyperCubes/HyperCubesWorkbenchPage.jsx'
 );
 const ALLOWED_KERNEL_IMPORTS = new Set([
   '@modules/flora',
@@ -264,15 +265,7 @@ async function checkHeadlessCalls(barrels) {
 }
 
 async function checkPageFields() {
-  const source = await readFile(PAGE_FIELDS, 'utf8');
-  const block = source.match(/const HANDLED = new Set\(\[([^\]]+)\]/u)?.[1];
-  check(block, 'OptionSections.jsx lost its HANDLED list.');
-  [...(block ?? '').matchAll(/'(\w+)'/gu)].forEach(([, key]) =>
-    check(
-      key in RENDER_OPTIONS,
-      `the workbench hand-lays "${key}", which is not in renderOptions.mjs.`
-    )
-  );
+  await checkWorkbenchPage(PAGE_FIELDS, RENDER_OPTIONS, check);
 }
 
 // The rig and its post chain must compile to valid WGSL and draw something
@@ -301,7 +294,6 @@ async function checkRender({ cubes, look, post }, THREE) {
   });
   const { device } = renderer.backend;
   device.pushErrorScope('validation');
-  await headless.readFrame(() => chain.pipeline.render());
   const frame = await headless.readFrame(() => chain.pipeline.render());
   const error = await device.popErrorScope();
   check(!error, `the rig fails validation: ${error?.message}`);

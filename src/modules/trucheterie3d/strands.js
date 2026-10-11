@@ -141,4 +141,4 @@ export default function buildStrands(field, { junction, pathDiv }) {
   return { dots, pieces };
 }
 
-export { pointAt, SPAN };
+export { hiddenArcs, pointAt, SPAN, visibleIntervals };

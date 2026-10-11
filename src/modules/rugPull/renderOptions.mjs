@@ -5,7 +5,17 @@
 // values. Dependency-free `.mjs` so plain Node and Vite's config loader can
 // import it; the id lists are mirrored from the kernel and held to it by
 // `npm run rug-pull:check`.
-import createOptionSchema from '../optionSchema/index.mjs';
+import createOptionSchema, {
+  choice,
+  color,
+  flag,
+  inFacet,
+  num,
+  rolled,
+  sceneOnly,
+  standard,
+  still,
+} from '../optionSchema/index.mjs';
 
 export const DESIGN_CHOICES = [
   'city',
@@ -75,52 +85,12 @@ export const HANG_STYLES = ['rod', 'clips', 'corners'];
 export const VIEWS = ['cartoon', 'flat', 'floor', 'wall'];
 export const FACETS = ['design', 'border', 'mine', 'palette', 'age', 'room'];
 
-function spec(type, section, group, label, value, extra = {}) {
-  return {
-    default: value,
-    group,
-    help: label,
-    label,
-    scene: true,
-    scope: 'shared',
-    section,
-    type,
-    ...extra,
-  };
-}
-
-const num = (section, group, label, value, min, max, step, extra = {}) =>
-  spec('number', section, group, label, value, {
-    max,
-    min,
-    placeholder: 'N',
-    step,
-    ...extra,
-  });
-const choice = (section, group, label, choices, value, extra = {}) =>
-  spec('enum', section, group, label, value, {
-    choices,
-    help: `${label}: ${choices.join(', ')}`,
-    ...extra,
-  });
-const color = (section, group, label, value, extra = {}) =>
-  spec('color', section, group, label, value, extra);
-const flag = (section, group, label, value, extra = {}) =>
-  spec('boolean', section, group, label, value, extra);
-const rolled = (facet, [min, max], item) => ({
-  ...item,
-  facet,
-  roll: { max, min, step: item.step },
-});
-const inFacet = (facet, item) => ({ ...item, facet });
-const sceneOnly = (item) => ({ ...item, sceneOnly: true });
-
 const DESIGN = {
   design: inFacet(
     'design',
     choice('design', null, 'Design', DESIGN_CHOICES, 'city', {
       help: 'city: medallion and floral field; village: Heriz-style stepped medallion; tribal: Qashqai pole medallion and scattered fillers; gul: Turkmen guls; herati / boteh / minaKhani: all-over repeats; prayer: mihrab arch; garden: khesti compartments; tree: tree of life; harlequin: argyle lattice',
-      optionLabels: {
+      choiceLabels: {
         boteh: 'Boteh',
         city: 'City medallion',
         garden: 'Garden',
@@ -359,7 +329,7 @@ const ROOM = {
   rugMode: sceneOnly(
     choice('room', null, 'Mode', RUG_MODES, 'floor', {
       help: 'floor: lying by the couch; wall: hung from a rod',
-      optionLabels: { floor: 'Floor rug', wall: 'Wall rug' },
+      choiceLabels: { floor: 'Floor rug', wall: 'Wall rug' },
     })
   ),
   rugWidth: rolled(
@@ -430,71 +400,19 @@ const ROOM = {
   ),
 };
 
-const output = (item) => ({ scope: 'shared', section: 'output', ...item });
-const still = (item) => ({ scope: 'still', section: 'output', ...item });
-
 const RENDER = {
-  batch: output({
-    default: null,
+  batch: standard.batch({
     help: 'Batch seed: names the rugs (batch, batch-1…) and seeds the facet rolls. Omit for a random one',
-    label: 'Batch seed',
-    nullable: true,
-    placeholder: 'WORD',
-    text: true,
-    type: 'seed',
   }),
-  out: output({
-    cliOnly: true,
-    default: 'output/rug-pull',
-    help: 'Output directory',
-    placeholder: 'PATH',
-    type: 'string',
+  out: standard.out('rug-pull', { help: 'Output directory' }),
+  count: standard.count('pieces', { help: 'How many rugs to weave', max: 500 }),
+  views: standard.views(VIEWS, 'cartoon,floor', {
+    help: 'Comma-separated views: cartoon, flat, floor, wall. cartoon is the knot chart (no GPU); the rest are WebGPU renders',
   }),
-  count: output({
-    default: 1,
-    help: 'How many rugs to weave',
-    label: 'Count',
-    max: 500,
-    min: 1,
-    placeholder: 'N',
-    step: 1,
-    type: 'number',
-  }),
-  views: still({
-    default: 'cartoon,floor',
-    help: `Comma-separated views: ${VIEWS.join(', ')}. cartoon is the knot chart (no GPU); the rest are WebGPU renders`,
-    label: 'Views',
-    placeholder: 'LIST',
-    type: 'string',
-  }),
-  width: output({
-    default: 1080,
-    help: 'Width of the 3D views',
-    label: 'Width',
-    max: 8192,
-    min: 64,
-    placeholder: 'PX',
-    step: 2,
-    type: 'number',
-  }),
-  height: output({
-    default: 1350,
-    help: 'Height of the 3D views',
-    label: 'Height',
-    max: 8192,
-    min: 64,
-    placeholder: 'PX',
-    step: 2,
-    type: 'number',
-  }),
-  pixelRatio: output({
-    choices: [1, 2, 3, 4],
-    default: 2,
+  width: standard.width(1080, { help: 'Width of the 3D views' }),
+  height: standard.height(1350, { help: 'Height of the 3D views' }),
+  pixelRatio: standard.pixelRatio({
     help: 'Renders the 3D views at width×ratio by height×ratio',
-    label: 'Pixel ratio',
-    max: 4,
-    min: 1,
-    type: 'number',
   }),
   cartoonScale: still({
     default: 4,
@@ -515,24 +433,9 @@ const RENDER = {
     step: 0.01,
     type: 'number',
   }),
-  png: still({
-    default: false,
-    help: 'Write PNG files',
-    label: 'PNG',
-    type: 'boolean',
-  }),
-  webp: still({
-    default: true,
-    help: 'Write lossless WebP files',
-    label: 'WebP',
-    type: 'boolean',
-  }),
-  svg: still({
-    default: false,
-    help: 'Write the knot chart as SVG: one path per yarn',
-    label: 'SVG',
-    type: 'boolean',
-  }),
+  png: standard.png(),
+  webp: standard.webp(),
+  svg: standard.svg('Write the knot chart as SVG: one path per yarn'),
   settleSteps: still({
     default: 480,
     help: 'Cloth solver steps before a 3D view is taken',
@@ -544,17 +447,7 @@ const RENDER = {
     step: 10,
     type: 'number',
   }),
-  samples: {
-    choices: [0, 4],
-    default: 4,
-    help: 'MSAA samples',
-    label: 'MSAA',
-    max: 4,
-    min: 0,
-    scope: 'shared',
-    section: 'render',
-    type: 'number',
-  },
+  samples: standard.samples(),
   designPool: {
     default: '',
     help: `Comma-separated designs the roll picks from (empty: all): ${DESIGN_CHOICES.join(', ')}`,
@@ -584,25 +477,8 @@ const RENDER = {
     step: 0.01,
     type: 'number',
   },
-  keep: {
-    default: '',
-    help: `Comma-separated facets to hold while the rest roll: ${FACETS.join(', ')}`,
-    label: 'Hold facets',
-    placeholder: 'LIST',
-    scope: 'shared',
-    section: 'roll',
-    type: 'string',
-  },
-  base: {
-    cliOnly: true,
-    default: null,
-    help: 'A config (or props.json path) the roll starts from',
-    nullable: true,
-    placeholder: 'JSON',
-    scope: 'shared',
-    section: 'roll',
-    type: 'json',
-  },
+  keep: standard.keep(FACETS),
+  base: standard.base(),
 };
 
 export const RENDER_OPTIONS = {
@@ -621,13 +497,8 @@ export const SURFACE_DEFAULTS = {
 };
 
 const SECTION_LABELS = {
-  age: 'age',
   border: 'borders',
-  design: 'design',
   mine: 'house motifs',
-  output: 'output',
-  palette: 'palette',
-  render: 'render',
   roll: 'rolling',
   room: 'room & drape',
 };
@@ -636,37 +507,9 @@ const schema = createOptionSchema({
   options: RENDER_OPTIONS,
   sectionLabels: SECTION_LABELS,
   surfaceDefaults: SURFACE_DEFAULTS,
-  validate(kind, options, fail) {
-    if (!options.png && !options.webp && !options.svg) {
-      throw fail('Select at least one output format: PNG, WebP or SVG.');
-    }
-    const views = String(options.views)
-      .split(',')
-      .map((view) => view.trim())
-      .filter(Boolean);
-    const unknown = views.filter((view) => !VIEWS.includes(view));
-    if (unknown.length) {
-      throw fail(
-        `Unknown view ${unknown.join(', ')}; pick from ${VIEWS.join(', ')}.`
-      );
-    }
-    if (Math.max(options.width, options.height) * options.pixelRatio > 8192) {
-      throw fail('width×pixelRatio must stay within 8192.');
-    }
-  },
+  views: VIEWS,
 });
 
-const keysWhere = (test) =>
-  Object.entries(RENDER_OPTIONS)
-    .filter(([, item]) => test(item))
-    .map(([key]) => key);
-
-export const SCENE_KEYS = keysWhere((item) => item.scene);
-export const LEVA_KEYS = SCENE_KEYS;
-// The keys the cartoon depends on; room keys only restyle or re-drape it.
-export const WEAVE_KEYS = keysWhere(
-  (item) => item.scene && item.section !== 'room'
-);
 export const DRAPE_KEYS = [
   'rugMode',
   'rugWidth',
@@ -678,36 +521,25 @@ export const DRAPE_KEYS = [
   'clipCount',
 ];
 
-export const sceneDefaults = () =>
-  Object.fromEntries(
-    SCENE_KEYS.map((key) => [key, RENDER_OPTIONS[key].default])
-  );
-
-export const configFrom = (source) => {
-  const flat = source?.preset ?? source ?? {};
-  return Object.fromEntries(
-    SCENE_KEYS.filter((key) => flat[key] != null).map((key) => [key, flat[key]])
-  );
-};
-
-export const optionsFromConfig = (config = {}) => configFrom(config);
-
-export function presetFromConfig(config = {}) {
-  const defaults = sceneDefaults();
-  return Object.fromEntries(
-    Object.entries(config).filter(
-      ([key, value]) =>
-        key in defaults && value != null && value !== defaults[key]
-    )
-  );
-}
-
 export const {
+  LEVA_KEYS,
+  SCENE_KEYS,
+  configFrom,
   defaultsFor,
   facets,
   keysInFacet,
   normalizeOptions,
   optionsFor,
+  optionsFromConfig,
+  presetFromConfig,
+  sceneDefaults,
   sectionsFor,
   usageFor,
 } = schema;
+
+const { keysWhere } = schema;
+
+// The keys the cartoon depends on; room keys only restyle or re-drape it.
+export const WEAVE_KEYS = keysWhere(
+  (item) => item.scene && item.section !== 'room'
+);

@@ -18,6 +18,7 @@ import {
 } from '../src/modules/pushComesToShove/renderOptions.mjs';
 import { createHeadlessRenderer, loadThree } from './lib/headlessWebgpu.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import checkWorkbenchPage from './lib/workbenchPage.mjs';
 
 const KERNEL_DIR = path.join(REPO_ROOT, 'src', 'modules', 'pushComesToShove');
 const PRESETS =
@@ -34,7 +35,7 @@ const BARRELS = {
 };
 const PAGE_FIELDS = path.join(
   REPO_ROOT,
-  'src/dev/tools/pushComesToShove/components/OptionSections.jsx'
+  'src/dev/tools/pushComesToShove/PushComesToShoveWorkbenchPage.jsx'
 );
 const ALLOWED_KERNEL_IMPORTS = new Set([
   '@modules/flora',
@@ -70,15 +71,7 @@ async function checkKernelPurity() {
 }
 
 async function checkPageFields() {
-  const source = await readFile(PAGE_FIELDS, 'utf8');
-  const block = source.match(/const HANDLED = new Set\(\[([^\]]+)\]/u)?.[1];
-  check(block, 'OptionSections.jsx lost its HANDLED list.');
-  [...(block ?? '').matchAll(/'(\w+)'/gu)].forEach(([, key]) =>
-    check(
-      key in RENDER_OPTIONS,
-      `the workbench hand-lays "${key}", which is not in renderOptions.mjs.`
-    )
-  );
+  await checkWorkbenchPage(PAGE_FIELDS, RENDER_OPTIONS, check);
 }
 
 function checkRigDefaults({ lights, look }) {
@@ -328,7 +321,6 @@ async function checkRender({ lights, look, shove }, THREE) {
 
   device.pushErrorScope('validation');
   rig.warm(renderer, config, 2);
-  await headless.readFrame(() => renderer.render(scene, camera));
   const frame = await headless.readFrame(() => renderer.render(scene, camera));
   const error = await device.popErrorScope();
   check(!error, `the rig fails validation: ${error?.message}`);

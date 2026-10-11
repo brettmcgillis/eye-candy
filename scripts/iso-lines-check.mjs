@@ -18,6 +18,7 @@ import {
 } from '../src/modules/isoLines/renderOptions.mjs';
 import { createHeadlessRenderer, loadThree } from './lib/headlessWebgpu.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import checkWorkbenchPage from './lib/workbenchPage.mjs';
 
 const KERNEL_DIR = path.join(REPO_ROOT, 'src', 'modules', 'isoLines');
 const PRESETS = '/src/components/scenes/WebGPU/IsoLines/presets/presets.js';
@@ -33,7 +34,7 @@ const BARRELS = {
 };
 const PAGE_FIELDS = path.join(
   REPO_ROOT,
-  'src/dev/tools/isoLines/components/OptionSections.jsx'
+  'src/dev/tools/isoLines/IsoLinesWorkbenchPage.jsx'
 );
 const RELIEF_DIR = path.join(REPO_ROOT, 'src', 'modules', 'isoLinesRelief');
 const ALLOWED_KERNEL_IMPORTS = new Set([
@@ -336,15 +337,7 @@ async function checkHeadlessCalls(barrels) {
 }
 
 async function checkPageFields() {
-  const source = await readFile(PAGE_FIELDS, 'utf8');
-  const block = source.match(/const HANDLED = new Set\(\[([^\]]+)\]/u)?.[1];
-  check(block, 'OptionSections.jsx lost its HANDLED list.');
-  [...(block ?? '').matchAll(/'(\w+)'/gu)].forEach(([, key]) =>
-    check(
-      key in RENDER_OPTIONS,
-      `the workbench hand-lays "${key}", which is not in renderOptions.mjs.`
-    )
-  );
+  await checkWorkbenchPage(PAGE_FIELDS, RENDER_OPTIONS, check);
 }
 
 // The flat rig must compile to valid WGSL and draw something other than
@@ -374,8 +367,6 @@ async function checkRender({ iso, look }, THREE) {
     rig.apply(config);
     rig.setBuild(iso.createIsoBuilder().build(config, { aspect: 1, time: 1 }));
     device.pushErrorScope('validation');
-    // eslint-disable-next-line no-await-in-loop
-    await headless.readFrame(() => renderer.render(scene, camera));
     // eslint-disable-next-line no-await-in-loop
     const frame = await headless.readFrame(() =>
       renderer.render(scene, camera)

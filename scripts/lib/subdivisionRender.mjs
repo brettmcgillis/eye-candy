@@ -1,5 +1,4 @@
 /* eslint-disable import/no-extraneous-dependencies */
-import { readFile } from 'node:fs/promises';
 import sharp from 'sharp';
 
 import {
@@ -8,14 +7,12 @@ import {
   defaultsFor,
   normalizeOptions,
 } from '../../src/modules/subdivision/renderOptions.mjs';
-import { parseArgs, providedKeys } from './cliArgs.mjs';
-import loadModules, { REPO_ROOT } from './loadModules.mjs';
+import { createParseCli } from './generatorCli.mjs';
+import loadModules from './loadModules.mjs';
 import {
   loadImage as loadSourceImage,
   resolveImagePath,
 } from './sourceImage.mjs';
-
-export { REPO_ROOT };
 
 const ENTRIES = {
   palettes: '/src/utils/gradientPalette.js',
@@ -32,25 +29,11 @@ export async function loadKernel() {
   };
 }
 
-async function readJsonOption(value) {
-  if (value == null || typeof value !== 'string') return value;
-  if (/^\s*[[{]/u.test(value)) return JSON.parse(value);
-  return JSON.parse(await readFile(value, 'utf8'));
-}
-
-export async function parseCli(kind, argv) {
-  const args = parseArgs(argv, defaultsFor(kind));
-  if (args.help) return { help: true };
-  const raw = { ...args };
-  await Promise.all(
-    Object.entries(RENDER_OPTIONS)
-      .filter(([, spec]) => spec.type === 'json')
-      .map(async ([key]) => {
-        raw[key] = await readJsonOption(args[key]);
-      })
-  );
-  return { options: normalizeOptions(kind, raw), typed: providedKeys(args) };
-}
+export const parseCli = createParseCli({
+  RENDER_OPTIONS,
+  defaultsFor,
+  normalizeOptions,
+});
 
 export function assertPalette(kernel, { options, typed }) {
   const names = ['None', ...kernel.paletteNames];

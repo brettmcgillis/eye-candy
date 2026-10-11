@@ -4,7 +4,18 @@
 // `when` hides a control unless every named key holds one of the listed
 // values. Dependency-free `.mjs` so plain Node and Vite's config loader can
 // import it.
-import createOptionSchema from '../optionSchema/index.mjs';
+import createOptionSchema, {
+  choice,
+  color,
+  inFacet,
+  num,
+  rigOf,
+  rolled,
+  sceneOnly,
+  spec,
+  standard,
+  still,
+} from '../optionSchema/index.mjs';
 
 export const FAMILIES = ['primitive', 'noise', 'attractor', 'cluster'];
 export const FAMILY_KINDS = {
@@ -49,45 +60,6 @@ export const VIEW_AZIMUTHS = {
 };
 export const VIEW_ELEVATIONS = { top: 89.9 };
 export const VIEW_ELEVATION = 18;
-
-function spec(type, section, group, label, value, extra = {}) {
-  return {
-    default: value,
-    group,
-    help: label,
-    label,
-    scene: true,
-    scope: 'shared',
-    section,
-    type,
-    ...extra,
-  };
-}
-
-const num = (section, group, label, value, min, max, step, extra = {}) =>
-  spec('number', section, group, label, value, {
-    max,
-    min,
-    placeholder: 'N',
-    step,
-    ...extra,
-  });
-const choice = (section, group, label, choices, value, extra = {}) =>
-  spec('enum', section, group, label, value, {
-    choices,
-    help: `${label}: ${choices.join(', ')}`,
-    ...extra,
-  });
-const color = (section, group, label, value, extra = {}) =>
-  spec('color', section, group, label, value, extra);
-
-const rolled = (facet, [min, max], item) => ({
-  ...item,
-  facet,
-  roll: { max, min, step: item.step },
-});
-const inFacet = (facet, item) => ({ ...item, facet });
-const sceneOnly = (item) => ({ ...item, sceneOnly: true });
 
 const kindChoice = (family, label) =>
   inFacet(
@@ -353,7 +325,7 @@ const NODES = {
     'color',
     choice('stage', null, 'Mood', MOODS, 'glow', {
       help: 'glow: additive light on a dark ground; ink: lines laid on paper',
-      optionLabels: { glow: 'Glow', ink: 'Ink' },
+      choiceLabels: { glow: 'Glow', ink: 'Ink' },
     })
   ),
   background: inFacet('color', color('stage', null, 'Background', '#05070d')),
@@ -391,7 +363,7 @@ const NODES = {
   nodeStyle: inFacet(
     'color',
     choice('nodes', null, 'Style', NODE_STYLES, 'halo', {
-      optionLabels: { dot: 'Dot', halo: 'Halo', ring: 'Ring' },
+      choiceLabels: { dot: 'Dot', halo: 'Halo', ring: 'Ring' },
     })
   ),
   nodeSize: rolled(
@@ -513,15 +485,8 @@ const MOTION = {
 // Owned by the post rig, which builds its own Leva controls; declared here
 // so a preset and a headless render carry them. Defaults are
 // networkTestRender's post.js.
-const rig = (item) => ({
-  facet: 'atmosphere',
-  group: null,
-  rig: true,
-  scene: true,
-  scope: 'shared',
-  section: 'post',
-  ...item,
-});
+const rig = rigOf({ facet: 'atmosphere' });
+
 const RIG = {
   postBloomEnabled: rig({
     default: true,
@@ -612,91 +577,19 @@ const RIG = {
   }),
 };
 
-const output = (item) => ({ scope: 'shared', section: 'output', ...item });
-const still = (item) => ({ scope: 'still', section: 'output', ...item });
-const video = (item) => ({ scope: 'video', section: 'video', ...item });
-
 const RENDER = {
-  batch: output({
-    default: null,
-    help: 'Batch seed: names the generations (batch, batch-1…) and seeds the facet rolls. Omit for a random one',
-    label: 'Batch seed',
-    nullable: true,
-    placeholder: 'WORD',
-    text: true,
-    type: 'seed',
-  }),
-  out: output({
-    cliOnly: true,
-    default: 'output/network-test',
-    help: 'Output directory (stills) or file (video)',
-    placeholder: 'PATH',
-    type: 'string',
-  }),
-  width: output({
-    default: 1080,
-    help: 'Width',
-    label: 'Width',
-    max: 8192,
-    min: 64,
-    placeholder: 'PX',
-    step: 2,
-    type: 'number',
-  }),
-  height: output({
-    default: 1350,
-    help: 'Height',
-    label: 'Height',
-    max: 8192,
-    min: 64,
-    placeholder: 'PX',
-    step: 2,
-    type: 'number',
-  }),
-  pixelRatio: output({
-    choices: [1, 2, 3, 4],
-    default: 2,
-    help: 'Renders at width×ratio by height×ratio',
-    label: 'Pixel ratio',
-    max: 4,
-    min: 1,
-    type: 'number',
-  }),
-  count: output({
-    default: 1,
-    help: 'How many networks to roll',
-    label: 'Count',
-    max: 200,
-    min: 1,
-    placeholder: 'N',
-    step: 1,
-    type: 'number',
-  }),
-  png: still({
-    default: false,
-    help: 'Write PNG files',
-    label: 'PNG',
-    type: 'boolean',
-  }),
-  webp: still({
-    default: true,
-    help: 'Write lossless WebP files',
-    label: 'WebP',
-    type: 'boolean',
-  }),
-  svg: still({
-    default: false,
-    help: 'Write a plottable SVG per view: edges chained into paths, one pen per class and depth band',
-    label: 'SVG',
-    type: 'boolean',
-  }),
-  views: still({
-    default: 'hero',
-    help: `Comma-separated views: ${VIEWS.join(', ')}`,
-    label: 'Views',
-    placeholder: 'LIST',
-    type: 'string',
-  }),
+  batch: standard.batch(),
+  out: standard.out('network-test'),
+  width: standard.width(),
+  height: standard.height(),
+  pixelRatio: standard.pixelRatio(),
+  count: standard.count('networks'),
+  png: standard.png(),
+  webp: standard.webp(),
+  svg: standard.svg(
+    'Write a plottable SVG per view: edges chained into paths, one pen per class and depth band'
+  ),
+  views: standard.views(VIEWS, 'hero'),
   stillTime: still({
     default: 4,
     help: 'Seconds of signal travel a still is frozen at',
@@ -707,18 +600,7 @@ const RENDER = {
     step: 0.5,
     type: 'number',
   }),
-  svgStroke: {
-    default: 0.6,
-    help: 'Stroke width in output px; 0 draws hairlines',
-    label: 'SVG stroke',
-    max: 8,
-    min: 0,
-    placeholder: 'PX',
-    scope: 'still',
-    section: 'svg',
-    step: 0.1,
-    type: 'number',
-  },
+  svgStroke: standard.svgStroke(),
   svgNodes: {
     choices: SVG_NODES,
     default: 'circles',
@@ -750,131 +632,32 @@ const RENDER = {
     step: 0.01,
     type: 'number',
   },
-  projection: {
-    choices: PROJECTIONS,
-    default: 'perspective',
-    help: 'Camera projection',
-    label: 'Projection',
-    scope: 'shared',
-    section: 'render',
-    type: 'enum',
-  },
-  fov: {
-    default: 32,
-    help: 'Vertical field of view in degrees (perspective only)',
-    label: 'Field of view',
-    max: 90,
-    min: 10,
-    scope: 'shared',
-    section: 'render',
-    step: 1,
-    type: 'number',
-  },
-  margin: {
-    default: 0.08,
-    help: 'Space around the network, as a share of the frame',
-    label: 'Fit margin',
-    max: 0.5,
-    min: 0,
-    scope: 'shared',
-    section: 'render',
-    step: 0.01,
-    type: 'number',
-  },
-  samples: {
-    choices: [0, 4],
-    default: 4,
-    help: 'MSAA samples',
-    label: 'MSAA',
-    max: 4,
-    min: 0,
-    scope: 'shared',
-    section: 'render',
-    type: 'number',
-  },
-  keep: {
-    default: '',
-    help: 'Comma-separated facets to hold while the rest roll: points, wiring, color, atmosphere',
-    label: 'Hold facets',
-    placeholder: 'LIST',
-    scope: 'shared',
-    section: 'roll',
-    type: 'string',
-  },
-  base: {
-    cliOnly: true,
-    default: null,
-    help: 'A network config (or props.json path) the roll starts from',
-    nullable: true,
-    placeholder: 'JSON',
-    scope: 'shared',
-    section: 'roll',
-    type: 'json',
-  },
-  palettes: {
-    array: true,
-    cliOnly: true,
-    default: null,
-    help: 'Palette names the colour roll picks from (the CLI fills this from gradients.json)',
-    nullable: true,
-    placeholder: 'JSON',
-    scope: 'shared',
-    section: 'roll',
-    type: 'json',
-  },
-  mode: video({
-    choices: VIDEO_MODES,
-    default: 'grow',
-    help: 'grow: the network grows out from its roots, holds, then grows back in, drifting and signalling throughout; drift: points wander and rewire; pulse: a settled network carrying signals; turntable: orbit a settled network',
-    label: 'Mode',
-    type: 'enum',
-  }),
-  view: video({
-    choices: VIEWS,
-    default: 'hero',
-    help: 'Camera view for the clip',
-    label: 'View',
-    type: 'enum',
-  }),
-  fps: video({
-    choices: [24, 30, 60],
-    default: 30,
-    help: 'Frames per second',
-    label: 'FPS',
-    max: 60,
-    min: 24,
-    type: 'number',
-  }),
-  hold: video({
-    default: 4,
-    help: 'Seconds each network holds grown, or plays for (drift, pulse, turntable)',
-    label: 'Hold',
-    max: 300,
-    min: 0,
-    placeholder: 'S',
-    step: 0.5,
-    type: 'number',
-  }),
-  turns: video({
-    default: 1,
-    help: 'Turntable revolutions per network',
-    label: 'Turns',
-    max: 10,
-    min: 0.25,
-    placeholder: 'N',
-    step: 0.25,
-    type: 'number',
-  }),
-  orbit: video({
-    default: 30,
-    help: 'Degrees the camera drifts round a grow, drift or pulse clip',
-    label: 'Orbit drift',
-    max: 360,
-    min: -360,
-    placeholder: 'DEG',
-    step: 5,
-    type: 'number',
-  }),
+  projection: standard.projection(PROJECTIONS, 'perspective'),
+  fov: standard.fov(32),
+  margin: standard.margin(
+    0.08,
+    'Space around the network, as a share of the frame'
+  ),
+  samples: standard.samples(),
+  keep: standard.keep(['points', 'wiring', 'color', 'atmosphere']),
+  base: standard.base('network'),
+  palettes: standard.palettes('colour'),
+  mode: standard.mode(
+    VIDEO_MODES,
+    'grow',
+    'grow: the network grows out from its roots, holds, then grows back in, drifting and signalling throughout; drift: points wander and rewire; pulse: a settled network carrying signals; turntable: orbit a settled network'
+  ),
+  view: standard.view(VIEWS, 'hero'),
+  fps: standard.fps(),
+  hold: standard.hold(
+    4,
+    'Seconds each network holds grown, or plays for (drift, pulse, turntable)'
+  ),
+  turns: standard.turns('network'),
+  orbit: standard.orbit(
+    30,
+    'Degrees the camera drifts round a grow, drift or pulse clip'
+  ),
 };
 
 export const RENDER_OPTIONS = {
@@ -893,93 +676,34 @@ export const SURFACE_DEFAULTS = {
   workbench: { count: 6 },
 };
 
-export function resolveViews(list, fail = (message) => new Error(message)) {
-  const views = String(list)
-    .split(',')
-    .map((view) => view.trim())
-    .filter(Boolean);
-  const unknown = views.filter((view) => !VIEWS.includes(view));
-  if (views.length === 0 || unknown.length > 0) {
-    throw fail(`views must name only ${VIEWS.join(', ')}.`);
-  }
-  return views;
-}
-
 const schema = createOptionSchema({
   options: RENDER_OPTIONS,
   sectionLabels: {
-    edges: 'edges',
-    image: 'image',
-    motion: 'motion',
-    nodes: 'nodes',
-    output: 'output',
-    points: 'points',
-    post: 'post',
-    pulses: 'pulses',
-    render: 'render',
     roll: 'rolling',
-    stage: 'stage',
-    svg: 'svg',
-    video: 'video',
-    wiring: 'wiring',
   },
   surfaceDefaults: SURFACE_DEFAULTS,
-  validate(kind, options, fail) {
-    if (kind === 'still' && !options.png && !options.webp && !options.svg) {
-      throw fail('Select at least one output format: PNG, WebP or SVG.');
-    }
-    const longest = Math.max(options.width, options.height);
-    if (longest * options.pixelRatio > 8192) {
-      throw fail(
-        `width×pixelRatio must stay within 8192; the longest side would be ${longest * options.pixelRatio}.`
-      );
-    }
-    if (kind === 'still') resolveViews(options.views, fail);
-  },
+  views: VIEWS,
 });
 
 export const {
+  LEVA_KEYS,
+  SCENE_KEYS,
+  configFrom,
   defaultsFor,
   facets,
   keysInFacet,
   normalizeOptions,
   optionsFor,
+  optionsFromConfig,
+  presetFromConfig,
+  resolveViews,
+  sceneDefaults,
   sectionsFor,
   usageFor,
 } = schema;
 
-const keysWhere = (test) =>
-  Object.entries(RENDER_OPTIONS)
-    .filter(([, item]) => test(item))
-    .map(([key]) => key);
-
-export const SCENE_KEYS = keysWhere((item) => item.scene);
-export const LEVA_KEYS = keysWhere((item) => item.scene && !item.rig);
+const { keysWhere } = schema;
 
 // The keys that move points; wiring keys only relink them.
 export const POINT_KEYS = keysWhere((item) => item.facet === 'points');
 export const WIRING_KEYS = keysWhere((item) => item.facet === 'wiring');
-
-export const sceneDefaults = () =>
-  Object.fromEntries(
-    SCENE_KEYS.map((key) => [key, RENDER_OPTIONS[key].default])
-  );
-
-export function configFrom(source) {
-  const flat = source?.preset ?? source ?? {};
-  return Object.fromEntries(
-    SCENE_KEYS.filter((key) => flat[key] != null).map((key) => [key, flat[key]])
-  );
-}
-
-export const optionsFromConfig = (config = {}) => configFrom(config);
-
-export function presetFromConfig(config = {}) {
-  const defaults = sceneDefaults();
-  return Object.fromEntries(
-    Object.entries(config).filter(
-      ([name, value]) =>
-        name in defaults && value != null && value !== defaults[name]
-    )
-  );
-}

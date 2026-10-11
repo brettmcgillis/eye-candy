@@ -5,60 +5,23 @@
 // the dev server validates jobs against it; the scene's Blob Field folder
 // takes its defaults from it. Dependency-free `.mjs` for the same reason as
 // Rorschach's and Flora's — see docs/flora-pipeline.md.
-import createOptionSchema from '../optionSchema/index.mjs';
+import createOptionSchema, {
+  color,
+  flag,
+  num,
+  standard,
+} from '../optionSchema/index.mjs';
 
 export const PALETTE_NONE = 'None';
 export const LANE_MODES = ['Cycle', 'Depth', 'Random', 'Spectrum'];
 export const MEATBALLS = { HIDE_LOOSE: 0, KEEP_ALL: 2, PRUNE_LOOSE: 1 };
 
-function num(section, label, value, min, max, step, extra = {}) {
-  return {
-    default: value,
-    help: label,
-    label,
-    max,
-    min,
-    placeholder: 'N',
-    scene: true,
-    scope: 'shared',
-    section,
-    step,
-    type: 'number',
-    ...extra,
-  };
-}
-
 const gen = (section, label, value, min, max, step, facet, roll) =>
-  num(section, label, value, min, max, step, {
+  num(section, null, label, value, min, max, step, {
     facet,
     generator: true,
     ...(roll ? { roll: { max: roll[1], min: roll[0], step } } : {}),
   });
-
-function color(section, label, value) {
-  return {
-    default: value,
-    help: label,
-    label,
-    scene: true,
-    scope: 'shared',
-    section,
-    type: 'color',
-  };
-}
-
-function flag(section, label, value, extra = {}) {
-  return {
-    default: value,
-    help: label,
-    label,
-    scene: true,
-    scope: 'shared',
-    section,
-    type: 'boolean',
-    ...extra,
-  };
-}
 
 const GENERATOR = {
   blobSeed: {
@@ -76,7 +39,7 @@ const GENERATOR = {
   },
 
   blobGridSize: gen('field', 'Grid Size', 25, 10, 50, 1, 'structure', [15, 35]),
-  blobCanvasSize: num('field', 'Canvas Size', 8, 1, 20, 0.1, {
+  blobCanvasSize: num('field', null, 'Canvas Size', 8, 1, 20, 0.1, {
     generator: true,
   }),
   blobPathsPerUnit: gen(
@@ -132,7 +95,7 @@ const GENERATOR = {
     [0, 0.5]
   ),
   blobHoles: gen('field', 'Holes', 0, 0, 1, 0.01, 'structure', [0, 0.4]),
-  blobMeatballs: num('field', 'Meatballs', MEATBALLS.KEEP_ALL, 0, 2, 1, {
+  blobMeatballs: num('field', null, 'Meatballs', MEATBALLS.KEEP_ALL, 0, 2, 1, {
     choices: [MEATBALLS.HIDE_LOOSE, MEATBALLS.PRUNE_LOOSE, MEATBALLS.KEEP_ALL],
     facet: 'structure',
     generator: true,
@@ -164,28 +127,40 @@ const LOOK = {
     section: 'palette',
     type: 'enum',
   },
-  blobPaletteExact: flag('palette', 'Palette Exact Colors', true, {
+  blobPaletteExact: flag('palette', null, 'Palette Exact Colors', true, {
     facet: 'palette',
   }),
-  blobPaletteShuffle: num('palette', 'Palette Shuffle Seed', 0, 0, 999999, 1, {
-    facet: 'palette',
-    roll: { max: 999999, min: 1, step: 1 },
-  }),
+  blobPaletteShuffle: num(
+    'palette',
+    null,
+    'Palette Shuffle Seed',
+    0,
+    0,
+    999999,
+    1,
+    {
+      facet: 'palette',
+      roll: { max: 999999, min: 1, step: 1 },
+    }
+  ),
   // Not `roll`-windowed on purpose: a monochrome look is an intentional pick,
   // not something the dice should land on unattended.
-  blobMonochrome: flag('palette', 'Monochrome', false, { facet: 'palette' }),
-  blobMonoColor: color('palette', 'Monochrome Color', '#141414'),
-  blobShowStrokes: flag('field', 'Show Strokes', true),
-  blobDebug: num('field', 'Debug', 0, 0, 3, 1, {
+  blobMonochrome: flag('palette', null, 'Monochrome', false, {
+    facet: 'palette',
+  }),
+  blobMonoColor: color('palette', null, 'Monochrome Color', '#141414'),
+  blobShowStrokes: flag('field', null, 'Show Strokes', true),
+  blobDebug: num('field', null, 'Debug', 0, 0, 3, 1, {
     choices: [0, 1, 2, 3],
     help: '0 none, 1 cells, 2 connections, 3 both',
   }),
 
-  bgColor: color('palette', 'Tile Background', '#f5f2ea'),
-  strokeColor: color('palette', 'Stroke Color', '#141414'),
-  sceneBgColor: color('palette', 'Scene Background', '#f5f2ea'),
+  bgColor: color('palette', null, 'Tile Background', '#f5f2ea'),
+  strokeColor: color('palette', null, 'Stroke Color', '#141414'),
+  sceneBgColor: color('palette', null, 'Scene Background', '#f5f2ea'),
   planeRotation: num(
     'composition',
+    null,
     'Plane Rotation (\u00b0)',
     0,
     -180,
@@ -197,85 +172,28 @@ const LOOK = {
   ),
 };
 
-const rollSeed = (facet) => ({
-  default: null,
-  help: `Seed for the ${facet} roll; blank follows the field seed`,
-  label: `${facet[0].toUpperCase()}${facet.slice(1)} seed`,
-  nullable: true,
-  placeholder: 'WORD',
-  scope: 'shared',
-  section: 'roll',
-  text: true,
-  type: 'seed',
-});
+const rollSeed = (facet) => standard.rollSeed(facet, 'field seed');
 
 const RENDER = {
-  out: {
-    cliOnly: true,
-    default: 'output/trucheterie',
-    help: 'Output directory',
-    placeholder: 'PATH',
-    scope: 'shared',
-    section: 'output',
-    type: 'string',
-  },
-  width: num('output', 'Width', 1440, 64, 8192, 2, {
-    placeholder: 'PX',
-    scene: false,
-  }),
-  height: num('output', 'Height', 2560, 64, 8192, 2, {
-    placeholder: 'PX',
-    scene: false,
-  }),
-  pixelRatio: num('output', 'Pixel ratio', 2, 1, 4, 1, {
-    choices: [1, 2, 3, 4],
+  out: standard.out('trucheterie', { help: 'Output directory' }),
+  width: standard.width(1440),
+  height: standard.height(2560),
+  pixelRatio: standard.pixelRatio({
     help: 'Renders at width\u00d7ratio by height\u00d7ratio; minimum stroke widths scale with it',
-    scene: false,
   }),
-  count: num('output', 'Count', 1, 1, 200, 1, {
-    help: 'How many fields to roll',
-    scene: false,
+  count: standard.count('fields'),
+  margin: standard.margin(0.08, 'Padding around the drawn field', {
+    max: 1,
+    section: 'output',
   }),
-  margin: num('output', 'Fit margin', 0.08, 0, 1, 0.01, {
-    help: 'Padding around the drawn field',
-    scene: false,
-  }),
-  png: {
-    default: false,
-    help: 'Write PNG files',
-    label: 'PNG',
-    scope: 'still',
-    section: 'output',
-    type: 'boolean',
-  },
-  webp: {
-    default: true,
-    help: 'Write lossless WebP files',
-    label: 'WebP',
-    scope: 'still',
-    section: 'output',
-    type: 'boolean',
-  },
-  svg: {
-    default: false,
-    help: 'Write a plottable SVG of stroke centrelines',
-    label: 'SVG',
-    scope: 'still',
-    section: 'output',
-    type: 'boolean',
-  },
-  svgStroke: {
+  png: standard.png(),
+  webp: standard.webp(),
+  svg: standard.svg('Write a plottable SVG of stroke centrelines'),
+  svgStroke: standard.svgStroke({
     default: 1,
-    help: 'Multiplier on the render\u2019s pen width; 0 draws hairlines for plotting',
-    label: 'SVG stroke',
-    max: 8,
-    min: 0,
+    help: 'Multiplier on the render’s pen width; 0 draws hairlines for plotting',
     placeholder: 'N',
-    scope: 'still',
-    section: 'svg',
-    step: 0.1,
-    type: 'number',
-  },
+  }),
   svgFill: {
     default: true,
     help: 'Draw the background and palette lanes; off leaves only the strokes, for plotting',
@@ -293,25 +211,8 @@ const RENDER = {
     type: 'boolean',
   },
 
-  keep: {
-    default: '',
-    help: 'Comma-separated facets to hold while the rest roll: structure, palette',
-    label: 'Hold facets',
-    placeholder: 'LIST',
-    scope: 'shared',
-    section: 'roll',
-    type: 'string',
-  },
-  base: {
-    cliOnly: true,
-    default: null,
-    help: 'A field config (or props.json path) the roll starts from',
-    nullable: true,
-    placeholder: 'JSON',
-    scope: 'shared',
-    section: 'roll',
-    type: 'json',
-  },
+  keep: standard.keep(['structure', 'palette']),
+  base: standard.base('field'),
   structureSeed: rollSeed('structure'),
   paletteSeed: rollSeed('palette'),
 
@@ -346,38 +247,17 @@ const RENDER = {
     type: 'number',
   },
 
-  mode: {
-    choices: ['stills', 'growth', 'flow', 'stream'],
-    default: 'stills',
-    help: 'stills: a cut per field; growth: a front spreads from the centre, drawing each ring, then recedes; flow: the grown field with its palette flowing through the channels; stream: Spectrum lanes, the gradient travelling along every lane',
-    label: 'Mode',
-    scope: 'video',
-    section: 'video',
-    type: 'enum',
-  },
-  fps: {
-    choices: [24, 30, 60],
-    default: 30,
-    help: 'Frames per second',
-    label: 'FPS',
-    max: 60,
-    min: 24,
-    scope: 'video',
-    section: 'video',
-    type: 'number',
-  },
-  hold: {
-    default: 3,
-    help: 'Seconds per field (stills, flow, stream), or held once fully grown (growth)',
-    label: 'Hold',
-    max: 60,
-    min: 0,
-    placeholder: 'S',
-    scope: 'video',
-    section: 'video',
-    step: 0.5,
-    type: 'number',
-  },
+  mode: standard.mode(
+    ['stills', 'growth', 'flow', 'stream'],
+    'stills',
+    'stills: a cut per field; growth: a front spreads from the centre, drawing each ring, then recedes; flow: the grown field with its palette flowing through the channels; stream: Spectrum lanes, the gradient travelling along every lane'
+  ),
+  fps: standard.fps(),
+  hold: standard.hold(
+    3,
+    'Seconds per field (stills, flow, stream), or held once fully grown (growth)',
+    { max: 60 }
+  ),
   growSeconds: {
     default: 4,
     help: 'growth: seconds for the front to cross the field; it recedes in half that',
@@ -407,15 +287,8 @@ const RENDER = {
 export const RENDER_OPTIONS = { ...GENERATOR, ...LOOK, ...RENDER };
 
 const SECTION_LABELS = {
-  composition: 'composition',
   field: 'blob field',
-  output: 'output',
-  overlay: 'overlay',
-  palette: 'palette',
-  render: 'render',
   roll: 'rolling',
-  svg: 'svg',
-  video: 'video',
 };
 
 export const SURFACE_DEFAULTS = {
@@ -428,79 +301,21 @@ const schema = createOptionSchema({
   options: RENDER_OPTIONS,
   sectionLabels: SECTION_LABELS,
   surfaceDefaults: SURFACE_DEFAULTS,
-  validate(kind, options, fail) {
-    if (kind === 'still' && !options.png && !options.webp && !options.svg) {
-      throw fail('Select at least one output format: PNG, WebP or SVG.');
-    }
-    const longest = Math.max(options.width, options.height);
-    if (longest * options.pixelRatio > 8192) {
-      throw fail(
-        `width\u00d7pixelRatio must stay within 8192; the longest side would be ${longest * options.pixelRatio}.`
-      );
-    }
-  },
 });
 
 export const {
+  GENERATOR_KEYS,
+  SCENE_KEYS,
+  configFrom,
   defaultsFor,
   facets,
   keysInFacet,
   normalizeOptions,
   optionsFor,
+  optionsFromConfig,
+  presetFromConfig,
+  sceneDefaults,
+  sceneNameFor,
   sectionsFor,
   usageFor,
 } = schema;
-
-const keysWhere = (test) =>
-  Object.entries(RENDER_OPTIONS)
-    .filter(([, spec]) => test(spec))
-    .map(([key]) => key);
-
-export const GENERATOR_KEYS = keysWhere((spec) => spec.generator);
-export const SCENE_KEYS = keysWhere((spec) => spec.scene);
-
-// A field config lives in the scene's key space, which is the schema's own —
-// no key ever gets renamed between the two (unlike Rorschach/Flora's
-// `overlay`/`showOverlay`), so this is the identity map kept around for the
-// callers that expect one.
-export const sceneNameFor = (key) => RENDER_OPTIONS[key].sceneKey ?? key;
-
-const SCENE_NAMES = new Map(SCENE_KEYS.map((key) => [sceneNameFor(key), key]));
-
-export const sceneDefaults = () =>
-  Object.fromEntries(
-    SCENE_KEYS.map((key) => [sceneNameFor(key), RENDER_OPTIONS[key].default])
-  );
-
-// A render sidecar carries a config as `preset`; this pulls one out of
-// whatever shape was handed over.
-export function configFrom(source) {
-  const flat = source?.preset ?? source ?? {};
-  return Object.fromEntries(
-    [...SCENE_NAMES.keys()]
-      .filter((name) => flat[name] != null)
-      .map((name) => [name, flat[name]])
-  );
-}
-
-// The same config as CLI/workbench options, for filling a form from a
-// generation.
-export function optionsFromConfig(config = {}) {
-  return Object.fromEntries(
-    [...SCENE_NAMES]
-      .filter(([name]) => config[name] != null)
-      .map(([name, key]) => [key, config[name]])
-  );
-}
-
-// The other direction, for saving a generation as a scene preset: only what
-// differs from the scene's defaults, the way the hand-written presets are.
-export function presetFromConfig(config = {}) {
-  const defaults = sceneDefaults();
-  return Object.fromEntries(
-    Object.entries(config).filter(
-      ([name, value]) =>
-        name in defaults && value != null && value !== defaults[name]
-    )
-  );
-}

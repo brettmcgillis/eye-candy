@@ -1,5 +1,6 @@
-import { button, folder } from 'leva';
+import { button } from 'leva';
 
+import createSchemaFolders from '@modules/schemaControls';
 import {
   LEVA_KEYS,
   RENDER_OPTIONS,
@@ -22,91 +23,23 @@ const FOLDERS = {
 
 const MEATBALL_LABELS = { 0: 'Hide Loose', 1: 'Prune Loose', 2: 'Keep All' };
 
-const titleCase = (text) => text.charAt(0).toUpperCase() + text.slice(1);
-
-const pathOf = (key) => {
-  const { group, section } = RENDER_OPTIONS[key];
-  return [
-    SCENE_LABEL,
-    FOLDERS[section],
-    ...(group ? group.split('.') : []),
-    key,
-  ]
-    .filter(Boolean)
-    .join('.');
-};
-
-// Leva inputs straight from the option schema, so the scene's ranges,
-// defaults and labels cannot drift from the CLI's.
-function schemaControl(key, saved) {
-  const spec = RENDER_OPTIONS[key];
-  const value = saved[key] ?? spec.default;
-  const base = { label: spec.label };
-
-  if (spec.when) {
-    base.render = (get) =>
-      Object.entries(spec.when).every(([other, allowed]) =>
-        allowed.includes(get(pathOf(other)))
-      );
-  }
-  if (key === 'blobPalette') return { ...base, options: PALETTE_NAMES, value };
-  if (key === 'blobMeatballs') {
-    return {
-      ...base,
+const schemaFolders = createSchemaFolders({
+  label: SCENE_LABEL,
+  options: RENDER_OPTIONS,
+  keys: LEVA_KEYS,
+  folders: FOLDERS,
+  controls: {
+    blobMeatballs: {
       options: Object.fromEntries(
-        spec.choices.map((option) => [MEATBALL_LABELS[option], option])
-      ),
-      value,
-    };
-  }
-  if (spec.type === 'enum') {
-    return {
-      ...base,
-      options: Object.fromEntries(
-        spec.choices.map((option) => [
-          spec.optionLabels?.[option] ?? titleCase(option),
+        RENDER_OPTIONS.blobMeatballs.choices.map((option) => [
+          MEATBALL_LABELS[option],
           option,
         ])
       ),
-      value,
-    };
-  }
-  if (spec.type === 'number') {
-    return { ...base, max: spec.max, min: spec.min, step: spec.step, value };
-  }
-  if (spec.type === 'seed') return { ...base, value: String(value ?? '') };
-  return { ...base, value };
-}
-
-function toFolders(node) {
-  return Object.fromEntries(
-    Object.entries(node).map(([name, entry]) =>
-      entry?.isGroup
-        ? [name, folder(toFolders(entry.children), { collapsed: true })]
-        : [name, entry]
-    )
-  );
-}
-
-function sectionControls(section, saved, extras) {
-  const root = {};
-
-  LEVA_KEYS.filter((key) => RENDER_OPTIONS[key].section === section).forEach(
-    (key) => {
-      const { group } = RENDER_OPTIONS[key];
-      let level = root;
-      (group ? group.split('.') : []).forEach((name) => {
-        if (!level[name]) level[name] = { children: {}, isGroup: true };
-        level = level[name].children;
-      });
-      Object.assign(level, extras[key]?.before ?? {});
-      level[key] = schemaControl(key, saved);
-      Object.assign(level, extras[key]?.after ?? {});
-    }
-  );
-
-  return folder(toFolders(root), { collapsed: true });
-}
+    },
+    blobPalette: { options: PALETTE_NAMES },
+  },
+});
 
 // Rolls `rolling` facets with the rest held, as the CLI's --keep does. A
 // structure roll is a new seed; anything else keeps the field on screen.
@@ -141,10 +74,5 @@ export default function sceneFolders(saved, { onReplay, onRoll }) {
     strands: { before: { rollForm: button(() => onRoll?.(['form'])) } },
   };
 
-  return Object.fromEntries(
-    Object.entries(FOLDERS).map(([section, name]) => [
-      name,
-      sectionControls(section, saved, extras),
-    ])
-  );
+  return schemaFolders(saved, extras);
 }

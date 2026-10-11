@@ -1,14 +1,7 @@
 #!/usr/bin/env node
-
-/* eslint-disable no-await-in-loop */
-import { mkdir } from 'node:fs/promises';
-import path from 'node:path';
-import process from 'node:process';
-
 import { usageFor } from '../src/modules/networkTest/renderOptions.mjs';
-import createFrameSink from './lib/frameSink.mjs';
+import { runVideo } from './lib/generatorCli.mjs';
 import {
-  REPO_ROOT,
   loadKernel,
   networkAt,
   padFor,
@@ -16,10 +9,7 @@ import {
   rollArgs,
   withCapturer,
 } from './lib/networkTestRender.mjs';
-import createProgress, { runStage } from './lib/progress.mjs';
-import { writeVideoSidecar } from './lib/videoMetadata.mjs';
-
-const KIND = 'video';
+import { runStage } from './lib/progress.mjs';
 
 // Each network is one shot: how many frames it runs for, and a stepper that
 // is called once per frame, in order, on a fixed clock.
@@ -89,100 +79,59 @@ function planShot(kernel, drawn, options) {
   };
 }
 
-async function main() {
-  const parsed = await parseCli(KIND, process.argv.slice(2));
-  if (parsed.help) {
-    process.stdout.write(
-      `Usage: npm run network-test:video -- [options]\n${usageFor(KIND)}`
-    );
-    return;
-  }
-  const { options, typed } = parsed;
-  const out = path.resolve(REPO_ROOT, String(options.out));
-  await mkdir(path.dirname(out), { recursive: true });
-  process.stdout.write(
-    `network test video: mode ${options.mode}, ${options.count} networks, ` +
-      `${options.width}x${options.height} at ${options.pixelRatio}x, ` +
-      `${options.fps}fps\n` +
-      `output: ${out}\n`
-  );
-
-  const kernel = await runStage('loading the NetworkTest kernel', loadKernel);
-  const { net } = kernel;
-  const roll = rollArgs(kernel, { options, typed });
-  const batch = options.batch ?? net.randomSeed();
-  const items = await runStage(`building ${options.count} networks`, () =>
-    Promise.all(
-      Array.from({ length: options.count }, (_, index) =>
-        networkAt(kernel, { batch, index, roll })
+runVideo({
+  kernelLabel: 'NetworkTest',
+  loadKernel,
+  nouns: 'networks',
+  parseCli,
+  async plan({ kernel, options, typed }) {
+    const { net } = kernel;
+    const roll = rollArgs(kernel, { options, typed });
+    const batch = options.batch ?? net.randomSeed();
+    const items = await runStage(`building ${options.count} networks`, () =>
+      Promise.all(
+        Array.from({ length: options.count }, (_, index) =>
+          networkAt(kernel, { batch, index, roll })
+        )
       )
-    )
-  );
-  const shots = items.map((drawn) => ({
-    drawn,
-    ...planShot(kernel, drawn, options),
-  }));
-  const total = shots.reduce((sum, shot) => sum + shot.frames, 0);
-  const progress = createProgress('rendering frames', total);
-  const sink = createFrameSink({
-    fps: options.fps,
-    height: options.height * options.pixelRatio,
-    out,
-    width: options.width * options.pixelRatio,
-  });
-  const moving =
-    options.mode === 'turntable' ||
-    options.mode === 'drift' ||
-    options.mode === 'grow' ||
-    options.orbit !== 0;
-
-  let written = 0;
-  try {
-    await withCapturer(kernel, options, async (capturer) => {
-      for (let s = 0; s < shots.length; s += 1) {
-        const { drawn, frames, step } = shots[s];
-        capturer.load(drawn);
-        const pad = padFor(drawn, {
-          drift: options.mode === 'drift' || options.mode === 'grow',
-        });
-        for (let frame = 0; frame < frames; frame += 1) {
-          const azimuthOffset =
-            options.mode === 'turntable'
-              ? (360 * options.turns * frame) / frames
-              : (options.orbit * frame) / frames;
-          const image = await capturer.capture(
-            net.frameView({
-              azimuthOffset,
-              options,
-              pad,
-              points: drawn.network.positions,
-              stable: moving,
-              view: options.view,
-            }),
-            step(frame)
-          );
-          await sink.write(image.data);
-          written += 1;
-          progress.update(written);
-        }
-      }
-    });
-  } finally {
-    await runStage('finishing encode', () => sink.finish());
-  }
-  progress.done('rendered frames');
-
-  const metadataPath = await writeVideoSidecar(out, {
-    presets: items.map(({ config }) => config),
-    render: { ...options, base: undefined, palettes: undefined },
-  });
-  process.stdout.write(
-    `saved video: ${out}\nsaved metadata: ${metadataPath}\n`
-  );
-  process.exit(0);
-}
-
-main().catch((error) => {
-  process.stderr.write(`${error.stack ?? error}\n`);
-  process.exit(1);
+    );
+    const moving =
+      options.mode === 'turntable' ||
+      options.mode === 'drift' ||
+      options.mode === 'grow' ||
+      options.orbit !== 0;
+    const pad = (drawn) =>
+      padFor(drawn, {
+        drift: options.mode === 'drift' || options.mode === 'grow',
+      });
+    return {
+      presets: () => items.map(({ config }) => config),
+      shots: items.map((drawn) => {
+        const { frames, step } = planShot(kernel, drawn, options);
+        return {
+          enter: (capturer) => capturer.load(drawn),
+          frame: (capturer, { frame }) =>
+            capturer.capture(
+              net.frameView({
+                azimuthOffset:
+                  options.mode === 'turntable'
+                    ? (360 * options.turns * frame) / frames
+                    : (options.orbit * frame) / frames,
+                options,
+                pad: pad(drawn),
+                points: drawn.network.positions,
+                stable: moving,
+                view: options.view,
+              }),
+              step(frame)
+            ),
+          frames,
+        };
+      }),
+    };
+  },
+  script: 'network-test',
+  title: 'network test',
+  usageFor,
+  withCapturer,
 });

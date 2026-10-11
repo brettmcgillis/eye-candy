@@ -9,18 +9,18 @@ import {
   FIELD,
   IMAGE,
   RIG,
-  checkSize,
+  fieldKeysOf,
+  sharedRender,
+} from '../isoLines/optionSpecs.mjs';
+import createOptionSchema, {
   choice,
   color,
-  createIsoSchema,
   inFacet,
   num,
   rolled,
   sceneOnly,
-  sharedRender,
-  still,
-  video,
-} from '../isoLines/optionSpecs.mjs';
+  standard,
+} from '../optionSchema/index.mjs';
 
 export {
   COLOR_MODES,
@@ -67,14 +67,14 @@ const FORM = {
     'form',
     choice('form', 'Terraces', 'Walls', WALL_MODES, 'solid', {
       help: 'solid: stepped terraces; floating: bare layers of plane',
-      optionLabels: { floating: 'Floating', solid: 'Solid' },
+      choiceLabels: { floating: 'Floating', solid: 'Solid' },
     })
   ),
   lineExtrude: inFacet(
     'form',
     choice('form', 'Lines', 'Extrude', LINE_EXTRUDES, 'height', {
       help: 'height: each contour stands at its level; time: the present on top, past contours stacked below it',
-      optionLabels: { height: 'Height', time: 'Time' },
+      choiceLabels: { height: 'Height', time: 'Time' },
     })
   ),
   lineHeight: rolled(
@@ -138,78 +138,24 @@ const MOTION = {
 };
 
 const CAMERAS = {
-  views: still({
-    default: 'hero',
-    help: `Comma-separated views: ${VIEWS.join(', ')}`,
-    label: 'Views',
-    placeholder: 'LIST',
-    type: 'string',
-  }),
-  projection: {
-    choices: PROJECTIONS,
-    default: 'perspective',
-    help: 'Camera projection',
-    label: 'Projection',
-    scope: 'shared',
-    section: 'render',
-    type: 'enum',
-  },
-  fov: {
-    default: 30,
-    help: 'Vertical field of view in degrees (perspective only)',
-    label: 'Field of view',
-    max: 90,
-    min: 10,
-    scope: 'shared',
-    section: 'render',
-    step: 1,
-    type: 'number',
-  },
-  margin: {
-    default: 0.04,
-    help: 'Space around the piece, as a share of the frame',
-    label: 'Fit margin',
-    max: 0.5,
-    min: 0,
-    scope: 'shared',
-    section: 'render',
-    step: 0.01,
-    type: 'number',
-  },
-  mode: video({
-    choices: VIDEO_MODES,
-    default: 'flow',
-    help: 'flow: the field moves; build: terraces stack up, hold, and sink back; rise: flat to full relief and back; turntable: orbit a still field',
-    label: 'Mode',
-    type: 'enum',
-  }),
-  view: video({
-    choices: VIEWS,
-    default: 'hero',
-    help: 'Camera view for the clip',
-    label: 'View',
-    type: 'enum',
-  }),
-  turns: video({
-    default: 1,
-    help: 'Turntable revolutions per piece',
-    label: 'Turns',
-    max: 10,
-    min: 0.25,
-    placeholder: 'N',
-    step: 0.25,
-    type: 'number',
-  }),
-  orbit: video({
-    default: 20,
-    help: 'Degrees the camera drifts round a flow, build or rise clip',
-    label: 'Orbit drift',
-    max: 360,
-    min: -360,
-    placeholder: 'DEG',
-    step: 5,
-    type: 'number',
-  }),
+  views: standard.views(VIEWS, 'hero'),
+  projection: standard.projection(PROJECTIONS, 'perspective'),
+  fov: standard.fov(30),
+  margin: standard.margin(
+    0.04,
+    'Space around the piece, as a share of the frame'
+  ),
+  mode: standard.mode(
+    VIDEO_MODES,
+    'flow',
+    'flow: the field moves; build: terraces stack up, hold, and sink back; rise: flat to full relief and back; turntable: orbit a still field'
+  ),
+  view: standard.view(VIEWS, 'hero'),
+  turns: standard.turns('piece'),
+  orbit: standard.orbit(
+    20,
+    'Degrees the camera drifts round a flow, build or rise clip'
+  ),
 };
 
 // Relief adds `smooth`: the field as one continuous surface.
@@ -218,7 +164,7 @@ const STYLE = {
     ...CONTOURS.style,
     choices: RELIEF_STYLES,
     help: 'terraced: stacked bands; smooth: one continuous surface; lines: the contours alone',
-    optionLabels: { lines: 'Lines', smooth: 'Smooth', terraced: 'Terraced' },
+    choiceLabels: { lines: 'Lines', smooth: 'Smooth', terraced: 'Terraced' },
   },
 };
 
@@ -241,20 +187,17 @@ export const SURFACE_DEFAULTS = {
   workbench: { count: 6 },
 };
 
-export function resolveViews(list, fail = (message) => new Error(message)) {
-  const views = String(list)
-    .split(',')
-    .map((view) => view.trim())
-    .filter(Boolean);
-  const unknown = views.filter((view) => !VIEWS.includes(view));
-  if (views.length === 0 || unknown.length > 0) {
-    throw fail(`views must name only ${VIEWS.join(', ')}.`);
-  }
-  return views;
-}
+const schema = createOptionSchema({
+  options: RENDER_OPTIONS,
+  sectionLabels: {
+    color: 'colour',
+    roll: 'rolling',
+  },
+  surfaceDefaults: SURFACE_DEFAULTS,
+  views: VIEWS,
+});
 
 export const {
-  FIELD_KEYS,
   LEVA_KEYS,
   SCENE_KEYS,
   configFrom,
@@ -265,30 +208,10 @@ export const {
   optionsFor,
   optionsFromConfig,
   presetFromConfig,
+  resolveViews,
   sceneDefaults,
   sectionsFor,
   usageFor,
-} = createIsoSchema(RENDER_OPTIONS, {
-  sectionLabels: {
-    color: 'colour',
-    contours: 'contours',
-    field: 'field',
-    form: 'form',
-    image: 'image',
-    motion: 'motion',
-    output: 'output',
-    post: 'post',
-    render: 'render',
-    roll: 'rolling',
-    svg: 'svg',
-    video: 'video',
-  },
-  surfaceDefaults: SURFACE_DEFAULTS,
-  validate(kind, options, fail) {
-    if (kind === 'still' && !options.png && !options.webp && !options.svg) {
-      throw fail('Select at least one output format: PNG, WebP or SVG.');
-    }
-    checkSize(options, fail);
-    if (kind === 'still') resolveViews(options.views, fail);
-  },
-});
+} = schema;
+
+export const FIELD_KEYS = fieldKeysOf(schema.keysWhere);

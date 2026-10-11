@@ -23,13 +23,13 @@ commit, and run `npm run iso-lines:check` and `npm run iso-lines-relief:check`.
              src/dev/server/isoLines → src/dev/tools/isoLines (IsoLinesCLI)
 ```
 
-| Piece                     | Rule                                                                                                                                                                                        |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@modules/isoLines`       | **Three-free.** May import only `@modules/flora` (`createRng`), `@utils/noise2d` and `@utils/paletteStops`. It runs in Node, in both scenes' workers and in Darkroom.                       |
-| `optionSpecs.mjs`         | The field, image, contour, colour, post and output specs both schemas take, and `createIsoSchema`. IsoLinesRelief's schema imports it by relative path — the one way in besides the barrel. |
-| `@modules/isoLinesRender` | The only home of the flat look. `createIsoRig()`: `apply(config)`, `setBuild(build)`, `setPixelRatio`.                                                                                      |
-| `renderOptions.mjs`       | Every flat knob, once; the scene's Leva is generated from it. Facets: `field`, `contours`, `color`, `atmosphere`.                                                                           |
-| Rig keys                  | `post*` keys are declared with `rig: true`; their defaults must equal `post.js`.                                                                                                            |
+| Piece                     | Rule                                                                                                                                                                                    |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@modules/isoLines`       | **Three-free.** May import only `@modules/flora` (`createRng`), `@utils/noise2d` and `@utils/paletteStops`. It runs in Node, in both scenes' workers and in Darkroom.                   |
+| `optionSpecs.mjs`         | The field, image, contour, colour, post and output specs both schemas take, and `fieldKeysOf`. IsoLinesRelief's schema imports it by relative path — the one way in besides the barrel. |
+| `@modules/isoLinesRender` | The only home of the flat look. `createIsoRig()`: `apply(config)`, `setBuild(build)`, `setPixelRatio`.                                                                                  |
+| `renderOptions.mjs`       | Every flat knob, once; the scene's Leva is generated from it. Facets: `field`, `contours`, `color`, `atmosphere`.                                                                       |
+| Rig keys                  | `post*` keys are declared with `rig: true`; their defaults must equal `post.js`.                                                                                                        |
 
 ## The references
 

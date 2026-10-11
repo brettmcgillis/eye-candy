@@ -1,0 +1,26 @@
+.rw-source {
+  grid-column: 1 / -1;
+}
+
+.rw-source__row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.rw-source__row select {
+  flex: 1;
+  min-width: 0;
+}
+
+.rw-source__thumb {
+  width: 2.25rem;
+  height: 2.25rem;
+  border: 1px solid var(--dev-border-strong);
+  border-radius: 0.25rem;
+  object-fit: cover;
+}
+
+.rw-source__upload {
+  cursor: pointer;
+}

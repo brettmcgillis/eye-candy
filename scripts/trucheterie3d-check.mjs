@@ -18,6 +18,7 @@ import {
 } from '../src/modules/trucheterie3d/renderOptions.mjs';
 import { createHeadlessRenderer, loadThree } from './lib/headlessWebgpu.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import checkWorkbenchPage from './lib/workbenchPage.mjs';
 
 const KERNEL_DIR = path.join(REPO_ROOT, 'src', 'modules', 'trucheterie3d');
 const PRESETS =
@@ -35,7 +36,7 @@ const BARRELS = {
 };
 const PAGE_FIELDS = path.join(
   REPO_ROOT,
-  'src/dev/tools/trucheterie3d/components/OptionSections.jsx'
+  'src/dev/tools/trucheterie3d/Trucheterie3DWorkbenchPage.jsx'
 );
 const ALLOWED_KERNEL_IMPORTS = new Set(['@modules/trucheterieBlob']);
 const CAMERA_KEY = /^(camera|orbit|fixed|spline|operator)/u;
@@ -54,6 +55,14 @@ const MODES = [
   { blobPathsPerUnit: 5, junction: 'cap', strands: 'both' },
 ];
 const MIN_SILHOUETTE_IOU = 0.9;
+const MEMBRANE_MODES = [
+  { strands: 'lanes' },
+  { strands: 'both', junction: 'weave', heightMode: 'terrace' },
+  { blobPathsPerUnit: 4, membraneRows: 2, strands: 'lanes' },
+  { membraneSides: 'double', strands: 'both' },
+];
+const MIN_MEMBRANE_IOU = 0.99;
+const MAX_FLIPPED_SHARE = 0.001;
 
 const failures = [];
 const check = (condition, message) => {
@@ -183,8 +192,14 @@ function checkRolls({ tubes: kernel }, paletteNames) {
     } catch (error) {
       failures.push(`roll check-${i} fails validation: ${error.message}`);
     }
-    const tubes = kernel.buildTubes(kernel.buildField(config), config);
-    invariants(`roll check-${i}`, tubes, kernel.verifyTubes);
+    const form = kernel.buildForm(kernel.buildField(config), config);
+    if (form.tubes.chains.length > 0) {
+      invariants(`roll check-${i}`, form.tubes, kernel.verifyTubes);
+    }
+    check(
+      !kernel.membraneActive(config) || form.membrane?.stats.vertices > 0,
+      `roll check-${i} asks for a membrane and builds none.`
+    );
   }
   const source = kernel.rollTubeConfig('b', { paletteNames });
   const held = kernel.rollTubeConfig('a', {
@@ -270,6 +285,141 @@ function checkSilhouette({ blob, tubes: kernel }) {
   );
 }
 
+// The 2D lanes' ground, per grid point: inside a family's sector and, for
+// a second family, outside the first's disc.
+function lanesCover(blob, field, x, y) {
+  return field.cells.some(({ cell, connections }) => {
+    if (
+      x < cell.column ||
+      y < cell.row ||
+      x >= cell.column + cell.size ||
+      y >= cell.row + cell.size
+    ) {
+      return false;
+    }
+    const occluder =
+      connections.length > 1
+        ? blob.familySector(cell, connections[0][0], connections[0][1])
+        : null;
+    return connections.some(([type, edge], slot) => {
+      const sector = blob.familySector(cell, type, edge);
+      if (Math.hypot(x - sector.x, y - sector.y) > sector.rMax) return false;
+      return (
+        slot === 0 || Math.hypot(x - occluder.x, y - occluder.y) > occluder.rMax
+      );
+    });
+  });
+}
+
+// A membrane is the 2D lanes' ground exactly, stitched in strips that all
+// wind one way, with every strip edge on a seam; any wires it carries keep
+// the tube invariants.
+function checkMembrane({ blob, tubes: kernel }) {
+  SEEDS.forEach((seed) =>
+    MEMBRANE_MODES.forEach((mode) => {
+      const label = `${seed} membrane ${JSON.stringify(mode)}`;
+      const config = {
+        ...kernel.sceneDefaults(),
+        blobSeed: seed,
+        lanesAs: 'membrane',
+        ...mode,
+      };
+      const field = kernel.buildField(config);
+      const { membrane, tubes } = kernel.buildForm(field, config);
+      if (config.strands === 'both') {
+        invariants(`${label} wires`, tubes, kernel.verifyTubes);
+      }
+      const { index, rest } = membrane;
+      let flipped = 0;
+      for (let t = 0; t < index.length; t += 3) {
+        const [a, b, c] = [index[t], index[t + 1], index[t + 2]];
+        const area =
+          (rest[b * 2] - rest[a * 2]) * (rest[c * 2 + 1] - rest[a * 2 + 1]) -
+          (rest[b * 2 + 1] - rest[a * 2 + 1]) * (rest[c * 2] - rest[a * 2]);
+        if (area > 1e-9) flipped += 1;
+      }
+      const share = flipped / (index.length / 3);
+      check(
+        share <= MAX_FLIPPED_SHARE,
+        `${label}: ${flipped} triangles fold back (${(share * 100).toFixed(2)}%).`
+      );
+      const { rows, strips } = membrane;
+      const welded = new Set(membrane.weldMembers);
+      let looseEdges = 0;
+      for (let s = 0; s < strips.length / 4; s += 1) {
+        const base = strips[s * 4];
+        const cols = strips[s * 4 + 1];
+        for (let c = 0; c < cols; c += 1) {
+          for (let k = 0; k < rows; k += rows - 1) {
+            const v = base + c * rows + k;
+            if (!membrane.pinned[v] && !welded.has(v)) looseEdges += 1;
+          }
+        }
+      }
+      check(
+        looseEdges === 0,
+        `${label}: ${looseEdges} strip-edge vertices are neither on a seam nor a welded centre.`
+      );
+      if (seed !== SEEDS[0]) return;
+
+      const grid = membrane.gridSize;
+      const steps = 480;
+      const unit = grid / steps;
+      const covered = new Uint8Array(steps * steps);
+      for (let t = 0; t < index.length; t += 3) {
+        const p = [0, 1, 2].map((i) => [
+          rest[index[t + i] * 2] / unit,
+          rest[index[t + i] * 2 + 1] / unit,
+        ]);
+        const edge = (u, w, x, y) =>
+          (w[0] - u[0]) * (y - u[1]) - (w[1] - u[1]) * (x - u[0]);
+        const xs = p.map(([x]) => x);
+        const ys = p.map(([, y]) => y);
+        for (
+          let gy = Math.max(0, Math.floor(Math.min(...ys)));
+          gy <= Math.min(steps - 1, Math.ceil(Math.max(...ys)));
+          gy += 1
+        ) {
+          for (
+            let gx = Math.max(0, Math.floor(Math.min(...xs)));
+            gx <= Math.min(steps - 1, Math.ceil(Math.max(...xs)));
+            gx += 1
+          ) {
+            const e = [
+              edge(p[0], p[1], gx + 0.5, gy + 0.5),
+              edge(p[1], p[2], gx + 0.5, gy + 0.5),
+              edge(p[2], p[0], gx + 0.5, gy + 0.5),
+            ];
+            if (e.every((w) => w >= 0) || e.every((w) => w <= 0)) {
+              covered[gy * steps + gx] = 1;
+            }
+          }
+        }
+      }
+      let both = 0;
+      let either = 0;
+      for (let gy = 0; gy < steps; gy += 1) {
+        for (let gx = 0; gx < steps; gx += 1) {
+          const a = lanesCover(
+            blob,
+            field,
+            (gx + 0.5) * unit,
+            (gy + 0.5) * unit
+          );
+          const b = covered[gy * steps + gx] === 1;
+          if (a && b) both += 1;
+          if (a || b) either += 1;
+        }
+      }
+      const iou = either > 0 ? both / either : 0;
+      check(
+        iou >= MIN_MEMBRANE_IOU,
+        `${label}: the skin covers the 2D lanes at IoU ${iou.toFixed(4)}, under ${MIN_MEMBRANE_IOU}.`
+      );
+    })
+  );
+}
+
 async function checkHeadlessCalls(barrels) {
   await Promise.all(
     HEADLESS.map(async (file) => {
@@ -290,19 +440,11 @@ async function checkHeadlessCalls(barrels) {
 }
 
 async function checkPageFields() {
-  const source = await readFile(PAGE_FIELDS, 'utf8');
-  const block = source.match(/const HANDLED = new Set\(\[([^\]]+)\]/u)?.[1];
-  check(block, 'OptionSections.jsx lost its HANDLED list.');
-  [...(block ?? '').matchAll(/'(\w+)'/gu)].forEach(([, key]) =>
-    check(
-      key in RENDER_OPTIONS,
-      `the workbench hand-lays "${key}", which is not in renderOptions.mjs.`
-    )
-  );
+  await checkWorkbenchPage(PAGE_FIELDS, RENDER_OPTIONS, check);
 }
 
 // The rig must compile to valid WGSL and draw something over the backdrop,
-// grown and mid-growth.
+// grown, mid-growth, and as an inflated membrane.
 async function checkRender({ lights, look, tubes: kernel }, THREE) {
   const size = 128;
   const headless = await createHeadlessRenderer({
@@ -342,7 +484,6 @@ async function checkRender({ lights, look, tubes: kernel }, THREE) {
   const { device } = renderer.backend;
   const litPixels = async () => {
     device.pushErrorScope('validation');
-    await headless.readFrame(() => renderer.render(scene, camera));
     const frame = await headless.readFrame(() =>
       renderer.render(scene, camera)
     );
@@ -362,7 +503,163 @@ async function checkRender({ lights, look, tubes: kernel }, THREE) {
     growing > 0 && growing < grown,
     `mid-growth should draw some of the field (drew ${growing} of ${grown} pixels).`
   );
+
+  const skin = {
+    ...config,
+    lanesAs: 'membrane',
+    strands: 'lanes',
+  };
+  rig.setTubes({ config: skin, field, ...kernel.buildForm(field, skin) });
+  for (let f = 0; f < 60; f += 1) {
+    rig.stepMembrane(renderer, 1 / 30, skin, skin.membranePressure);
+  }
+  const inflated = await litPixels();
+  check(
+    inflated > size * size * 0.1,
+    `the membrane draws almost nothing (${inflated} pixels).`
+  );
+  const balloon = { ...skin, membraneSides: 'double' };
+  rig.setTubes({ config: balloon, field, ...kernel.buildForm(field, balloon) });
+  for (let f = 0; f < 30; f += 1) {
+    rig.stepMembrane(renderer, 1 / 30, balloon, balloon.membranePressure);
+  }
+  const ballooned = await litPixels();
+  check(
+    ballooned > size * size * 0.1,
+    `the balloon membrane draws almost nothing (${ballooned} pixels).`
+  );
+  const finishes = RENDER_OPTIONS.membraneFinish.choices;
+  for (let f = 0; f < finishes.length; f += 1) {
+    const dressed = {
+      ...skin,
+      membraneFinish: finishes[f],
+      membraneSubdivision: f % 3,
+    };
+    rig.apply(dressed);
+    rig.stepMembrane(renderer, 1 / 30, dressed, dressed.membranePressure);
+    // eslint-disable-next-line no-await-in-loop
+    const lit = await litPixels();
+    check(
+      lit > size * size * 0.1,
+      `the ${finishes[f]} membrane at subdivision ${f % 3} draws almost nothing (${lit} pixels).`
+    );
+  }
   rig.dispose();
+  headless.dispose();
+}
+
+// The solve itself, read back: inflating lifts every lane off the ground
+// with the seams held, welded centres stay one point, nothing blows up,
+// and with the pressure off the skin settles back toward flat.
+async function checkMembraneSolve({ look, tubes: kernel }) {
+  const headless = await createHeadlessRenderer({ height: 8, width: 8 });
+  const { renderer } = headless;
+  const config = {
+    ...kernel.sceneDefaults(),
+    blobPathsPerUnit: 3,
+    blobSeed: 'blob-1',
+    lanesAs: 'membrane',
+  };
+  const { membrane } = kernel.buildForm(kernel.buildField(config), config);
+  const solver = look.createMembraneSolver(membrane);
+  const read = async () =>
+    new Float32Array(
+      await renderer.getArrayBufferAsync(solver.positions.value)
+    );
+  const run = (seconds, target) => {
+    for (let t = 0; t < seconds; t += 1 / 30) {
+      solver.step(renderer, 1 / 30, config, target);
+    }
+  };
+  const summarise = (p) => {
+    let peak = 0;
+    let finite = true;
+    let drift = 0;
+    for (let v = 0; v < solver.count; v += 1) {
+      const [x, y, z] = [p[v * 4], p[v * 4 + 1], p[v * 4 + 2]];
+      finite = finite && Number.isFinite(x + y + z);
+      if (membrane.pinned[v]) {
+        drift = Math.max(
+          drift,
+          Math.abs(z),
+          Math.abs(x - membrane.rest[v * 2] / membrane.pitch),
+          Math.abs(y - membrane.rest[v * 2 + 1] / membrane.pitch)
+        );
+      } else {
+        peak = Math.max(peak, z);
+      }
+    }
+    return { drift, finite, peak };
+  };
+
+  run(4, config.membranePressure);
+  const p = await read();
+  const up = summarise(p);
+  check(up.finite, 'the membrane solve produced non-finite positions.');
+  check(up.drift < 1e-4, `pinned seams moved ${up.drift} lane widths.`);
+  check(
+    up.peak > 0.15 && up.peak < 2,
+    `inflated lanes peak at ${up.peak.toFixed(3)} lane widths, outside 0.15–2.`
+  );
+  let split = 0;
+  const { weldGroups, weldMembers } = membrane;
+  for (let g = 0; g < weldGroups.length / 2; g += 1) {
+    const [first, n] = [weldGroups[g * 2], weldGroups[g * 2 + 1]];
+    const lead = weldMembers[first];
+    for (let m = first + 1; m < first + n; m += 1) {
+      const v = weldMembers[m];
+      for (let a = 0; a < 3; a += 1) {
+        split = Math.max(split, Math.abs(p[v * 4 + a] - p[lead * 4 + a]));
+      }
+    }
+  }
+  check(split < 1e-4, `welded centres drift ${split} lane widths apart.`);
+
+  run(8, 0);
+  const down = summarise(await read());
+  check(
+    down.peak < up.peak * 0.25,
+    `with the pressure off the skin only fell from ${up.peak.toFixed(3)} to ${down.peak.toFixed(3)}.`
+  );
+  solver.dispose();
+
+  // A balloon: both skins inflate apart under normal pressure, the seams
+  // hold, and neither skin crosses the plane they are sewn on.
+  const balloon = {
+    ...config,
+    membranePressureMode: 'normal',
+    membraneSides: 'double',
+  };
+  const sewn = kernel.buildForm(kernel.buildField(balloon), balloon).membrane;
+  const pair = look.createMembraneSolver(sewn);
+  for (let t = 0; t < 4; t += 1 / 30) {
+    pair.step(renderer, 1 / 30, balloon, balloon.membranePressure);
+  }
+  const q = new Float32Array(
+    await renderer.getArrayBufferAsync(pair.positions.value)
+  );
+  let top = 0;
+  let bottom = 0;
+  let crossed = 0;
+  let seams = 0;
+  for (let v = 0; v < pair.count; v += 1) {
+    const z = q[v * 4 + 2];
+    const side = sewn.side[v] ? -1 : 1;
+    if (sewn.pinned[v]) seams = Math.max(seams, Math.abs(z));
+    else if (side > 0) top = Math.max(top, z);
+    else bottom = Math.min(bottom, z);
+    if (z * side < -1e-6) crossed += 1;
+  }
+  check(
+    top > 0.15 && bottom < -0.15,
+    `a balloon inflates to ${top.toFixed(3)} / ${bottom.toFixed(3)} lane widths; both skins should clear 0.15.`
+  );
+  check(seams < 1e-4, `a balloon's seams moved ${seams} lane widths.`);
+  check(
+    crossed === 0,
+    `${crossed} balloon vertices crossed to the other skin.`
+  );
+  pair.dispose();
   headless.dispose();
 }
 
@@ -384,8 +681,10 @@ async function main() {
     palettes.filter((name) => name !== 'None')
   );
   checkSilhouette(barrels);
+  checkMembrane(barrels);
   await checkHeadlessCalls(barrels);
   await checkRender(barrels, THREE);
+  await checkMembraneSolve(barrels);
 
   if (failures.length > 0) {
     console.error(`trucheterie3d:check failed (${failures.length}):\n`);

@@ -1,14 +1,7 @@
 #!/usr/bin/env node
-
-/* eslint-disable no-await-in-loop */
-import { mkdir, writeFile } from 'node:fs/promises';
-import path from 'node:path';
-import process from 'node:process';
-
 import { resolveViews, usageFor } from '../src/modules/flora/renderOptions.mjs';
 import { readPackageVersion } from './lib/cliArgs.mjs';
 import {
-  REPO_ROOT,
   assertPalette,
   buildFlowers,
   encodeFrame,
@@ -22,105 +15,60 @@ import {
   sidecarFor,
   withCapturer,
 } from './lib/floraRender.mjs';
-import createProgress, { runStage } from './lib/progress.mjs';
+import { runStills } from './lib/generatorCli.mjs';
 
-const KIND = 'still';
-
-async function main() {
-  const parsed = await parseCli(KIND, process.argv.slice(2));
-  if (parsed.help) {
-    process.stdout.write(
-      `Usage: npm run flora:generate -- [options]\n${usageFor(KIND)}`
+runStills({
+  encode: encodeFrame,
+  async item({ capturer, index, kernel, options, roll, save, step }) {
+    const drawn = flowersAt(kernel, { index, options, roll });
+    const itemOptions = resolveItemOptions(kernel, options, drawn.seed);
+    const label = drawn.bouquet ? `bouquet-${drawn.seed}` : drawn.seed;
+    const count = drawn.configs.length;
+    const flowers = await step(
+      `growing ${label} (${count} specimen${count === 1 ? '' : 's'})`,
+      async () => buildFlowers(kernel, { ...drawn, options: itemOptions })
     );
-    return;
-  }
-  const { typed } = parsed;
-  const options = { ...parsed.options, version: await readPackageVersion() };
-  const views = resolveViews(options.views);
-  const formats = ['png', 'webp'].filter((format) => options[format]);
-  const labels = [...formats, options.svg ? 'svg' : null].filter(Boolean);
-  const outRoot = path.resolve(REPO_ROOT, String(options.out));
-  const unit =
-    options.bouquetSize > 0 || options.bouquet ? 'bouquets' : 'flowers';
-
-  await mkdir(outRoot, { recursive: true });
-  process.stdout.write(
-    `flora stills: ${options.count} ${unit}, ${views.length} views each, ` +
-      `${options.width}x${options.height} at ${options.pixelRatio}x, ` +
-      `formats ${labels.join('+')}\n` +
-      `output: ${outRoot}\n`
-  );
-
-  const kernel = await runStage('loading the Flora kernel', loadKernel);
-  assertPalette(kernel, parsed);
-  const roll = rollArgs(kernel, { options, typed });
-  const progress = createProgress(
-    'rendering views',
-    options.count * views.length
-  );
-
-  await withCapturer(kernel, options, async (capturer) => {
-    for (let index = 0; index < options.count; index += 1) {
-      const drawn = flowersAt(kernel, { index, options, roll });
-      const itemOptions = resolveItemOptions(kernel, options, drawn.seed);
-      const label = drawn.bouquet ? `bouquet-${drawn.seed}` : drawn.seed;
-      const flowers = await progress.stage(
-        `growing ${label} (${drawn.configs.length} specimen${drawn.configs.length === 1 ? '' : 's'})`,
-        async () => buildFlowers(kernel, { ...drawn, options: itemOptions })
+    const bounds = capturer.setFlowers(flowers);
+    const out = await save(
+      label,
+      sidecarFor({ ...drawn, options: itemOptions })
+    );
+    await out.eachView(async (view) => {
+      const framing = frameView(kernel, { bounds, options, view });
+      await out.image(view, () =>
+        capturer.capture({
+          ...framing,
+          levels: () => ({
+            bloom: options.bloom,
+            exit: 0,
+            growth: options.growth,
+          }),
+        })
       );
-      const bounds = capturer.setFlowers(flowers);
-      const dir = path.join(outRoot, label);
-
-      await mkdir(dir, { recursive: true });
-      await writeFile(
-        path.join(dir, 'props.json'),
-        `${JSON.stringify(sidecarFor({ ...drawn, options: itemOptions }), null, 2)}\n`
-      );
-
-      for (let viewIndex = 0; viewIndex < views.length; viewIndex += 1) {
-        const view = views[viewIndex];
-        await progress.stage(`rendering ${label}, ${view} view`, async () => {
-          const framing = frameView(kernel, { bounds, options, view });
-          if (formats.length > 0) {
-            const frame = await capturer.capture({
-              ...framing,
-              levels: () => ({
-                bloom: options.bloom,
-                exit: 0,
-                growth: options.growth,
-              }),
-            });
-            await Promise.all(
-              formats.map(async (format) =>
-                writeFile(
-                  path.join(dir, `${view}.${format}`),
-                  await encodeFrame(frame, format, options)
-                )
-              )
-            );
-          }
-          if (options.svg) {
-            await writeFile(
-              path.join(dir, `${view}.svg`),
-              await renderSvg(kernel, capturer, {
-                flowers,
-                options,
-                view: framing,
-              })
-            );
-          }
-        });
-        progress.update(index * views.length + viewIndex + 1);
+      if (options.svg) {
+        await out.svg(
+          view,
+          await renderSvg(kernel, capturer, { flowers, options, view: framing })
+        );
       }
-      progress.log(`saved ${label}: ${dir}`);
-    }
-  });
-  progress.done('rendered views');
-  // Dawn keeps the event loop alive after the renderer is disposed.
-  process.exit(0);
-}
-
-main().catch((error) => {
-  process.stderr.write(`${error.stack ?? error}\n`);
-  process.exit(1);
+    });
+  },
+  kernelLabel: 'Flora',
+  loadKernel,
+  nouns: (options) =>
+    options.bouquetSize > 0 || options.bouquet ? 'bouquets' : 'flowers',
+  parseCli,
+  prepare: async (options) => ({
+    ...options,
+    version: await readPackageVersion(),
+  }),
+  resolveViews,
+  script: 'flora',
+  setup({ kernel, options, parsed, typed }) {
+    assertPalette(kernel, parsed);
+    return { roll: rollArgs(kernel, { options, typed }) };
+  },
+  title: 'flora',
+  usageFor,
+  withCapturer,
 });

@@ -41,6 +41,15 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   server code under `src/dev/`. This is the source of truth; follow it
   exactly. None of this ships to GitHub Pages.
 
+## Required reading before touching a render workbench
+
+- **`docs/render-workbench.md`** — the plumbing every generator shares: option
+  specs declared with `@modules/optionSchema`'s builders and `standard`
+  factories, scene Leva from `@modules/schemaControls`, the `RollWorkbench`
+  page, `createSchemaToolPlugin` on the dev server, and the checklist for a
+  new one. Read it before adding or changing any `renderOptions.mjs`, scene
+  `utils/controls.js`, workbench page or `src/dev/server/<tool>/plugin.js`.
+
 ## Required reading before touching Apollian
 
 - **`docs/apollian-pipeline.md`** — the HyperCubes arrangement for the
@@ -50,6 +59,15 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   `@modules/apollianRender` (`createApollianRig`, the full-screen stage
   march, surfaces and slice view), the headless CLIs, and ApollianCLI. Run
   `npm run apollian:check` after changing any of them.
+
+## Required reading before touching ExhibitA
+
+- **`docs/exhibit-a-pipeline.md`** — the Apollian arrangement for the museum
+  exhibits: `@modules/exhibitA` (three-free registry, builders, framing,
+  motion, roll and option schema; the scene's Leva is generated from it),
+  `@modules/exhibitARender` (`createExhibitRig`, the stage and materials), the
+  headless CLIs (`exhibit-a:generate`, `exhibit-a:video`), and ExhibitACLI. Run
+  `npm run exhibit-a:check` after changing any of them.
 
 ## Required reading before touching Brutalist / BrutalistMaquette
 
@@ -101,6 +119,15 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   is generated from it), `@modules/blockPartyRender` (`createCityRig`, the
   look), the headless CLIs, and BlockPartyCLI. Run `npm run block-party:check`
   after changing any of them.
+
+## Required reading before touching Fractal Automata
+
+- **`docs/fractal-automata-pipeline.md`** — the Nesting Boxes arrangement for
+  the voxel CA: `@modules/fractalAutomata` (three-free rule tables, facet roll
+  and option schema; the scene's Leva is generated from it),
+  `@modules/fractalAutomataRender` (GPU CA, voxel build, light rig, godrays
+  slot), the headless CLIs, and FractalAutomataCLI. Run
+  `npm run fractal-automata:check` after changing any of them.
 
 ## Required reading before touching Nesting Boxes
 
@@ -164,6 +191,16 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   drawn by the WebGPU scene and by the headless CLI, with SubdivisionCLI over
   the latter. Run `npm run subdivision:check` after changing any of them.
 
+## Required reading before touching SubdivisionRelief
+
+- **`docs/subdivision-relief-pipeline.md`** — the relief half over the same
+  kernel: `@modules/subdivisionRelief` (three-free schema, roller, heights,
+  cell placement, framing, grow clock and motion; the scene's Leva is
+  generated from it), `@modules/subdivisionReliefRender` (`createReliefRig`,
+  the prisms and plate), the headless CLIs, SubdivisionReliefCLI and the
+  Darkroom relief technique. Run `npm run subdivision:check` and
+  `npm run subdivision-relief:check` after changing either.
+
 ## Required reading before touching Rug Pull
 
 - **`docs/rug-pull-pipeline.md`** — the Kumiko arrangement for generative
@@ -180,10 +217,22 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   tubes: `@modules/trucheterie3d` (three-free tube solve over
   `@modules/trucheterieBlob`: strands, chains, heights, retraction, crossing
   lift, the no-intersection invariants and their verifier, the mesh sweep,
-  option schema; the scene's Leva is generated from it),
-  `@modules/trucheterie3dRender` (`createTubeRig`), the headless CLIs and
+  the quilted-membrane strips, option schema; the scene's Leva is generated
+  from it), `@modules/trucheterie3dRender` (`createTubeRig`, the GPU
+  membrane solver ported from 260421_CatenaryCanopy), the headless CLIs and
   Trucheterie3DCLI. Run `npm run trucheterie3d:check` after changing any of
   them, and `npm run trucheterie:check` too if you touch the blob modules.
+
+## Required reading before touching PrintShop
+
+- **`docs/print-shop-pipeline.md`** — the 3D-print export tool: the
+  three-free mesh kernel under `src/dev/tools/printShop/kernel/`, the
+  glob-registered printables (`printables/<id>/printable.js`), the
+  CLI (`npm run print-shop:export`) and the job runner. Gh0st's pose comes
+  from `@elements/WebGPU/ghost/ghostRig` and the CPU cloth mirror
+  (`cloth/clothTopology.js`, `cloth/clothCpu.js`), which GhostCharacter and
+  `createClothSimulation` share. Run `npm run print-shop:check` after
+  changing any of them.
 
 ## Orientation
 
@@ -237,7 +286,10 @@ directly from the local three.js checkout:
   back-link or existing content as a side effect of implementing something.
   See `docs/scene-conventions.md` §15.
 - **New scenes and local presets self-register in Cataloggr** through their
-  existing config and preset files. When creating a scene, add its `todo.md`
+  existing config and preset files. When creating a scene or dev tool,
+  scaffold its `todo.md` with `npm run todo:new -- <dir> "<Name>"` (never
+  hand-write one — all six sections are required, empty is fine), and finish
+  with a clean `npm run todo:check -- <dir>`. Add its `todo.md`
   link to the matching group in root `TODO.md`; add loose scene ideas to
   Cataloggr, and do not add scene status or publishing checklists to the root
   TODO. See `docs/scene-conventions.md` §16.

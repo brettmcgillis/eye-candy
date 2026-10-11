@@ -79,7 +79,9 @@
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/darkroom/**",
+                  "**/exhibitA/**",
                   "**/flora/**",
+                  "**/fractalAutomata/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
@@ -92,11 +94,13 @@
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
                   "**/networkTest/**",
+                  "**/printShop/**",
                   "**/projectionMapping/**",
                   "**/pushComesToShove/**",
                   "**/rorschach/**",
                   "**/rugPull/**",
                   "**/subdivision/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**"
                 ],
@@ -131,7 +135,9 @@
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/darkroom/**",
+                  "**/exhibitA/**",
                   "**/flora/**",
+                  "**/fractalAutomata/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
@@ -143,11 +149,13 @@
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
                   "**/networkTest/**",
+                  "**/printShop/**",
                   "**/projectionMapping/**",
                   "**/pushComesToShove/**",
                   "**/rorschach/**",
                   "**/rugPull/**",
                   "**/subdivision/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**"
                 ],
@@ -172,7 +180,9 @@
                   "**/brutalist/**",
                   "**/cataloggr/**",
                   "**/darkroom/**",
+                  "**/exhibitA/**",
                   "**/flora/**",
+                  "**/fractalAutomata/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
@@ -185,11 +195,13 @@
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
                   "**/networkTest/**",
+                  "**/printShop/**",
                   "**/projectionMapping/**",
                   "**/pushComesToShove/**",
                   "**/rorschach/**",
                   "**/rugPull/**",
                   "**/subdivision/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**"
                 ],
@@ -214,7 +226,9 @@
                   "**/brutalist/**",
                   "**/cataloggr/**",
                   "**/colors/**",
+                  "**/exhibitA/**",
                   "**/flora/**",
+                  "**/fractalAutomata/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
@@ -227,11 +241,13 @@
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
                   "**/networkTest/**",
+                  "**/printShop/**",
                   "**/projectionMapping/**",
                   "**/pushComesToShove/**",
                   "**/rorschach/**",
                   "**/rugPull/**",
                   "**/subdivision/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**"
                 ],
@@ -258,7 +274,9 @@
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/darkroom/**",
+                  "**/exhibitA/**",
                   "**/flora/**",
+                  "**/fractalAutomata/**",
                   "**/fungi/**",
                   "**/glyphs/**",
                   "**/hyperCubes/**",
@@ -270,11 +288,13 @@
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
                   "**/networkTest/**",
+                  "**/printShop/**",
                   "**/projectionMapping/**",
                   "**/pushComesToShove/**",
                   "**/rorschach/**",
                   "**/rugPull/**",
                   "**/subdivision/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**"
                 ],
@@ -300,7 +320,9 @@
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/darkroom/**",
+                  "**/exhibitA/**",
                   "**/flora/**",
+                  "**/fractalAutomata/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
@@ -312,11 +334,13 @@
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
                   "**/networkTest/**",
+                  "**/printShop/**",
                   "**/projectionMapping/**",
                   "**/pushComesToShove/**",
                   "**/rorschach/**",
                   "**/rugPull/**",
                   "**/subdivision/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**"
                 ],
@@ -342,7 +366,9 @@
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/darkroom/**",
+                  "**/exhibitA/**",
                   "**/flora/**",
+                  "**/fractalAutomata/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
@@ -354,11 +380,13 @@
                   "**/kumiko/**",
                   "**/nestingBoxes/**",
                   "**/networkTest/**",
+                  "**/printShop/**",
                   "**/projectionMapping/**",
                   "**/pushComesToShove/**",
                   "**/rorschach/**",
                   "**/rugPull/**",
                   "**/subdivision/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**"
                 ],
@@ -384,7 +412,9 @@
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/darkroom/**",
+                  "**/exhibitA/**",
                   "**/flora/**",
+                  "**/fractalAutomata/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
@@ -397,10 +427,12 @@
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
                   "**/networkTest/**",
+                  "**/printShop/**",
                   "**/projectionMapping/**",
                   "**/pushComesToShove/**",
                   "**/rugPull/**",
                   "**/subdivision/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**"
                 ],
@@ -429,7 +461,9 @@
                   "**/brutalist/**",
                   "**/colors/**",
                   "**/darkroom/**",
+                  "**/exhibitA/**",
                   "**/flora/**",
+                  "**/fractalAutomata/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
@@ -442,11 +476,13 @@
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
                   "**/networkTest/**",
+                  "**/printShop/**",
                   "**/projectionMapping/**",
                   "**/pushComesToShove/**",
                   "**/rorschach/**",
                   "**/rugPull/**",
                   "**/subdivision/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**"
                 ],
@@ -472,7 +508,9 @@
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/darkroom/**",
+                  "**/exhibitA/**",
                   "**/flora/**",
+                  "**/fractalAutomata/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
@@ -485,10 +523,12 @@
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
                   "**/networkTest/**",
+                  "**/printShop/**",
                   "**/pushComesToShove/**",
                   "**/rorschach/**",
                   "**/rugPull/**",
                   "**/subdivision/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**"
                 ],
@@ -514,7 +554,9 @@
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/darkroom/**",
+                  "**/exhibitA/**",
                   "**/flora/**",
+                  "**/fractalAutomata/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/hyperCubes/**",
@@ -526,11 +568,13 @@
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
                   "**/networkTest/**",
+                  "**/printShop/**",
                   "**/projectionMapping/**",
                   "**/pushComesToShove/**",
                   "**/rorschach/**",
                   "**/rugPull/**",
                   "**/subdivision/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**"
                 ],
@@ -556,6 +600,8 @@
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/darkroom/**",
+                  "**/exhibitA/**",
+                  "**/fractalAutomata/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
@@ -568,11 +614,13 @@
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
                   "**/networkTest/**",
+                  "**/printShop/**",
                   "**/projectionMapping/**",
                   "**/pushComesToShove/**",
                   "**/rorschach/**",
                   "**/rugPull/**",
                   "**/subdivision/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**"
                 ],
@@ -607,7 +655,9 @@
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/darkroom/**",
+                  "**/exhibitA/**",
                   "**/flora/**",
+                  "**/fractalAutomata/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
                   "**/hyperCubes/**",
@@ -619,11 +669,13 @@
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
                   "**/networkTest/**",
+                  "**/printShop/**",
                   "**/projectionMapping/**",
                   "**/pushComesToShove/**",
                   "**/rorschach/**",
                   "**/rugPull/**",
                   "**/subdivision/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**"
                 ],
@@ -658,7 +710,9 @@
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/darkroom/**",
+                  "**/exhibitA/**",
                   "**/flora/**",
+                  "**/fractalAutomata/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
@@ -670,11 +724,13 @@
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
                   "**/networkTest/**",
+                  "**/printShop/**",
                   "**/projectionMapping/**",
                   "**/pushComesToShove/**",
                   "**/rorschach/**",
                   "**/rugPull/**",
                   "**/subdivision/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**"
                 ],
@@ -709,7 +765,9 @@
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/darkroom/**",
+                  "**/exhibitA/**",
                   "**/flora/**",
+                  "**/fractalAutomata/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
@@ -722,11 +780,13 @@
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
                   "**/networkTest/**",
+                  "**/printShop/**",
                   "**/projectionMapping/**",
                   "**/pushComesToShove/**",
                   "**/rorschach/**",
                   "**/rugPull/**",
                   "**/subdivision/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie3d/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
@@ -760,7 +820,9 @@
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/darkroom/**",
+                  "**/exhibitA/**",
                   "**/flora/**",
+                  "**/fractalAutomata/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
@@ -773,10 +835,12 @@
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
                   "**/networkTest/**",
+                  "**/printShop/**",
                   "**/projectionMapping/**",
                   "**/pushComesToShove/**",
                   "**/rorschach/**",
                   "**/rugPull/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**"
                 ],
@@ -785,6 +849,61 @@
               {
                 "group": ["@modules/subdivision/*", "**/modules/subdivision/*"],
                 "message": "Import the Subdivision kernel through its @modules/subdivision barrel, never a file inside it."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/subdivisionRelief/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/apollian/**",
+                  "**/blockParty/**",
+                  "**/brutalist/**",
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/darkroom/**",
+                  "**/exhibitA/**",
+                  "**/flora/**",
+                  "**/fractalAutomata/**",
+                  "**/fungi/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/hyperCubes/**",
+                  "**/iconography/**",
+                  "**/inventory/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/networkTest/**",
+                  "**/printShop/**",
+                  "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
+                  "**/rorschach/**",
+                  "**/rugPull/**",
+                  "**/subdivision/**",
+                  "**/trucheterie/**",
+                  "**/trucheterie3d/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": [
+                  "@modules/subdivisionRelief/*",
+                  "**/modules/subdivisionRelief/*",
+                  "@modules/subdivisionReliefRender/*",
+                  "**/modules/subdivisionReliefRender/*"
+                ],
+                "message": "Import the SubdivisionRelief kernel through its @modules/subdivisionRelief barrel, never a file inside it. See docs/subdivision-relief-pipeline.md."
               }
             ]
           }
@@ -805,7 +924,9 @@
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/darkroom/**",
+                  "**/exhibitA/**",
                   "**/flora/**",
+                  "**/fractalAutomata/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
@@ -818,11 +939,13 @@
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
                   "**/networkTest/**",
+                  "**/printShop/**",
                   "**/projectionMapping/**",
                   "**/pushComesToShove/**",
                   "**/rorschach/**",
                   "**/rugPull/**",
                   "**/subdivision/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**"
                 ],
@@ -857,7 +980,9 @@
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/darkroom/**",
+                  "**/exhibitA/**",
                   "**/flora/**",
+                  "**/fractalAutomata/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
@@ -869,11 +994,13 @@
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
                   "**/networkTest/**",
+                  "**/printShop/**",
                   "**/projectionMapping/**",
                   "**/pushComesToShove/**",
                   "**/rorschach/**",
                   "**/rugPull/**",
                   "**/subdivision/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**"
                 ],
@@ -894,7 +1021,7 @@
       }
     },
     {
-      "files": ["src/dev/tools/brutalist/**/*.{js,jsx}"],
+      "files": ["src/dev/tools/fractalAutomata/**/*.{js,jsx}"],
       "rules": {
         "no-restricted-imports": [
           "error",
@@ -904,9 +1031,11 @@
                 "group": [
                   "**/apollian/**",
                   "**/blockParty/**",
+                  "**/brutalist/**",
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/darkroom/**",
+                  "**/exhibitA/**",
                   "**/flora/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
@@ -920,11 +1049,68 @@
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
                   "**/networkTest/**",
+                  "**/printShop/**",
                   "**/projectionMapping/**",
                   "**/pushComesToShove/**",
                   "**/rorschach/**",
                   "**/rugPull/**",
                   "**/subdivision/**",
+                  "**/subdivisionRelief/**",
+                  "**/trucheterie/**",
+                  "**/trucheterie3d/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": [
+                  "@modules/fractalAutomata/*",
+                  "**/modules/fractalAutomata/*",
+                  "@modules/fractalAutomataRender/*",
+                  "**/modules/fractalAutomataRender/*"
+                ],
+                "message": "Import the Fractal Automata kernel through its @modules/fractalAutomata barrel, never a file inside it. See docs/fractal-automata-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/brutalist/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/apollian/**",
+                  "**/blockParty/**",
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/darkroom/**",
+                  "**/exhibitA/**",
+                  "**/flora/**",
+                  "**/fractalAutomata/**",
+                  "**/fungi/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/hyperCubes/**",
+                  "**/iconography/**",
+                  "**/inventory/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/networkTest/**",
+                  "**/printShop/**",
+                  "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
+                  "**/rorschach/**",
+                  "**/rugPull/**",
+                  "**/subdivision/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**"
                 ],
@@ -950,7 +1136,9 @@
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/darkroom/**",
+                  "**/exhibitA/**",
                   "**/flora/**",
+                  "**/fractalAutomata/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
@@ -962,11 +1150,13 @@
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
                   "**/networkTest/**",
+                  "**/printShop/**",
                   "**/projectionMapping/**",
                   "**/pushComesToShove/**",
                   "**/rorschach/**",
                   "**/rugPull/**",
                   "**/subdivision/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**"
                 ],
@@ -980,6 +1170,61 @@
                   "**/modules/hyperCubesRender/*"
                 ],
                 "message": "Import the HyperCubes kernel through its @modules/hyperCubes barrel, never a file inside it. See docs/hyper-cubes-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/exhibitA/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/apollian/**",
+                  "**/blockParty/**",
+                  "**/brutalist/**",
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/darkroom/**",
+                  "**/flora/**",
+                  "**/fractalAutomata/**",
+                  "**/fungi/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/hyperCubes/**",
+                  "**/iconography/**",
+                  "**/inventory/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/networkTest/**",
+                  "**/printShop/**",
+                  "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
+                  "**/rorschach/**",
+                  "**/rugPull/**",
+                  "**/subdivision/**",
+                  "**/subdivisionRelief/**",
+                  "**/trucheterie/**",
+                  "**/trucheterie3d/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": [
+                  "@modules/exhibitA/*",
+                  "**/modules/exhibitA/*",
+                  "@modules/exhibitARender/*",
+                  "**/modules/exhibitARender/*"
+                ],
+                "message": "Import the ExhibitA kernel through its @modules/exhibitA barrel, never a file inside it. See docs/exhibit-a-pipeline.md."
               }
             ]
           }
@@ -1001,7 +1246,9 @@
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/darkroom/**",
+                  "**/exhibitA/**",
                   "**/flora/**",
+                  "**/fractalAutomata/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
@@ -1013,11 +1260,13 @@
                   "**/kumiko/**",
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
+                  "**/printShop/**",
                   "**/projectionMapping/**",
                   "**/pushComesToShove/**",
                   "**/rorschach/**",
                   "**/rugPull/**",
                   "**/subdivision/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**"
                 ],
@@ -1052,7 +1301,9 @@
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/darkroom/**",
+                  "**/exhibitA/**",
                   "**/flora/**",
+                  "**/fractalAutomata/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
@@ -1064,11 +1315,13 @@
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
                   "**/networkTest/**",
+                  "**/printShop/**",
                   "**/projectionMapping/**",
                   "**/pushComesToShove/**",
                   "**/rorschach/**",
                   "**/rugPull/**",
                   "**/subdivision/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**"
                 ],
@@ -1103,7 +1356,9 @@
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/darkroom/**",
+                  "**/exhibitA/**",
                   "**/flora/**",
+                  "**/fractalAutomata/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
@@ -1116,10 +1371,12 @@
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
                   "**/networkTest/**",
+                  "**/printShop/**",
                   "**/projectionMapping/**",
                   "**/pushComesToShove/**",
                   "**/rorschach/**",
                   "**/subdivision/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**"
                 ],
@@ -1154,7 +1411,9 @@
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/darkroom/**",
+                  "**/exhibitA/**",
                   "**/flora/**",
+                  "**/fractalAutomata/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
@@ -1166,11 +1425,13 @@
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
                   "**/networkTest/**",
+                  "**/printShop/**",
                   "**/projectionMapping/**",
                   "**/pushComesToShove/**",
                   "**/rorschach/**",
                   "**/rugPull/**",
                   "**/subdivision/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**"
                 ],
@@ -1205,7 +1466,9 @@
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/darkroom/**",
+                  "**/exhibitA/**",
                   "**/flora/**",
+                  "**/fractalAutomata/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
@@ -1218,10 +1481,12 @@
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
                   "**/networkTest/**",
+                  "**/printShop/**",
                   "**/projectionMapping/**",
                   "**/rorschach/**",
                   "**/rugPull/**",
                   "**/subdivision/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**"
                 ],
@@ -1235,6 +1500,52 @@
                   "**/modules/pushComesToShoveRender/*"
                 ],
                 "message": "Import the Push Comes to Shove kernel through its @modules/pushComesToShove barrel, never a file inside it. See docs/push-comes-to-shove-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/printShop/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/apollian/**",
+                  "**/blockParty/**",
+                  "**/brutalist/**",
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/darkroom/**",
+                  "**/exhibitA/**",
+                  "**/flora/**",
+                  "**/fractalAutomata/**",
+                  "**/fungi/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/hyperCubes/**",
+                  "**/iconography/**",
+                  "**/inventory/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/networkTest/**",
+                  "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
+                  "**/rorschach/**",
+                  "**/rugPull/**",
+                  "**/subdivision/**",
+                  "**/subdivisionRelief/**",
+                  "**/trucheterie/**",
+                  "**/trucheterie3d/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
             ]
           }
@@ -1256,7 +1567,9 @@
                   "**/cataloggr/**",
                   "**/colors/**",
                   "**/darkroom/**",
+                  "**/exhibitA/**",
                   "**/flora/**",
+                  "**/fractalAutomata/**",
                   "**/fungi/**",
                   "**/gltfjsx/**",
                   "**/glyphs/**",
@@ -1269,11 +1582,13 @@
                   "**/loaderPatterns/**",
                   "**/nestingBoxes/**",
                   "**/networkTest/**",
+                  "**/printShop/**",
                   "**/projectionMapping/**",
                   "**/pushComesToShove/**",
                   "**/rorschach/**",
                   "**/rugPull/**",
                   "**/subdivision/**",
+                  "**/subdivisionRelief/**",
                   "**/trucheterie/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."

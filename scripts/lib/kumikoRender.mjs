@@ -1,6 +1,5 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import { existsSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import sharp from 'sharp';
 
@@ -10,12 +9,14 @@ import {
   defaultsFor,
   normalizeOptions,
 } from '../../src/modules/kumiko/renderOptions.mjs';
-import { parseArgs, providedKeys } from './cliArgs.mjs';
-import { createHeadlessRenderer, loadThree } from './headlessWebgpu.mjs';
-import loadModules, { REPO_ROOT } from './loadModules.mjs';
-import { runStage } from './progress.mjs';
-
-export { REPO_ROOT };
+import {
+  DEG,
+  createParseCli,
+  loadKernelModules,
+  withRenderer,
+} from './generatorCli.mjs';
+import { createHeadlessRenderer } from './headlessWebgpu.mjs';
+import { REPO_ROOT } from './loadModules.mjs';
 
 // Barrels only — see docs/kumiko-pipeline.md.
 const ENTRIES = {
@@ -24,8 +25,6 @@ const ENTRIES = {
   look: '/src/modules/kumikoRender/index.js',
 };
 
-const DEG = Math.PI / 180;
-
 // Azimuth and elevation, in degrees, of each 3D view; `flat` is the 2D art.
 export const VIEW_ANGLES = {
   angle: [-24, 12],
@@ -33,39 +32,13 @@ export const VIEW_ANGLES = {
   raking: [-58, 6],
 };
 
-export async function loadKernel() {
-  const { THREE, TSL } = await loadThree();
-  const loaded = await loadModules(Object.values(ENTRIES));
-  const pick = (name) => loaded[ENTRIES[name]];
-  return {
-    THREE,
-    TSL,
-    kumiko: pick('kumiko'),
-    lights: pick('lights'),
-    look: pick('look'),
-  };
-}
+export const loadKernel = () => loadKernelModules(ENTRIES);
 
-async function readJsonOption(value) {
-  if (value == null || typeof value !== 'string') return value;
-  if (/^\s*[[{]/u.test(value)) return JSON.parse(value);
-  return JSON.parse(await readFile(value, 'utf8'));
-}
-
-// A typed flag is a pin; the set is read before defaults are merged.
-export async function parseCli(kind, argv) {
-  const args = parseArgs(argv, defaultsFor(kind));
-  if (args.help) return { help: true };
-  const raw = { ...args };
-  await Promise.all(
-    Object.entries(RENDER_OPTIONS)
-      .filter(([, spec]) => spec.type === 'json')
-      .map(async ([key]) => {
-        raw[key] = await readJsonOption(args[key]);
-      })
-  );
-  return { options: normalizeOptions(kind, raw), typed: providedKeys(args) };
-}
+export const parseCli = createParseCli({
+  RENDER_OPTIONS,
+  defaultsFor,
+  normalizeOptions,
+});
 
 export function rollArgs(kernel, { options, typed }) {
   const { kumiko, look } = kernel;
@@ -212,7 +185,6 @@ export async function createKumikoCapturer(
       camera.position.set(...eye);
       camera.lookAt(...target);
       camera.updateProjectionMatrix();
-      await headless.readFrame(() => pipeline.render());
       return headless.readFrame(() => pipeline.render());
     },
     dispose() {
@@ -247,23 +219,18 @@ export function frameView({ bounds, options, view }) {
   };
 }
 
-export async function withCapturer(kernel, options, work) {
-  const capturer = await runStage(
-    `initializing WebGPU renderer (${options.width * options.pixelRatio}x${options.height * options.pixelRatio})`,
+export const withCapturer = (kernel, options, work) =>
+  withRenderer(
+    options,
     () =>
       createKumikoCapturer(kernel, {
         height: options.height * options.pixelRatio,
         samples: options.samples,
         shadows: options.shadows,
         width: options.width * options.pixelRatio,
-      })
+      }),
+    work
   );
-  try {
-    return await work(capturer);
-  } finally {
-    capturer.dispose();
-  }
-}
 
 export function sidecarFor({ config, options, panel }) {
   return {

@@ -1,7 +1,4 @@
 /* eslint-disable import/no-extraneous-dependencies */
-import { readFile } from 'node:fs/promises';
-import sharp from 'sharp';
-
 import {
   RENDER_OPTIONS,
   SCENE_KEYS,
@@ -9,12 +6,12 @@ import {
   normalizeOptions,
   resolveFamilies,
 } from '../../src/modules/apollian/renderOptions.mjs';
-import { parseArgs, providedKeys } from './cliArgs.mjs';
-import { createHeadlessRenderer, loadThree } from './headlessWebgpu.mjs';
-import loadModules, { REPO_ROOT } from './loadModules.mjs';
-import { runStage } from './progress.mjs';
-
-export { REPO_ROOT };
+import {
+  createParseCli,
+  loadKernelModules,
+  withRenderer,
+} from './generatorCli.mjs';
+import { createHeadlessRenderer } from './headlessWebgpu.mjs';
 
 // Barrels only — see docs/apollian-pipeline.md.
 const ENTRIES = {
@@ -23,41 +20,13 @@ const ENTRIES = {
   post: '/src/modules/postRig/index.js',
 };
 
-// three must see the stubbed browser globals before any module that imports
-// it is evaluated, so the renderer bootstrap runs first.
-export async function loadKernel() {
-  const { THREE, TSL } = await loadThree();
-  const loaded = await loadModules(Object.values(ENTRIES));
-  const pick = (name) => loaded[ENTRIES[name]];
-  return {
-    THREE,
-    TSL,
-    apollian: pick('apollian'),
-    look: pick('look'),
-    post: pick('post'),
-  };
-}
+export const loadKernel = () => loadKernelModules(ENTRIES);
 
-async function readJsonOption(value) {
-  if (value == null || typeof value !== 'string') return value;
-  if (/^\s*[[{]/u.test(value)) return JSON.parse(value);
-  return JSON.parse(await readFile(value, 'utf8'));
-}
-
-// A typed flag is a pin; the set is read before defaults are merged.
-export async function parseCli(kind, argv) {
-  const args = parseArgs(argv, defaultsFor(kind));
-  if (args.help) return { help: true };
-  const raw = { ...args };
-  await Promise.all(
-    Object.entries(RENDER_OPTIONS)
-      .filter(([, spec]) => spec.type === 'json')
-      .map(async ([key]) => {
-        raw[key] = await readJsonOption(args[key]);
-      })
-  );
-  return { options: normalizeOptions(kind, raw), typed: providedKeys(args) };
-}
+export const parseCli = createParseCli({
+  RENDER_OPTIONS,
+  defaultsFor,
+  normalizeOptions,
+});
 
 export function rollArgs(kernel, { options, typed }) {
   const { apollian, look } = kernel;
@@ -181,8 +150,6 @@ export async function createApollianCapturer(kernel, { height, width }) {
       const projection = framing?.projection ?? 'orthographic';
       if (framing) aim(framing);
       const pipeline = pipelineFor(projection, config);
-      // The first render after a uniform change reads back stale in Dawn.
-      await headless.readFrame(() => pipeline.render());
       return headless.readFrame(() => pipeline.render());
     },
 
@@ -193,19 +160,16 @@ export async function createApollianCapturer(kernel, { height, width }) {
   };
 }
 
-export async function withCapturer(kernel, options, work) {
-  const width = options.width * options.pixelRatio;
-  const height = options.height * options.pixelRatio;
-  const capturer = await runStage(
-    `initializing WebGPU renderer (${width}x${height})`,
-    () => createApollianCapturer(kernel, { height, width })
+export const withCapturer = (kernel, options, work) =>
+  withRenderer(
+    options,
+    () =>
+      createApollianCapturer(kernel, {
+        height: options.height * options.pixelRatio,
+        width: options.width * options.pixelRatio,
+      }),
+    work
   );
-  try {
-    return await work(capturer);
-  } finally {
-    capturer.dispose();
-  }
-}
 
 export function framingFor(kernel, config, options, view, azimuthOffset = 0) {
   if (view === 'slice') return null;
@@ -232,14 +196,6 @@ export function plotSvg(kernel, config, stops, options) {
     stroke: options.svgStroke,
     width: options.width,
   });
-}
-
-export async function encodeFrame(frame, format) {
-  const image = sharp(frame.data, {
-    raw: { channels: 4, height: frame.height, width: frame.width },
-  });
-  if (format === 'webp') return image.webp({ lossless: true }).toBuffer();
-  return image.png().toBuffer();
 }
 
 const sceneConfig = (config) =>

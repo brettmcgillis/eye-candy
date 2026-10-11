@@ -4,7 +4,17 @@
 // `section` is the top folder, `group` the folder path inside it, `when`
 // hides a control unless every named key holds one of the listed values.
 // Dependency-free `.mjs` so plain Node and Vite's config loader import it.
-import createOptionSchema from '../optionSchema/index.mjs';
+import createOptionSchema, {
+  choice,
+  color,
+  flag,
+  inFacet,
+  num,
+  rigOf,
+  rolled,
+  sceneOnly,
+  standard,
+} from '../optionSchema/index.mjs';
 import {
   RENDER_OPTIONS as BLOB,
   LANE_MODES,
@@ -15,12 +25,16 @@ import {
 export { LANE_MODES, MEATBALLS, PALETTE_NONE };
 
 export const STRANDS = ['lanes', 'wires', 'both'];
+export const LANES_AS = ['tubes', 'membrane'];
+export const MEMBRANE_FINISHES = ['palette', 'foil', 'tintedFoil', 'matte'];
+export const MEMBRANE_SIDES = ['single', 'double'];
+export const PRESSURE_MODES = ['lift', 'normal'];
 export const PROFILES = ['round', 'half', 'ribbon'];
 export const JUNCTIONS = ['cap', 'weave'];
 export const HEIGHT_MODES = ['flat', 'terrace'];
-export const MOTION_MODES = ['off', 'grow', 'flow'];
+export const MOTION_MODES = ['off', 'grow', 'flow', 'inflate'];
 export const VIEWS = ['hero', 'top', 'low', 'side', 'under'];
-export const VIDEO_MODES = ['growth', 'flow', 'turntable'];
+export const VIDEO_MODES = ['growth', 'flow', 'turntable', 'inflate'];
 export const PROJECTIONS = ['perspective', 'orthographic'];
 // Weave needs slack round the crossings at grid corners: at full width the
 // lanes touch edge to edge and three-way contacts there have no solution.
@@ -35,45 +49,6 @@ export const VIEW_ELEVATIONS = {
   under: -38,
 };
 
-function spec(type, section, group, label, value, extra = {}) {
-  return {
-    default: value,
-    group,
-    help: label,
-    label,
-    scene: true,
-    scope: 'shared',
-    section,
-    type,
-    ...extra,
-  };
-}
-
-const num = (section, group, label, value, min, max, step, extra = {}) =>
-  spec('number', section, group, label, value, {
-    max,
-    min,
-    placeholder: 'N',
-    step,
-    ...extra,
-  });
-const choice = (section, group, label, choices, value, extra = {}) =>
-  spec('enum', section, group, label, value, {
-    choices,
-    help: `${label}: ${choices.join(', ')}`,
-    ...extra,
-  });
-const flag = (section, group, label, value, extra = {}) =>
-  spec('boolean', section, group, label, value, extra);
-const color = (section, group, label, value, extra = {}) =>
-  spec('color', section, group, label, value, extra);
-const rolled = (facet, [min, max], item) => ({
-  ...item,
-  facet,
-  roll: { max, min, step: item.step },
-});
-const inFacet = (facet, item) => ({ ...item, facet });
-const sceneOnly = (item) => ({ ...item, sceneOnly: true });
 const from = (key, section, group, extra = {}) => ({
   ...BLOB[key],
   group,
@@ -125,26 +100,151 @@ const PALETTE = {
   }),
 };
 
+const MEMBRANE_WHEN = { lanesAs: ['membrane'], strands: ['lanes', 'both'] };
+const membraneNum = (label, value, min, max, step, help) =>
+  num('form', 'Membrane', label, value, min, max, step, {
+    help,
+    when: MEMBRANE_WHEN,
+  });
+
+// The 260421_CatenaryCanopy solver's knobs, its defaults and ranges.
+function membraneControls() {
+  return {
+    membraneRows: membraneNum(
+      'Rows Across',
+      4,
+      2,
+      8,
+      1,
+      'Simulated vertices across each lane, seam to seam'
+    ),
+    membraneSides: choice(
+      'form',
+      'Membrane',
+      'Sides',
+      MEMBRANE_SIDES,
+      'single',
+      {
+        help: 'single: one skin lifted off the ground, as the canopy; double: a second skin sewn under it at every seam, so each lane inflates into a closed balloon',
+        choiceLabels: { double: 'Double (Balloon)', single: 'Single' },
+        when: MEMBRANE_WHEN,
+      }
+    ),
+    membranePressureMode: choice(
+      'form',
+      'Membrane',
+      'Pressure Direction',
+      PRESSURE_MODES,
+      'lift',
+      {
+        help: "lift: straight up (down for a balloon's bottom skin), as the canopy; normal: along the skin's own normal, as a gas presses on a balloon",
+        choiceLabels: { lift: 'Lift', normal: 'Normal' },
+        when: MEMBRANE_WHEN,
+      }
+    ),
+    membraneSubdivision: membraneNum(
+      'Subdivision Level',
+      1,
+      0,
+      2,
+      1,
+      'Loop subdivisions of the drawn skin, each smoothed; every level is four times the triangles'
+    ),
+    membranePressure: membraneNum(
+      'Pressure',
+      56.55,
+      0,
+      100,
+      0.01,
+      'Uniform upward lift on every free vertex'
+    ),
+    membraneCrownBias: membraneNum(
+      'Crown Bias',
+      0.2,
+      0,
+      4,
+      0.01,
+      'Extra lift toward the middle of each lane'
+    ),
+    membranePressureScale: membraneNum(
+      'Pressure Scale',
+      8.3,
+      0,
+      200,
+      0.1,
+      'Multiplies pressure into force'
+    ),
+    membraneResponse: membraneNum(
+      'Pressure Response',
+      1.9,
+      0.1,
+      20,
+      0.1,
+      'How quickly pressure eases toward its target'
+    ),
+    membraneDamping: membraneNum(
+      'Damping',
+      4.8,
+      0,
+      40,
+      0.1,
+      'How fast motion dies away; low wobbles before it settles'
+    ),
+    membraneSubsteps: membraneNum(
+      'Substeps',
+      5,
+      1,
+      20,
+      1,
+      'Solver steps per frame'
+    ),
+    membraneIterations: membraneNum(
+      'Constraint Iterations',
+      10,
+      1,
+      60,
+      1,
+      'Spring passes per step, run in pairs; more is stiffer'
+    ),
+    membraneStiffness: membraneNum(
+      'Stiffness',
+      0.19,
+      0,
+      2,
+      0.01,
+      'Spring correction per iteration; low stretches and billows more'
+    ),
+    membraneMaxDelta: membraneNum(
+      'Max Delta Time',
+      0.032,
+      0.005,
+      0.2,
+      0.001,
+      'Longest frame the solver will take in one go, in seconds'
+    ),
+  };
+}
+
 const FORM = {
   strands: inFacet(
     'form',
     choice('form', null, 'Strands', STRANDS, 'lanes', {
       help: 'lanes: every lane a tube; wires: every pen stroke a wire; both: tubes with wires in the seams',
-      optionLabels: { both: 'Lanes + Wires', lanes: 'Lanes', wires: 'Wires' },
+      choiceLabels: { both: 'Lanes + Wires', lanes: 'Lanes', wires: 'Wires' },
     })
   ),
   junction: inFacet(
     'form',
     choice('form', null, 'Junctions', JUNCTIONS, 'cap', {
       help: `cap: lanes stop against the blob they meet, as in 2D; weave: in four-way cells the second family passes under the first (lane thickness is held to ${WEAVE_MAX_THICKNESS})`,
-      optionLabels: { cap: 'Cap', weave: 'Weave' },
+      choiceLabels: { cap: 'Cap', weave: 'Weave' },
     })
   ),
   tubeProfile: inFacet(
     'form',
     choice('form', 'Profile', 'Profile', PROFILES, 'round', {
       help: 'round: a full tube; half: half-round on a flat back; ribbon: a rounded flat band',
-      optionLabels: { half: 'Half Round', ribbon: 'Ribbon', round: 'Round' },
+      choiceLabels: { half: 'Half Round', ribbon: 'Ribbon', round: 'Round' },
     })
   ),
   tubeThickness: rolled(
@@ -168,11 +268,20 @@ const FORM = {
   tubeSegments: num('form', 'Profile', 'Segments', 12, 4, 32, 1, {
     help: 'Vertices round each tube',
   }),
+  lanesAs: inFacet(
+    'form',
+    choice('form', null, 'Lanes As', LANES_AS, 'tubes', {
+      help: 'tubes: a tube per lane; membrane: one skin over the field, every stroke pinned as a seam and each lane inflated (always capped and flat)',
+      choiceLabels: { membrane: 'Membrane', tubes: 'Tubes' },
+      when: { strands: ['lanes', 'both'] },
+    })
+  ),
+  ...membraneControls(),
   heightMode: inFacet(
     'form',
     choice('form', 'Height', 'Height', HEIGHT_MODES, 'flat', {
       help: 'flat: one plane; terrace: each ring one step above the ring outside it',
-      optionLabels: { flat: 'Flat', terrace: 'Terrace' },
+      choiceLabels: { flat: 'Flat', terrace: 'Terrace' },
     })
   ),
   heightScale: rolled(
@@ -218,6 +327,23 @@ const STAGE = {
     [0, 0.8],
     num('stage', 'Material', 'Clearcoat', 0.3, 0, 1, 0.01)
   ),
+  membraneFinish: choice(
+    'stage',
+    'Material',
+    'Membrane Finish',
+    MEMBRANE_FINISHES,
+    'palette',
+    {
+      help: "palette: lane colours with the material below; foil / matte: the canopy's own materials, iridescent film and all; tinted foil: the foil over the lane colours",
+      choiceLabels: {
+        foil: 'Foil',
+        matte: 'Matte',
+        palette: 'Palette',
+        tintedFoil: 'Tinted Foil',
+      },
+      when: MEMBRANE_WHEN,
+    }
+  ),
   envIntensity: num('stage', 'Material', 'Environment', 0.8, 0, 3, 0.01, {
     help: 'Studio reflection strength',
   }),
@@ -226,9 +352,17 @@ const STAGE = {
 const MOTION = {
   motionMode: sceneOnly(
     choice('motion', null, 'Mode', MOTION_MODES, 'off', {
-      help: 'grow: tubes extrude along their channels, hold, and loop; flow: the palette drifts along the channels',
+      help: 'grow: tubes extrude along their channels, hold, and loop; flow: the palette drifts along the channels; inflate: a membrane breathes, pressure on then off',
     })
   ),
+  inflateSeconds: num('motion', null, 'Inflate Seconds', 5, 0.5, 60, 0.1, {
+    help: 'How long pressure stays on each cycle',
+    when: { motionMode: ['inflate'] },
+  }),
+  deflateSeconds: num('motion', null, 'Deflate Seconds', 4, 0.5, 60, 0.1, {
+    help: 'How long pressure stays off each cycle',
+    when: { motionMode: ['inflate'] },
+  }),
   growSeconds: num('motion', null, 'Grow Seconds', 6, 0.5, 60, 0.1, {
     help: 'How long the growth front takes to finish',
   }),
@@ -241,15 +375,7 @@ const MOTION = {
 // Owned by the lighting rig, which builds its own Leva controls; declared
 // here so a preset and a headless render carry them. Defaults are
 // trucheterie3dRender's lighting.js.
-const rig = (item) => ({
-  facet: 'atmosphere',
-  group: null,
-  rig: true,
-  scene: true,
-  scope: 'shared',
-  section: 'light',
-  ...item,
-});
+const rig = rigOf({ facet: 'atmosphere', section: 'light' });
 const RIG = {
   lightKeyColor: rig({
     default: '#fff4e6',
@@ -297,180 +423,42 @@ const RIG = {
   }),
 };
 
-const output = (item) => ({ scope: 'shared', section: 'output', ...item });
-const still = (item) => ({ scope: 'still', section: 'output', ...item });
-const video = (item) => ({ scope: 'video', section: 'video', ...item });
-const render = (item) => ({ scope: 'shared', section: 'render', ...item });
-
 const RENDER = {
-  out: output({
-    cliOnly: true,
-    default: 'output/trucheterie3d',
-    help: 'Output directory (stills) or file (video)',
-    placeholder: 'PATH',
-    type: 'string',
-  }),
-  width: output({
-    default: 1080,
-    help: 'Width',
-    label: 'Width',
-    max: 8192,
-    min: 64,
-    placeholder: 'PX',
-    step: 2,
-    type: 'number',
-  }),
-  height: output({
-    default: 1350,
-    help: 'Height',
-    label: 'Height',
-    max: 8192,
-    min: 64,
-    placeholder: 'PX',
-    step: 2,
-    type: 'number',
-  }),
-  pixelRatio: output({
-    choices: [1, 2, 3, 4],
-    default: 2,
-    help: 'Renders at width×ratio by height×ratio',
-    label: 'Pixel ratio',
-    max: 4,
-    min: 1,
-    type: 'number',
-  }),
-  count: output({
-    default: 1,
+  out: standard.out('trucheterie3d'),
+  width: standard.width(),
+  height: standard.height(),
+  pixelRatio: standard.pixelRatio(),
+  count: standard.count('pieces', {
     help: 'How many fields to roll; a batch uses seed, seed-1, seed-2…',
-    label: 'Count',
-    max: 200,
-    min: 1,
-    placeholder: 'N',
-    step: 1,
-    type: 'number',
   }),
-  png: still({
-    default: false,
-    help: 'Write PNG files',
-    label: 'PNG',
-    type: 'boolean',
-  }),
-  webp: still({
-    default: true,
-    help: 'Write lossless WebP files',
-    label: 'WebP',
-    type: 'boolean',
-  }),
-  views: still({
-    default: 'hero',
-    help: `Comma-separated views: ${VIEWS.join(', ')}`,
-    label: 'Views',
-    placeholder: 'LIST',
-    type: 'string',
-  }),
-  projection: render({
-    choices: PROJECTIONS,
-    default: 'perspective',
-    help: 'Camera projection',
-    label: 'Projection',
-    type: 'enum',
-  }),
-  fov: render({
-    default: 30,
-    help: 'Vertical field of view in degrees (perspective only)',
-    label: 'Field of view',
-    max: 90,
-    min: 10,
-    step: 1,
-    type: 'number',
-  }),
-  margin: render({
-    default: 0.06,
-    help: 'Space around the piece, as a share of the frame',
-    label: 'Fit margin',
-    max: 0.5,
-    min: 0,
-    step: 0.01,
-    type: 'number',
-  }),
-  shadows: render({
-    default: true,
-    help: 'Key light shadow map',
-    label: 'Shadows',
-    type: 'boolean',
-  }),
-  keep: {
-    default: '',
-    help: 'Comma-separated facets to hold while the rest roll: structure, palette, form, atmosphere',
-    label: 'Hold facets',
-    placeholder: 'LIST',
-    scope: 'shared',
-    section: 'roll',
-    type: 'string',
-  },
-  base: {
-    cliOnly: true,
-    default: null,
-    help: 'A field config (or props.json path) the roll starts from',
-    nullable: true,
-    placeholder: 'JSON',
-    scope: 'shared',
-    section: 'roll',
-    type: 'json',
-  },
-  mode: video({
-    choices: VIDEO_MODES,
-    default: 'growth',
-    help: 'growth: tubes extrude along their channels from the centre, then hold; flow: the grown field with its palette drifting; turntable: orbit a still field',
-    label: 'Mode',
-    type: 'enum',
-  }),
-  view: video({
-    choices: VIEWS,
-    default: 'hero',
-    help: 'Camera view for the clip',
-    label: 'View',
-    type: 'enum',
-  }),
-  fps: video({
-    choices: [24, 30, 60],
-    default: 30,
-    help: 'Frames per second',
-    label: 'FPS',
-    max: 60,
-    min: 24,
-    type: 'number',
-  }),
-  hold: video({
-    default: 3,
-    help: 'Seconds each field holds (growth, flow) or orbits for (turntable)',
-    label: 'Hold',
-    max: 300,
-    min: 0,
-    placeholder: 'S',
-    step: 0.5,
-    type: 'number',
-  }),
-  turns: video({
-    default: 1,
-    help: 'Turntable revolutions per field',
-    label: 'Turns',
-    max: 10,
-    min: 0.25,
-    placeholder: 'N',
-    step: 0.25,
-    type: 'number',
-  }),
-  orbit: video({
-    default: 20,
-    help: 'Degrees the camera drifts round a growth or flow clip',
-    label: 'Orbit drift',
-    max: 360,
-    min: -360,
-    placeholder: 'DEG',
-    step: 5,
-    type: 'number',
-  }),
+  png: standard.png(),
+  webp: standard.webp(),
+  views: standard.views(VIEWS, 'hero'),
+  projection: standard.projection(PROJECTIONS, 'perspective'),
+  fov: standard.fov(30),
+  margin: standard.margin(
+    0.06,
+    'Space around the piece, as a share of the frame'
+  ),
+  shadows: standard.shadows(),
+  keep: standard.keep(['structure', 'palette', 'form', 'atmosphere']),
+  base: standard.base('field'),
+  mode: standard.mode(
+    VIDEO_MODES,
+    'growth',
+    'growth: tubes extrude along their channels from the centre, then hold; flow: the grown field with its palette drifting; turntable: orbit a still field; inflate: a membrane inflates from flat, holds, then deflates'
+  ),
+  view: standard.view(VIEWS, 'hero'),
+  fps: standard.fps(),
+  hold: standard.hold(
+    3,
+    'Seconds each field holds (growth, flow) or orbits for (turntable)'
+  ),
+  turns: standard.turns('field'),
+  orbit: standard.orbit(
+    20,
+    'Degrees the camera drifts round a growth or flow clip'
+  ),
 };
 
 export const RENDER_OPTIONS = {
@@ -489,64 +477,31 @@ export const SURFACE_DEFAULTS = {
   workbench: { blobSeed: null, count: 6 },
 };
 
-export function resolveViews(list, fail = (message) => new Error(message)) {
-  const views = String(list)
-    .split(',')
-    .map((view) => view.trim())
-    .filter(Boolean);
-  const unknown = views.filter((view) => !VIEWS.includes(view));
-  if (views.length === 0 || unknown.length > 0) {
-    throw fail(`views must name only ${VIEWS.join(', ')}.`);
-  }
-  return views;
-}
-
 const schema = createOptionSchema({
   options: RENDER_OPTIONS,
   sectionLabels: {
-    field: 'field',
-    form: 'form',
-    light: 'light',
-    motion: 'motion',
-    output: 'output',
-    palette: 'palette',
-    render: 'render',
     roll: 'rolling',
-    stage: 'stage',
-    video: 'video',
   },
   surfaceDefaults: SURFACE_DEFAULTS,
-  validate(kind, options, fail) {
-    if (kind === 'still' && !options.png && !options.webp) {
-      throw fail('Select at least one output format: PNG or WebP.');
-    }
-    const longest = Math.max(options.width, options.height);
-    if (longest * options.pixelRatio > 8192) {
-      throw fail(
-        `width×pixelRatio must stay within 8192; the longest side would be ${longest * options.pixelRatio}.`
-      );
-    }
-    if (kind === 'still') resolveViews(options.views, fail);
-  },
+  views: VIEWS,
 });
 
 export const {
+  LEVA_KEYS,
+  SCENE_KEYS,
+  configFrom,
   defaultsFor,
   facets,
   keysInFacet,
   normalizeOptions,
   optionsFor,
+  optionsFromConfig,
+  presetFromConfig,
+  resolveViews,
+  sceneDefaults,
   sectionsFor,
   usageFor,
 } = schema;
-
-const keysWhere = (test) =>
-  Object.entries(RENDER_OPTIONS)
-    .filter(([, item]) => test(item))
-    .map(([key]) => key);
-
-export const SCENE_KEYS = keysWhere((item) => item.scene);
-export const LEVA_KEYS = keysWhere((item) => item.scene && !item.rig);
 
 // Keys that change the tubes' geometry; every other key only re-dresses them.
 export const TUBE_KEYS = [
@@ -560,6 +515,9 @@ export const TUBE_KEYS = [
   'blobHoles',
   'blobMeatballs',
   'strands',
+  'lanesAs',
+  'membraneRows',
+  'membraneSides',
   'junction',
   'tubeThickness',
   'wireThickness',
@@ -569,26 +527,16 @@ export const TUBE_KEYS = [
   'rampLength',
 ];
 
-export const sceneDefaults = () =>
-  Object.fromEntries(
-    SCENE_KEYS.map((key) => [key, RENDER_OPTIONS[key].default])
-  );
-
-export function configFrom(source) {
-  const flat = source?.preset ?? source ?? {};
-  return Object.fromEntries(
-    SCENE_KEYS.filter((key) => flat[key] != null).map((key) => [key, flat[key]])
-  );
-}
-
-export const optionsFromConfig = (config = {}) => configFrom(config);
-
-export function presetFromConfig(config = {}) {
-  const defaults = sceneDefaults();
-  return Object.fromEntries(
-    Object.entries(config).filter(
-      ([name, value]) =>
-        name in defaults && value != null && value !== defaults[name]
-    )
-  );
-}
+// The membrane solve's runtime knobs: they move the simulation, never its mesh.
+export const MEMBRANE_KEYS = [
+  'membranePressureMode',
+  'membranePressure',
+  'membraneCrownBias',
+  'membranePressureScale',
+  'membraneResponse',
+  'membraneDamping',
+  'membraneSubsteps',
+  'membraneIterations',
+  'membraneStiffness',
+  'membraneMaxDelta',
+];

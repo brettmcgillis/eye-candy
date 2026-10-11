@@ -168,9 +168,10 @@ Inside a scene folder, keep imports relative (`./components/Foo`,
   hooks), and the rigs `src/modules/cameraRig` and `src/modules/lightingRig` —
   each a control-builder + runtime utils + drop-in component that only make
   sense together, exposed through an `index.js` barrel. Current modules:
-  `cameraRig`, `lightingRig`, `ecctrl`, `handTracking`, `poseTracking`,
-  `mediaRecorder`, `shallowWater`, `splineAuthoring`, `trashAudio`,
-  `trashCatalog`, `tsl`, `verletPhysics`, `windowSync`. When a
+  `blackHole`, `cameraRig`, `lightingRig`, `ecctrl`, `handTracking`,
+  `ifftOcean`, `poseTracking`, `mediaRecorder`, `shallowWater`,
+  `splineAuthoring`, `trashAudio`, `trashCatalog`, `tsl`, `verletPhysics`,
+  `windowSync`. When a
   control-builder + component pair grows this tightly coupled, promote it the
   same way rather than scattering it across `hooks/` and `components/`.
 
@@ -394,6 +395,9 @@ for it, and delete the file otherwise.
   channels from a single folder (e.g. `Shared/FireTest/scene.config.jsx`
   exports two entries, one per channel) — copy that file's shape for similar
   cases.
+- `hideUI: true` hides the app overlay (version tag, Leva, corner panels)
+  whenever the scene is open — for scenes with their own full-screen UI, like
+  `WebGPU/PartyLine`. Shift+H still toggles it.
 - `route` is optional and defaults to `id`. Set it explicitly only when a
   scene needs a URL slug distinct from its sibling in the other channel — the
   repo convention is an explicit `-webgpu` suffix (e.g. `crtTest-webgpu`).
@@ -430,14 +434,22 @@ to the next agent as current intent.
 - Every scene and registered dev tool's `todo.md` follows a fixed shape: a
   `# // Name` title, a
   `[Back to main TODO](...)` link to the root `TODO.md` (relative depth
-  matches the scene's folder nesting), then optional H2 sections in this
+  matches the scene's folder nesting), then **all six** H2 sections in this
   order: `// Intent / Use Cases`, `// TODO:`, `// Presets`, `// Features`,
-  `// Interactivity`, and `// Bugs`. Every heading uses the comment-style `//`
-  prefix to bridge code and documentation of the artwork. Omit sections that
-  do not apply. Nest supporting material under these sections at H3 or deeper,
-  also prefixed with `//`, rather than creating one-off top-level sections.
-  Adding a reusable top-level section is a schema change here and in Cataloggr,
-  not a per-scene exception.
+  `// Interactivity`, and `// Bugs`. Every section is required — leave one
+  empty rather than omitting it; Cataloggr flags a missing section. Every
+  heading uses the comment-style `//` prefix to bridge code and documentation
+  of the artwork. Nest supporting material under these sections at H3 or
+  deeper, also prefixed with `//`, rather than creating one-off top-level
+  sections. Adding a reusable top-level section is a schema change here and in
+  Cataloggr (`src/dev/server/cataloggr/todoFormat.mjs`), not a per-scene
+  exception.
+- **Never hand-write a new `todo.md`.** Scaffold it with
+  `npm run todo:new -- <scene-or-tool-dir> "<Name>"` (computes the backlink
+  depth; replaces a todo copied from SceneTemplate), fill it in, then run
+  `npm run todo:check -- <dir>` and fix every reported issue before handing
+  the scene over. The check runs Cataloggr's own audit, so a clean check means
+  no warning in Cataloggr. `--fix` applies Cataloggr's normalizer.
 - Action items under `TODO`, `Presets`, `Features`, `Interactivity`, and `Bugs`
   use Markdown task checkboxes. Completed items stay in place as durable
   context and can be filtered in Cataloggr.

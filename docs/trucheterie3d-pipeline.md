@@ -1,7 +1,8 @@
 # Trucheterie3D pipeline
 
 Trucheterie3D is the Trucheterie blob field built as real tubes: every lane a
-tube, every pen stroke a wire, or both. It is a separate scene (not a 2D/3D
+tube, every pen stroke a wire, or both — or the lanes as one inflated
+membrane, every stroke pinned as a seam (see Membrane below). It is a separate scene (not a 2D/3D
 toggle on Trucheterie, for the reason IsoLines and IsoLinesRelief are split)
 over the 2D generator, `@modules/trucheterieBlob`, which it uses unchanged
 apart from a `weave` flag on the lane-channel solve. Run
@@ -13,9 +14,11 @@ apart from a `weave` flag on the lane-channel solve. Run
 ```
 @modules/trucheterieBlob        the 2D generator: field, lane radii, families, lane channels
 @modules/trucheterie3d          three-free: tube solve, heights, crossings, verify,
-                                mesh sweep + profiles, schema, roller, framing, growth
+                                mesh sweep + profiles, membrane strips, schema,
+                                roller, framing, growth, inflate clock
 @modules/trucheterie3dRender    createTubeRig: wraps the mesh, lane colours,
-                                material, studio PMREM, floor; camera + lighting
+                                material, studio PMREM, floor; camera + lighting;
+                                createMembraneSolver (GPU inflation)
         │                               │
   WebGPU/Trucheterie3D scene      scripts/lib/trucheterie3dRender.mjs
   (Leva generated from schema,      ├─ trucheterie3d-generate.mjs   stills per view
@@ -24,12 +27,12 @@ apart from a `weave` flag on the lane-channel solve. Run
             src/dev/server/trucheterie3d → src/dev/tools/trucheterie3d (Trucheterie3DCLI)
 ```
 
-| Piece                          | Rule                                                                                                                                                                                 |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `@modules/trucheterie3d`       | **Three-free.** May import only `@modules/trucheterieBlob`. The check enforces it. The mesh lives here (plain typed arrays) so a worker can build it and an STL export can reuse it. |
-| `@modules/trucheterie3dRender` | The only home of the look. `createTubeRig()`: `setTubes({ config, field, tubes, mesh? })`, `apply`, `setGrowth`, `setPalettePhase`, `updateEnvironment`, `setShadows`.               |
-| `renderOptions.mjs`            | The 2D field/palette specs re-foldered, plus form, stage, motion, lighting and render keys. Facets: `structure`, `palette`, `form`, `atmosphere`.                                    |
-| Keys                           | `TUBE_KEYS` change the solve, `MESH_KEYS` the sweep; anything else only re-dresses (colours repaint, transform moves). Scene keys match the 2D scene's, so a seed carries over.      |
+| Piece                          | Rule                                                                                                                                                                                                                                 |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `@modules/trucheterie3d`       | **Three-free.** May import only `@modules/trucheterieBlob`. The check enforces it. The mesh lives here (plain typed arrays) so a worker can build it and an STL export can reuse it.                                                 |
+| `@modules/trucheterie3dRender` | The only home of the look. `createTubeRig()`: `setTubes({ config, field, tubes, mesh? })`, `apply`, `setGrowth`, `setPalettePhase`, `updateEnvironment`, `setShadows`.                                                               |
+| `renderOptions.mjs`            | The 2D field/palette specs re-foldered, plus form, stage, motion, lighting and render keys. Facets: `structure`, `palette`, `form`, `atmosphere`.                                                                                    |
+| Keys                           | `TUBE_KEYS` change the solve, `MESH_KEYS` the sweep, `MEMBRANE_KEYS` only move the membrane's simulation; anything else only re-dresses (colours repaint, transform moves). Scene keys match the 2D scene's, so a seed carries over. |
 
 ## The solve (grid units: one micro-cell = 1, y down, z up)
 
@@ -81,6 +84,13 @@ apart from a `weave` flag on the lane-channel solve. Run
 
 ### Invariants (what `verifyTubes` and the check assert)
 
+The membrane has its own: the skin covers the 2D lanes' ground (IoU ≥ 0.99),
+at most 0.1% of its plan triangles fold back (cut ends), and every
+strip-edge vertex is pinned or welded. A headless solve keeps seams fixed
+and welds whole, lifts the lanes, and comes back down with the pressure off.
+A balloon inflates both skins apart, holds its seams, and keeps each skin on
+its own side. Every finish draws, validated, at subdivision levels 0–2.
+
 - No two tubes closer than the sum of their radii in 3D. Samples within π·R
   of each other along one chain (in plan) are exempt: a tube may bend.
 - Every chain is a loop or has two ends that take hemispherical caps
@@ -95,6 +105,93 @@ apart from a `weave` flag on the lane-channel solve. Run
 - Weave holds lane thickness to `WEAVE_MAX_THICKNESS` (0.9): at full width
   the lanes touch edge to edge and three-way contacts at grid corners have
   no solution.
+
+## Membrane
+
+`lanesAs: membrane` swaps the lane tubes for one single-surface skin,
+inflated by a port of `~/dev/examples/260421_CatenaryCanopy`'s solver. The
+user's calls (2026-10-08): strokes are seams (quilted, each lane billows on
+its own), a faithful single surface lifted straight up (not a closed
+two-skin pillow), a mode of this scene, and inflation is the motion.
+`buildForm` is the one entry point: tubes, or the membrane plus — with
+`strands: both` — the wires solved alone, capped and flat, as piping in the
+seams. A membrane is always Cap and flat; Weave and Terrace do not apply.
+
+- **Strips, not a triangulation** (`membrane.js`). Each lane chain is a
+  structured strip: columns are the chain's samples, `membraneRows + 1`
+  rows run across the lane. Lanes are concentric arcs, so each column's
+  rows run radially from one seam to the other and the seams are the 2D
+  strokes exactly. Strips meet only on pinned seams, so no welding is
+  needed between them.
+- **Its own lane pieces.** The tube solve clips a second family's lane at
+  its mid radius. A rim that bites only partway into a lane would then
+  split it into two overlapping strips. Here a lane is cut only where the
+  occluding disc covers its whole width. Each column then takes the part
+  of its ray outside the disc (`radialSpan`), so the rim becomes that side's
+  seam and a cut end narrows to a point on it.
+- **Pins**: every strip-edge row that lies on a stroke, plus the end
+  columns of open chains. A row at radius 0 (a corner family's lane 0
+  wrapping a grid point) is pinned when only part of the wrap is there,
+  because a stroke ends on that point. A whole-disc wrap (a loop of nothing
+  but pivots, and beads) has a free centre split across its columns. Those
+  copies are a weld group, averaged after every relaxation pair, or the
+  dome tears open.
+- **Solve** (`membraneSolver.js`, TSL compute). Per substep, as in the
+  reference: a uniform +Z lift `pressure · scale · (1 + crown · crownBias)`
+  (not normal pressure), velocity damped by `exp(-damping·dt)`, spring
+  corrections on the triangle edges (rest = flat length, half each side, or
+  whole against a pin), then velocity = Δposition / dt. Pressure eases to
+  its target at `pressureResponse`. The reference relaxes springs one after
+  another; here every vertex gathers its own springs (Jacobi), with the same
+  per-spring magnitudes. Neighbours are implicit in the strip layout, so
+  there are no adjacency buffers. The sim runs in lane units (pitch = 1),
+  where the reference's defaults land at its own mesh scale.
+- **Motion.** `inflate` holds pressure on for `inflateSeconds`, then off for
+  `deflateSeconds`; with no gravity, the springs pull the skin back toward
+  flat. Other modes inflate once and hold. The rig stops stepping once
+  pressure has held at its target for a few seconds, and wakes when a
+  membrane knob or the target moves. The CLI settles a membrane before a
+  still; video mode `inflate` steps it from flat at 1/fps.
+- **Balloons** (`membraneSides: double`). `sewBelow` repeats every strip as
+  a bottom skin with the same seams, so the two skins are sewn wherever the
+  top is pinned. Every vertex carries its skin's side (rest flags:
+  pinned + 2 · bottom), and the lift pushes each skin away from the other.
+  By symmetry the skins meet on the seams' plane, so the relaxation holds
+  each one on its own side of it. Without that, normal pressure pushed the
+  skins through each other beside the seams. That contact is the only
+  addition to the reference's physics, and only for balloons.
+- **Pressure direction** (`membranePressureMode`). `lift` is the reference:
+  straight up, or straight down for the bottom skin. `normal` pushes along
+  each skin's own normal, as gas does on a balloon. It needs a normals pass
+  on the sim grid every substep. It works on a single skin too.
+- **Display** (`membraneDisplay.js`, `membraneLevels.js`). The reference
+  draws through its render topology: Loop subdivision with the outline as a
+  crease, then `level` Laplacian passes at 0.18 that skip creases, then
+  pinned sim vertices snapped back. Every strip edge is a crease here. The
+  strips stay regular triangulated grids at every level, so each level is a
+  fixed-stencil GPU pass over a 2× finer grid instead of per-vertex stencil
+  tables (~150 MB at level 1 for this mesh). Normals come off the finest
+  grid by central differences, as the reference's `computeVertexNormals`
+  would. Along a row collapsed to a point the row tangent is taken from the
+  next row in, or rounding noise flips the normal. Levels run 0–2 (the
+  reference allows 4): each level quadruples the triangles, ~2.9M at level
+  2 and 3 paths per unit. The subdivision level and the finish re-dress the
+  drawn skin without restarting the simulation. Unlike the reference,
+  interior edges joining two crease vertices (the diagonals at an open
+  strip's corners) are not creased.
+- **Finish** (`membraneFinish`). `palette` dresses the skin like the tubes.
+  `foil` and `matte` are the reference's two MeshPhysical styles, including
+  its "egg iridescence" thin-film tint, ported from its `onBeforeCompile`
+  GLSL to TSL (`iridescence.js`). `tintedFoil` lays the foil over the lane
+  colours instead of the reference's near-white. Their environment strength
+  only applies through the material's own `envMap`, so the rig hands them
+  the studio PMREM. The film's world normal follows `faceDirection`, so a
+  balloon's underside shimmers too.
+- **Cost.** About 255k vertices at the default 6 paths per unit, and ~90
+  dispatches per frame. Headless Dawn takes ~45 ms per frame there and
+  ~28 ms at 3 paths per unit, so the membrane presets use 4. A balloon
+  doubles the vertices (~45 ms at 3 paths per unit). The display passes
+  run only when the solve steps.
 
 ## Look
 
@@ -127,6 +224,10 @@ the arrays and paints colours. `motionMode`: `grow` loops the extrusion,
 quarter of the frame; Spectrum is the costly mode).
 
 ## Not yet
+
+- Membrane: seams at terrace heights; pinning every Nth stroke for wider
+  pillows; thickening for print (a balloon is already a closed volume per
+  lane, but each one only touches the next at a seam).
 
 - STL export (the mesh is ready; touching tubes and loose rings would print
   as separate parts until something bonds them).

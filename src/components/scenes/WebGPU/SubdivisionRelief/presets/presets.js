@@ -1,12 +1,14 @@
 import { PRESETS as FLAT_PRESETS } from '@components/scenes/WebGPU/Subdivision/presets/presets';
-import { sceneDefaults } from '@modules/subdivision';
+import {
+  RENDER_OPTIONS,
+  SCENE_KEYS,
+  sceneDefaults,
+} from '@modules/subdivisionRelief';
 
-import { DEFAULT_SEED, OMITTED_KEYS } from '../utils/controls';
-import { reliefDefaults } from '../utils/reliefOptions';
+import { DEFAULT_SEED } from '../utils/controls';
 
-// Subdivision's presets, piece for piece, each with a relief: the 2D outline
-// keys dropped and the height and motion options added. Keys match the Leva
-// schema 1:1.
+// Keys match @modules/subdivisionRelief's option schema 1:1, so presets saved
+// from SubdivisionReliefCLI land below in the same shape.
 export const DEFAULT_PRESET = 'Quadtree';
 
 const RELIEF = {
@@ -39,34 +41,32 @@ const RELIEF = {
   'Webcam Trixels': { depthWeight: 0.4, lumaWeight: 0.7 },
 };
 
-export const PRESETS = Object.fromEntries(
+// Subdivision's presets, piece for piece, each with a relief; the keys the
+// relief has no use for (the outline band) are left out.
+const FROM_SUBDIVISION = Object.fromEntries(
   Object.entries(FLAT_PRESETS).map(([name, preset]) => [
     name,
     {
       ...Object.fromEntries(
-        Object.entries(preset).filter(([key]) => !OMITTED_KEYS.includes(key))
+        Object.entries(preset).filter(([key]) => SCENE_KEYS.includes(key))
       ),
       ...RELIEF[name],
     },
   ])
 );
 
-const pieceDefaults = () =>
-  Object.fromEntries(
-    Object.entries(sceneDefaults()).filter(
-      ([key]) => !OMITTED_KEYS.includes(key)
-    )
-  );
+export const PRESETS = {
+  ...FROM_SUBDIVISION,
+};
 
 // A preset only lists what differs from the schema, so applying one starts
 // from the defaults or the previous preset's values would linger.
 export function getPresetControls({ presetSnapshot }) {
   return {
-    ...pieceDefaults(),
-    ...reliefDefaults(),
-    height: 1000,
+    ...sceneDefaults(),
+    height: RENDER_OPTIONS.height.default,
     seed: DEFAULT_SEED,
-    width: 1600,
+    width: RENDER_OPTIONS.width.default,
     ...presetSnapshot,
   };
 }

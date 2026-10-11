@@ -65,6 +65,14 @@ export function tubeBounds(tubes, config) {
   return { hull, max, min };
 }
 
+// The bounds of everything a form draws; a membrane's lanes stand in for
+// its skin, one lane wide.
+export const formBounds = ({ membrane, tubes }, config) =>
+  tubeBounds(
+    { ...tubes, chains: [...tubes.chains, ...(membrane?.chains ?? [])] },
+    config
+  );
+
 // The camera a still or a frame is drawn through, fitted from the view's
 // bearing. A moving camera fits the bounding sphere instead, so orbiting
 // never changes the zoom.

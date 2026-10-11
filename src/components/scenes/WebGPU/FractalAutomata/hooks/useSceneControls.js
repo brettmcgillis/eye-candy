@@ -7,33 +7,21 @@ import {
   getCameraControlsKey,
   useSceneCameraControls,
 } from '@modules/cameraRig';
+import { FRACTAL_AUTOMATA_CAMERA as CAMERA } from '@modules/fractalAutomataRender';
 import { useMediaRecorder } from '@modules/mediaRecorder';
 
-import getDetailEnhanceControls from '../components/getDetailEnhanceControls';
-import getGodraysControls from '../components/getGodraysControls';
-import getLightingControls from '../components/getLightingControls';
-import getMaterialControls from '../components/getMaterialControls';
-import getPaletteControls from '../components/getPaletteControls';
-import getVoxelFieldControls from '../components/getVoxelFieldControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
-import CAMERA from '../utils/camera';
+import sceneFolders, { SCENE_LABEL, rollFacet } from '../utils/controls';
 
-const SCENE_LABEL = 'Fractal Automata';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
 
 export default function useSceneControls() {
-  const {
-    attachSetControls,
-    controlsSnapshotRef,
-    initialPreset,
-    presetsFolder,
-  } = usePresetsFolder({
-    defaultPreset: DEFAULT_PRESET,
-    getPresetControls,
-    presets: PRESETS,
-  });
-
-  const p = PRESETS[initialPreset] || PRESETS[DEFAULT_PRESET];
+  const { attachSetControls, controlsSnapshotRef, presetsFolder } =
+    usePresetsFolder({
+      defaultPreset: DEFAULT_PRESET,
+      getPresetControls,
+      presets: PRESETS,
+    });
 
   const cameraApiRef = useRef(null);
   const { buildCamera, cameraControls } = useSceneCameraControls({
@@ -43,18 +31,22 @@ export default function useSceneControls() {
     controlsSnapshotRef,
   });
 
+  const setControlsRef = useRef(null);
+  const onRoll = useCallback(
+    (facet) => {
+      setControlsRef.current?.(rollFacet(facet, controlsSnapshotRef.current));
+    },
+    [controlsSnapshotRef]
+  );
+
   const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
     Camera: folder(cameraControls, { collapsed: true }),
-    VoxelField: getVoxelFieldControls(p),
-    VoxelDetail: getDetailEnhanceControls(p),
-    Palette: getPaletteControls(p),
-    Materials: getMaterialControls(p),
-    Lighting: getLightingControls(p),
-    Godrays: getGodraysControls(p),
+    ...sceneFolders(controlsSnapshotRef.current, { onRoll }),
   }));
 
   attachSetControls(setControls);
+  setControlsRef.current = setControls;
   controlsSnapshotRef.current = { ...controls };
 
   useMediaRecorder({ fileName: SCENE_LABEL });

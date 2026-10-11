@@ -1,24 +1,13 @@
 #!/usr/bin/env node
-
-/* eslint-disable no-await-in-loop */
-import { mkdir } from 'node:fs/promises';
-import path from 'node:path';
-import process from 'node:process';
-
 import { usageFor } from '../src/modules/hyperCubes/renderOptions.mjs';
-import createFrameSink from './lib/frameSink.mjs';
+import { azimuthOffset, runVideo } from './lib/generatorCli.mjs';
 import {
-  REPO_ROOT,
   loadKernel,
   parseCli,
   rollArgs,
   structureAt,
   withCapturer,
 } from './lib/hyperCubesRender.mjs';
-import createProgress, { runStage } from './lib/progress.mjs';
-import { writeVideoSidecar } from './lib/videoMetadata.mjs';
-
-const KIND = 'video';
 
 // A morph clip is one stage: every structure after the first keeps the
 // first one's atmosphere, so only the cubes move.
@@ -96,94 +85,58 @@ function planShots(kernel, items, options) {
   });
 }
 
-async function main() {
-  const parsed = await parseCli(KIND, process.argv.slice(2));
-  if (parsed.help) {
-    process.stdout.write(
-      `Usage: npm run hyper-cubes:video -- [options]\n${usageFor(KIND)}`
-    );
-    return;
-  }
-  const { options, typed } = parsed;
-  const out = path.resolve(REPO_ROOT, String(options.out));
-  await mkdir(path.dirname(out), { recursive: true });
-  process.stdout.write(
-    `hypercubes video: mode ${options.mode}, ${options.count} structures, ` +
-      `${options.width}x${options.height} at ${options.pixelRatio}x, ` +
-      `${options.fps}fps\n` +
-      `output: ${out}\n`
-  );
+const unionBounds = (boundsList) =>
+  boundsList.reduce((all, b) => ({
+    max: all.max.map((v, a) => Math.max(v, b.max[a])),
+    min: all.min.map((v, a) => Math.min(v, b.min[a])),
+  }));
 
-  const kernel = await runStage('loading the HyperCubes kernel', loadKernel);
-  const { cubes } = kernel;
-  const roll = rollArgs(kernel, { options, typed });
-  const batch = options.batch ?? cubes.randomSeed();
-  const items = rollItems(kernel, { batch, options, roll });
-  const shots = planShots(kernel, items, options);
-  const total = shots.reduce((sum, shot) => sum + shot.frames, 0);
-  const progress = createProgress('rendering frames', total);
-  const sink = createFrameSink({
-    fps: options.fps,
-    height: options.height * options.pixelRatio,
-    out,
-    width: options.width * options.pixelRatio,
-  });
-
-  let written = 0;
-  try {
-    await withCapturer(kernel, options, async (capturer) => {
-      for (let s = 0; s < shots.length; s += 1) {
-        const { drawn, frames, instancesAt } = shots[s];
-        const loaded = capturer.load(drawn);
-        const bounds =
-          options.mode === 'morph'
-            ? items
-                .map(({ config }) => cubes.domainBounds(config))
-                .reduce(
-                  (all, b) => ({
-                    max: all.max.map((v, a) => Math.max(v, b.max[a])),
-                    min: all.min.map((v, a) => Math.min(v, b.min[a])),
-                  }),
-                  loaded
-                )
-            : loaded;
-        for (let frame = 0; frame < frames; frame += 1) {
-          const azimuthOffset =
-            options.mode === 'turntable'
-              ? (360 * options.turns * frame) / frames
-              : (options.orbit * written) / total;
-          const image = await capturer.capture(
-            cubes.frameView({
-              azimuthOffset,
-              bounds,
-              options,
-              stable: options.mode === 'turntable' || options.orbit !== 0,
-              view: options.view,
-            }),
-            instancesAt(frame)
-          );
-          await sink.write(image.data);
-          written += 1;
-          progress.update(written);
+runVideo({
+  kernelLabel: 'HyperCubes',
+  loadKernel,
+  nouns: 'structures',
+  parseCli,
+  plan({ kernel, options, typed }) {
+    const { cubes } = kernel;
+    const roll = rollArgs(kernel, { options, typed });
+    const batch = options.batch ?? cubes.randomSeed();
+    const items = rollItems(kernel, { batch, options, roll });
+    const stable = options.mode === 'turntable' || options.orbit !== 0;
+    return {
+      presets: () => items.map(({ config }) => config),
+      shots: planShots(kernel, items, options).map(
+        ({ drawn, frames, instancesAt }) => {
+          let bounds = null;
+          return {
+            enter(capturer) {
+              const loaded = capturer.load(drawn);
+              bounds =
+                options.mode === 'morph'
+                  ? unionBounds([
+                      loaded,
+                      ...items.map(({ config }) => cubes.domainBounds(config)),
+                    ])
+                  : loaded;
+            },
+            frame: (capturer, clock) =>
+              capturer.capture(
+                cubes.frameView({
+                  azimuthOffset: azimuthOffset(options, clock),
+                  bounds,
+                  options,
+                  stable,
+                  view: options.view,
+                }),
+                instancesAt(clock.frame)
+              ),
+            frames,
+          };
         }
-      }
-    });
-  } finally {
-    await runStage('finishing encode', () => sink.finish());
-  }
-  progress.done('rendered frames');
-
-  const metadataPath = await writeVideoSidecar(out, {
-    presets: items.map(({ config }) => config),
-    render: { ...options, base: undefined, palettes: undefined },
-  });
-  process.stdout.write(
-    `saved video: ${out}\nsaved metadata: ${metadataPath}\n`
-  );
-  process.exit(0);
-}
-
-main().catch((error) => {
-  process.stderr.write(`${error.stack ?? error}\n`);
-  process.exit(1);
+      ),
+    };
+  },
+  script: 'hyper-cubes',
+  title: 'hypercubes',
+  usageFor,
+  withCapturer,
 });

@@ -4,7 +4,19 @@
 // `when` hides a control unless every named key holds one of the listed
 // values. Dependency-free `.mjs` so plain Node and Vite's config loader can
 // import it.
-import createOptionSchema from '../optionSchema/index.mjs';
+import createOptionSchema, {
+  choice,
+  color,
+  flag,
+  inFacet,
+  num,
+  rigOf,
+  rolled,
+  sceneOnly,
+  spec,
+  standard,
+  video,
+} from '../optionSchema/index.mjs';
 
 export const FAMILIES = ['apollian4', 'disc', 'kleinian', 'classic'];
 export const BOUNDS = ['sphere', 'disc', 'cube', 'open'];
@@ -30,47 +42,6 @@ export const FAMILY_LABELS = {
 export const VIEW_AZIMUTHS = { front: 90, hero: 55, side: 0, top: 90 };
 export const VIEW_ELEVATIONS = { front: 8, hero: 24, side: 8, top: 89 };
 
-function spec(type, section, group, label, value, extra = {}) {
-  return {
-    default: value,
-    group,
-    help: label,
-    label,
-    scene: true,
-    scope: 'shared',
-    section,
-    type,
-    ...extra,
-  };
-}
-
-const num = (section, group, label, value, min, max, step, extra = {}) =>
-  spec('number', section, group, label, value, {
-    max,
-    min,
-    placeholder: 'N',
-    step,
-    ...extra,
-  });
-const choice = (section, group, label, choices, value, extra = {}) =>
-  spec('enum', section, group, label, value, {
-    choices,
-    help: `${label}: ${choices.join(', ')}`,
-    ...extra,
-  });
-const flag = (section, group, label, value, extra = {}) =>
-  spec('boolean', section, group, label, value, extra);
-const color = (section, group, label, value, extra = {}) =>
-  spec('color', section, group, label, value, extra);
-
-const rolled = (facet, [min, max], item) => ({
-  ...item,
-  facet,
-  roll: { max, min, step: item.step },
-});
-const inFacet = (facet, item) => ({ ...item, facet });
-const sceneOnly = (item) => ({ ...item, sceneOnly: true });
-
 const isA4 = { family: ['apollian4'] };
 const isDisc = { family: ['disc'] };
 const isKlein = { family: ['kleinian'] };
@@ -84,7 +55,7 @@ const form = (item) => inFacet('form', item);
 const FORM = {
   family: form(
     choice('form', null, 'Family', FAMILIES, 'apollian4', {
-      optionLabels: FAMILY_LABELS,
+      choiceLabels: FAMILY_LABELS,
     })
   ),
   fieldScale: form(
@@ -111,7 +82,7 @@ const FORM = {
   a4Shape: form(
     choice('form', '4D Apollian', 'Estimator', A4_SHAPES, 'sheets', {
       help: 'sheets: Apollian with a twist (|p.y|), tubes: Slicing a 4D apollian',
-      optionLabels: { sheets: 'Sheets (twist)', tubes: 'Tubes (slice)' },
+      choiceLabels: { sheets: 'Sheets (twist)', tubes: 'Tubes (slice)' },
       when: isA4,
     })
   ),
@@ -193,7 +164,7 @@ const FORM = {
   ),
   bound: form(
     choice('form', 'Bound', 'Shape', BOUNDS, 'sphere', {
-      optionLabels: {
+      choiceLabels: {
         cube: 'Cube / Slab',
         disc: 'Disc / Coin',
         open: 'Open',
@@ -247,7 +218,7 @@ const SLICE = {
   slicePanY: slice(num('slice', 'Frame', 'Pan Y', 0, -1.5, 1.5, 0.001)),
   sliceMode: slice(
     choice('slice', null, 'Mode', SLICE_MODES, 'bands', {
-      optionLabels: { bands: 'Iso Bands', section: 'Section', stack: 'Stack' },
+      choiceLabels: { bands: 'Iso Bands', section: 'Section', stack: 'Stack' },
     })
   ),
   bandStep: rolled(
@@ -331,7 +302,7 @@ const LOOK = {
   colorHeight: look(num('look', 'Colour By', 'Height', 0, 0, 1, 0.01)),
   material: look(
     choice('look', 'Material', 'Surface', MATERIALS, 'matte', {
-      optionLabels: {
+      choiceLabels: {
         glass: 'Glass',
         iridescent: 'Iridescent',
         matte: 'Matte + AO',
@@ -386,7 +357,7 @@ const STAGE = {
   ),
   plinth: stage(
     choice('stage', 'Plinth', 'Style', PLINTHS, 'column', {
-      optionLabels: { block: 'Block', column: 'Column', none: 'None' },
+      choiceLabels: { block: 'Block', column: 'Column', none: 'None' },
     })
   ),
   plinthColor: stage(color('stage', 'Plinth', 'Color', '#8f8a94')),
@@ -442,12 +413,12 @@ const STAGE = {
 const MOTION = {
   sceneView: sceneOnly(
     choice('motion', null, 'View', ['object', 'slice'], 'object', {
-      optionLabels: { object: 'Object', slice: 'Slice' },
+      choiceLabels: { object: 'Object', slice: 'Slice' },
     })
   ),
   motionMode: sceneOnly(
     choice('motion', null, 'Motion', MOTION_MODES, 'turntable', {
-      optionLabels: {
+      choiceLabels: {
         evolve: 'Evolve Field',
         off: 'Off',
         spin: 'Spin Object',
@@ -472,15 +443,8 @@ const MOTION = {
 // Owned by the post rig, which builds its own Leva controls; declared here
 // so a preset and a headless render carry them. Defaults are
 // apollianRender's post.js.
-const rig = (item) => ({
-  facet: 'stage',
-  group: null,
-  rig: true,
-  scene: true,
-  scope: 'shared',
-  section: 'post',
-  ...item,
-});
+const rig = rigOf({ facet: 'stage' });
+
 const RIG = {
   postBloomEnabled: rig({
     default: true,
@@ -556,92 +520,20 @@ const QUALITY = {
   ),
 };
 
-const output = (item) => ({ scope: 'shared', section: 'output', ...item });
-const still = (item) => ({ scope: 'still', section: 'output', ...item });
 const plot = (item) => ({ ...item, scope: 'still', section: 'svg' });
-const video = (item) => ({ scope: 'video', section: 'video', ...item });
-
 const RENDER = {
-  batch: output({
-    default: null,
-    help: 'Batch seed: names the generations (batch, batch-1…) and seeds the facet rolls. Omit for a random one',
-    label: 'Batch seed',
-    nullable: true,
-    placeholder: 'WORD',
-    text: true,
-    type: 'seed',
-  }),
-  out: output({
-    cliOnly: true,
-    default: 'output/apollian',
-    help: 'Output directory (stills) or file (video)',
-    placeholder: 'PATH',
-    type: 'string',
-  }),
-  width: output({
-    default: 1080,
-    help: 'Width',
-    label: 'Width',
-    max: 8192,
-    min: 64,
-    placeholder: 'PX',
-    step: 2,
-    type: 'number',
-  }),
-  height: output({
-    default: 1350,
-    help: 'Height',
-    label: 'Height',
-    max: 8192,
-    min: 64,
-    placeholder: 'PX',
-    step: 2,
-    type: 'number',
-  }),
-  pixelRatio: output({
-    choices: [1, 2, 3, 4],
-    default: 2,
-    help: 'Renders at width×ratio by height×ratio',
-    label: 'Pixel ratio',
-    max: 4,
-    min: 1,
-    type: 'number',
-  }),
-  count: output({
-    default: 1,
-    help: 'How many objects to roll',
-    label: 'Count',
-    max: 200,
-    min: 1,
-    placeholder: 'N',
-    step: 1,
-    type: 'number',
-  }),
-  png: still({
-    default: false,
-    help: 'Write PNG files',
-    label: 'PNG',
-    type: 'boolean',
-  }),
-  webp: still({
-    default: true,
-    help: 'Write lossless WebP files',
-    label: 'WebP',
-    type: 'boolean',
-  }),
-  svg: still({
-    default: false,
-    help: 'Write a plottable SVG of the slice: outlines, contours by pen or hatching',
-    label: 'SVG',
-    type: 'boolean',
-  }),
-  views: still({
-    default: 'hero,slice',
-    help: `Comma-separated views: ${VIEWS.join(', ')}`,
-    label: 'Views',
-    placeholder: 'LIST',
-    type: 'string',
-  }),
+  batch: standard.batch(),
+  out: standard.out('apollian'),
+  width: standard.width(),
+  height: standard.height(),
+  pixelRatio: standard.pixelRatio(),
+  count: standard.count('objects'),
+  png: standard.png(),
+  webp: standard.webp(),
+  svg: standard.svg(
+    'Write a plottable SVG of the slice: outlines, contours by pen or hatching'
+  ),
+  views: standard.views(VIEWS, 'hero,slice'),
   svgStyle: plot(
     choice('svg', null, 'SVG style', SVG_STYLES, 'pens', {
       facet: 'slice',
@@ -678,58 +570,19 @@ const RENDER = {
       scene: false,
     })
   ),
-  svgOcclusion: plot(
-    flag('svg', null, 'SVG hidden lines', true, {
-      help: 'In a stack, drop line work hidden behind nearer planes',
-      scene: false,
-    })
+  svgOcclusion: standard.svgOcclusion(
+    'In a stack, drop line work hidden behind nearer planes'
   ),
-  svgStroke: plot(
-    num('svg', null, 'SVG stroke', 0.6, 0, 8, 0.1, {
-      help: 'Stroke width in output px; 0 draws hairlines',
-      scene: false,
-    })
-  ),
-  projection: {
-    choices: PROJECTIONS,
-    default: 'perspective',
+  svgStroke: standard.svgStroke({ placeholder: 'N' }),
+  projection: standard.projection(PROJECTIONS, 'perspective', {
     help: 'Camera projection for the object views',
-    label: 'Projection',
-    scope: 'shared',
-    section: 'render',
-    type: 'enum',
-  },
-  fov: {
-    default: 30,
-    help: 'Vertical field of view in degrees (perspective only)',
-    label: 'Field of view',
-    max: 90,
-    min: 10,
-    scope: 'shared',
-    section: 'render',
-    step: 1,
-    type: 'number',
-  },
-  margin: {
-    default: 0.12,
-    help: 'Space round the object and plinth, as a share of the frame',
-    label: 'Fit margin',
-    max: 0.5,
-    min: 0,
-    scope: 'shared',
-    section: 'render',
-    step: 0.01,
-    type: 'number',
-  },
-  keep: {
-    default: '',
-    help: 'Comma-separated facets to hold while the rest roll: form, slice, look, stage',
-    label: 'Hold facets',
-    placeholder: 'LIST',
-    scope: 'shared',
-    section: 'roll',
-    type: 'string',
-  },
+  }),
+  fov: standard.fov(30),
+  margin: standard.margin(
+    0.12,
+    'Space round the object and plinth, as a share of the frame'
+  ),
+  keep: standard.keep(['form', 'slice', 'look', 'stage']),
   families: {
     default: FAMILIES.join(','),
     help: `Comma-separated families the form roll picks from: ${FAMILIES.join(', ')}`,
@@ -739,70 +592,22 @@ const RENDER = {
     section: 'roll',
     type: 'string',
   },
-  base: {
-    cliOnly: true,
-    default: null,
-    help: 'A config (or props.json path) the roll starts from',
-    nullable: true,
-    placeholder: 'JSON',
-    scope: 'shared',
-    section: 'roll',
-    type: 'json',
-  },
-  palettes: {
-    array: true,
-    cliOnly: true,
-    default: null,
-    help: 'Palette names the look roll picks from (the CLI fills this from gradients.json)',
-    nullable: true,
-    placeholder: 'JSON',
-    scope: 'shared',
-    section: 'roll',
-    type: 'json',
-  },
-  mode: video({
-    choices: VIDEO_MODES,
-    default: 'turntable',
-    help: 'turntable: orbit the object; sweep: the slice plane travels through it; evolve: the field moves; morph: each object holds, then morphs into the next and back to the first',
-    label: 'Mode',
-    type: 'enum',
-  }),
-  view: video({
-    choices: VIEWS,
-    default: 'hero',
+  base: standard.base(),
+  palettes: standard.palettes('look'),
+  mode: standard.mode(
+    VIDEO_MODES,
+    'turntable',
+    'turntable: orbit the object; sweep: the slice plane travels through it; evolve: the field moves; morph: each object holds, then morphs into the next and back to the first'
+  ),
+  view: standard.view(VIEWS, 'hero', {
     help: 'Camera view for the clip; slice films the 2D section',
-    label: 'View',
-    type: 'enum',
   }),
-  fps: video({
-    choices: [24, 30, 60],
-    default: 30,
-    help: 'Frames per second',
-    label: 'FPS',
-    max: 60,
-    min: 24,
-    type: 'number',
-  }),
-  hold: video({
-    default: 8,
-    help: 'Seconds per object (turntable, sweep, evolve) or each hold of a morph',
-    label: 'Hold',
-    max: 300,
-    min: 0,
-    placeholder: 'S',
-    step: 0.5,
-    type: 'number',
-  }),
-  turns: video({
-    default: 1,
-    help: 'Turntable revolutions per object',
-    label: 'Turns',
-    max: 10,
-    min: 0.25,
-    placeholder: 'N',
-    step: 0.25,
-    type: 'number',
-  }),
+  fps: standard.fps(),
+  hold: standard.hold(
+    8,
+    'Seconds per object (turntable, sweep, evolve) or each hold of a morph'
+  ),
+  turns: standard.turns('object'),
   morphSeconds: video({
     default: 3,
     help: 'Seconds each morph takes',
@@ -813,16 +618,10 @@ const RENDER = {
     step: 0.5,
     type: 'number',
   }),
-  orbit: video({
-    default: 0,
-    help: 'Degrees the camera drifts round a sweep, evolve or morph clip',
-    label: 'Orbit drift',
-    max: 360,
-    min: -360,
-    placeholder: 'DEG',
-    step: 5,
-    type: 'number',
-  }),
+  orbit: standard.orbit(
+    0,
+    'Degrees the camera drifts round a sweep, evolve or morph clip'
+  ),
 };
 
 export const RENDER_OPTIONS = {
@@ -842,18 +641,6 @@ export const SURFACE_DEFAULTS = {
   workbench: { count: 4 },
 };
 
-export function resolveViews(list, fail = (message) => new Error(message)) {
-  const views = String(list)
-    .split(',')
-    .map((view) => view.trim())
-    .filter(Boolean);
-  const unknown = views.filter((view) => !VIEWS.includes(view));
-  if (views.length === 0 || unknown.length > 0) {
-    throw fail(`views must name only ${VIEWS.join(', ')}.`);
-  }
-  return views;
-}
-
 export function resolveFamilies(list, fail = (message) => new Error(message)) {
   const families = String(list)
     .split(',')
@@ -868,52 +655,31 @@ export function resolveFamilies(list, fail = (message) => new Error(message)) {
 const schema = createOptionSchema({
   options: RENDER_OPTIONS,
   sectionLabels: {
-    form: 'form',
-    look: 'look',
-    motion: 'motion',
-    output: 'output',
-    post: 'post',
-    quality: 'quality',
-    render: 'render',
     roll: 'rolling',
-    slice: 'slice',
-    stage: 'stage',
-    svg: 'svg',
-    video: 'video',
   },
   surfaceDefaults: SURFACE_DEFAULTS,
   validate(kind, options, fail) {
-    if (kind === 'still' && !options.png && !options.webp && !options.svg) {
-      throw fail('Select at least one output format: PNG, WebP or SVG.');
-    }
-    const longest = Math.max(options.width, options.height);
-    if (longest * options.pixelRatio > 8192) {
-      throw fail(
-        `width×pixelRatio must stay within 8192; the longest side would be ${longest * options.pixelRatio}.`
-      );
-    }
-    if (kind === 'still') resolveViews(options.views, fail);
     resolveFamilies(options.families, fail);
   },
+  views: VIEWS,
 });
 
 export const {
+  LEVA_KEYS,
+  SCENE_KEYS,
+  configFrom,
   defaultsFor,
   facets,
   keysInFacet,
   normalizeOptions,
   optionsFor,
+  optionsFromConfig,
+  presetFromConfig,
+  resolveViews,
+  sceneDefaults,
   sectionsFor,
   usageFor,
 } = schema;
-
-const keysWhere = (test) =>
-  Object.entries(RENDER_OPTIONS)
-    .filter(([, item]) => test(item))
-    .map(([key]) => key);
-
-export const SCENE_KEYS = keysWhere((item) => item.scene);
-export const LEVA_KEYS = keysWhere((item) => item.scene && !item.rig);
 
 // The keys that change the packing; every other key is a uniform.
 export const PACKING_KEYS = [
@@ -923,27 +689,3 @@ export const PACKING_KEYS = [
   'classicWarpAzimuth',
   'classicWarpElevation',
 ];
-
-export const sceneDefaults = () =>
-  Object.fromEntries(
-    SCENE_KEYS.map((key) => [key, RENDER_OPTIONS[key].default])
-  );
-
-export function configFrom(source) {
-  const flat = source?.preset ?? source ?? {};
-  return Object.fromEntries(
-    SCENE_KEYS.filter((key) => flat[key] != null).map((key) => [key, flat[key]])
-  );
-}
-
-export const optionsFromConfig = (config = {}) => configFrom(config);
-
-export function presetFromConfig(config = {}) {
-  const defaults = sceneDefaults();
-  return Object.fromEntries(
-    Object.entries(config).filter(
-      ([name, value]) =>
-        name in defaults && value != null && value !== defaults[name]
-    )
-  );
-}

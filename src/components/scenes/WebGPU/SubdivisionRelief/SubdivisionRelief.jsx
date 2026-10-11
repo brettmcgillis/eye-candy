@@ -4,14 +4,9 @@ import useSceneBackdrop from '@hooks/useSceneBackdrop';
 import { CameraRig } from '@modules/cameraRig';
 import { LightingRig } from '@modules/lightingRig';
 
-import Cells from './components/Cells';
-import Plate from './components/Plate';
-import useCellGeometry from './hooks/useCellGeometry';
-import useGrowClock from './hooks/useGrowClock';
-import useMotionUniforms from './hooks/useMotionUniforms';
+import Relief from './components/Relief';
 import usePiece from './hooks/usePiece';
 import useSceneControls from './hooks/useSceneControls';
-import { slidesIn } from './utils/cellBuffers';
 
 function SubdivisionRelief() {
   const config = useSceneControls();
@@ -20,26 +15,13 @@ function SubdivisionRelief() {
     [config.height, config.width]
   );
   const piece = usePiece(config, canvas);
-  const geometry = useCellGeometry(piece, config);
-  const grow = useGrowClock(config, piece.maxDepth);
-  const motion = useMotionUniforms(config, piece);
   useSceneBackdrop({ color: config.bgColor });
 
   return (
     <>
       <CameraRig camera={config.camera} />
       <LightingRig lighting={config.lighting} />
-      <Plate
-        canvas={canvas}
-        color={config.plateColor}
-        roughness={config.roughness}
-      />
-      <Cells
-        geometry={geometry}
-        grow={grow}
-        motion={motion}
-        slide={slidesIn(config)}
-      />
+      <Relief config={config} piece={piece} />
     </>
   );
 }

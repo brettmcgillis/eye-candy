@@ -1,19 +1,18 @@
 /* eslint-disable import/no-extraneous-dependencies */
-import { readFile } from 'node:fs/promises';
-import sharp from 'sharp';
-
 import {
   RENDER_OPTIONS,
   defaultsFor,
   normalizeOptions,
 } from '../../src/modules/fungi/renderOptions.mjs';
-import { parseArgs, providedKeys } from './cliArgs.mjs';
-import { createHeadlessRenderer, loadThree } from './headlessWebgpu.mjs';
-import loadModules, { REPO_ROOT } from './loadModules.mjs';
-import overlayLayer from './overlayLayer.mjs';
-import { runStage } from './progress.mjs';
-
-export { REPO_ROOT };
+import {
+  DEG,
+  createParseCli,
+  encodeFrame as encode,
+  loadKernelModules,
+  overlayFor,
+  withRenderer,
+} from './generatorCli.mjs';
+import { createHeadlessRenderer } from './headlessWebgpu.mjs';
 
 // Barrels only — see docs/fungi-pipeline.md.
 const ENTRIES = {
@@ -22,48 +21,13 @@ const ENTRIES = {
   look: '/src/modules/fungiRender/index.js',
 };
 
-const DEG = Math.PI / 180;
+export const loadKernel = () => loadKernelModules(ENTRIES);
 
-// three must see the stubbed browser globals before any module that imports
-// it is evaluated, so the renderer bootstrap runs first.
-export async function loadKernel() {
-  const { THREE, TSL } = await loadThree();
-  const loaded = await loadModules(Object.values(ENTRIES));
-  const pick = (name) => loaded[ENTRIES[name]];
-  return {
-    THREE,
-    TSL,
-    fungi: pick('fungi'),
-    lights: pick('lights'),
-    look: pick('look'),
-  };
-}
-
-// A json option may name a file, and a file may be a props.json sidecar;
-// either way the caller gets the payload.
-async function readJsonOption(value) {
-  if (value == null || typeof value !== 'string') return value;
-  if (/^\s*[[{]/u.test(value)) return JSON.parse(value);
-  return JSON.parse(await readFile(value, 'utf8'));
-}
-
-// A typed flag is a pin; the set is read before defaults are merged.
-export async function parseCli(kind, argv) {
-  const args = parseArgs(argv, defaultsFor(kind));
-  if (args.help) return { help: true };
-  const raw = { ...args };
-  await Promise.all(
-    Object.entries(RENDER_OPTIONS)
-      .filter(([, spec]) => spec.type === 'json')
-      .map(async ([key]) => {
-        raw[key] = await readJsonOption(args[key]);
-      })
-  );
-  return {
-    options: normalizeOptions(kind, raw),
-    typed: providedKeys(args),
-  };
-}
+export const parseCli = createParseCli({
+  RENDER_OPTIONS,
+  defaultsFor,
+  normalizeOptions,
+});
 
 export function rollArgs(kernel, { options, typed }) {
   const { fungi } = kernel;
@@ -195,8 +159,6 @@ export async function createFungiCapturer(
 
     async capture(view) {
       aim(view);
-      // The first render after a uniform change reads back stale in Dawn.
-      await headless.readFrame(() => post.render());
       return headless.readFrame(() => post.render());
     },
 
@@ -204,7 +166,6 @@ export async function createFungiCapturer(
     async captureDepth(view) {
       aim(view);
       const pipeline = depthPass();
-      await headless.readFrame(() => pipeline.render());
       const frame = await headless.readFrame(() => pipeline.render());
       const { far, near } = camera;
       const depths = new Float32Array(frame.width * frame.height);
@@ -295,35 +256,12 @@ export function sidecarFor({ config, options }) {
   return { preset: config, render: { ...options, base: undefined } };
 }
 
-// The chrome is composited onto the raw pixels so a frame is encoded once.
-export async function encodeFrame(frame, format, options = {}) {
-  let image = sharp(frame.data, {
-    raw: { channels: 4, height: frame.height, width: frame.width },
-  });
-  if (options.overlay) {
-    image = image.composite([
-      {
-        input: await overlayLayer({
-          height: frame.height,
-          icon: 'fungi.svg',
-          ig: options.ig === 'none' ? null : options.ig,
-          version: options.version,
-          viewport: options.viewport,
-          width: frame.width,
-        }),
-      },
-    ]);
-  }
-  if (format === 'raw') return image.ensureAlpha().raw().toBuffer();
-  if (format === 'webp') return image.webp({ lossless: true }).toBuffer();
-  return image.png().toBuffer();
-}
+export const encodeFrame = (frame, format, options = {}) =>
+  encode(frame, format, overlayFor('fungi.svg', options));
 
-export async function withCapturer(kernel, options, work) {
-  const capturer = await runStage(
-    `initializing WebGPU renderer (${options.width * options.pixelRatio}x${
-      options.height * options.pixelRatio
-    })`,
+export const withCapturer = (kernel, options, work) =>
+  withRenderer(
+    options,
     () =>
       createFungiCapturer(kernel, {
         height: options.height * options.pixelRatio,
@@ -331,11 +269,6 @@ export async function withCapturer(kernel, options, work) {
         samples: options.samples,
         shadows: options.shadows,
         width: options.width * options.pixelRatio,
-      })
+      }),
+    work
   );
-  try {
-    return await work(capturer);
-  } finally {
-    capturer.dispose();
-  }
-}

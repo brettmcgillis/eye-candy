@@ -1,27 +1,29 @@
-import createRenderJobPlugin from '../renderJobs/plugin';
-import service from './jobService';
-import writeScenePreset from './presetWriter';
-import { MAX_UPLOAD_BYTES, listSources, saveSource } from './sources';
+// Relative, not `@modules/subdivision`: this runs inside Vite's config loader,
+// which resolves no aliases.
+import {
+  RENDER_OPTIONS,
+  configFrom,
+  normalizeOptions,
+  presetFromConfig,
+} from '../../../modules/subdivision/renderOptions.mjs';
+import createSchemaToolPlugin from '../renderJobs/schemaTool';
+import sourceImageRoutes from '../renderJobs/sourceImages';
+
+const preset = {
+  configFrom,
+  name: (config) => `Seed ${config.seed}`,
+  presetFromConfig,
+  requires: 'seed',
+  scene: 'Subdivision',
+};
 
 export default function subdivisionDevPlugin() {
-  return createRenderJobPlugin({
-    routes: [
-      {
-        handler: async (rootDir, body) => ({
-          preset: await writeScenePreset(rootDir, body),
-        }),
-        method: 'POST',
-        path: '/presets',
-      },
-      { handler: listSources, method: 'GET', path: '/sources' },
-      {
-        handler: saveSource,
-        maxBytes: MAX_UPLOAD_BYTES,
-        method: 'POST',
-        path: '/sources',
-      },
-    ],
-    service,
+  return createSchemaToolPlugin({
+    normalizeOptions,
+    options: RENDER_OPTIONS,
+    preset,
+    routes: sourceImageRoutes('images/subdivision-sources'),
+    slug: 'subdivision',
     tool: 'subdivision',
   });
 }

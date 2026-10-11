@@ -222,7 +222,8 @@
 
 .rw-results__tabs {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-auto-columns: minmax(0, 1fr);
+  grid-auto-flow: column;
   margin-bottom: 0.85rem;
   border: 1px solid var(--dev-border-strong);
   border-radius: 4px;
@@ -1545,4 +1546,16 @@ body:has(.rw-preview) {
   font-size: 0.78rem;
   line-height: 1.45;
   opacity: 0.75;
+}
+
+.rw-save-preset {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.rw-save-preset input {
+  flex: 1;
+  min-width: 8rem;
 }

@@ -3,9 +3,8 @@ import { useMemo } from 'react';
 import {
   RENDER_OPTIONS,
   SCENE_KEYS,
-  buildPiece,
-  sceneDefaults,
-} from '@modules/subdivision';
+  buildReliefPiece,
+} from '@modules/subdivisionRelief';
 import { useWebcamFrame } from '@modules/webcam';
 import { PALETTE_NONE, getPaletteStops } from '@utils/gradientPalette';
 
@@ -15,14 +14,15 @@ import useSourceImage from './useSourceImage';
 // cell, and the tree is rebuilt on every frame taken.
 const WEBCAM_FRAME_MAX = 480;
 
+// Heights, motion and the loop never rebuild the tree.
 const PIECE_KEYS = SCENE_KEYS.filter(
   (key) =>
-    !RENDER_OPTIONS[key].sceneOnly && RENDER_OPTIONS[key].section !== 'video'
+    !RENDER_OPTIONS[key].sceneOnly &&
+    !['loop', 'motion', 'relief'].includes(RENDER_OPTIONS[key].section)
 );
 
 // `canvas` is the panel in px. The webcam, when on, is the source image
-// whatever the Field says. Outline keys have no control here, so the kernel
-// reads their defaults.
+// whatever the Field says.
 export default function usePiece(config, canvas) {
   const webcam = useWebcamFrame(config.webcam, {
     facing: config.webcamFacing,
@@ -39,16 +39,7 @@ export default function usePiece(config, canvas) {
   return useMemo(() => {
     const stops =
       config.palette === PALETTE_NONE ? null : getPaletteStops(config.palette);
-    const settings = {
-      ...sceneDefaults(),
-      ...config,
-      ...(config.webcam ? { field: 'image' } : {}),
-    };
-    const piece = buildPiece(settings, { canvas, image, stops });
-    const maxDepth = piece.nodes.reduce(
-      (deepest, node) => Math.max(deepest, node.depth),
-      0
-    );
-    return { ...piece, maxDepth };
+    const settings = config.webcam ? { ...config, field: 'image' } : config;
+    return buildReliefPiece(settings, { canvas, image, stops });
   }, [pieceKey, image, canvas, config.webcam]);
 }

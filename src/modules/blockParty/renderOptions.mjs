@@ -2,7 +2,16 @@
 // (docs/block-party-pipeline.md). The scene's Leva folders are generated from
 // it: `section` is the top folder and `group` the folder inside it.
 // Dependency-free `.mjs` so plain Node and Vite's config loader can import it.
-import createOptionSchema from '../optionSchema/index.mjs';
+import createOptionSchema, {
+  choice,
+  color,
+  flag,
+  inFacet,
+  num,
+  rigOf,
+  rolled,
+  standard,
+} from '../optionSchema/index.mjs';
 
 export const PALETTE_NONE = 'None';
 export const COLOR_BY = [
@@ -27,73 +36,6 @@ export const VIEW_AZIMUTHS = {
   plan: 45,
   right: 135,
 };
-
-function num(section, group, label, value, min, max, step, extra = {}) {
-  return {
-    default: value,
-    group,
-    help: label,
-    label,
-    max,
-    min,
-    placeholder: 'N',
-    scene: true,
-    scope: 'shared',
-    section,
-    step,
-    type: 'number',
-    ...extra,
-  };
-}
-
-function choice(section, group, label, choices, value, extra = {}) {
-  return {
-    choices,
-    default: value,
-    group,
-    help: `${label}: ${choices.join(', ')}`,
-    label,
-    scene: true,
-    scope: 'shared',
-    section,
-    type: 'enum',
-    ...extra,
-  };
-}
-
-function flag(section, group, label, value, extra = {}) {
-  return {
-    default: value,
-    group,
-    help: label,
-    label,
-    scene: true,
-    scope: 'shared',
-    section,
-    type: 'boolean',
-    ...extra,
-  };
-}
-
-function color(group, label, value) {
-  return {
-    default: value,
-    group,
-    help: label,
-    label,
-    scene: true,
-    scope: 'shared',
-    section: 'surface',
-    type: 'color',
-  };
-}
-
-const rolled = (facet, [min, max], spec) => ({
-  ...spec,
-  facet,
-  roll: { max, min, step: spec.step },
-});
-const inFacet = (facet, spec) => ({ ...spec, facet });
 
 const CITY = {
   seed: rolled(
@@ -289,13 +231,13 @@ const MOTION = {
 
 const SURFACE = {
   backgroundColor: {
-    ...color(null, 'Background', '#ffffff'),
+    ...color('surface', null, 'Background', '#ffffff'),
     help: 'Scene background. Never taken from the palette, so the plinth always stands off it',
   },
-  groundColor: color('Paper', 'Ground', '#fcfcfc'),
-  cardColor: color('Paper', 'Floating Card', '#fcfcfc'),
-  cardEdgeColor: color('Paper', 'Card Edge', '#fcfcfc'),
-  pedestalColor: color('Paper', 'Pedestal', '#fcfcfc'),
+  groundColor: color('surface', 'Paper', 'Ground', '#fcfcfc'),
+  cardColor: color('surface', 'Paper', 'Floating Card', '#fcfcfc'),
+  cardEdgeColor: color('surface', 'Paper', 'Card Edge', '#fcfcfc'),
+  pedestalColor: color('surface', 'Paper', 'Pedestal', '#fcfcfc'),
   groundPattern: choice(
     'surface',
     'Ground Pattern',
@@ -303,7 +245,7 @@ const SURFACE = {
     ['crosshatch', 'dots', 'grid', 'none'],
     'none'
   ),
-  patternColor: color('Ground Pattern', 'Colour', '#d8d8d8'),
+  patternColor: color('surface', 'Ground Pattern', 'Colour', '#d8d8d8'),
   patternScale: num('surface', 'Ground Pattern', 'Scale', 16, 2, 120, 0.5),
   patternWidth: num(
     'surface',
@@ -324,8 +266,8 @@ const SURFACE = {
     0.01
   ),
   towerBlend: choice('surface', 'Towers', 'Blend', ['glow', 'ink'], 'ink'),
-  towerColor: color('Towers', 'Tower Top', '#000000'),
-  towerBaseColor: color('Towers', 'Tower Base', '#000000'),
+  towerColor: color('surface', 'Towers', 'Tower Top', '#000000'),
+  towerBaseColor: color('surface', 'Towers', 'Tower Base', '#000000'),
   towerBanding: num('surface', 'Towers', 'Banding', 0, 0, 60, 1),
   towerBandStrength: num(
     'surface',
@@ -338,13 +280,13 @@ const SURFACE = {
   ),
   towerInk: num('surface', 'Towers', 'Opacity', 1, 0, 3, 0.01),
   towerShadows: flag('surface', 'Towers', 'Shadows', true),
-  pitRimColor: color('Pits', 'Rim', '#bfbfbf'),
-  pitColor: color('Pits', 'Wall', '#050505'),
-  pitStrataColor: color('Pits', 'Strata', '#3a3a3a'),
+  pitRimColor: color('surface', 'Pits', 'Rim', '#bfbfbf'),
+  pitColor: color('surface', 'Pits', 'Wall', '#050505'),
+  pitStrataColor: color('surface', 'Pits', 'Strata', '#3a3a3a'),
   pitStrataStrength: num('surface', 'Pits', 'Strata Strength', 0.5, 0, 1, 0.01),
-  pitFloorColor: color('Pits', 'Floor', '#000000'),
+  pitFloorColor: color('surface', 'Pits', 'Floor', '#000000'),
   pitLineWidth: num('surface', 'Pits', 'Line Width', 0.12, 0.01, 0.5, 0.01),
-  ringColor: color('Glow Pits', 'Rings', '#00aaff'),
+  ringColor: color('surface', 'Glow Pits', 'Rings', '#00aaff'),
   ringIntensity: num(
     'surface',
     'Glow Pits',
@@ -354,12 +296,12 @@ const SURFACE = {
     12,
     0.05
   ),
-  glowFloorColor: color('Glow Pits', 'Floor', '#3c3c44'),
-  wellWallColor: color('Stairs', 'Well Wall', '#d6d6d6'),
-  wellFloorColor: color('Stairs', 'Well Floor', '#050505'),
+  glowFloorColor: color('surface', 'Glow Pits', 'Floor', '#3c3c44'),
+  wellWallColor: color('surface', 'Stairs', 'Well Wall', '#d6d6d6'),
+  wellFloorColor: color('surface', 'Stairs', 'Well Floor', '#050505'),
   wellFalloff: num('surface', 'Stairs', 'Wall Falloff', 0.7, 0, 1, 0.01),
-  stairHighColor: color('Stairs', 'Top Step', '#c8c8c8'),
-  stairLowColor: color('Stairs', 'Deep Step', '#050505'),
+  stairHighColor: color('surface', 'Stairs', 'Top Step', '#c8c8c8'),
+  stairLowColor: color('surface', 'Stairs', 'Deep Step', '#050505'),
   stairAlphaStep: num(
     'surface',
     'Stairs',
@@ -370,9 +312,9 @@ const SURFACE = {
     0.01
   ),
   riserShade: num('surface', 'Stairs', 'Riser Shade', 0.8, 0, 1, 0.01),
-  neonMagentaColor: color('Neon', 'Magenta Slot', '#ff0066'),
-  neonCyanColor: color('Neon', 'Cyan Slot', '#00ffcc'),
-  neonAmberColor: color('Neon', 'Amber Slot', '#ffcc00'),
+  neonMagentaColor: color('surface', 'Neon', 'Magenta Slot', '#ff0066'),
+  neonCyanColor: color('surface', 'Neon', 'Cyan Slot', '#00ffcc'),
+  neonAmberColor: color('surface', 'Neon', 'Amber Slot', '#ffcc00'),
   neonIntensity: num('surface', 'Neon', 'Intensity', 1.15, 0, 8, 0.05),
 };
 
@@ -438,14 +380,8 @@ const PALETTE = {
 // Owned by the lighting and post rigs, which build their own Leva controls;
 // declared here so a preset and a headless render carry them. Defaults are
 // blockPartyRender's lighting.js and post.js.
-const rig = (spec) => ({
-  ...spec,
-  group: null,
-  rig: true,
-  scene: true,
-  scope: 'shared',
-  section: 'post',
-});
+const rig = rigOf();
+
 const RIG = {
   lightAmbientIntensity: rig({
     default: 1.68,
@@ -510,254 +446,50 @@ const RIG = {
 };
 
 const RENDER = {
-  batch: {
-    default: null,
-    help: 'Batch seed: names the generations (batch, batch-1…) and seeds the facet rolls. Omit for a random one',
-    label: 'Batch seed',
-    nullable: true,
-    placeholder: 'WORD',
-    scope: 'shared',
-    section: 'output',
-    text: true,
-    type: 'seed',
-  },
-  out: {
-    cliOnly: true,
-    default: 'output/block-party',
-    help: 'Output directory (stills) or file (video)',
-    placeholder: 'PATH',
-    scope: 'shared',
-    section: 'output',
-    type: 'string',
-  },
-  width: {
-    default: 1080,
-    help: 'Width',
-    label: 'Width',
-    max: 8192,
-    min: 64,
-    placeholder: 'PX',
-    scope: 'shared',
-    section: 'output',
-    step: 2,
-    type: 'number',
-  },
-  height: {
-    default: 1350,
-    help: 'Height',
-    label: 'Height',
-    max: 8192,
-    min: 64,
-    placeholder: 'PX',
-    scope: 'shared',
-    section: 'output',
-    step: 2,
-    type: 'number',
-  },
-  pixelRatio: {
-    choices: [1, 2, 3, 4],
-    default: 2,
-    help: 'Renders at width×ratio by height×ratio',
-    label: 'Pixel ratio',
-    max: 4,
-    min: 1,
-    scope: 'shared',
-    section: 'output',
-    type: 'number',
-  },
-  count: {
-    default: 1,
-    help: 'How many cities to roll',
-    label: 'Count',
-    max: 200,
-    min: 1,
-    placeholder: 'N',
-    scope: 'shared',
-    section: 'output',
-    step: 1,
-    type: 'number',
-  },
-  png: {
-    default: false,
-    help: 'Write PNG files',
-    label: 'PNG',
-    scope: 'still',
-    section: 'output',
-    type: 'boolean',
-  },
-  webp: {
-    default: true,
-    help: 'Write lossless WebP files',
-    label: 'WebP',
-    scope: 'still',
-    section: 'output',
-    type: 'boolean',
-  },
-  svg: {
-    default: false,
-    help: 'Write a plottable SVG per view: cell, card and tower edges, pit strata and stacked tower rings, one pen per colour',
-    label: 'SVG',
-    scope: 'still',
-    section: 'output',
-    type: 'boolean',
-  },
-  views: {
-    default: 'front',
-    help: `Comma-separated views: ${VIEWS.join(', ')}`,
-    label: 'Views',
-    placeholder: 'LIST',
-    scope: 'still',
-    section: 'output',
-    type: 'string',
-  },
-  svgOcclusion: {
-    default: true,
-    help: 'Drop line work hidden behind nearer geometry (uses a depth pass)',
-    label: 'SVG hidden lines',
-    scope: 'still',
-    section: 'svg',
-    type: 'boolean',
-  },
-  svgStroke: {
-    default: 0.6,
-    help: 'Stroke width in output px; 0 draws hairlines',
-    label: 'SVG stroke',
-    max: 8,
-    min: 0,
-    placeholder: 'PX',
-    scope: 'still',
-    section: 'svg',
-    step: 0.1,
-    type: 'number',
-  },
+  batch: standard.batch(),
+  out: standard.out('block-party'),
+  width: standard.width(),
+  height: standard.height(),
+  pixelRatio: standard.pixelRatio(),
+  count: standard.count('cities'),
+  png: standard.png(),
+  webp: standard.webp(),
+  svg: standard.svg(
+    'Write a plottable SVG per view: cell, card and tower edges, pit strata and stacked tower rings, one pen per colour'
+  ),
+  views: standard.views(VIEWS, 'front'),
+  svgOcclusion: standard.svgOcclusion(
+    'Drop line work hidden behind nearer geometry (uses a depth pass)'
+  ),
+  svgStroke: standard.svgStroke(),
 
-  margin: {
-    default: 0.06,
-    help: 'Space around the pedestal, as a share of the frame',
-    label: 'Fit margin',
-    max: 0.5,
-    min: 0,
-    scope: 'shared',
-    section: 'render',
-    step: 0.01,
-    type: 'number',
-  },
-  samples: {
-    choices: [0, 4],
-    default: 4,
-    help: 'MSAA samples',
-    label: 'MSAA',
-    max: 4,
-    min: 0,
-    scope: 'shared',
-    section: 'render',
-    type: 'number',
-  },
-  shadows: {
-    default: true,
-    help: 'Sun shadow map (the cards’ grey bands)',
-    label: 'Shadows',
-    scope: 'shared',
-    section: 'render',
-    type: 'boolean',
-  },
+  margin: standard.margin(
+    0.06,
+    'Space around the pedestal, as a share of the frame'
+  ),
+  samples: standard.samples(),
+  shadows: standard.shadows({ help: 'Sun shadow map (the cards’ grey bands)' }),
 
-  keep: {
-    default: '',
-    help: 'Comma-separated facets to hold while the rest roll: composition, form, palette',
-    label: 'Hold facets',
-    placeholder: 'LIST',
-    scope: 'shared',
-    section: 'roll',
-    type: 'string',
-  },
-  base: {
-    cliOnly: true,
-    default: null,
-    help: 'A city config (or props.json path) the roll starts from',
-    nullable: true,
-    placeholder: 'JSON',
-    scope: 'shared',
-    section: 'roll',
-    type: 'json',
-  },
-  palettes: {
-    array: true,
-    cliOnly: true,
-    default: null,
-    help: 'Palette names the palette roll picks from (the CLI fills this from gradients.json)',
-    nullable: true,
-    placeholder: 'JSON',
-    scope: 'shared',
-    section: 'roll',
-    type: 'json',
-  },
+  keep: standard.keep(['composition', 'form', 'palette']),
+  base: standard.base('city'),
+  palettes: standard.palettes('palette'),
 
-  mode: {
-    choices: VIDEO_MODES,
-    default: 'build',
-    help: 'build: the city emerges from the centre out, then holds; rebuild: districts recede and re-emerge one at a time; turntable: orbit a settled city',
-    label: 'Mode',
-    scope: 'video',
-    section: 'video',
-    type: 'enum',
-  },
-  view: {
-    choices: VIEWS,
-    default: 'front',
-    help: 'Camera view for the clip',
-    label: 'View',
-    scope: 'video',
-    section: 'video',
-    type: 'enum',
-  },
-  fps: {
-    choices: [24, 30, 60],
-    default: 30,
-    help: 'Frames per second',
-    label: 'FPS',
-    max: 60,
-    min: 24,
-    scope: 'video',
-    section: 'video',
-    type: 'number',
-  },
-  hold: {
-    default: 12,
-    help: 'Seconds held after the build (build), or seconds per city (rebuild, turntable)',
-    label: 'Hold',
-    max: 300,
-    min: 0,
-    placeholder: 'S',
-    scope: 'video',
-    section: 'video',
-    step: 0.5,
-    type: 'number',
-  },
-  turns: {
-    default: 1,
-    help: 'Turntable revolutions per city',
-    label: 'Turns',
-    max: 10,
-    min: 0.25,
-    placeholder: 'N',
-    scope: 'video',
-    section: 'video',
-    step: 0.25,
-    type: 'number',
-  },
-  orbit: {
-    default: 0,
-    help: 'Degrees the camera drifts around a build or rebuild clip',
-    label: 'Orbit drift',
-    max: 360,
-    min: -360,
-    placeholder: 'DEG',
-    scope: 'video',
-    section: 'video',
-    step: 5,
-    type: 'number',
-  },
+  mode: standard.mode(
+    VIDEO_MODES,
+    'build',
+    'build: the city emerges from the centre out, then holds; rebuild: districts recede and re-emerge one at a time; turntable: orbit a settled city'
+  ),
+  view: standard.view(VIEWS, 'front'),
+  fps: standard.fps(),
+  hold: standard.hold(
+    12,
+    'Seconds held after the build (build), or seconds per city (rebuild, turntable)'
+  ),
+  turns: standard.turns('city'),
+  orbit: standard.orbit(
+    0,
+    'Degrees the camera drifts around a build or rebuild clip'
+  ),
 };
 
 export const RENDER_OPTIONS = {
@@ -781,66 +513,35 @@ export const SURFACE_DEFAULTS = {
   workbench: { count: 6 },
 };
 
-export function resolveViews(list, fail = (message) => new Error(message)) {
-  const views = String(list)
-    .split(',')
-    .map((view) => view.trim())
-    .filter(Boolean);
-  const unknown = views.filter((view) => !VIEWS.includes(view));
-  if (views.length === 0 || unknown.length > 0) {
-    throw fail(`views must name only ${VIEWS.join(', ')}.`);
-  }
-  return views;
-}
-
 const schema = createOptionSchema({
   options: RENDER_OPTIONS,
   sectionLabels: {
-    city: 'city',
-    composition: 'composition',
-    form: 'form',
-    motion: 'motion',
-    output: 'output',
-    palette: 'palette',
     post: 'light & post',
-    render: 'render',
     roll: 'rolling',
-    surface: 'surface',
-    svg: 'svg',
-    video: 'video',
   },
   surfaceDefaults: SURFACE_DEFAULTS,
-  validate(kind, options, fail) {
-    if (kind === 'still' && !options.png && !options.webp && !options.svg) {
-      throw fail('Select at least one output format: PNG, WebP or SVG.');
-    }
-    const longest = Math.max(options.width, options.height);
-    if (longest * options.pixelRatio > 8192) {
-      throw fail(
-        `width×pixelRatio must stay within 8192; the longest side would be ${longest * options.pixelRatio}.`
-      );
-    }
-    if (kind === 'still') resolveViews(options.views, fail);
-  },
+  views: VIEWS,
 });
 
 export const {
+  LEVA_KEYS,
+  SCENE_KEYS,
+  configFrom,
   defaultsFor,
   facets,
   keysInFacet,
   normalizeOptions,
   optionsFor,
+  optionsFromConfig,
+  presetFromConfig,
+  resolveViews,
+  sceneDefaults,
   sectionsFor,
   usageFor,
 } = schema;
 
-const keysWhere = (test) =>
-  Object.entries(RENDER_OPTIONS)
-    .filter(([, spec]) => test(spec))
-    .map(([key]) => key);
+const { keysWhere } = schema;
 
-export const SCENE_KEYS = keysWhere((spec) => spec.scene);
-export const LEVA_KEYS = keysWhere((spec) => spec.scene && !spec.rig);
 // The surfaces a palette can colour; the background stays authored.
 export const COLOR_KEYS = keysWhere(
   (spec) => spec.section === 'surface' && spec.type === 'color'
@@ -855,27 +556,3 @@ export const COMPOSITION_KEYS = [
 export const FORM_KEYS = keysWhere((spec) => spec.section === 'form').filter(
   (key) => ![...MODEL_FORM_KEYS, 'pedestalDepth'].includes(key)
 );
-
-export const sceneDefaults = () =>
-  Object.fromEntries(
-    SCENE_KEYS.map((key) => [key, RENDER_OPTIONS[key].default])
-  );
-
-export function configFrom(source) {
-  const flat = source?.preset ?? source ?? {};
-  return Object.fromEntries(
-    SCENE_KEYS.filter((key) => flat[key] != null).map((key) => [key, flat[key]])
-  );
-}
-
-export const optionsFromConfig = (config = {}) => configFrom(config);
-
-export function presetFromConfig(config = {}) {
-  const defaults = sceneDefaults();
-  return Object.fromEntries(
-    Object.entries(config).filter(
-      ([name, value]) =>
-        name in defaults && value != null && value !== defaults[name]
-    )
-  );
-}

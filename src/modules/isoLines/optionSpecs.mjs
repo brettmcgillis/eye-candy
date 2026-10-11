@@ -3,7 +3,19 @@
 // run them through (docs/iso-lines-pipeline.md). Dependency-free `.mjs` so
 // plain Node and Vite's config loader can import it; IsoLinesRelief's schema
 // imports it by relative path, the one sanctioned way in besides the barrel.
-import createOptionSchema from '../optionSchema/index.mjs';
+import {
+  choice,
+  color,
+  flag,
+  inFacet,
+  num,
+  rigOf,
+  rolled,
+  sceneOnly,
+  spec,
+  standard,
+  still,
+} from '../optionSchema/index.mjs';
 
 export const STYLES = ['terraced', 'lines'];
 export const SHAPE_KINDS = [
@@ -16,47 +28,6 @@ export const SHAPE_KINDS = [
 ];
 export const COLOR_MODES = ['cosine', 'palette', 'ramp'];
 export const MAX_RESOLUTION = 480;
-
-export function spec(type, section, group, label, value, extra = {}) {
-  return {
-    default: value,
-    group,
-    help: label,
-    label,
-    scene: true,
-    scope: 'shared',
-    section,
-    type,
-    ...extra,
-  };
-}
-
-export const num = (section, group, label, value, min, max, step, extra = {}) =>
-  spec('number', section, group, label, value, {
-    max,
-    min,
-    placeholder: 'N',
-    step,
-    ...extra,
-  });
-export const choice = (section, group, label, choices, value, extra = {}) =>
-  spec('enum', section, group, label, value, {
-    choices,
-    help: `${label}: ${choices.join(', ')}`,
-    ...extra,
-  });
-export const color = (section, group, label, value, extra = {}) =>
-  spec('color', section, group, label, value, extra);
-export const flag = (section, group, label, value, extra = {}) =>
-  spec('boolean', section, group, label, value, extra);
-
-export const rolled = (facet, [min, max], item) => ({
-  ...item,
-  facet,
-  roll: { max, min, step: item.step },
-});
-export const inFacet = (facet, item) => ({ ...item, facet });
-export const sceneOnly = (item) => ({ ...item, sceneOnly: true });
 
 const driverWeight = (label, value, help) =>
   inFacet(
@@ -211,7 +182,7 @@ export const CONTOURS = {
     'contours',
     choice('contours', null, 'Style', STYLES, 'terraced', {
       help: 'terraced: the field as stacked bands; lines: the contours alone',
-      optionLabels: { lines: 'Lines', terraced: 'Terraced' },
+      choiceLabels: { lines: 'Lines', terraced: 'Terraced' },
     })
   ),
   levels: rolled(
@@ -237,7 +208,7 @@ export const COLOR = {
     'color',
     choice('color', null, 'Mode', COLOR_MODES, 'cosine', {
       help: 'cosine: the reference’s cosine palette; palette: a gradients.json palette; ramp: low to high',
-      optionLabels: { cosine: 'Cosine', palette: 'Palette', ramp: 'Ramp' },
+      choiceLabels: { cosine: 'Cosine', palette: 'Palette', ramp: 'Ramp' },
     })
   ),
   cosineFreq: rolled(
@@ -308,15 +279,8 @@ export const COLOR = {
 // Owned by the post rig, which builds its own Leva controls; declared here
 // so a preset and a headless render carry them. Defaults are each look's
 // post.js.
-const rig = (item) => ({
-  facet: 'atmosphere',
-  group: null,
-  rig: true,
-  scene: true,
-  scope: 'shared',
-  section: 'post',
-  ...item,
-});
+const rig = rigOf({ facet: 'atmosphere' });
+
 export const RIG = {
   postGradeEnabled: rig({
     default: true,
@@ -381,91 +345,21 @@ export const RIG = {
   }),
 };
 
-export const output = (item) => ({
-  scope: 'shared',
-  section: 'output',
-  ...item,
-});
-export const still = (item) => ({ scope: 'still', section: 'output', ...item });
-export const video = (item) => ({ scope: 'video', section: 'video', ...item });
-
 // The output, roll and video options both CLIs take. `out` names the
 // default output; `facets` lists what --keep may hold.
 export function sharedRender({ facets, name }) {
   return {
-    batch: output({
-      default: null,
-      help: 'Batch seed: names the generations (batch, batch-1…) and seeds the facet rolls. Omit for a random one',
-      label: 'Batch seed',
-      nullable: true,
-      placeholder: 'WORD',
-      text: true,
-      type: 'seed',
-    }),
-    out: output({
-      cliOnly: true,
-      default: `output/${name}`,
-      help: 'Output directory (stills) or file (video)',
-      placeholder: 'PATH',
-      type: 'string',
-    }),
-    width: output({
-      default: 1080,
-      help: 'Width',
-      label: 'Width',
-      max: 8192,
-      min: 64,
-      placeholder: 'PX',
-      step: 2,
-      type: 'number',
-    }),
-    height: output({
-      default: 1350,
-      help: 'Height',
-      label: 'Height',
-      max: 8192,
-      min: 64,
-      placeholder: 'PX',
-      step: 2,
-      type: 'number',
-    }),
-    pixelRatio: output({
-      choices: [1, 2, 3, 4],
-      default: 2,
-      help: 'Renders at width×ratio by height×ratio',
-      label: 'Pixel ratio',
-      max: 4,
-      min: 1,
-      type: 'number',
-    }),
-    count: output({
-      default: 1,
-      help: 'How many pieces to roll',
-      label: 'Count',
-      max: 200,
-      min: 1,
-      placeholder: 'N',
-      step: 1,
-      type: 'number',
-    }),
-    png: still({
-      default: false,
-      help: 'Write PNG files',
-      label: 'PNG',
-      type: 'boolean',
-    }),
-    webp: still({
-      default: true,
-      help: 'Write lossless WebP files',
-      label: 'WebP',
-      type: 'boolean',
-    }),
-    svg: still({
-      default: false,
-      help: 'Write a plottable SVG: the contours chained into paths, one pen per colour group',
-      label: 'SVG',
-      type: 'boolean',
-    }),
+    batch: standard.batch(),
+    out: standard.out(name),
+    width: standard.width(),
+    height: standard.height(),
+    pixelRatio: standard.pixelRatio(),
+    count: standard.count('pieces'),
+    png: standard.png(),
+    webp: standard.webp(),
+    svg: standard.svg(
+      'Write a plottable SVG: the contours chained into paths, one pen per colour group'
+    ),
     stillTime: still({
       default: 0,
       help: 'Seconds of field flow a still is frozen at',
@@ -476,155 +370,42 @@ export function sharedRender({ facets, name }) {
       step: 0.5,
       type: 'number',
     }),
-    svgStroke: {
-      default: 0.6,
-      help: 'Stroke width in output px; 0 draws hairlines',
-      label: 'SVG stroke',
-      max: 8,
-      min: 0,
-      placeholder: 'PX',
-      scope: 'still',
-      section: 'svg',
-      step: 0.1,
-      type: 'number',
-    },
-    svgPens: {
+    svgStroke: standard.svgStroke(),
+    svgPens: still({
       default: 4,
       help: 'Pens the levels are shared between, low to high, each in its mean colour',
       label: 'SVG pens',
       max: 16,
       min: 1,
       placeholder: 'N',
-      scope: 'still',
       section: 'svg',
       step: 1,
       type: 'number',
-    },
-    svgMinLength: {
+    }),
+    svgMinLength: still({
       default: 4,
       help: 'Drop contours shorter than this many output px',
       label: 'SVG min length',
       max: 200,
       min: 0,
       placeholder: 'PX',
-      scope: 'still',
       section: 'svg',
       step: 1,
       type: 'number',
-    },
-    samples: {
-      choices: [0, 4],
-      default: 4,
-      help: 'MSAA samples',
-      label: 'MSAA',
-      max: 4,
-      min: 0,
-      scope: 'shared',
-      section: 'render',
-      type: 'number',
-    },
-    keep: {
-      default: '',
-      help: `Comma-separated facets to hold while the rest roll: ${facets.join(', ')}`,
-      label: 'Hold facets',
-      placeholder: 'LIST',
-      scope: 'shared',
-      section: 'roll',
-      type: 'string',
-    },
-    base: {
-      cliOnly: true,
-      default: null,
-      help: 'A config (or props.json path) the roll starts from',
-      nullable: true,
-      placeholder: 'JSON',
-      scope: 'shared',
-      section: 'roll',
-      type: 'json',
-    },
-    palettes: {
-      array: true,
-      cliOnly: true,
-      default: null,
-      help: 'Palette names the colour roll picks from (the CLI fills this from gradients.json)',
-      nullable: true,
-      placeholder: 'JSON',
-      scope: 'shared',
-      section: 'roll',
-      type: 'json',
-    },
-    fps: video({
-      choices: [24, 30, 60],
-      default: 30,
-      help: 'Frames per second',
-      label: 'FPS',
-      max: 60,
-      min: 24,
-      type: 'number',
     }),
-    hold: video({
-      default: 6,
-      help: 'Seconds each piece plays for, or holds built',
-      label: 'Hold',
-      max: 300,
-      min: 0,
-      placeholder: 'S',
-      step: 0.5,
-      type: 'number',
-    }),
+    samples: standard.samples(),
+    keep: standard.keep(facets),
+    base: standard.base(),
+    palettes: standard.palettes('colour'),
+    fps: standard.fps(),
+    hold: standard.hold(6, 'Seconds each piece plays for, or holds built'),
   };
 }
 
-// The schema plus the key lists every consumer derives from it.
-export function createIsoSchema(options, schemaOptions) {
-  const schema = createOptionSchema({ options, ...schemaOptions });
-  const keysWhere = (test) =>
-    Object.entries(options)
-      .filter(([, item]) => test(item))
-      .map(([key]) => key);
-  const SCENE_KEYS = keysWhere((item) => item.scene);
-  const sceneDefaults = () =>
-    Object.fromEntries(SCENE_KEYS.map((key) => [key, options[key].default]));
-  const configFrom = (source) => {
-    const flat = source?.preset ?? source ?? {};
-    return Object.fromEntries(
-      SCENE_KEYS.filter((key) => flat[key] != null).map((key) => [
-        key,
-        flat[key],
-      ])
-    );
-  };
-  return {
-    ...schema,
-    // The keys that change the field grid; the rest only restyle it.
-    FIELD_KEYS: [
-      ...keysWhere((item) => item.section === 'field'),
-      'imageInvert',
-      'imageBlur',
-      'resolution',
-    ],
-    LEVA_KEYS: keysWhere((item) => item.scene && !item.rig),
-    SCENE_KEYS,
-    configFrom,
-    optionsFromConfig: (config = {}) => configFrom(config),
-    presetFromConfig(config = {}) {
-      const defaults = sceneDefaults();
-      return Object.fromEntries(
-        Object.entries(config).filter(
-          ([key, value]) =>
-            key in defaults && value != null && value !== defaults[key]
-        )
-      );
-    },
-    sceneDefaults,
-  };
-}
-
-export function checkSize(options, fail) {
-  const longest = Math.max(options.width, options.height);
-  if (longest * options.pixelRatio > 8192) {
-    throw fail(
-      `width×pixelRatio must stay within 8192; the longest side would be ${longest * options.pixelRatio}.`
-    );
-  }
-}
+// The keys that change the field grid; the rest only restyle it.
+export const fieldKeysOf = (keysWhere) => [
+  ...keysWhere((item) => item.section === 'field'),
+  'imageInvert',
+  'imageBlur',
+  'resolution',
+];

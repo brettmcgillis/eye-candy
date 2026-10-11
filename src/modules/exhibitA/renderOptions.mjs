@@ -4,7 +4,18 @@
 // `when` hides a control unless every named key holds one of the listed
 // values. Dependency-free `.mjs` so plain Node and Vite's config loader can
 // import it.
-import createOptionSchema from '../optionSchema/index.mjs';
+import createOptionSchema, {
+  choice,
+  color,
+  flag,
+  inFacet,
+  num,
+  rigOf,
+  rolled,
+  sceneOnly,
+  spec,
+  standard,
+} from '../optionSchema/index.mjs';
 
 export const FAMILIES = [
   'fractal',
@@ -131,47 +142,6 @@ export const VIEW_ELEVATIONS = { front: 8, hero: 24, side: 8, top: 89 };
 export const kindKey = (family) => `${family}Kind`;
 export const exhibitOf = (config) => config[kindKey(config.family)];
 
-function spec(type, section, group, label, value, extra = {}) {
-  return {
-    default: value,
-    group,
-    help: label,
-    label,
-    scene: true,
-    scope: 'shared',
-    section,
-    type,
-    ...extra,
-  };
-}
-
-const num = (section, group, label, value, min, max, step, extra = {}) =>
-  spec('number', section, group, label, value, {
-    max,
-    min,
-    placeholder: 'N',
-    step,
-    ...extra,
-  });
-const choice = (section, group, label, choices, value, extra = {}) =>
-  spec('enum', section, group, label, value, {
-    choices,
-    help: `${label}: ${choices.join(', ')}`,
-    ...extra,
-  });
-const flag = (section, group, label, value, extra = {}) =>
-  spec('boolean', section, group, label, value, extra);
-const color = (section, group, label, value, extra = {}) =>
-  spec('color', section, group, label, value, extra);
-
-const inFacet = (facet, item) => ({ ...item, facet });
-const rolled = (facet, [min, max], item) => ({
-  ...item,
-  facet,
-  roll: { max, min, step: item.step },
-});
-const sceneOnly = (item) => ({ ...item, sceneOnly: true });
-
 const isFamily = (family) => ({ family: [family] });
 const isExhibit = (family, ...ids) => ({
   family: [family],
@@ -215,7 +185,7 @@ const KIND_KEYS = Object.fromEntries(
     kindKey(family),
     form(
       choice('form', null, 'Exhibit', EXHIBITS[family], EXHIBITS[family][0], {
-        optionLabels: EXHIBIT_LABELS,
+        choiceLabels: EXHIBIT_LABELS,
         when: isFamily(family),
       })
     ),
@@ -346,7 +316,7 @@ const ALGEBRAIC = {
   algebraicSide: form(
     choice('form', FAMILY_LABELS.algebraic, 'Fill', ALGEBRAIC_SIDES, 'solid', {
       help: 'solid: the f < 0 side, cut by the ball, as the plaster models are; shell: the surface itself, thickened',
-      optionLabels: {
+      choiceLabels: {
         inverse: 'Solid (other side)',
         shell: 'Shell',
         solid: 'Solid',
@@ -407,7 +377,7 @@ const SURFACE = {
   kleinForm: form(
     choice('form', EXHIBIT_LABELS.klein, 'Form', KLEIN_FORMS, 'bottle', {
       exhibit: 'klein',
-      optionLabels: { bottle: 'Bottle', figure8: 'Figure-8' },
+      choiceLabels: { bottle: 'Bottle', figure8: 'Figure-8' },
       when: isExhibit('surface', 'klein'),
     })
   ),
@@ -705,7 +675,7 @@ const APOLLIAN = {
   a4Shape: form(
     choice('form', EXHIBIT_LABELS.apollian4, 'Estimator', A4_SHAPES, 'sheets', {
       exhibit: 'apollian4',
-      optionLabels: { sheets: 'Sheets (twist)', tubes: 'Tubes (slice)' },
+      choiceLabels: { sheets: 'Sheets (twist)', tubes: 'Tubes (slice)' },
       when: isExhibit('apollian', 'apollian4'),
     })
   ),
@@ -787,7 +757,7 @@ const APOLLIAN = {
   }),
   guestBound: form(
     choice('form', FAMILY_LABELS.apollian, 'Bound', GUEST_BOUNDS, 'sphere', {
-      optionLabels: {
+      choiceLabels: {
         cube: 'Cube / Slab',
         disc: 'Disc / Coin',
         sphere: 'Sphere',
@@ -832,7 +802,7 @@ const PLACEMENT = {
 const FORM = {
   family: form(
     choice('form', null, 'Family', FAMILIES, 'fractal', {
-      optionLabels: FAMILY_LABELS,
+      choiceLabels: FAMILY_LABELS,
     })
   ),
   ...KIND_KEYS,
@@ -853,7 +823,7 @@ const isMetal = { material: ['bronze', 'steel', 'brass'] };
 const LOOK = {
   material: look(
     choice('look', 'Material', 'Material', MATERIALS, 'plaster', {
-      optionLabels: {
+      choiceLabels: {
         brass: 'Brass',
         bronze: 'Bronze',
         ceramic: 'Glazed Ceramic',
@@ -935,7 +905,7 @@ const STAGE = {
   skyHorizon: stage(color('stage', 'Sky', 'Horizon', '#efe7da')),
   plinth: stage(
     choice('stage', 'Plinth', 'Style', PLINTHS, 'column', {
-      optionLabels: {
+      choiceLabels: {
         block: 'Block',
         column: 'Column',
         none: 'None',
@@ -1012,7 +982,7 @@ const STAGE = {
 const MOTION = {
   motionMode: sceneOnly(
     choice('motion', null, 'Motion', MOTION_MODES, 'turntable', {
-      optionLabels: {
+      choiceLabels: {
         draw: 'Draw / Build',
         evolve: 'Evolve',
         off: 'Off',
@@ -1043,15 +1013,8 @@ const MOTION = {
 // Owned by the post rig, which builds its own Leva controls; declared here
 // so a preset and a headless render carry them. Defaults are
 // exhibitARender's post.js.
-const rig = (item) => ({
-  facet: 'stage',
-  group: null,
-  rig: true,
-  scene: true,
-  scope: 'shared',
-  section: 'post',
-  ...item,
-});
+const rig = rigOf({ facet: 'stage' });
+
 const RIG = {
   postBloomEnabled: rig({
     default: true,
@@ -1132,125 +1095,23 @@ const QUALITY = {
   ),
 };
 
-const output = (item) => ({ scope: 'shared', section: 'output', ...item });
-const still = (item) => ({ scope: 'still', section: 'output', ...item });
-const video = (item) => ({ scope: 'video', section: 'video', ...item });
-
 const RENDER = {
-  batch: output({
-    default: null,
-    help: 'Batch seed: names the generations (batch, batch-1…) and seeds the facet rolls. Omit for a random one',
-    label: 'Batch seed',
-    nullable: true,
-    placeholder: 'WORD',
-    text: true,
-    type: 'seed',
-  }),
-  out: output({
-    cliOnly: true,
-    default: 'output/exhibit-a',
-    help: 'Output directory (stills) or file (video)',
-    placeholder: 'PATH',
-    type: 'string',
-  }),
-  width: output({
-    default: 1080,
-    help: 'Width',
-    label: 'Width',
-    max: 8192,
-    min: 64,
-    placeholder: 'PX',
-    step: 2,
-    type: 'number',
-  }),
-  height: output({
-    default: 1350,
-    help: 'Height',
-    label: 'Height',
-    max: 8192,
-    min: 64,
-    placeholder: 'PX',
-    step: 2,
-    type: 'number',
-  }),
-  pixelRatio: output({
-    choices: [1, 2, 3, 4],
-    default: 2,
-    help: 'Renders at width×ratio by height×ratio',
-    label: 'Pixel ratio',
-    max: 4,
-    min: 1,
-    type: 'number',
-  }),
-  count: output({
-    default: 1,
-    help: 'How many exhibits to roll',
-    label: 'Count',
-    max: 200,
-    min: 1,
-    placeholder: 'N',
-    step: 1,
-    type: 'number',
-  }),
-  png: still({
-    default: false,
-    help: 'Write PNG files',
-    label: 'PNG',
-    type: 'boolean',
-  }),
-  webp: still({
-    default: true,
-    help: 'Write lossless WebP files',
-    label: 'WebP',
-    type: 'boolean',
-  }),
-  views: still({
-    default: 'hero',
-    help: `Comma-separated views: ${VIEWS.join(', ')}`,
-    label: 'Views',
-    placeholder: 'LIST',
-    type: 'string',
-  }),
-  projection: {
-    choices: PROJECTIONS,
-    default: 'perspective',
-    help: 'Camera projection',
-    label: 'Projection',
-    scope: 'shared',
-    section: 'render',
-    type: 'enum',
-  },
-  fov: {
-    default: 30,
-    help: 'Vertical field of view in degrees (perspective only)',
-    label: 'Field of view',
-    max: 90,
-    min: 10,
-    scope: 'shared',
-    section: 'render',
-    step: 1,
-    type: 'number',
-  },
-  margin: {
-    default: 0.12,
-    help: 'Space round the exhibit and plinth, as a share of the frame',
-    label: 'Fit margin',
-    max: 0.5,
-    min: 0,
-    scope: 'shared',
-    section: 'render',
-    step: 0.01,
-    type: 'number',
-  },
-  keep: {
-    default: '',
-    help: 'Comma-separated facets to hold while the rest roll: form, look, stage',
-    label: 'Hold facets',
-    placeholder: 'LIST',
-    scope: 'shared',
-    section: 'roll',
-    type: 'string',
-  },
+  batch: standard.batch(),
+  out: standard.out('exhibit-a'),
+  width: standard.width(),
+  height: standard.height(),
+  pixelRatio: standard.pixelRatio(),
+  count: standard.count('exhibits'),
+  png: standard.png(),
+  webp: standard.webp(),
+  views: standard.views(VIEWS, 'hero'),
+  projection: standard.projection(PROJECTIONS, 'perspective'),
+  fov: standard.fov(30),
+  margin: standard.margin(
+    0.12,
+    'Space round the exhibit and plinth, as a share of the frame'
+  ),
+  keep: standard.keep(['form', 'look', 'stage']),
   families: {
     default: FAMILIES.join(','),
     help: `Comma-separated families the form roll picks from: ${FAMILIES.join(', ')}`,
@@ -1260,80 +1121,21 @@ const RENDER = {
     section: 'roll',
     type: 'string',
   },
-  base: {
-    cliOnly: true,
-    default: null,
-    help: 'A config (or props.json path) the roll starts from',
-    nullable: true,
-    placeholder: 'JSON',
-    scope: 'shared',
-    section: 'roll',
-    type: 'json',
-  },
-  palettes: {
-    array: true,
-    cliOnly: true,
-    default: null,
-    help: 'Palette names the look roll picks from (the CLI fills this from gradients.json)',
-    nullable: true,
-    placeholder: 'JSON',
-    scope: 'shared',
-    section: 'roll',
-    type: 'json',
-  },
-  mode: video({
-    choices: VIDEO_MODES,
-    default: 'turntable',
-    help: 'turntable: orbit the exhibit; sweep: the key light swings round it; evolve: its parameter walks; draw: it builds from nothing',
-    label: 'Mode',
-    type: 'enum',
-  }),
-  view: video({
-    choices: VIEWS,
-    default: 'hero',
-    help: 'Camera view for the clip',
-    label: 'View',
-    type: 'enum',
-  }),
-  fps: video({
-    choices: [24, 30, 60],
-    default: 30,
-    help: 'Frames per second',
-    label: 'FPS',
-    max: 60,
-    min: 24,
-    type: 'number',
-  }),
-  hold: video({
-    default: 8,
-    help: 'Seconds per exhibit',
-    label: 'Hold',
-    max: 300,
-    min: 0,
-    placeholder: 'S',
-    step: 0.5,
-    type: 'number',
-  }),
-  turns: video({
-    default: 1,
-    help: 'Turntable revolutions per exhibit',
-    label: 'Turns',
-    max: 10,
-    min: 0.25,
-    placeholder: 'N',
-    step: 0.25,
-    type: 'number',
-  }),
-  orbit: video({
-    default: 0,
-    help: 'Degrees the camera drifts round a sweep, evolve or draw clip',
-    label: 'Orbit drift',
-    max: 360,
-    min: -360,
-    placeholder: 'DEG',
-    step: 5,
-    type: 'number',
-  }),
+  base: standard.base(),
+  palettes: standard.palettes('look'),
+  mode: standard.mode(
+    VIDEO_MODES,
+    'turntable',
+    'turntable: orbit the exhibit; sweep: the key light swings round it; evolve: its parameter walks; draw: it builds from nothing'
+  ),
+  view: standard.view(VIEWS, 'hero'),
+  fps: standard.fps(),
+  hold: standard.hold(8, 'Seconds per exhibit'),
+  turns: standard.turns('exhibit'),
+  orbit: standard.orbit(
+    0,
+    'Degrees the camera drifts round a sweep, evolve or draw clip'
+  ),
 };
 
 export const RENDER_OPTIONS = {
@@ -1358,14 +1160,6 @@ const splitList = (list) =>
     .map((item) => item.trim())
     .filter(Boolean);
 
-export function resolveViews(list, fail = (message) => new Error(message)) {
-  const views = splitList(list);
-  if (views.length === 0 || views.some((view) => !VIEWS.includes(view))) {
-    throw fail(`views must name only ${VIEWS.join(', ')}.`);
-  }
-  return views;
-}
-
 export function resolveFamilies(list, fail = (message) => new Error(message)) {
   const families = splitList(list);
   if (families.length === 0 || families.some((f) => !FAMILIES.includes(f))) {
@@ -1377,77 +1171,36 @@ export function resolveFamilies(list, fail = (message) => new Error(message)) {
 const schema = createOptionSchema({
   options: RENDER_OPTIONS,
   sectionLabels: {
-    form: 'form',
-    look: 'look',
-    motion: 'motion',
-    output: 'output',
-    post: 'post',
-    quality: 'quality',
-    render: 'render',
     roll: 'rolling',
-    stage: 'stage',
-    video: 'video',
   },
   surfaceDefaults: SURFACE_DEFAULTS,
   validate(kind, options, fail) {
-    if (kind === 'still' && !options.png && !options.webp) {
-      throw fail('Select at least one output format: PNG or WebP.');
-    }
-    const longest = Math.max(options.width, options.height);
-    if (longest * options.pixelRatio > 8192) {
-      throw fail(
-        `width×pixelRatio must stay within 8192; the longest side would be ${longest * options.pixelRatio}.`
-      );
-    }
-    if (kind === 'still') resolveViews(options.views, fail);
     resolveFamilies(options.families, fail);
   },
+  views: VIEWS,
 });
 
 export const {
+  LEVA_KEYS,
+  SCENE_KEYS,
+  configFrom,
   defaultsFor,
   facets,
   keysInFacet,
   normalizeOptions,
   optionsFor,
+  optionsFromConfig,
+  presetFromConfig,
+  resolveViews,
+  sceneDefaults,
   sectionsFor,
   usageFor,
 } = schema;
 
-const keysWhere = (test) =>
-  Object.entries(RENDER_OPTIONS)
-    .filter(([, item]) => test(item))
-    .map(([key]) => key);
-
-export const SCENE_KEYS = keysWhere((item) => item.scene);
-export const LEVA_KEYS = keysWhere((item) => item.scene && !item.rig);
+const { keysWhere } = schema;
 
 // The form keys that only place the exhibit; every other form key reshapes it.
 export const PLACEMENT_KEYS = Object.keys(PLACEMENT);
 export const SHAPE_KEYS = keysWhere(
   (item) => item.facet === 'form' && item.scene
 ).filter((key) => !PLACEMENT_KEYS.includes(key));
-
-export const sceneDefaults = () =>
-  Object.fromEntries(
-    SCENE_KEYS.map((key) => [key, RENDER_OPTIONS[key].default])
-  );
-
-export function configFrom(source) {
-  const flat = source?.preset ?? source ?? {};
-  return Object.fromEntries(
-    SCENE_KEYS.filter((key) => flat[key] != null).map((key) => [key, flat[key]])
-  );
-}
-
-export const optionsFromConfig = (config = {}) => configFrom(config);
-
-export function presetFromConfig(config = {}) {
-  const defaults = sceneDefaults();
-  return Object.fromEntries(
-    Object.entries(config).filter(
-      ([name, value]) =>
-        name in defaults && value != null && value !== defaults[name]
-    )
-  );
-}

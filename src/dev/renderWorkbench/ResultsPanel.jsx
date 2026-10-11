@@ -8,9 +8,12 @@ import { countMediaItems } from './assetGroups';
 const ACTIVE = ['queued', 'running', 'cancelling'];
 
 // Saved / Transient / Jobs, over one tool's useRenderJobs() result. Tool
-// specifics come in through the gallery's slots.
+// specifics come in through the gallery's slots; `leadingTabs` ({ id, label,
+// icon, render }) go first, for a tool with a live view of its own.
 export default function ResultsPanel({
   collectionTitle,
+  defaultTab = 'transient',
+  leadingTabs = [],
   jobTitle,
   jobsApi,
   renderDetails,
@@ -27,7 +30,7 @@ export default function ResultsPanel({
     removeSavedAssets,
     savedCollections,
   } = jobsApi;
-  const [tab, setTab] = useState('transient');
+  const [tab, setTab] = useState(defaultTab);
   const [deletingId, setDeletingId] = useState(null);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
 
@@ -57,6 +60,7 @@ export default function ResultsPanel({
   }
 
   const tabs = [
+    ...leadingTabs,
     {
       count: countMediaItems(savedCollections),
       icon: <FiSave />,
@@ -69,7 +73,12 @@ export default function ResultsPanel({
       id: 'transient',
       label: 'Transient',
     },
-    { count: workbenchJobs.length, icon: <FiList />, id: 'jobs', label: 'Jobs' },
+    {
+      count: workbenchJobs.length,
+      icon: <FiList />,
+      id: 'jobs',
+      label: 'Jobs',
+    },
   ];
 
   return (
@@ -90,10 +99,17 @@ export default function ResultsPanel({
           >
             {item.icon}
             <span>{item.label}</span>
-            <strong>{item.count}</strong>
+            {item.count == null ? null : <strong>{item.count}</strong>}
           </button>
         ))}
       </div>
+      {leadingTabs.map((item) =>
+        tab === item.id ? (
+          <div id={`rw-panel-${item.id}`} key={item.id} role="tabpanel">
+            {item.render()}
+          </div>
+        ) : null
+      )}
       {tab === 'saved' ? (
         <div id="rw-panel-saved" role="tabpanel">
           <AssetGallery

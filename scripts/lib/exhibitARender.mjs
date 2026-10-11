@@ -1,17 +1,16 @@
 /* eslint-disable import/no-extraneous-dependencies */
-import { readFile } from 'node:fs/promises';
-
 import {
   RENDER_OPTIONS,
   SCENE_KEYS,
   defaultsFor,
   normalizeOptions,
 } from '../../src/modules/exhibitA/renderOptions.mjs';
-import { parseArgs, providedKeys } from './cliArgs.mjs';
-import { createHeadlessRenderer, loadThree } from './headlessWebgpu.mjs';
-import loadModules, { REPO_ROOT } from './loadModules.mjs';
-
-export { REPO_ROOT };
+import {
+  createParseCli,
+  loadKernelModules,
+  withRenderer,
+} from './generatorCli.mjs';
+import { createHeadlessRenderer } from './headlessWebgpu.mjs';
 
 // Barrels only — see docs/exhibit-a-pipeline.md.
 const ENTRIES = {
@@ -20,41 +19,13 @@ const ENTRIES = {
   post: '/src/modules/postRig/index.js',
 };
 
-// three must see the stubbed browser globals before any module that imports
-// it is evaluated, so the renderer bootstrap runs first.
-export async function loadKernel() {
-  const { THREE, TSL } = await loadThree();
-  const loaded = await loadModules(Object.values(ENTRIES));
-  const pick = (name) => loaded[ENTRIES[name]];
-  return {
-    THREE,
-    TSL,
-    exhibit: pick('exhibit'),
-    look: pick('look'),
-    post: pick('post'),
-  };
-}
+export const loadKernel = () => loadKernelModules(ENTRIES);
 
-async function readJsonOption(value) {
-  if (value == null || typeof value !== 'string') return value;
-  if (/^\s*[[{]/u.test(value)) return JSON.parse(value);
-  return JSON.parse(await readFile(value, 'utf8'));
-}
-
-// A typed flag is a pin; the set is read before defaults are merged.
-export async function parseCli(kind, argv) {
-  const args = parseArgs(argv, defaultsFor(kind));
-  if (args.help) return { help: true };
-  const raw = { ...args };
-  await Promise.all(
-    Object.entries(RENDER_OPTIONS)
-      .filter(([, spec]) => spec.type === 'json')
-      .map(async ([key]) => {
-        raw[key] = await readJsonOption(args[key]);
-      })
-  );
-  return { options: normalizeOptions(kind, raw), typed: providedKeys(args) };
-}
+export const parseCli = createParseCli({
+  RENDER_OPTIONS,
+  defaultsFor,
+  normalizeOptions,
+});
 
 export function rollArgs(kernel, { options, typed }) {
   const { exhibit, look } = kernel;
@@ -170,13 +141,14 @@ export async function createExhibitCapturer(
     camera.updateMatrixWorld();
   }
 
-  // The first render after a uniform change reads back stale in Dawn.
   async function render(pipeline) {
-    await headless.readFrame(() => pipeline.render());
     return headless.readFrame(() => pipeline.render());
   }
 
   return {
+    renderer,
+    scene,
+
     // Builds the exhibit and sets the stage; returns the layout views are
     // framed on.
     load(drawn) {
@@ -214,5 +186,32 @@ export async function createExhibitCapturer(
       rig.dispose();
       headless.dispose();
     },
+  };
+}
+
+export const withCapturer = (kernel, options, work) =>
+  withRenderer(
+    options,
+    () =>
+      createExhibitCapturer(kernel, {
+        height: options.height * options.pixelRatio,
+        width: options.width * options.pixelRatio,
+      }),
+    work
+  );
+
+// A camera that fits the loaded exhibit and plinth from a named bearing.
+export function viewFor(kernel, { azimuthOffset = 0, layout, options, view }) {
+  return kernel.exhibit.frameView({ azimuthOffset, layout, options, view });
+}
+
+const sceneConfig = (config) =>
+  Object.fromEntries(SCENE_KEYS.map((key) => [key, config[key]]));
+
+export function sidecarFor({ config, name, options }) {
+  return {
+    name,
+    preset: sceneConfig(config),
+    render: { ...options, base: undefined, palettes: undefined },
   };
 }

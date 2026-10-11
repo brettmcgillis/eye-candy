@@ -11,7 +11,7 @@
 // stay dependency-free. Everything needing three.js or an alias belongs in a
 // sibling `.js` module instead. Its one import is the shared option-schema
 // machinery, which is dependency-free by the same rule.
-import createOptionSchema from '../optionSchema/index.mjs';
+import createOptionSchema, { standard } from '../optionSchema/index.mjs';
 
 export const VIEWS = ['front', 'back', 'top', 'bottom'];
 export const VIDEO_MODES = [
@@ -37,47 +37,13 @@ export const IPHONE_HEIGHT = 2532;
 // section: groups the option in `--help` output.
 // workbenchOnly: accepted from the workbench but not a real CLI flag.
 export const RENDER_OPTIONS = {
-  out: {
-    scope: 'shared',
-    section: 'output',
-    type: 'string',
-    default: 'output/rorschach',
-    placeholder: 'PATH',
-    help: 'Output directory (stills) or file (video)',
-  },
-  width: {
-    scope: 'shared',
-    section: 'output',
-    type: 'number',
-    default: 1440,
-    min: 64,
-    max: 8192,
-    step: 2,
-    placeholder: 'PX',
-    help: 'Output width',
-  },
-  height: {
-    scope: 'shared',
-    section: 'output',
-    type: 'number',
-    default: 2560,
-    min: 64,
-    max: 8192,
-    step: 2,
-    placeholder: 'PX',
-    help: 'Output height',
-  },
-  pixelRatio: {
-    scope: 'shared',
-    section: 'output',
-    type: 'number',
-    default: 2,
-    min: 1,
-    max: 4,
+  out: standard.out('rorschach', { cliOnly: false }),
+  width: standard.width(1440, { help: 'Output width' }),
+  height: standard.height(2560, { help: 'Output height' }),
+  pixelRatio: standard.pixelRatio({
+    help: 'Renders at width×ratio by height×ratio; a still’s stroke width scales with it, so a 2x still is the 1x still, sharper',
     step: 1,
-    choices: [1, 2, 3, 4],
-    help: 'Renders at width×ratio by height×ratio; a still\u2019s stroke width scales with it, so a 2x still is the 1x still, sharper',
-  },
+  }),
   seed: {
     scope: 'shared',
     section: 'output',
@@ -89,17 +55,7 @@ export const RENDER_OPTIONS = {
     placeholder: 'S',
     help: 'First seed; omit for a random seed per test',
   },
-  count: {
-    scope: 'shared',
-    section: 'output',
-    type: 'number',
-    default: 1,
-    min: 1,
-    max: 100,
-    step: 1,
-    placeholder: 'N',
-    help: 'How many tests to roll',
-  },
+  count: standard.count('tests', { max: 100 }),
   renderer: {
     scope: 'shared',
     section: 'render',
@@ -1098,36 +1054,13 @@ export const RENDER_OPTIONS = {
     placeholder: 'LIST',
     help: 'Which views to render',
   },
-  png: {
-    scope: 'still',
-    section: 'output',
-    type: 'boolean',
-    default: true,
-    help: 'PNG output; --no-png skips it',
-  },
-  svg: {
-    scope: 'still',
-    section: 'output',
-    type: 'boolean',
-    default: false,
-    help: 'Also write editable SVG output',
-  },
-  webp: {
-    scope: 'still',
-    section: 'output',
-    type: 'boolean',
-    default: true,
-    help: 'Also write lossless WebP output',
-  },
+  png: standard.png({ default: true, help: 'PNG output; --no-png skips it' }),
+  svg: standard.svg('Also write editable SVG output'),
+  webp: standard.webp({ help: 'Also write lossless WebP output' }),
 
-  mode: {
-    scope: 'video',
+  mode: standard.mode(VIDEO_MODES, 'stills', 'Which video mode to render', {
     section: 'output',
-    type: 'enum',
-    default: 'stills',
-    choices: VIDEO_MODES,
-    help: 'Which video mode to render',
-  },
+  }),
   fps: {
     scope: 'video',
     section: 'output',
@@ -1161,14 +1094,10 @@ export const RENDER_OPTIONS = {
     placeholder: 'S',
     help: 'stills: seconds of fade between stills, 0 to cut',
   },
-  view: {
-    scope: 'video',
+  view: standard.view(VIEWS, 'front', {
     section: 'timing',
-    type: 'enum',
-    default: 'front',
-    choices: VIEWS,
     help: 'stills: which view to use',
-  },
+  }),
   growthView: {
     scope: 'video',
     section: 'timing',
@@ -1339,15 +1268,8 @@ export const SURFACE_DEFAULTS = {
 };
 
 const SECTION_LABELS = {
-  output: 'output',
-  render: 'render',
-  bloom: 'bloom',
-  overlay: 'overlay',
-  layers: 'layers',
   timing: 'mode timing',
-  palette: 'palette',
   roll: 'rolling',
-  structure: 'structure',
   source: 'source frames',
 };
 

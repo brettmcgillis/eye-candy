@@ -1,51 +1,26 @@
-import React, { memo } from 'react';
+import React, { memo, useEffect, useMemo } from 'react';
 
-const DEFAULT_POSITION = [0, 0, 0];
-const SHADOW_NEAR = 0.05;
+import { createCenterLight } from '@modules/fractalAutomataRender';
 
-// Godrays centerpiece, adapted from Windswept/components/CenterLight.jsx (not
-// shared via import per docs/scene-conventions.md §6): a shadow-casting point
-// light positioned via `position` (defaults to the grid's geometric center —
-// VoxelField centers cell positions around the origin, so [0, 0, 0] sits at
-// the structure's core and the growing cells occlude the beam as they reveal
-// around it). shadow-camera-far is driven by `volumeSize` (godraysVolumeSize,
-// default sized to this scene's actual grid extent in FractalAutomata.jsx)
-// rather than three.js's far=500 default, which would spread the shadow
-// map's fixed texel budget across a box far bigger than this scene and
-// flatten the raymarch attenuation curve — the same gotcha Windswept's
-// version documents.
-function CenterLight({
-  color,
-  intensity,
-  lightRef,
-  position = DEFAULT_POSITION,
-  volumeSize,
-}) {
-  return (
-    <>
-      <pointLight
-        ref={lightRef}
-        castShadow
-        color={color}
-        intensity={intensity}
-        position={position}
-        shadow-bias={-0.0005}
-        shadow-camera-far={volumeSize}
-        shadow-camera-near={SHADOW_NEAR}
-        shadow-mapSize={[1024, 1024]}
-      />
-      <mesh position={position}>
-        <sphereGeometry args={[0.4, 16, 16]} />
-        <meshStandardMaterial
-          color={color}
-          emissive={color}
-          emissiveIntensity={3}
-          roughness={0.35}
-          toneMapped={false}
-        />
-      </mesh>
-    </>
-  );
+function CenterLight({ config, lightRef }) {
+  const rig = useMemo(() => createCenterLight(), []);
+
+  // eslint-disable-next-line no-param-reassign
+  lightRef.current = rig.light;
+
+  useEffect(() => {
+    rig.apply(config);
+  }, [
+    rig,
+    config.godraysColor,
+    config.godraysIntensity,
+    config.godraysPosition,
+    config.godraysVolumeSize,
+  ]);
+
+  useEffect(() => () => rig.dispose(), [rig]);
+
+  return <primitive object={rig.group} />;
 }
 
 export default memo(CenterLight);

@@ -1,16 +1,8 @@
 #!/usr/bin/env node
-
-/* eslint-disable no-await-in-loop */
-import { mkdir } from 'node:fs/promises';
-import path from 'node:path';
-import process from 'node:process';
-
 import { usageFor } from '../src/modules/trucheterieBlob/renderOptions.mjs';
 import { readPackageVersion } from './lib/cliArgs.mjs';
-import createFrameSink from './lib/frameSink.mjs';
-import createProgress, { runStage } from './lib/progress.mjs';
+import { runVideo } from './lib/generatorCli.mjs';
 import {
-  REPO_ROOT,
   assertPalette,
   encodeFrame,
   fieldAt,
@@ -19,9 +11,7 @@ import {
   rollArgs,
   withCapturer,
 } from './lib/trucheterieBlobRender.mjs';
-import { writeVideoSidecar } from './lib/videoMetadata.mjs';
 
-const KIND = 'video';
 // A touch past 1 so the last cell the front reaches clears blobShader.js's
 // GROWTH_AA falloff and reads as fully drawn.
 const FULLY_GROWN = 1.05;
@@ -48,115 +38,64 @@ function timeline(mode, options) {
   return { growthAt: () => FULLY_GROWN, seconds: options.hold };
 }
 
-async function main() {
-  const parsed = await parseCli(KIND, process.argv.slice(2));
-  if (parsed.help) {
-    process.stdout.write(
-      `Usage: npm run trucheterie:video -- [options]\n${usageFor(KIND)}`
-    );
-    return;
-  }
-  const { typed } = parsed;
-  const options = { ...parsed.options, version: await readPackageVersion() };
-  const out = path.resolve(REPO_ROOT, String(options.out));
-  await mkdir(path.dirname(out), { recursive: true });
-  process.stdout.write(
-    `trucheterie video: mode ${options.mode}, ${options.count} fields, ` +
-      `${options.width}x${options.height} at ${options.pixelRatio}x, ` +
-      `${options.fps}fps\n` +
-      `output: ${out}\n`
-  );
-
-  const kernel = await runStage(
-    'loading the Trucheterie blob-field kernel',
-    loadKernel
-  );
-  assertPalette(kernel, parsed);
-  const roll = rollArgs(kernel, { options, typed });
-
-  const animated = options.mode !== 'stills';
-  const clip = timeline(options.mode, options);
-  const items = Array.from({ length: options.count }, (_, index) => {
-    const drawn = fieldAt(kernel, { index, options, roll });
-    if (options.mode === 'stream') drawn.config.blobLaneMode = 'Spectrum';
-    return {
-      drawn,
-      frames: Math.max(1, Math.round(clip.seconds * options.fps)),
-    };
-  });
-  const total = items.reduce((sum, item) => sum + item.frames, 0);
-  const progress = createProgress('rendering frames', total);
-  const sink = createFrameSink({
-    fps: options.fps,
-    height: options.height * options.pixelRatio,
-    out,
-    width: options.width * options.pixelRatio,
-  });
-
-  let written = 0;
-  try {
-    await withCapturer(kernel, options, async (capturer) => {
-      for (let item = 0; item < items.length; item += 1) {
-        const { drawn, frames } = items[item];
-        const bounds = await progress.stage(
-          `laying out ${drawn.seed}`,
-          async () => capturer.setField(drawn.config)
-        );
-        let cachedStill = null;
-
-        for (let frame = 0; frame < frames; frame += 1) {
-          const seconds = frame / options.fps;
-          let still;
-          if (animated) {
-            capturer.setGrowth(clip.growthAt(seconds));
-            capturer.setPalettePhase(seconds * options.paletteDrift);
-            const image = await capturer.capture({
-              backgroundColor: drawn.config.sceneBgColor,
-              bounds,
-              margin: options.margin,
-              transparentBackground: options.transparentBackground,
-            });
-            still = options.overlay
-              ? await encodeFrame(image, 'raw', options)
-              : image.data;
-          } else if (cachedStill) {
-            still = cachedStill;
-          } else {
-            const image = await capturer.capture({
-              backgroundColor: drawn.config.sceneBgColor,
-              bounds,
-              margin: options.margin,
-              transparentBackground: options.transparentBackground,
-            });
-            still = options.overlay
-              ? await encodeFrame(image, 'raw', options)
-              : image.data;
-            cachedStill = still;
-          }
-          await sink.write(still);
-          written += 1;
-          progress.update(written);
-        }
-        progress.log(`rendered ${drawn.seed} (${frames} frames)`);
-      }
+runVideo({
+  kernelLabel: 'Trucheterie blob-field',
+  loadKernel,
+  nouns: 'fields',
+  parseCli,
+  plan({ kernel, options, parsed, typed }) {
+    assertPalette(kernel, parsed);
+    const roll = rollArgs(kernel, { options, typed });
+    const animated = options.mode !== 'stills';
+    const clip = timeline(options.mode, options);
+    const frames = Math.max(1, Math.round(clip.seconds * options.fps));
+    const items = Array.from({ length: options.count }, (_, index) => {
+      const drawn = fieldAt(kernel, { index, options, roll });
+      if (options.mode === 'stream') drawn.config.blobLaneMode = 'Spectrum';
+      return drawn;
     });
-  } finally {
-    await runStage('finishing encode', () => sink.finish());
-  }
-  progress.done('rendered frames');
-
-  const render = { ...options, base: undefined };
-  const metadataPath = await writeVideoSidecar(out, {
-    presets: items.map(({ drawn }) => drawn.config),
-    render,
-  });
-  process.stdout.write(
-    `saved video: ${out}\nsaved metadata: ${metadataPath}\n`
-  );
-  process.exit(0);
-}
-
-main().catch((error) => {
-  process.stderr.write(`${error.stack ?? error}\n`);
-  process.exit(1);
+    return {
+      presets: () => items.map((drawn) => drawn.config),
+      shots: items.map((drawn) => {
+        let bounds = null;
+        let still = null;
+        return {
+          async enter(capturer, { progress }) {
+            bounds = await progress.stage(
+              `laying out ${drawn.seed}`,
+              async () => capturer.setField(drawn.config)
+            );
+          },
+          exit: ({ progress }) =>
+            progress.log(`rendered ${drawn.seed} (${frames} frames)`),
+          async frame(capturer, { seconds }) {
+            if (!animated && still) return still;
+            if (animated) {
+              capturer.setGrowth(clip.growthAt(seconds));
+              capturer.setPalettePhase(seconds * options.paletteDrift);
+            }
+            const image = await capturer.capture({
+              backgroundColor: drawn.config.sceneBgColor,
+              bounds,
+              margin: options.margin,
+              transparentBackground: options.transparentBackground,
+            });
+            still = options.overlay
+              ? await encodeFrame(image, 'raw', options)
+              : image.data;
+            return still;
+          },
+          frames,
+        };
+      }),
+    };
+  },
+  prepare: async (options) => ({
+    ...options,
+    version: await readPackageVersion(),
+  }),
+  script: 'trucheterie',
+  title: 'trucheterie',
+  usageFor,
+  withCapturer,
 });

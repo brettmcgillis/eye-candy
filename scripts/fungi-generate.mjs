@@ -1,14 +1,7 @@
 #!/usr/bin/env node
-
-/* eslint-disable no-await-in-loop */
-import { mkdir, writeFile } from 'node:fs/promises';
-import path from 'node:path';
-import process from 'node:process';
-
 import { resolveViews, usageFor } from '../src/modules/fungi/renderOptions.mjs';
 import { readPackageVersion } from './lib/cliArgs.mjs';
 import {
-  REPO_ROOT,
   encodeFrame,
   frameView,
   loadKernel,
@@ -19,102 +12,52 @@ import {
   specimenAt,
   withCapturer,
 } from './lib/fungiRender.mjs';
-import createProgress, { runStage } from './lib/progress.mjs';
+import { runStills } from './lib/generatorCli.mjs';
 
-const KIND = 'still';
-
-async function main() {
-  const parsed = await parseCli(KIND, process.argv.slice(2));
-  if (parsed.help) {
-    process.stdout.write(
-      `Usage: npm run fungi:generate -- [options]\n${usageFor(KIND)}`
+runStills({
+  encode: encodeFrame,
+  async item({ capturer, index, kernel, options, roll, save, step }) {
+    const drawn = await step(`growing specimen ${index + 1}`, async () =>
+      specimenAt(kernel, { index, options, roll })
     );
-    return;
-  }
-  const { typed } = parsed;
-  const options = { ...parsed.options, version: await readPackageVersion() };
-  const views = resolveViews(options.views);
-  const formats = ['png', 'webp'].filter((format) => options[format]);
-  const labels = [...formats, options.svg ? 'svg' : null].filter(Boolean);
-  const outRoot = path.resolve(REPO_ROOT, String(options.out));
-
-  await mkdir(outRoot, { recursive: true });
-  process.stdout.write(
-    `fungi stills: ${options.count} specimens, ${views.length} views each, ` +
-      `${options.width}x${options.height} at ${options.pixelRatio}x, ` +
-      `formats ${labels.join('+')}\n` +
-      `output: ${outRoot}\n`
-  );
-
-  const kernel = await runStage('loading the Fungi kernel', loadKernel);
-  const roll = rollArgs(kernel, { options, typed });
-  const progress = createProgress(
-    'rendering views',
-    options.count * views.length
-  );
-
-  await withCapturer(kernel, options, async (capturer) => {
-    for (let index = 0; index < options.count; index += 1) {
-      const drawn = await progress.stage(
-        `growing specimen ${index + 1}`,
-        async () => specimenAt(kernel, { index, options, roll })
-      );
-      const bounds = capturer.load(drawn);
-      const dir = path.join(outRoot, drawn.seed);
-
-      await mkdir(dir, { recursive: true });
-      await writeFile(
-        path.join(dir, 'props.json'),
-        `${JSON.stringify(sidecarFor({ ...drawn, options }), null, 2)}\n`
-      );
-
-      for (let viewIndex = 0; viewIndex < views.length; viewIndex += 1) {
-        const view = views[viewIndex];
-        await progress.stage(
-          `rendering ${drawn.seed}, ${view} view`,
-          async () => {
-            const framing = {
-              ...frameView(kernel, { bounds, options, view }),
-              levels: (specimen) =>
-                kernel.fungi.stillLevels(specimen, {
-                  grow: options.grow,
-                  rot: options.rot,
-                }),
-            };
-            if (formats.length > 0) {
-              const frame = await capturer.capture(framing);
-              await Promise.all(
-                formats.map(async (format) =>
-                  writeFile(
-                    path.join(dir, `${view}.${format}`),
-                    await encodeFrame(frame, format, options)
-                  )
-                )
-              );
-            }
-            if (options.svg) {
-              await writeFile(
-                path.join(dir, `${view}.svg`),
-                await renderSvg(kernel, capturer, {
-                  ...drawn,
-                  options,
-                  view: framing,
-                })
-              );
-            }
-          }
+    const bounds = capturer.load(drawn);
+    const out = await save(drawn.seed, sidecarFor({ ...drawn, options }));
+    await out.eachView(async (view) => {
+      const framing = {
+        ...frameView(kernel, { bounds, options, view }),
+        levels: (specimen) =>
+          kernel.fungi.stillLevels(specimen, {
+            grow: options.grow,
+            rot: options.rot,
+          }),
+      };
+      await out.image(view, () => capturer.capture(framing));
+      if (options.svg) {
+        await out.svg(
+          view,
+          await renderSvg(kernel, capturer, {
+            ...drawn,
+            options,
+            view: framing,
+          })
         );
-        progress.update(index * views.length + viewIndex + 1);
       }
-      progress.log(`saved ${drawn.seed}: ${dir}`);
-    }
-  });
-  progress.done('rendered views');
-  // Dawn keeps the event loop alive after the renderer is disposed.
-  process.exit(0);
-}
-
-main().catch((error) => {
-  process.stderr.write(`${error.stack ?? error}\n`);
-  process.exit(1);
+    });
+  },
+  kernelLabel: 'Fungi',
+  loadKernel,
+  nouns: 'specimens',
+  parseCli,
+  prepare: async (options) => ({
+    ...options,
+    version: await readPackageVersion(),
+  }),
+  resolveViews,
+  script: 'fungi',
+  setup: ({ kernel, options, typed }) => ({
+    roll: rollArgs(kernel, { options, typed }),
+  }),
+  title: 'fungi',
+  usageFor,
+  withCapturer,
 });

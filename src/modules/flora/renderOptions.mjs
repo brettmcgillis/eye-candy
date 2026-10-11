@@ -5,7 +5,14 @@
 // the scene takes its defaults from it and `npm run flora:check` holds its
 // Leva ranges to it. Dependency-free `.mjs` for the same reason as Rorschach's
 // — see docs/flora-pipeline.md.
-import createOptionSchema from '../optionSchema/index.mjs';
+import createOptionSchema, {
+  color,
+  flag,
+  inFacet,
+  num,
+  render,
+  standard,
+} from '../optionSchema/index.mjs';
 
 export const PALETTE_NONE = 'None';
 export const VIEWS = ['front', 'right', 'back', 'left'];
@@ -60,59 +67,12 @@ const SHAPES = [
   ['petal', 'Petals'],
 ];
 
-// `generator` marks the params @modules/flora's buildSpecimen reads; `scene`
-// marks a Leva control of the Flora scene. A spec can be both. `arrangement`
-// marks a scene control that places flowers rather than describing one: it
-// belongs to a preset but never to a flower's config.
-function num(section, label, value, min, max, step, extra = {}) {
-  return {
-    default: value,
-    help: label,
-    label,
-    max,
-    min,
-    placeholder: 'N',
-    scene: true,
-    scope: 'shared',
-    section,
-    step,
-    type: 'number',
-    ...extra,
-  };
-}
-
 const gen = (section, label, value, min, max, step, facet, roll) =>
-  num(section, label, value, min, max, step, {
+  num(section, null, label, value, min, max, step, {
     facet,
     generator: true,
     ...(roll ? { roll: { max: roll[1], min: roll[0], step } } : {}),
   });
-
-function color(section, label, value, facet) {
-  return {
-    default: value,
-    facet,
-    help: label,
-    label,
-    scene: true,
-    scope: 'shared',
-    section,
-    type: 'color',
-  };
-}
-
-function flag(section, label, value, extra = {}) {
-  return {
-    default: value,
-    help: label,
-    label,
-    scene: true,
-    scope: 'shared',
-    section,
-    type: 'boolean',
-    ...extra,
-  };
-}
 
 const ORNAMENT_MIX = Object.fromEntries(
   SHAPES.flatMap(([shape, label]) => [
@@ -146,7 +106,7 @@ const GENERATOR = {
   },
 
   stemHeight: gen('stem', 'Height', 6.5, 1, 12, 0.1, 'form', [4.5, 8.5]),
-  stemSegments: num('generator', 'Stem segments', 48, 8, 256, 1, {
+  stemSegments: num('generator', null, 'Stem segments', 48, 8, 256, 1, {
     generator: true,
     scene: false,
   }),
@@ -262,6 +222,7 @@ const GENERATOR = {
   wispReach: gen('fibers', 'Wisp reach', 0.8, 0, 3, 0.05, 'form', [0.3, 1.5]),
   maxSegments: num(
     'generator',
+    null,
     'Segment budget',
     400000,
     10000,
@@ -346,186 +307,104 @@ const LOOK = {
     section: 'palette',
     type: 'string',
   },
-  paletteShuffle: flag('palette', 'New palette each generation', false),
-  paletteExact: flag('palette', 'Exact colours', false, { facet: 'palette' }),
-  backgroundColor: color('palette', 'Background', '#050505'),
-  stemColor: color('palette', 'Stem', '#3f9a4a', 'palette'),
-  budColor: color('palette', 'Bud', '#e4eed8', 'palette'),
-  crownColor: color('palette', 'Crown', '#e58fc2', 'palette'),
-  accentColor: color('palette', 'Accent', '#f0a040', 'palette'),
-  tipColor: color('palette', 'Tips', '#fff0e0', 'palette'),
-  ornamentColor: color('palette', 'Ornaments', '#ffd27a', 'palette'),
-  greenReach: num('palette', 'Green reach', 0.18, 0.001, 1, 0.005, {
+  paletteShuffle: flag('palette', null, 'New palette each generation', false),
+  paletteExact: flag('palette', null, 'Exact colours', false, {
+    facet: 'palette',
+  }),
+  backgroundColor: color('palette', null, 'Background', '#050505'),
+  stemColor: inFacet('palette', color('palette', null, 'Stem', '#3f9a4a')),
+  budColor: inFacet('palette', color('palette', null, 'Bud', '#e4eed8')),
+  crownColor: inFacet('palette', color('palette', null, 'Crown', '#e58fc2')),
+  accentColor: inFacet('palette', color('palette', null, 'Accent', '#f0a040')),
+  tipColor: inFacet('palette', color('palette', null, 'Tips', '#fff0e0')),
+  ornamentColor: inFacet(
+    'palette',
+    color('palette', null, 'Ornaments', '#ffd27a')
+  ),
+  greenReach: num('palette', null, 'Green reach', 0.18, 0.001, 1, 0.005, {
     facet: 'palette',
     roll: { max: 0.3, min: 0.12, step: 0.005 },
   }),
-  tipAmount: num('palette', 'Tip amount', 0.55, 0, 1, 0.01, {
+  tipAmount: num('palette', null, 'Tip amount', 0.55, 0, 1, 0.01, {
     facet: 'palette',
     roll: { max: 0.7, min: 0.2, step: 0.01 },
   }),
-  tipPower: num('palette', 'Tip falloff', 2, 0.2, 8, 0.05),
-  tintVariance: num('palette', 'Lobe variance', 0.3, 0, 1, 0.01, {
+  tipPower: num('palette', null, 'Tip falloff', 2, 0.2, 8, 0.05),
+  tintVariance: num('palette', null, 'Lobe variance', 0.3, 0, 1, 0.01, {
     facet: 'palette',
     roll: { max: 0.5, min: 0.1, step: 0.01 },
   }),
 
-  stemWidth: num('strands', 'Stem width', 0.045, 0.002, 0.2, 0.001),
-  tipWidth: num('strands', 'Tip width', 0.004, 0.0005, 0.05, 0.0005),
-  thicknessCurve: num('strands', 'Taper', 2.4, 0.2, 8, 0.05),
-  leafWidth: num('strands', 'Leaf width', 0.06, 0, 0.3, 0.005),
-  leafFlatness: num('strands', 'Leaf flatness', 0.22, 0.05, 1, 0.01),
-  minPixels: num('strands', 'Min pixels', 0.6, 0.25, 4, 0.05),
-  ornamentScale: num('strands', 'Ornament scale', 1, 0, 4, 0.05),
-  ornamentMinPixels: num('strands', 'Ornament min px', 1.5, 0, 10, 0.1),
+  stemWidth: num('strands', null, 'Stem width', 0.045, 0.002, 0.2, 0.001),
+  tipWidth: num('strands', null, 'Tip width', 0.004, 0.0005, 0.05, 0.0005),
+  thicknessCurve: num('strands', null, 'Taper', 2.4, 0.2, 8, 0.05),
+  leafWidth: num('strands', null, 'Leaf width', 0.06, 0, 0.3, 0.005),
+  leafFlatness: num('strands', null, 'Leaf flatness', 0.22, 0.05, 1, 0.01),
+  minPixels: num('strands', null, 'Min pixels', 0.6, 0.25, 4, 0.05),
+  ornamentScale: num('strands', null, 'Ornament scale', 1, 0, 4, 0.05),
+  ornamentMinPixels: num('strands', null, 'Ornament min px', 1.5, 0, 10, 0.1),
 
-  roughness: num('surface', 'Roughness', 0.55, 0.05, 1, 0.01),
-  occlusion: num('surface', 'Occlusion', 0.8, 0, 1, 0.01),
-  cardCup: num('surface', 'Petal cup', 0.25, -0.6, 0.6, 0.01),
+  roughness: num('surface', null, 'Roughness', 0.55, 0.05, 1, 0.01),
+  occlusion: num('surface', null, 'Occlusion', 0.8, 0, 1, 0.01),
+  cardCup: num('surface', null, 'Petal cup', 0.25, -0.6, 0.6, 0.01),
 };
 
 const MOTION = {
-  regrow: flag('lifecycle', 'Regrow loop', true),
+  regrow: flag('lifecycle', null, 'Regrow loop', true),
   // A scene behaviour, not a render setting: the CLI rolls every still
   // anyway, so this is marked sceneOnly and never becomes a flag.
-  rollGenerations: flag('lifecycle', 'Roll each generation', false, {
+  rollGenerations: flag('lifecycle', null, 'Roll each generation', false, {
     sceneOnly: true,
   }),
-  startGrown: flag('lifecycle', 'Start grown', false, {
+  startGrown: flag('lifecycle', null, 'Start grown', false, {
     sceneOnly: true,
   }),
-  timeScale: num('lifecycle', 'Time scale', 1, 0, 4, 0.05),
-  growSeconds: num('lifecycle', 'Grow', 16, 1, 60, 0.5),
-  bloomStart: num('lifecycle', 'Bloom starts', 0.5, 0, 1, 0.01),
-  bloomSeconds: num('lifecycle', 'Bloom', 9, 0.1, 40, 0.5),
-  holdSeconds: num('lifecycle', 'Hold', 6, 0, 60, 0.5),
-  exitSeconds: num('lifecycle', 'Unravel', 9, 0.5, 30, 0.5),
-  restSeconds: num('lifecycle', 'Rest', 1.5, 0, 10, 0.1),
-  windStrength: num('wind', 'Strength', 0, 0, 2, 0.01),
-  windSpeed: num('wind', 'Speed', 0.6, 0, 4, 0.01),
-  scatterDistance: num('seeds', 'Distance', 7, 0, 30, 0.1),
-  scatterDrift: num('seeds', 'Wind carry', 0.55, 0, 1, 0.01),
-  scatterAngle: num('seeds', 'Wind angle', 25, -180, 180, 1),
-  scatterLift: num('seeds', 'Lift', 0.8, -1, 2, 0.01),
-  scatterGravity: num('seeds', 'Gravity', 0.25, 0, 8, 0.05),
-  scatterFlutter: num('seeds', 'Flutter', 0.5, 0, 3, 0.01),
-  scatterTurbulence: num('seeds', 'Turbulence', 0.7, 0, 3, 0.01),
-  scatterSpin: num('seeds', 'Tumble', 2.5, 0, 6, 0.05),
+  timeScale: num('lifecycle', null, 'Time scale', 1, 0, 4, 0.05),
+  growSeconds: num('lifecycle', null, 'Grow', 16, 1, 60, 0.5),
+  bloomStart: num('lifecycle', null, 'Bloom starts', 0.5, 0, 1, 0.01),
+  bloomSeconds: num('lifecycle', null, 'Bloom', 9, 0.1, 40, 0.5),
+  holdSeconds: num('lifecycle', null, 'Hold', 6, 0, 60, 0.5),
+  exitSeconds: num('lifecycle', null, 'Unravel', 9, 0.5, 30, 0.5),
+  restSeconds: num('lifecycle', null, 'Rest', 1.5, 0, 10, 0.1),
+  windStrength: num('wind', null, 'Strength', 0, 0, 2, 0.01),
+  windSpeed: num('wind', null, 'Speed', 0.6, 0, 4, 0.01),
+  scatterDistance: num('seeds', null, 'Distance', 7, 0, 30, 0.1),
+  scatterDrift: num('seeds', null, 'Wind carry', 0.55, 0, 1, 0.01),
+  scatterAngle: num('seeds', null, 'Wind angle', 25, -180, 180, 1),
+  scatterLift: num('seeds', null, 'Lift', 0.8, -1, 2, 0.01),
+  scatterGravity: num('seeds', null, 'Gravity', 0.25, 0, 8, 0.05),
+  scatterFlutter: num('seeds', null, 'Flutter', 0.5, 0, 3, 0.01),
+  scatterTurbulence: num('seeds', null, 'Turbulence', 0.7, 0, 3, 0.01),
+  scatterSpin: num('seeds', null, 'Tumble', 2.5, 0, 6, 0.05),
 };
 
-const rollSeed = (facet) => ({
-  default: null,
-  help: `Seed for the ${facet} roll; blank follows the flower seed`,
-  label: `${facet[0].toUpperCase()}${facet.slice(1)} seed`,
-  nullable: true,
-  placeholder: 'WORD',
-  scope: 'shared',
-  section: 'roll',
-  text: true,
-  type: 'seed',
-});
-
-const render = (spec) => ({ scope: 'shared', section: 'render', ...spec });
+const rollSeed = (facet) => standard.rollSeed(facet, 'flower seed');
 
 const RENDER = {
-  out: {
-    cliOnly: true,
-    default: 'output/flora',
-    help: 'Output directory (stills) or file (video)',
-    placeholder: 'PATH',
-    scope: 'shared',
-    section: 'output',
-    type: 'string',
-  },
-  width: num('output', 'Width', 1440, 64, 8192, 2, {
-    placeholder: 'PX',
-    scene: false,
-  }),
-  height: num('output', 'Height', 2560, 64, 8192, 2, {
-    placeholder: 'PX',
-    scene: false,
-  }),
-  pixelRatio: num('output', 'Pixel ratio', 2, 1, 4, 1, {
-    choices: [1, 2, 3, 4],
+  out: standard.out('flora'),
+  width: standard.width(1440),
+  height: standard.height(2560),
+  pixelRatio: standard.pixelRatio({
     help: 'Renders at width×ratio by height×ratio; minimum stroke widths scale with it, so a 2x still is the 1x still, sharper',
-    scene: false,
   }),
-  count: num('output', 'Count', 1, 1, 200, 1, {
-    help: 'How many flowers (or bouquets) to roll',
-    scene: false,
-  }),
-  png: {
-    default: false,
-    help: 'Write PNG files',
-    label: 'PNG',
-    scope: 'still',
-    section: 'output',
-    type: 'boolean',
-  },
-  webp: {
-    default: true,
-    help: 'Write lossless WebP files',
-    label: 'WebP',
-    scope: 'still',
-    section: 'output',
-    type: 'boolean',
-  },
-  svg: {
-    default: false,
-    help: 'Write a plottable SVG of fiber centrelines and ornament outlines',
-    label: 'SVG',
-    scope: 'still',
-    section: 'output',
-    type: 'boolean',
-  },
-  svgOcclusion: {
-    default: true,
-    help: 'Drop line work hidden behind nearer geometry (uses a depth pass)',
-    label: 'SVG hidden lines',
-    scope: 'still',
-    section: 'svg',
-    type: 'boolean',
-  },
-  svgStroke: {
+  count: standard.count('flowers (or bouquets)'),
+  png: standard.png(),
+  webp: standard.webp(),
+  svg: standard.svg(
+    'Write a plottable SVG of fiber centrelines and ornament outlines'
+  ),
+  svgOcclusion: standard.svgOcclusion(
+    'Drop line work hidden behind nearer geometry (uses a depth pass)'
+  ),
+  svgStroke: standard.svgStroke({
     default: 1,
     help: 'Multiplier on the projected tube width; 0 draws hairlines for plotting',
-    label: 'SVG stroke',
-    max: 8,
-    min: 0,
     placeholder: 'N',
-    scope: 'still',
-    section: 'svg',
-    step: 0.1,
-    type: 'number',
-  },
-  views: {
-    default: 'front',
-    help: `Comma-separated views: ${VIEWS.join(', ')}`,
-    label: 'Views',
-    placeholder: 'LIST',
-    scope: 'still',
-    section: 'output',
-    type: 'string',
-  },
+  }),
+  views: standard.views(VIEWS, 'front'),
 
-  keep: {
-    default: '',
-    help: 'Comma-separated facets to hold while the rest roll: form, palette, ornaments',
-    label: 'Hold facets',
-    placeholder: 'LIST',
-    scope: 'shared',
-    section: 'roll',
-    type: 'string',
-  },
-  base: {
-    cliOnly: true,
-    default: null,
-    help: 'A flower config (or props.json path) the roll starts from',
-    nullable: true,
-    placeholder: 'JSON',
-    scope: 'shared',
-    section: 'roll',
-    type: 'json',
-  },
+  keep: standard.keep(['form', 'palette', 'ornaments']),
+  base: standard.base('flower'),
   formSeed: rollSeed('form'),
   paletteSeed: rollSeed('palette'),
   ornamentsSeed: rollSeed('ornaments'),
@@ -573,38 +452,26 @@ const RENDER = {
     label: 'Framing',
     type: 'enum',
   }),
-  margin: num('render', 'Fit margin', 0.12, 0, 1, 0.01, {
-    help: 'Padding around the bounds when framing is fit',
-    scene: false,
-  }),
-  distance: num('render', 'Distance', 26, 1, 200, 0.5, {
+  margin: standard.margin(
+    0.12,
+    'Padding around the bounds when framing is fit',
+    { max: 1 }
+  ),
+  distance: num('render', null, 'Distance', 26, 1, 200, 0.5, {
     help: 'Camera distance when framing is scene',
     scene: false,
   }),
-  fov: num('render', 'FOV', 30, 5, 120, 1, { scene: false }),
-  growth: num('render', 'Growth', 1, 0, 1, 0.01, {
+  fov: standard.fov(30, { max: 120, min: 5 }),
+  growth: num('render', null, 'Growth', 1, 0, 1, 0.01, {
     help: 'How grown a still is, 0-1',
     scene: false,
   }),
-  bloom: num('render', 'Bloom', 1, 0, 1, 0.01, {
+  bloom: num('render', null, 'Bloom', 1, 0, 1, 0.01, {
     help: 'How far the colour has matured, 0-1',
     scene: false,
   }),
-  shadows: render({
-    default: true,
-    help: 'Key-light shadow map',
-    label: 'Shadows',
-    type: 'boolean',
-  }),
-  samples: render({
-    choices: [0, 4],
-    default: 4,
-    help: 'MSAA samples',
-    label: 'MSAA',
-    max: 4,
-    min: 0,
-    type: 'number',
-  }),
+  shadows: standard.shadows({ help: 'Key-light shadow map' }),
+  samples: standard.samples(),
 
   bouquet: {
     array: true,
@@ -617,7 +484,7 @@ const RENDER = {
     section: 'bouquet',
     type: 'json',
   },
-  bouquetSize: num('bouquet', 'Stems', 0, 0, 24, 1, {
+  bouquetSize: num('bouquet', null, 'Stems', 0, 0, 24, 1, {
     arrangement: true,
     help: 'Flowers per bouquet; 0 renders single flowers',
   }),
@@ -643,32 +510,28 @@ const RENDER = {
     section: 'bouquet',
     type: 'enum',
   },
-  bouquetSpread: num('bouquet', 'Spread', 30, 0, 80, 1, {
+  bouquetSpread: num('bouquet', null, 'Spread', 30, 0, 80, 1, {
     arrangement: true,
     help: 'Minimum lean of the outermost heads, degrees; widened as needed so crowns do not overlap',
   }),
-  bouquetTie: num('bouquet', 'Tie height', 0.12, 0, 0.9, 0.01, {
+  bouquetTie: num('bouquet', null, 'Tie height', 0.12, 0, 0.9, 0.01, {
     arrangement: true,
     help: 'Where the stems cross, as a fraction of stem height; lowered automatically if the crowns need a longer lever',
   }),
-  bouquetGap: num('bouquet', 'Gap', 0.1, -0.5, 1, 0.01, {
+  bouquetGap: num('bouquet', null, 'Gap', 0.1, -0.5, 1, 0.01, {
     arrangement: true,
     help: 'Space kept between neighbouring crowns, as a fraction of their radii; negative lets them mingle',
   }),
-  bouquetJitter: num('bouquet', 'Jitter', 0.35, 0, 1, 0.01, {
+  bouquetJitter: num('bouquet', null, 'Jitter', 0.35, 0, 1, 0.01, {
     arrangement: true,
     help: 'Irregularity of lean, height and turn',
   }),
 
-  mode: {
-    choices: VIDEO_MODES,
-    default: 'lifecycle',
-    help: 'lifecycle: grow→bloom→hold→unravel per flower; growth: grow and bloom; turntable: orbit a grown flower; stills: a cut per flower',
-    label: 'Mode',
-    scope: 'video',
-    section: 'video',
-    type: 'enum',
-  },
+  mode: standard.mode(
+    VIDEO_MODES,
+    'lifecycle',
+    'lifecycle: grow→bloom→hold→unravel per flower; growth: grow and bloom; turntable: orbit a grown flower; stills: a cut per flower'
+  ),
   imageFormat: {
     choices: ['png', 'webp'],
     default: 'png',
@@ -707,50 +570,17 @@ const RENDER = {
     type: 'boolean',
     workbenchOnly: true,
   },
-  view: {
-    choices: VIEWS,
-    default: 'front',
-    help: 'Camera view for the clip',
-    label: 'View',
-    scope: 'video',
-    section: 'video',
-    type: 'enum',
-  },
-  fps: {
-    choices: [24, 30, 60],
-    default: 30,
-    help: 'Frames per second',
-    label: 'FPS',
-    max: 60,
-    min: 24,
-    scope: 'video',
-    section: 'video',
-    type: 'number',
-  },
-  hold: {
-    default: 4,
-    help: 'Seconds per flower (turntable, stills) or held at the end (growth)',
-    label: 'Hold',
-    max: 120,
-    min: 0,
-    placeholder: 'S',
-    scope: 'video',
-    section: 'video',
-    step: 0.5,
-    type: 'number',
-  },
-  turns: {
-    default: 1,
+  view: standard.view(VIEWS, 'front'),
+  fps: standard.fps(),
+  hold: standard.hold(
+    4,
+    'Seconds per flower (turntable, stills) or held at the end (growth)',
+    { max: 120 }
+  ),
+  turns: standard.turns('turntableSpan', {
     help: 'Turntable revolutions, counted per flower or across the whole clip per turntableSpan',
-    label: 'Turns',
-    max: 10,
     min: 0.125,
-    placeholder: 'N',
-    scope: 'video',
-    section: 'video',
-    step: 0.25,
-    type: 'number',
-  },
+  }),
   turntableSpan: {
     choices: TURNTABLE_SPANS,
     default: 'flower',
@@ -760,46 +590,20 @@ const RENDER = {
     section: 'video',
     type: 'enum',
   },
-  orbit: {
-    default: 0,
-    help: 'Degrees the camera drifts around a lifecycle or growth clip',
-    label: 'Orbit drift',
-    max: 360,
-    min: -360,
-    placeholder: 'DEG',
-    scope: 'video',
-    section: 'video',
-    step: 5,
-    type: 'number',
-  },
+  orbit: standard.orbit(
+    0,
+    'Degrees the camera drifts around a lifecycle or growth clip'
+  ),
 };
 
 export const RENDER_OPTIONS = { ...GENERATOR, ...LOOK, ...MOTION, ...RENDER };
 
 const SECTION_LABELS = {
-  bouquet: 'bouquet',
-  crown: 'crown',
-  fibers: 'fibers',
   generator: 'generator limits',
-  growth: 'growth',
-  lifecycle: 'lifecycle',
   ornamentMix: 'ornament mix',
   ornamentWire: 'ornament wireframe ratio',
-  ornaments: 'ornaments',
-  output: 'output',
-  overlay: 'overlay',
-  palette: 'palette',
   roll: 'rolling',
-  render: 'render',
-  source: 'source',
   seeds: 'seed flight',
-  svg: 'svg',
-  stem: 'stem',
-  strands: 'strands',
-  surface: 'surface',
-  variation: 'variation',
-  video: 'video',
-  wind: 'wind',
 };
 
 export const SURFACE_DEFAULTS = {
@@ -818,112 +622,43 @@ export const SURFACE_DEFAULTS = {
   },
 };
 
-export function resolveViews(list, fail = (message) => new Error(message)) {
-  const views = String(list)
-    .split(',')
-    .map((view) => view.trim())
-    .filter(Boolean);
-  const unknown = views.filter((view) => !VIEWS.includes(view));
-  if (views.length === 0 || unknown.length > 0) {
-    throw fail(`views must name only ${VIEWS.join(', ')}.`);
-  }
-  return views;
-}
+const isFlower = (spec) => spec.scene && !spec.arrangement;
 
+// A config is one flower's: the scene's key space less the arrangement.
 const schema = createOptionSchema({
+  configKeys: isFlower,
   options: RENDER_OPTIONS,
   sectionLabels: SECTION_LABELS,
   surfaceDefaults: SURFACE_DEFAULTS,
   validate(kind, options, fail) {
-    if (kind === 'still' && !options.png && !options.webp && !options.svg) {
-      throw fail('Select at least one output format: PNG, WebP or SVG.');
-    }
-    const longest = Math.max(options.width, options.height);
-    if (longest * options.pixelRatio > 8192) {
-      throw fail(
-        `width×pixelRatio must stay within 8192; the longest side would be ${longest * options.pixelRatio}.`
-      );
-    }
-    if (kind === 'still') resolveViews(options.views, fail);
     if (kind === 'video' && options.in && options.mode !== 'stills') {
       throw fail('--in is only supported with --mode stills.');
     }
   },
+  views: VIEWS,
 });
 
 export const {
+  GENERATOR_KEYS,
+  SCENE_KEYS,
+  configFrom,
   defaultsFor,
   facets,
+  generatorDefaults,
   keysInFacet,
   normalizeOptions,
   optionsFor,
+  optionsFromConfig,
+  presetFromConfig,
+  resolveViews,
+  sceneDefaults,
+  sceneNameFor,
   sectionsFor,
   usageFor,
 } = schema;
 
-const keysWhere = (test) =>
-  Object.entries(RENDER_OPTIONS)
-    .filter(([, spec]) => test(spec))
-    .map(([key]) => key);
+const { defaultsOf, keysWhere } = schema;
 
-export const GENERATOR_KEYS = keysWhere((spec) => spec.generator);
-export const SCENE_KEYS = keysWhere((spec) => spec.scene);
 export const ARRANGEMENT_KEYS = keysWhere((spec) => spec.arrangement);
-const FLOWER_KEYS = keysWhere((spec) => spec.scene && !spec.arrangement);
 
-// A flower config lives in the scene's key space, which is the schema's except
-// where a spec renames it (`overlay` is the scene's `showOverlay`). Everything
-// that crosses between the two goes through here.
-export const sceneNameFor = (key) => RENDER_OPTIONS[key].sceneKey ?? key;
-
-const FLOWER_NAMES = new Map(
-  FLOWER_KEYS.map((key) => [sceneNameFor(key), key])
-);
-
-export const generatorDefaults = () =>
-  Object.fromEntries(
-    GENERATOR_KEYS.map((key) => [key, RENDER_OPTIONS[key].default])
-  );
-
-const defaultsOf = (keys) =>
-  Object.fromEntries(
-    keys.map((key) => [sceneNameFor(key), RENDER_OPTIONS[key].default])
-  );
-
-export const sceneDefaults = () => defaultsOf(SCENE_KEYS);
-
-// One flower's config: the scene's key space less the arrangement.
-export const flowerDefaults = () => defaultsOf(FLOWER_KEYS);
-
-// A render sidecar carries a config as `preset`; this pulls one out of
-// whatever shape was handed over.
-export function configFrom(source) {
-  const flat = source?.preset ?? source ?? {};
-  return Object.fromEntries(
-    [...FLOWER_NAMES.keys()]
-      .filter((name) => flat[name] != null)
-      .map((name) => [name, flat[name]])
-  );
-}
-
-// The same config as CLI/workbench options, for filling a form from a
-// generation.
-export function optionsFromConfig(config = {}) {
-  return Object.fromEntries(
-    [...FLOWER_NAMES]
-      .filter(([name]) => config[name] != null)
-      .map(([name, key]) => [key, config[name]])
-  );
-}
-
-// The other direction, for saving a generation as a scene preset: only what
-// differs from the scene's defaults, the way the hand-written snapshots are.
-export function presetFromConfig(config = {}) {
-  const defaults = sceneDefaults();
-  return Object.fromEntries(
-    Object.entries(config).filter(
-      ([name, value]) =>
-        name in defaults && value != null && value !== defaults[name]
-    )
-  );
-}
+export const flowerDefaults = () => defaultsOf(keysWhere(isFlower));

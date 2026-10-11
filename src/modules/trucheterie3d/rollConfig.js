@@ -65,6 +65,10 @@ const FACET_ROLLS = {
         ['half', 2],
         ['ribbon', 2],
       ]),
+      lanesAs: weighted(rng, [
+        ['tubes', 3],
+        ['membrane', 1],
+      ]),
     });
   },
 };

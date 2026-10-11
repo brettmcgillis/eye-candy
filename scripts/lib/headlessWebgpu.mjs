@@ -10,6 +10,29 @@
 
 let modules = null;
 
+// Animation frames run only when a capture asks for one. A PassNode renders
+// its scene once per node frame, which three advances from the animation
+// loop; on a timer, a capture inside the last capture's frame read back the
+// previous image, so output depended on how long each step took.
+const frameCallbacks = new Map();
+let lastFrameId = 0;
+
+export function advanceFrame() {
+  const due = [...frameCallbacks.values()];
+  frameCallbacks.clear();
+  const now = performance.now();
+  due.forEach((callback) => callback(now));
+}
+
+// TSL `time` reads the node frame's clock, which three keeps from
+// performance.now(). Headless, it is the capture's clock instead: seconds
+// into the video, or 0 for a still.
+let clockSeconds = 0;
+
+export function setClock(seconds) {
+  clockSeconds = seconds;
+}
+
 // three touches a handful of browser globals during construction. Only the
 // ones it actually reaches are stubbed; the canvas never backs a swapchain
 // because every render goes to a RenderTarget.
@@ -21,9 +44,19 @@ export async function loadThree() {
 
   globalThis.navigator = { ...globalThis.navigator, gpu };
   globalThis.self = globalThis;
-  globalThis.requestAnimationFrame = (cb) =>
-    setTimeout(() => cb(Date.now()), 16);
-  globalThis.cancelAnimationFrame = (id) => clearTimeout(id);
+  globalThis.requestAnimationFrame = (callback) => {
+    lastFrameId += 1;
+    frameCallbacks.set(lastFrameId, callback);
+    return lastFrameId;
+  };
+  globalThis.cancelAnimationFrame = (id) => frameCallbacks.delete(id);
+  // three's async builds yield to an animation frame unless this exists.
+  globalThis.scheduler ??= {
+    yield: () =>
+      new Promise((resolve) => {
+        setImmediate(resolve);
+      }),
+  };
   Object.assign(globalThis, webgpu.globals);
 
   modules = {
@@ -113,14 +146,22 @@ export async function createHeadlessRenderer({
     colorSpace: THREE.NoColorSpace,
     depthBuffer: true,
   });
+  // eslint-disable-next-line no-underscore-dangle
+  const { nodeFrame } = renderer._nodes;
+  let stamped = clockSeconds;
 
   return {
     renderer,
     target,
 
     // `draw` renders into the target; the pixels come back as raw RGBA so the
-    // caller can composite and encode exactly once.
+    // caller can composite and encode exactly once. Each read is its own
+    // animation frame at the capture clock, so every pass re-renders.
     async readFrame(draw) {
+      advanceFrame();
+      nodeFrame.deltaTime = clockSeconds - stamped;
+      nodeFrame.time = clockSeconds;
+      stamped = clockSeconds;
       renderer.setRenderTarget(target);
       draw();
       const pixels = await renderer.readRenderTargetPixelsAsync(

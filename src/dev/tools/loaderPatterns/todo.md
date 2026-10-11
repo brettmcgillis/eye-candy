@@ -8,6 +8,10 @@ Preview loader animations and pattern references.
 
 ## // TODO:
 
+## // Presets
+
 ## // Features
+
+## // Interactivity
 
 ## // Bugs

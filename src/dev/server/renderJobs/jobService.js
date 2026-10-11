@@ -151,8 +151,12 @@ export function optionsToFlags(options, skip = () => false) {
 //     { args, options, files? } — the CLI argv and the options to record;
 //     `files` are written into the collection before the CLI starts
 //   maxConcurrent    how many CLIs may run at once; the rest queue
+//   itemFolders      each item is its whole folder (PrintShop: preview +
+//                    model files); keep and delete move the folder, and
+//                    the saved tree lists every file in it
 export default function createRenderJobService({
   curatedRoot,
+  itemFolders = false,
   curatedUrl,
   extraRoots = [],
   kinds,
@@ -233,7 +237,11 @@ export default function createRenderJobService({
           }
 
           const relativePath = path.relative(root, target);
-          if (!MEDIA.test(relativePath) && !relativePath.endsWith('.json')) {
+          if (
+            !itemFolders &&
+            !MEDIA.test(relativePath) &&
+            !relativePath.endsWith('.json')
+          ) {
             return;
           }
           const segments = relativePath.split(path.sep);
@@ -348,7 +356,9 @@ export default function createRenderJobService({
           if (error.code === 'ENOENT') return [];
           throw error;
         });
-        if (!entries.some((entry) => /\.(png|svg|webp)$/u.test(entry))) {
+        if (itemFolders && directory !== outputDir) {
+          await fs.rm(directory, { force: true, recursive: true });
+        } else if (!entries.some((entry) => /\.(png|svg|webp)$/u.test(entry))) {
           await fs.rm(path.join(directory, 'props.json'), { force: true });
         }
       })
@@ -686,9 +696,14 @@ export default function createRenderJobService({
       .map((relativePath) =>
         path.resolve(outputDir, relativePath.replace(/\.mp4$/u, '.json'))
       );
+    const folderTargets = itemFolders
+      ? [...new Set(targets.map((target) => path.dirname(target)))].filter(
+          (directory) => directory !== outputDir
+        )
+      : [];
     await Promise.all(
-      [...targets, ...metadataTargets].map((target) =>
-        fs.rm(target, { force: true })
+      [...targets, ...metadataTargets, ...folderTargets].map((target) =>
+        fs.rm(target, { force: true, recursive: true })
       )
     );
     Object.assign(job, await discoverAssets(rootDir, job));
@@ -746,6 +761,24 @@ export default function createRenderJobService({
             (item) => item.path === propsPath.split(path.sep).join('/')
           );
         const copies = [fs.copyFile(source, target)];
+        if (itemFolders) {
+          const folder = path.posix.dirname(asset.path);
+          job.assets
+            .filter(
+              (item) =>
+                item.path !== asset.path &&
+                folder !== '.' &&
+                path.posix.dirname(item.path) === folder
+            )
+            .forEach((item) => {
+              copies.push(
+                fs.copyFile(
+                  resolveAsset(rootDir, id, item.path),
+                  path.join(path.dirname(target), item.name)
+                )
+              );
+            });
+        }
         if (metadataAsset) {
           copies.push(
             fs.copyFile(

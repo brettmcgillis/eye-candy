@@ -18,6 +18,7 @@ import {
 } from '../src/modules/isoLinesRelief/renderOptions.mjs';
 import { createHeadlessRenderer, loadThree } from './lib/headlessWebgpu.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import checkWorkbenchPage from './lib/workbenchPage.mjs';
 
 const PRESETS =
   '/src/components/scenes/WebGPU/IsoLinesRelief/presets/presets.js';
@@ -34,7 +35,7 @@ const BARRELS = {
 };
 const PAGE_FIELDS = path.join(
   REPO_ROOT,
-  'src/dev/tools/isoLinesRelief/components/OptionSections.jsx'
+  'src/dev/tools/isoLinesRelief/IsoLinesReliefWorkbenchPage.jsx'
 );
 // Keys the camera rig owns; a preset may carry them but the schema does not.
 const CAMERA_KEY = /^(camera|orbit|fixed|spline|operator)/u;
@@ -217,15 +218,7 @@ async function checkHeadlessCalls(barrels) {
 }
 
 async function checkPageFields() {
-  const source = await readFile(PAGE_FIELDS, 'utf8');
-  const block = source.match(/const HANDLED = new Set\(\[([^\]]+)\]/u)?.[1];
-  check(block, 'OptionSections.jsx lost its HANDLED list.');
-  [...(block ?? '').matchAll(/'(\w+)'/gu)].forEach(([, key]) =>
-    check(
-      key in RENDER_OPTIONS,
-      `the workbench hand-lays "${key}", which is not in renderOptions.mjs.`
-    )
-  );
+  await checkWorkbenchPage(PAGE_FIELDS, RENDER_OPTIONS, check);
 }
 
 // The rig must compile to valid WGSL and draw something other than the
@@ -302,8 +295,6 @@ async function checkRender({ iso, look, relief }, THREE) {
     rig.setBuild(build);
     rig.setTime(build.time);
     device.pushErrorScope('validation');
-    // eslint-disable-next-line no-await-in-loop
-    await headless.readFrame(() => renderer.render(scene, camera));
     // eslint-disable-next-line no-await-in-loop
     const frame = await headless.readFrame(() =>
       renderer.render(scene, camera)

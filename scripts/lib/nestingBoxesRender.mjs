@@ -1,5 +1,4 @@
 /* eslint-disable import/no-extraneous-dependencies */
-import { readFile } from 'node:fs/promises';
 import path from 'node:path';
 import sharp from 'sharp';
 
@@ -11,12 +10,18 @@ import {
   defaultsFor,
   normalizeOptions,
 } from '../../src/modules/nestingBoxes/renderOptions.mjs';
-import { parseArgs, providedKeys } from './cliArgs.mjs';
-import { createHeadlessRenderer, loadThree } from './headlessWebgpu.mjs';
-import loadModules, { REPO_ROOT } from './loadModules.mjs';
+import {
+  DEG,
+  createParseCli,
+  cross,
+  dotOf,
+  loadKernelModules,
+  normalize,
+  sub,
+} from './generatorCli.mjs';
+import { createHeadlessRenderer } from './headlessWebgpu.mjs';
+import { REPO_ROOT } from './loadModules.mjs';
 import { runStage } from './progress.mjs';
-
-export { REPO_ROOT };
 
 // Barrels only — see docs/nesting-boxes-pipeline.md.
 const ENTRIES = {
@@ -26,44 +31,13 @@ const ENTRIES = {
   post: '/src/modules/postRig/index.js',
 };
 
-const DEG = Math.PI / 180;
+export const loadKernel = () => loadKernelModules(ENTRIES);
 
-// three must see the stubbed browser globals before any module that imports
-// it is evaluated, so the renderer bootstrap runs first.
-export async function loadKernel() {
-  const { THREE, TSL } = await loadThree();
-  const loaded = await loadModules(Object.values(ENTRIES));
-  const pick = (name) => loaded[ENTRIES[name]];
-  return {
-    THREE,
-    TSL,
-    boxes: pick('boxes'),
-    lights: pick('lights'),
-    look: pick('look'),
-    post: pick('post'),
-  };
-}
-
-async function readJsonOption(value) {
-  if (value == null || typeof value !== 'string') return value;
-  if (/^\s*[[{]/u.test(value)) return JSON.parse(value);
-  return JSON.parse(await readFile(value, 'utf8'));
-}
-
-// A typed flag is a pin; the set is read before defaults are merged.
-export async function parseCli(kind, argv) {
-  const args = parseArgs(argv, defaultsFor(kind));
-  if (args.help) return { help: true };
-  const raw = { ...args };
-  await Promise.all(
-    Object.entries(RENDER_OPTIONS)
-      .filter(([, spec]) => spec.type === 'json')
-      .map(async ([key]) => {
-        raw[key] = await readJsonOption(args[key]);
-      })
-  );
-  return { options: normalizeOptions(kind, raw), typed: providedKeys(args) };
-}
+export const parseCli = createParseCli({
+  RENDER_OPTIONS,
+  defaultsFor,
+  normalizeOptions,
+});
 
 export function rollArgs(kernel, { options, typed }) {
   const { boxes, look } = kernel;
@@ -95,18 +69,6 @@ export function treeAt(kernel, { batch, index, roll }) {
   const config = boxes.rollNestingBoxesConfig(name, roll);
   return { config, name, stops: look.getPaletteStops(config.paletteName) };
 }
-
-const sub = (a, b) => a.map((v, i) => v - b[i]);
-const dotOf = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
-const normalize = (v) => {
-  const length = Math.hypot(...v) || 1;
-  return v.map((c) => c / length);
-};
-const cross = (a, b) => [
-  a[1] * b[2] - a[2] * b[1],
-  a[2] * b[0] - a[0] * b[2],
-  a[0] * b[1] - a[1] * b[0],
-];
 
 // A perspective camera on the view's bearing, pulled back until the tree's
 // bounds fit. A moving camera fits the bounding sphere instead, so orbiting
@@ -322,13 +284,11 @@ export async function createTreeCapturer(
     return depthPipeline;
   }
 
-  // The first render after a uniform change reads back stale in Dawn.
   async function render(pipeline) {
     const draw = () => {
       rig.compute(renderer);
       pipeline.render();
     };
-    await headless.readFrame(draw);
     return headless.readFrame(draw);
   }
 
@@ -477,20 +437,4 @@ export async function withCapturer(kernel, options, work) {
   } finally {
     await capturer.dispose();
   }
-}
-
-export async function encodeFrame(frame, format) {
-  const image = sharp(frame.data, {
-    raw: { channels: 4, height: frame.height, width: frame.width },
-  });
-  if (format === 'webp') return image.webp({ lossless: true }).toBuffer();
-  return image.png().toBuffer();
-}
-
-export function sidecarFor({ config, name, options }) {
-  return {
-    name,
-    preset: config,
-    render: { ...options, base: undefined, palettes: undefined },
-  };
 }

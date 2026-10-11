@@ -1,18 +1,17 @@
 import React, { memo, useRef } from 'react';
 
-import { Environment } from '@react-three/drei';
-
 import { CameraRig } from '@modules/cameraRig';
 import Godrays from '@postprocessing/WebGPU/godrays/Godrays';
 
 import ButtonOverlay from './components/ButtonOverlay';
 import CenterLight from './components/CenterLight';
 import LightRig from './components/LightRig';
+import StudioEnvironment from './components/StudioEnvironment';
 import VoxelField from './components/VoxelField';
 import useSceneControls from './hooks/useSceneControls';
 
 // Hierarchical cube/face/edge subdivision CA (voxel automata terrain lineage,
-// ported to TSL compute — see utils/growthCompute.js), straddling "tiny
+// ported to TSL compute — see @modules/fractalAutomataRender), straddling "tiny
 // cellular organism" and "futuristic megalithic structure." Resolves
 // instantly — the timed growth-reveal-over-real-time animation and the
 // continuous/cyclic CA modes were both removed (slow, and read as uneven/
@@ -28,25 +27,12 @@ function FractalAutomata() {
     <>
       <CameraRig camera={config.camera} />
       <color attach="background" args={[config.backgroundColor]} />
-      {config.envEnabled && (
-        <Environment
-          preset="studio"
-          background={false}
-          environmentIntensity={config.envIntensity}
-        />
-      )}
-      <LightRig config={config} />
-      <CenterLight
-        color={config.godraysColor}
-        intensity={config.godraysIntensity}
-        lightRef={godraysLightRef}
-        position={[
-          config.godraysPosition.x,
-          config.godraysPosition.y,
-          config.godraysPosition.z,
-        ]}
-        volumeSize={config.godraysVolumeSize}
+      <StudioEnvironment
+        enabled={config.envEnabled}
+        intensity={config.envIntensity}
       />
+      <LightRig config={config} />
+      <CenterLight config={config} lightRef={godraysLightRef} />
       <VoxelField config={config} />
       <ButtonOverlay onRegenerate={config.regenerate} />
       {config.godraysEnabled && (

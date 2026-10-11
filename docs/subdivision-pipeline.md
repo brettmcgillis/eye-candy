@@ -61,7 +61,7 @@ the split hash, and are left out of the plot. Rolls and presets leave
 
 SubdivisionRelief builds its presets from Subdivision's (same names and
 pieces, outline keys dropped, relief and motion added), so the two scenes
-stay aligned.
+stay aligned; its own pipeline is `docs/subdivision-relief-pipeline.md`.
 
 ## Canvas
 
@@ -122,7 +122,8 @@ workbench only (`scene: false`); `plotOptionsFrom(options)` hands them to
 
 `field: image` reads `sourceImage`, a path under `public/`. The workbench
 uploads to `public/images/subdivision-sources/` (content-addressed, via
-`/dev-api/subdivision/sources`, the one route with a large body limit) and
+`/dev-api/subdivision/sources`, the one route with a large body limit, served
+by `sourceImageRoutes` and shared with SubdivisionReliefCLI) and
 stores the path; the CLI also takes a plain file path. The scene has its own
 **Upload image** control (a blob URL, so not saved in a preset) and a
 **Webcam source** that re-subdivides a mirrored frame `webcamRate` times a

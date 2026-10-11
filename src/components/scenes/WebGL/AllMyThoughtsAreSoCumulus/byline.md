@@ -1,0 +1,6 @@
+[My/The]
+[Head/Clouds] 
+[Is/Are]
+[In] 
+[The/My]
+[Clouds/Head]

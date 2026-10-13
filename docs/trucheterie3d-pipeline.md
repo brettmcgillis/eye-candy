@@ -9,6 +9,9 @@ apart from a `weave` flag on the lane-channel solve. Run
 `npm run trucheterie3d:check` after changing anything below, and
 `npm run trucheterie:check` after touching the shared blob modules.
 
+A hand-made field (`blobDesign`) replaces the seeded packing everywhere
+below; see `docs/trucheterie-designs.md`.
+
 ## The shape
 
 ```

@@ -7,6 +7,7 @@ export const SCENE_LABEL = 'Trucheterie';
 
 export const GRID_PATH = `${SCENE_LABEL}.Grid`;
 export const BLOB_PATH = `${SCENE_LABEL}.Blob Field`;
+export const DESIGN_PATH = `${SCENE_LABEL}.Design`;
 export const MOTIF_PATH = `${SCENE_LABEL}.Motif`;
 export const MULTISCALE_PATH = `${SCENE_LABEL}.Multiscale`;
 export const STROKE_PATH = `${SCENE_LABEL}.Stroke`;

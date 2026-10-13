@@ -12,6 +12,7 @@ const hasPalette = (get) =>
   !get(`${BLOB_PATH}.blobMonochrome`) &&
   get(`${BLOB_PATH}.blobPalette`) !== PALETTE_NONE;
 const isMonochrome = (get) => get(`${BLOB_PATH}.blobMonochrome`) === true;
+const isSeeded = (get) => !get(`${BLOB_PATH}.blobDesign`);
 
 // The blob field's parameters, mirroring the TurtleToy reference's own
 // control block one for one (todo.md, "IRREGULAR / BLOB FIELD EXAMPLE") —
@@ -24,6 +25,10 @@ const isMonochrome = (get) => get(`${BLOB_PATH}.blobMonochrome`) === true;
 export default function getBlobFieldControls(snapshot, setControlsRef) {
   const saved = snapshot ?? {};
   return {
+    blobDesign: {
+      label: 'Design Code',
+      value: saved.blobDesign ?? '',
+    },
     blobSeed: {
       label: 'Seed',
       value: saved.blobSeed ?? 'Change me, empty seed means random',
@@ -50,10 +55,12 @@ export default function getBlobFieldControls(snapshot, setControlsRef) {
       value: saved.blobPathsPerUnit ?? 6,
     },
     blobSizeFunction: {
+      render: isSeeded,
       label: 'Size Function',
       value: saved.blobSizeFunction ?? '1+(gridSize/9)*Math.random()',
     },
     blobDistribution: {
+      render: isSeeded,
       label: 'Distribution Count',
       max: 1,
       min: 0,
@@ -61,6 +68,7 @@ export default function getBlobFieldControls(snapshot, setControlsRef) {
       value: saved.blobDistribution ?? 0.1,
     },
     blobConnectivity: {
+      render: isSeeded,
       label: 'Connectivity',
       max: 1,
       min: 0,
@@ -68,6 +76,7 @@ export default function getBlobFieldControls(snapshot, setControlsRef) {
       value: saved.blobConnectivity ?? 0.95,
     },
     blobOneFill: {
+      render: isSeeded,
       label: 'One Fill',
       max: 1,
       min: 0,
@@ -75,6 +84,7 @@ export default function getBlobFieldControls(snapshot, setControlsRef) {
       value: saved.blobOneFill ?? 0.25,
     },
     blobHoles: {
+      render: isSeeded,
       label: 'Holes',
       max: 1,
       min: 0,
@@ -82,6 +92,7 @@ export default function getBlobFieldControls(snapshot, setControlsRef) {
       value: saved.blobHoles ?? 0,
     },
     blobMeatballs: {
+      render: isSeeded,
       label: 'Meatballs',
       options: {
         'Not if not connected': 0,

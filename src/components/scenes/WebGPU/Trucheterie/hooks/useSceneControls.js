@@ -8,11 +8,13 @@ import {
   useSceneCameraControls,
 } from '@modules/cameraRig';
 import { useMediaRecorder } from '@modules/mediaRecorder';
+import { useSceneDesign } from '@modules/trucheterieDesigner';
 
 import { SCENE_LABEL, isFieldMode } from '../components/controlPaths';
 import getBlobFieldControls from '../components/getBlobFieldControls';
 import getColorControls from '../components/getColorControls';
 import getCompositionControls from '../components/getCompositionControls';
+import getDesignControls from '../components/getDesignControls';
 import getGridControls from '../components/getGridControls';
 import getMotifControls from '../components/getMotifControls';
 import getMultiscaleControls from '../components/getMultiscaleControls';
@@ -34,6 +36,7 @@ export default function useSceneControls() {
   // Fed to the Blob Field folder's shuffle button, which needs the setter
   // Leva has not returned yet when the schema is built.
   const setControlsRef = useRef(null);
+  const designRef = useRef(null);
   const cameraApiRef = useRef(null);
   const { buildCamera, cameraControls } = useSceneCameraControls({
     apiRef: cameraApiRef,
@@ -47,6 +50,9 @@ export default function useSceneControls() {
     Camera: folder(cameraControls, { collapsed: true }),
     Grid: folder(getGridControls(controlsSnapshotRef.current), {
       collapsed: true,
+    }),
+    Design: folder(getDesignControls(controlsSnapshotRef.current, designRef), {
+      render: isFieldMode,
     }),
     'Blob Field': folder(
       getBlobFieldControls(controlsSnapshotRef.current, setControlsRef),
@@ -82,6 +88,12 @@ export default function useSceneControls() {
   // initial preset and copy returns a near-empty object.
   controlsSnapshotRef.current = { ...controls };
 
+  const { actions, editor: designApi } = useSceneDesign({
+    controls,
+    setControls,
+  });
+  designRef.current = actions;
+
   useMediaRecorder({ fileName: SCENE_LABEL });
 
   // Rule: control changes must never reset the camera (docs/scene-conventions
@@ -96,7 +108,7 @@ export default function useSceneControls() {
   );
 
   return useMemo(
-    () => ({ ...controls, camera, cameraApiRef }),
-    [camera, controls]
+    () => ({ ...controls, camera, cameraApiRef, designApi }),
+    [camera, controls, designApi]
   );
 }

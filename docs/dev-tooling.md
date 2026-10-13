@@ -35,7 +35,7 @@ Codex).
 - Each independent tool lives under `src/dev/tools/<tool>/` (current tools:
   `blockParty`, `brutalist`, `cataloggr`, `colors`, `darkroom`, `exhibitA`, `flora`, `fractalAutomata`, `fungi`, `gltfjsx`, `glyphs`, `hyperCubes`, `iconography`, `inventory`,
   `isoLines`, `isoLinesRelief`, `kumiko`, `loaderPatterns`, `nestingBoxes`, `networkTest`, `printShop`, `projectionMapping`, `pushComesToShove`, `rorschach`,
-  `subdivision`, `trucheterie3d`).
+  `subdivision`, `trucheterie3d`, `trucheterieDesigner`).
 - Every registered tool owns a colocated `todo.md` using the same canonical
   TODO shape as scenes (`docs/scene-conventions.md` §15): scaffold it with
   `npm run todo:new` and verify with `npm run todo:check`. Cataloggr discovers
@@ -57,6 +57,10 @@ Codex).
   `ResultsPanel`, `AssetGallery`, `SchemaSections`, `SchemaFields` +
   `usePins`, `RollPreviewDetails`, `renderWorkbench.css`) stay available to
   the bespoke pages (Flora, Trucheterie, Rorschach).
+- **Trucheterie designs** are shared by TrucheterieDesigner, TrucheterieCLI
+  and Trucheterie3DCLI through `src/dev/trucheterieDesigns/` (the saved-design
+  list and the workbenches' `?design=` picker); see
+  `docs/trucheterie-designs.md`.
 - **Darkroom** (`src/dev/tools/darkroom/`) is the media-in tool: a still,
   clip, webcam or phone camera through one image-driven technique. It renders
   in the browser (live preview and frame-exact export alike) and only stages

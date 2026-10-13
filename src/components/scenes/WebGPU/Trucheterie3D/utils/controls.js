@@ -59,10 +59,27 @@ export function rollFacets(current, rolling) {
   );
 }
 
-export default function sceneFolders(saved, { onReplay, onRoll }) {
+export default function sceneFolders(saved, { onDesign, onReplay, onRoll }) {
   const extras = {
     blobPalette: {
       before: { rollPalette: button(() => onRoll?.(['palette'])) },
+    },
+    designTool: {
+      before: {
+        startFromSeededField: button(() => onDesign?.('fromSeed')),
+        newBlankDesign: button(() => onDesign?.('newBlank')),
+      },
+    },
+    designGridSize: {
+      after: { resizeGrid: button(() => onDesign?.('resize')) },
+    },
+    designAutoConnect: {
+      after: {
+        undoDesign: button(() => onDesign?.('undo')),
+        redoDesign: button(() => onDesign?.('redo')),
+        clearDesign: button(() => onDesign?.('clear')),
+        backToSeededField: button(() => onDesign?.('toSeed')),
+      },
     },
     blobSeed: {
       before: {

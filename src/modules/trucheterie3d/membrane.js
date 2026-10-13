@@ -359,7 +359,7 @@ export default function buildMembrane(field, config) {
   const skin = {
     chains,
     crown,
-    gridSize: Math.max(2, Math.round(config.blobGridSize)),
+    gridSize: field.gridSize,
     index,
     pinned,
     pitch,

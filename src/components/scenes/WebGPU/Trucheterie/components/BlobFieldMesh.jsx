@@ -8,7 +8,7 @@ import React, {
 
 import * as THREE from 'three/webgpu';
 
-import { buildBlobField } from '@modules/trucheterieBlob';
+import { fieldFromConfig } from '@modules/trucheterieBlob';
 import {
   applyFieldToMesh,
   createBlobMaterial,
@@ -30,6 +30,7 @@ function BlobFieldMesh({ config }) {
     bgColor,
     blobCanvasSize,
     blobConnectivity,
+    blobDesign,
     blobDistribution,
     blobGridSize,
     blobHoles,
@@ -53,20 +54,22 @@ function BlobFieldMesh({ config }) {
 
   const field = useMemo(
     () =>
-      buildBlobField({
-        canvasSize: blobCanvasSize,
-        connectivity: blobConnectivity,
-        distributionCount: blobDistribution,
-        gridSize: blobGridSize,
-        holes: blobHoles,
-        meatballs: blobMeatballs,
-        oneFill: blobOneFill,
-        seed: blobSeed,
-        sizeFunction: blobSizeFunction,
+      fieldFromConfig({
+        blobCanvasSize,
+        blobConnectivity,
+        blobDesign,
+        blobDistribution,
+        blobGridSize,
+        blobHoles,
+        blobMeatballs,
+        blobOneFill,
+        blobSeed,
+        blobSizeFunction,
       }),
     [
       blobCanvasSize,
       blobConnectivity,
+      blobDesign,
       blobDistribution,
       blobGridSize,
       blobHoles,
@@ -131,9 +134,9 @@ function BlobFieldMesh({ config }) {
   useLayoutEffect(() => {
     const mesh = meshRef.current;
     if (!mesh) return;
-    const { quadMargin } = penGeometry(blobGridSize);
+    const { quadMargin } = penGeometry(field.gridSize);
     applyFieldToMesh(mesh, field, quadMargin);
-  }, [blobGridSize, field]);
+  }, [field]);
 
   return (
     <instancedMesh

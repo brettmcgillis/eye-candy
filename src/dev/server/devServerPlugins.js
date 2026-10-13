@@ -24,6 +24,7 @@ import subdivisionPlugin from './subdivision/plugin';
 import subdivisionReliefPlugin from './subdivisionRelief/plugin';
 import trucheterie3dPlugin from './trucheterie3d/plugin';
 import trucheteriePlugin from './trucheterie/plugin';
+import trucheterieDesignerPlugin from './trucheterieDesigner/plugin';
 
 export default function devServerPlugins() {
   return [
@@ -53,5 +54,6 @@ export default function devServerPlugins() {
     subdivisionReliefPlugin(),
     trucheteriePlugin(),
     trucheterie3dPlugin(),
+    trucheterieDesignerPlugin(),
   ];
 }

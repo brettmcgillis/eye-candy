@@ -102,7 +102,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -157,7 +158,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -203,7 +205,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -249,7 +252,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior).",
                 "caseSensitive": true
@@ -296,7 +300,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -342,7 +347,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -388,7 +394,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -434,7 +441,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -484,7 +492,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -530,7 +539,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -576,7 +586,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -622,7 +633,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -677,7 +689,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -732,7 +745,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -787,7 +801,8 @@
                   "**/rugPull/**",
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -842,7 +857,8 @@
                   "**/rugPull/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -892,7 +908,8 @@
                   "**/rugPull/**",
                   "**/subdivision/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -947,7 +964,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1002,7 +1020,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1057,7 +1076,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1112,7 +1132,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -1158,7 +1179,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1213,7 +1235,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1268,7 +1291,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1323,7 +1347,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1378,7 +1403,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1433,7 +1459,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1488,7 +1515,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1543,7 +1571,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -1589,7 +1618,65 @@
                   "**/rugPull/**",
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
-                  "**/trucheterie/**"
+                  "**/trucheterie/**",
+                  "**/trucheterieDesigner/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": [
+                  "@modules/trucheterieBlob/*",
+                  "**/modules/trucheterieBlob/*",
+                  "@modules/trucheterieBlobRender/*",
+                  "**/modules/trucheterieBlobRender/*"
+                ],
+                "message": "Import the Trucheterie blob-field kernel through its @modules/trucheterieBlob barrel, never a file inside it. See docs/flora-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/trucheterieDesigner/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "caseSensitive": true,
+                "group": [
+                  "**/apollian/**",
+                  "**/blockParty/**",
+                  "**/brutalist/**",
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/darkroom/**",
+                  "**/exhibitA/**",
+                  "**/flora/**",
+                  "**/fractalAutomata/**",
+                  "**/fungi/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/hyperCubes/**",
+                  "**/iconography/**",
+                  "**/inventory/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/networkTest/**",
+                  "**/printShop/**",
+                  "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
+                  "**/rorschach/**",
+                  "**/rugPull/**",
+                  "**/subdivision/**",
+                  "**/subdivisionRelief/**",
+                  "**/trucheterie/**",
+                  "**/trucheterie3d/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },

@@ -13,6 +13,7 @@ import WorkbenchLayout from '@dev/renderWorkbench/WorkbenchLayout';
 import '@dev/renderWorkbench/renderWorkbench.css';
 import usePins from '@dev/renderWorkbench/usePins';
 import useRenderJobs from '@dev/renderWorkbench/useRenderJobs';
+import useDesignChoices from '@dev/trucheterieDesigns/useDesignChoices';
 
 import {
   PALETTE_NONE,
@@ -110,7 +111,11 @@ export default function TrucheterieWorkbenchPage() {
   const jobsApi = useRenderJobs('trucheterie');
   const { error, jobs, refresh, submit } = jobsApi;
   const [kind, setKind] = useState('still');
-  const [options, setOptions] = useState(INITIAL_OPTIONS);
+  const designs = useDesignChoices();
+  const [options, setOptions] = useState(() => ({
+    ...INITIAL_OPTIONS,
+    ...designs.initialOptions,
+  }));
   const [base, setBase] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [outcome, setOutcome] = useState(null);
@@ -337,7 +342,10 @@ export default function TrucheterieWorkbenchPage() {
                     {section.keys.map((key) => (
                       <SchemaField
                         choices={
-                          key === 'blobPalette' ? PALETTE_CHOICES : undefined
+                          {
+                            blobDesign: designs.choices,
+                            blobPalette: PALETTE_CHOICES,
+                          }[key]
                         }
                         key={key}
                         onChange={(value) => setOption(key, value)}

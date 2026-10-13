@@ -47,6 +47,7 @@ export default function RollWorkbench({
   baseLabel = groupLabel,
   controls: Controls,
   hint,
+  initialOptions,
   jobTitle,
   kinds = ['still', 'video'],
   name,
@@ -90,7 +91,11 @@ export default function RollWorkbench({
   const [kind, setKind] = useState(kinds[0]);
   const [profile, setProfile] = useState('post');
   const [options, setOptions] = useState(() =>
-    Object.assign({}, ...kinds.map((each) => defaultsFor(each, 'workbench')))
+    Object.assign(
+      {},
+      ...kinds.map((each) => defaultsFor(each, 'workbench')),
+      initialOptions
+    )
   );
   const [base, setBase] = useState(null);
   const [submitting, setSubmitting] = useState(false);

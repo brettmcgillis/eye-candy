@@ -57,6 +57,7 @@ const from = (key, section, group, extra = {}) => ({
 });
 
 const FIELD = {
+  blobDesign: from('blobDesign', 'field', null),
   blobSeed: from('blobSeed', 'field', null, { facet: undefined }),
   blobGridSize: from('blobGridSize', 'field', null, {
     max: 40,
@@ -79,6 +80,36 @@ const FIELD = {
   planeRotation: from('planeRotation', 'field', null, {
     help: 'Turns the field about the vertical',
   }),
+};
+
+const DESIGN_TOOLS = ['off', 'paint', 'erase', 'connect', 'diagonal', 'order'];
+const whenPainting = { designTool: ['paint'] };
+
+const DESIGN = {
+  designTool: sceneOnly(
+    choice('field', 'Design', 'Tool', DESIGN_TOOLS, 'off', {
+      choiceLabels: {
+        connect: 'Connect',
+        diagonal: 'Diagonal',
+        erase: 'Erase',
+        order: 'Order',
+        off: 'View',
+        paint: 'Paint',
+      },
+      help: 'Edit the hand-made field (Design) on the ground plane: paint cells, erase them, open and close their sides, flip a four-way cell\u2019s diagonal, or swap which of a cell\u2019s two families goes over',
+    })
+  ),
+  designBrush: sceneOnly(
+    num('field', 'Design', 'Cell Size', 2, 1, 12, 1, { when: whenPainting })
+  ),
+  designAutoConnect: sceneOnly(
+    flag('field', 'Design', 'Auto Connect', true, { when: whenPainting })
+  ),
+  designGridSize: sceneOnly(
+    num('field', 'Design', 'Grid Size', 18, 4, 50, 1, {
+      help: 'Size of a new blank design, and what Resize Grid resizes the current one to (centred; cells that no longer fit are dropped)',
+    })
+  ),
 };
 
 const PALETTE = {
@@ -463,6 +494,7 @@ const RENDER = {
 
 export const RENDER_OPTIONS = {
   ...FIELD,
+  ...DESIGN,
   ...PALETTE,
   ...FORM,
   ...STAGE,
@@ -505,6 +537,7 @@ export const {
 
 // Keys that change the tubes' geometry; every other key only re-dresses them.
 export const TUBE_KEYS = [
+  'blobDesign',
   'blobSeed',
   'blobGridSize',
   'blobPathsPerUnit',

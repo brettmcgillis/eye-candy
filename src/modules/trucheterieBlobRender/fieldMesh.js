@@ -33,8 +33,8 @@ export const ATTRIBUTES = [
   ['instanceMeta', connectorsAndDelay, 2],
 ];
 
-export function penGeometry(blobGridSize) {
-  const penHalfWidth = (REFERENCE_PEN / 2 / REFERENCE_CANVAS) * blobGridSize;
+export function penGeometry(gridSize) {
+  const penHalfWidth = (REFERENCE_PEN / 2 / REFERENCE_CANVAS) * gridSize;
   return { penHalfWidth, quadMargin: penHalfWidth * MARGIN_PENS };
 }
 
@@ -79,7 +79,7 @@ export function syncBlobUniforms(
   uniforms,
   { blobCanvasSize, config, field, laneInfo }
 ) {
-  const { penHalfWidth, quadMargin } = penGeometry(config.blobGridSize);
+  const { penHalfWidth, quadMargin } = penGeometry(field.gridSize);
   uniforms.strokeColorU.value.set(config.strokeColor);
   uniforms.maxLanesU.value = laneInfo.maxLanes;
   uniforms.spectrumU.value = laneInfo.spectrum ? 1 : 0;

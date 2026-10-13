@@ -135,6 +135,15 @@ export const PRESETS = {
     motionMode: 'inflate',
   },
   Grow: { ...BASE, ...PALETTE, motionMode: 'grow' },
+  'Design Your Own': {
+    ...BASE,
+    ...PALETTE,
+    blobDesign:
+      'tb1.EgUDAgYHAwEMBwQBCQUFAgcHBQIOCQUCDgsFAQ4MBQEMCwYBDwwGAQ8NBgEIBQcBBwYHAQ8HBwEPCAcBDwkHAQ8KBwEPCwcBDwwHAQ8NBwEMBQgCAwcIAQ8ICAIPCggBDwsIAQ8MCAEPDQgBCQcJAQ8KCQEPCwkCDw0JAgwFCgIGBwoCDwkKAQ8KCgEPCQsBDwoLAQsLCwELDAsBDw0LAgkFDAEDBgwBDwcMAQ8IDAILCgwCCgwMAQ8GDQEDBw0BCwwNAQk',
+    blobGridSize: 18,
+    blobPathsPerUnit: 4,
+    designTool: 'paint',
+  },
   Flow: {
     ...BASE,
     ...PALETTE,

@@ -16,6 +16,7 @@ import {
   TRUCHETERIE3D_CAMERA as CAMERA,
   TRUCHETERIE3D_LIGHTING as LIGHTING,
 } from '@modules/trucheterie3dRender';
+import { useSceneDesign } from '@modules/trucheterieDesigner';
 
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import sceneFolders, { SCENE_LABEL, rollFacets } from '../utils/controls';
@@ -53,6 +54,8 @@ export default function useSceneControls() {
     },
     [controlsSnapshotRef]
   );
+  const designRef = useRef(null);
+  const onDesign = useCallback((action) => designRef.current?.[action]?.(), []);
   const onReplay = useCallback(() => {
     replayRef.current += 1;
   }, []);
@@ -61,12 +64,22 @@ export default function useSceneControls() {
     Presets: presetsFolder,
     Camera: folder(cameraControls, { collapsed: true }),
     Lighting: folder(lightingControls, { collapsed: true }),
-    ...sceneFolders(controlsSnapshotRef.current, { onReplay, onRoll }),
+    ...sceneFolders(controlsSnapshotRef.current, {
+      onDesign,
+      onReplay,
+      onRoll,
+    }),
   }));
 
   attachSetControls(setControls);
   setControlsRef.current = setControls;
   controlsSnapshotRef.current = { ...controls };
+
+  const { actions, editor: designApi } = useSceneDesign({
+    controls,
+    setControls,
+  });
+  designRef.current = actions;
 
   useMediaRecorder({ fileName: SCENE_LABEL });
 
@@ -93,10 +106,11 @@ export default function useSceneControls() {
       ...controls,
       camera,
       cameraApiRef,
+      designApi,
       lighting,
       replayRef,
       setControlsRef,
     }),
-    [camera, controls, lighting]
+    [camera, controls, designApi, lighting]
   );
 }

@@ -223,6 +223,15 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   Trucheterie3DCLI. Run `npm run trucheterie3d:check` after changing any of
   them, and `npm run trucheterie:check` too if you touch the blob modules.
 
+## Required reading before touching Trucheterie designs
+
+- **`docs/trucheterie-designs.md`** — hand-made blob fields: the design
+  model, neighbour rule and codec in `@modules/trucheterieBlob`
+  (`design.js`, `fieldFromConfig`, `designs/*.json`), the shared editor in
+  `@modules/trucheterieDesigner`, both scenes' Design folders,
+  TrucheterieDesigner and the CLIs' `--blobDesign`. Run
+  `npm run trucheterie:check` after changing any of them.
+
 ## Required reading before touching PrintShop
 
 - **`docs/print-shop-pipeline.md`** — the 3D-print export tool: the

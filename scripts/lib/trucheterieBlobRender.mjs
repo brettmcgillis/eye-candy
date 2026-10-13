@@ -12,6 +12,7 @@ import {
 } from './generatorCli.mjs';
 import { createHeadlessRenderer, loadThree } from './headlessWebgpu.mjs';
 import loadModules from './loadModules.mjs';
+import { withResolvedDesign } from './trucheterieDesigns.mjs';
 
 // Barrels only — see docs/flora-pipeline.md, the arrangement this mirrors.
 const ENTRIES = {
@@ -59,10 +60,13 @@ export function rollArgs(kernel, { options, typed }) {
       .map((facet) => facet.trim())
       .filter(Boolean),
     paletteNames: kernel.paletteNames,
-    pinned: Object.fromEntries(
-      [...typed]
-        .filter((key) => scene.has(key))
-        .map((key) => [kernel.blob.sceneNameFor(key), options[key]])
+    pinned: withResolvedDesign(
+      kernel.blob,
+      Object.fromEntries(
+        [...typed]
+          .filter((key) => scene.has(key))
+          .map((key) => [kernel.blob.sceneNameFor(key), options[key]])
+      )
     ),
     seeds: {
       palette: options.paletteSeed ?? undefined,
@@ -89,17 +93,7 @@ export function sidecarFor({ config, options }) {
 // (the still CLI's SVG export) that needs the field data itself rather than
 // a rendered frame.
 export function buildField(kernel, config) {
-  return kernel.blob.buildBlobField({
-    canvasSize: config.blobCanvasSize,
-    connectivity: config.blobConnectivity,
-    distributionCount: config.blobDistribution,
-    gridSize: config.blobGridSize,
-    holes: config.blobHoles,
-    meatballs: config.blobMeatballs,
-    oneFill: config.blobOneFill,
-    seed: config.blobSeed,
-    sizeFunction: config.blobSizeFunction,
-  });
+  return kernel.blob.fieldFromConfig(config);
 }
 
 function laneOptions(config, phase = 0) {
@@ -124,7 +118,7 @@ function laneOptions(config, phase = 0) {
 export function renderSvg(kernel, field, config, options) {
   const { look } = kernel;
   const lanes = look.resolveLaneColors(field.cells, laneOptions(config));
-  const { penHalfWidth } = look.penGeometry(config.blobGridSize);
+  const { penHalfWidth } = look.penGeometry(field.gridSize);
   return kernel.blob.renderBlobSvg(field, {
     background:
       options.svgFill && !options.transparentBackground
@@ -212,17 +206,7 @@ export async function createBlobCapturer(kernel, { height, width }) {
   return {
     // `config` is a scene-keyed field config (renderOptions.mjs SCENE_KEYS).
     setField(config) {
-      const field = kernel.blob.buildBlobField({
-        canvasSize: config.blobCanvasSize,
-        connectivity: config.blobConnectivity,
-        distributionCount: config.blobDistribution,
-        gridSize: config.blobGridSize,
-        holes: config.blobHoles,
-        meatballs: config.blobMeatballs,
-        oneFill: config.blobOneFill,
-        seed: config.blobSeed,
-        sizeFunction: config.blobSizeFunction,
-      });
+      const field = kernel.blob.fieldFromConfig(config);
       const laneInfo = look.fillLaneTextures(
         laneTextures,
         field.cells,

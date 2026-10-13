@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { CameraRig } from '@modules/cameraRig';
+import { BlobDesignEditor } from '@modules/trucheterieDesigner';
 
 import Backdrop from './components/Backdrop';
 import TileGrid from './components/TileGrid';
@@ -20,6 +21,17 @@ export default function Truchet() {
       <Backdrop bgColor={config.sceneBgColor} />
       <group rotation={[0, 0, planeRotationRad]}>
         <TileGrid config={config} />
+        {config.gridMode === 'field' && config.designApi.design && (
+          <BlobDesignEditor
+            autoConnect={config.designAutoConnect}
+            brush={config.designBrush}
+            canvasSize={config.blobCanvasSize}
+            design={config.designApi.design}
+            onChange={config.designApi.onChange}
+            onStrokeStart={config.designApi.onStrokeStart}
+            tool={config.designTool}
+          />
+        )}
       </group>
     </>
   );

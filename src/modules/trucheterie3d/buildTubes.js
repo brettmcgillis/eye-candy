@@ -1,4 +1,4 @@
-import { buildBlobField } from '@modules/trucheterieBlob';
+import { fieldFromConfig } from '@modules/trucheterieBlob';
 
 import buildChains from './chains';
 import liftCrossings from './crossings';
@@ -236,7 +236,7 @@ export default function buildTubes(field, config) {
   const kindOf = (i) => samples.runs[samples.chainOf[i]].kind;
   const isWire = (i) => kindOf(i) === 'wire';
 
-  const gridSize = Math.max(2, Math.round(config.blobGridSize));
+  const { gridSize } = field;
   const solve = {
     cellAt: cellLookup(field, gridSize),
     cellSlots: chainCells(samples, samples.runs, pieces),
@@ -350,15 +350,5 @@ export default function buildTubes(field, config) {
 
 // The 2D blob field a scene-keyed config describes.
 export function buildField(config) {
-  return buildBlobField({
-    canvasSize: config.blobCanvasSize,
-    connectivity: config.blobConnectivity,
-    distributionCount: config.blobDistribution,
-    gridSize: config.blobGridSize,
-    holes: config.blobHoles,
-    meatballs: config.blobMeatballs,
-    oneFill: config.blobOneFill,
-    seed: config.blobSeed,
-    sizeFunction: config.blobSizeFunction,
-  });
+  return fieldFromConfig(config);
 }

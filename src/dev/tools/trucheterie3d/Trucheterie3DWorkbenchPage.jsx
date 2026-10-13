@@ -1,14 +1,13 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import { Stat } from '@dev/renderWorkbench/AssetGallery';
 import RollWorkbench from '@dev/renderWorkbench/RollWorkbench';
+import useDesignChoices from '@dev/trucheterieDesigns/useDesignChoices';
 
 import * as kernel from '@modules/trucheterie3d';
 import { PALETTE_NAMES } from '@modules/trucheterie3dRender';
 
 const PALETTE_CHOICES = PALETTE_NAMES.map((name) => [name, name]);
-
-const sections = { choices: { blobPalette: PALETTE_CHOICES } };
 
 const preview = {
   placeholder: (metadata) => metadata.name ?? metadata.preset.blobSeed,
@@ -16,6 +15,7 @@ const preview = {
   stats: (config, metadata) => (
     <>
       <Stat label="Seed" value={config.blobSeed} />
+      {config.blobDesign ? <Stat label="Design" value="hand-made" /> : null}
       <Stat label="Strands" value={config.strands} />
       <Stat label="Junctions" value={config.junction} />
       <Stat label="Height" value={config.heightMode} />
@@ -33,8 +33,14 @@ const preview = {
 };
 
 export default function Trucheterie3DWorkbenchPage() {
+  const { choices, initialOptions } = useDesignChoices();
+  const sections = useMemo(
+    () => ({ choices: { blobDesign: choices, blobPalette: PALETTE_CHOICES } }),
+    [choices]
+  );
   return (
     <RollWorkbench
+      initialOptions={initialOptions}
       name="Trucheterie3D"
       noun={{ many: 'fields', one: 'field' }}
       preview={preview}

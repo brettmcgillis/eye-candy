@@ -38,6 +38,18 @@ const GENERATOR = {
     type: 'seed',
   },
 
+  blobDesign: {
+    default: '',
+    generator: true,
+    help: 'A hand-made field from the Trucheterie designer: a saved design name, a .json path or a design code. Replaces the seeded packing; the field knobs below are ignored',
+    label: 'Design',
+    nullable: true,
+    placeholder: 'NAME|PATH|CODE',
+    scene: true,
+    scope: 'shared',
+    section: 'field',
+    type: 'string',
+  },
   blobGridSize: gen('field', 'Grid Size', 25, 10, 50, 1, 'structure', [15, 35]),
   blobCanvasSize: num('field', null, 'Canvas Size', 8, 1, 20, 0.1, {
     generator: true,

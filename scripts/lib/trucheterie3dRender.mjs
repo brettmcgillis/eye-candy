@@ -11,9 +11,11 @@ import {
   withRenderer,
 } from './generatorCli.mjs';
 import { createHeadlessRenderer } from './headlessWebgpu.mjs';
+import { withResolvedDesign } from './trucheterieDesigns.mjs';
 
 // Barrels only — see docs/trucheterie3d-pipeline.md.
 const ENTRIES = {
+  blob: '/src/modules/trucheterieBlob/index.js',
   lights: '/src/modules/lightingRig/index.js',
   look: '/src/modules/trucheterie3dRender/index.js',
   tubes: '/src/modules/trucheterie3d/index.js',
@@ -45,10 +47,13 @@ export function rollArgs(kernel, { options, typed }) {
       .map((facet) => facet.trim())
       .filter(Boolean),
     paletteNames: kernel.look.PALETTE_NAMES.filter((name) => name !== 'None'),
-    pinned: Object.fromEntries(
-      [...typed]
-        .filter((key) => scene.has(key))
-        .map((key) => [key, options[key]])
+    pinned: withResolvedDesign(
+      kernel.blob,
+      Object.fromEntries(
+        [...typed]
+          .filter((key) => scene.has(key))
+          .map((key) => [key, options[key]])
+      )
     ),
   };
 }

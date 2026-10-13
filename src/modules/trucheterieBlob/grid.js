@@ -50,6 +50,45 @@ function stepsToBoundary(direction, boundary) {
   ]);
 }
 
+// [[type, startEdge], ...] — type 0 = isolated (concentric circles about
+// the cell centre), 1 = stub (semicircles about a side midpoint), 2 =
+// corner turn (quarter arcs about a corner). Never more than two.
+export function resolveConnections(connectors, random = Math.random) {
+  const active = connectors
+    .map((e, i) => [i, e])
+    .filter((e) => e[1])
+    .map((e) => e[0]);
+
+  switch (active.length) {
+    case 0:
+      return [[0, 0]];
+    case 1:
+      return [[1, active[0]]];
+    case 2: {
+      const adjacent = connectors
+        .map((e, i, a) => [i, e && a[(i + 3) % a.length]])
+        .filter((e) => e[1]);
+      if (adjacent.length === 1) return [[2, adjacent[0][0]]];
+      return active.map((i) => [1, i]);
+    }
+    case 3:
+      return connectors
+        .map((e, i, a) => [i, e && a[(i + 3) % a.length]])
+        .filter((e) => e[1])
+        .map((e) => [2, e[0]]);
+    default:
+      return random() < 0.5
+        ? [
+            [2, 0],
+            [2, 2],
+          ]
+        : [
+            [2, 1],
+            [2, 3],
+          ];
+  }
+}
+
 export class Cell {
   constructor(grid, column, row, size) {
     this.id = grid.cells.length + 1;
@@ -69,43 +108,8 @@ export class Cell {
     this.connectors = [false, false, false, false];
   }
 
-  // [[type, startEdge], ...] — type 0 = isolated (concentric circles about
-  // the cell centre), 1 = stub (semicircles about a side midpoint), 2 =
-  // corner turn (quarter arcs about a corner). Never more than two.
   getConnections() {
-    const active = this.connectors
-      .map((e, i) => [i, e])
-      .filter((e) => e[1])
-      .map((e) => e[0]);
-
-    switch (active.length) {
-      case 0:
-        return [[0, 0]];
-      case 1:
-        return [[1, active[0]]];
-      case 2: {
-        const adjacent = this.connectors
-          .map((e, i, a) => [i, e && a[(i + 3) % a.length]])
-          .filter((e) => e[1]);
-        if (adjacent.length === 1) return [[2, adjacent[0][0]]];
-        return active.map((i) => [1, i]);
-      }
-      case 3:
-        return this.connectors
-          .map((e, i, a) => [i, e && a[(i + 3) % a.length]])
-          .filter((e) => e[1])
-          .map((e) => [2, e[0]]);
-      default:
-        return Math.random() < 0.5
-          ? [
-              [2, 0],
-              [2, 2],
-            ]
-          : [
-              [2, 1],
-              [2, 3],
-            ];
-    }
+    return resolveConnections(this.connectors);
   }
 }
 

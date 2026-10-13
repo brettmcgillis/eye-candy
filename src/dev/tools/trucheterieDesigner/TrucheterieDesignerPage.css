@@ -1,0 +1,94 @@
+.tdz-tools .rw-segmented {
+  grid-auto-flow: row;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.tdz-tools .rw-segmented__button:nth-child(3n) {
+  border-right: 0;
+}
+
+.tdz-tools .rw-segmented__button:nth-child(-n + 3) {
+  border-bottom: 1px solid var(--dev-border-strong);
+}
+
+.tdz-stage {
+  position: sticky;
+  top: 0.75rem;
+  height: calc(100vh - 6rem);
+  min-height: 24rem;
+  overflow: hidden;
+  padding: 0;
+}
+
+.tdz-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: end;
+  gap: 0.4rem;
+}
+
+.tdz-name {
+  flex: 1;
+  min-width: 8rem;
+  height: 2rem;
+  padding: 0 0.5rem;
+  border: 1px solid var(--dev-border-strong);
+  border-radius: 4px;
+  font-family: var(--dev-mono);
+  font-size: 0.72rem;
+}
+
+.tdz-list {
+  display: grid;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tdz-list li {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.tdz-list__open {
+  display: grid;
+  flex: 1;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--dev-border-strong);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--dev-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.tdz-list__open[aria-pressed='true'] {
+  border-color: var(--rw-ink);
+}
+
+.tdz-list__open span {
+  color: var(--dev-text-secondary);
+  font-size: 0.7rem;
+}
+
+.tdz-command {
+  display: block;
+  padding: 0.4rem 0.5rem;
+  overflow-wrap: anywhere;
+  border-radius: 4px;
+  background: var(--dev-border);
+  font-family: var(--dev-mono);
+  font-size: 0.68rem;
+}
+
+@media (max-width: 900px) {
+  .tdz-page .rw-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .tdz-stage {
+    position: relative;
+    height: 70vh;
+  }
+}

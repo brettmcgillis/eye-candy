@@ -54,6 +54,7 @@ function growthDelays(centers, count) {
 const EMPTY = {
   cellSize: 1,
   cells: [],
+  gridSize: 2,
   centers: new Float32Array(0),
   delays: new Float32Array(0),
   conn0: new Float32Array(0),
@@ -126,41 +127,8 @@ function isDrawn(cell, config) {
   );
 }
 
-export default function buildBlobField({
-  canvasSize,
-  connectivity,
-  distributionCount,
-  gridSize,
-  holes,
-  meatballs,
-  oneFill,
-  seed,
-  sizeFunction,
-}) {
-  const size = Math.max(2, Math.round(gridSize));
-  const config = {
-    allowSatelites: meatballs,
-    attempts: ATTEMPTS,
-    connectivity,
-    destruction: holes / 10,
-    distributionCount,
-    fill: oneFill,
-    gridSize: size,
-    sizeDistribution: new Formula(sizeFunction),
-  };
-
-  const drawn = withSeededRandom(seed, () => {
-    const grid = buildGrid(config);
-    return grid.cells
-      .filter((cell) => isDrawn(cell, config))
-      .map((cell) => {
-        const connections = cell.getConnections();
-        connections.sort(() => (Math.random() < 0.5 ? -1 : 1));
-        return { cell, connections };
-      });
-  });
-
-  if (drawn.length === 0) return EMPTY;
+export function assembleField(drawn, size, canvasSize) {
+  if (drawn.length === 0) return { ...EMPTY, gridSize: size };
 
   const cellSize = canvasSize / size;
   const half = canvasSize / 2;
@@ -209,7 +177,45 @@ export default function buildBlobField({
     connectorMask,
     count,
     delays: growthDelays(centers, count),
+    gridSize: size,
     positions,
     sizes,
   };
+}
+
+export default function buildBlobField({
+  canvasSize,
+  connectivity,
+  distributionCount,
+  gridSize,
+  holes,
+  meatballs,
+  oneFill,
+  seed,
+  sizeFunction,
+}) {
+  const size = Math.max(2, Math.round(gridSize));
+  const config = {
+    allowSatelites: meatballs,
+    attempts: ATTEMPTS,
+    connectivity,
+    destruction: holes / 10,
+    distributionCount,
+    fill: oneFill,
+    gridSize: size,
+    sizeDistribution: new Formula(sizeFunction),
+  };
+
+  const drawn = withSeededRandom(seed, () => {
+    const grid = buildGrid(config);
+    return grid.cells
+      .filter((cell) => isDrawn(cell, config))
+      .map((cell) => {
+        const connections = cell.getConnections();
+        connections.sort(() => (Math.random() < 0.5 ? -1 : 1));
+        return { cell, connections };
+      });
+  });
+
+  return assembleField(drawn, size, canvasSize);
 }

@@ -19,7 +19,7 @@ pointer attractor, fade, and rebind. Afterimage post is toggleable.
 - [ ] butterfly might be a great candidate for surface curl
 - [ ] dragon fly
 - [ ] black goldfish
-- [ ] Could we do a split screen light/dark contrasting tech presets? Possibly with multiple render targets, see three.js examples
+- [ ] Could we do a split screen light/dark contrasting tech presets? Possibly with multiple render targets, see three.js examples. might need to do multiple scenes / scissor canvas
 
 ## // Presets
 

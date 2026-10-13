@@ -5,7 +5,6 @@ export default {
   aliases: ['Trucheterie3DCLI'],
   label: 'Trucheterie3DCLI',
   group: 'render-workbenches',
-  description:
-    'Generate tube-field images and videos using the Trucheterie3DCLI.',
+  description: 'Generate images and videos using the Trucheterie3DCLI.',
   Component: lazy(() => import('./Trucheterie3DWorkbenchPage')),
 };

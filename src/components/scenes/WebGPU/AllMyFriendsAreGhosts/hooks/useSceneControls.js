@@ -19,6 +19,7 @@ import {
   getStarControls,
 } from '../components/getSpaceControls';
 import getBlackHoleControls from '../components/locations/getBlackHoleControls';
+import getCampfireControls from '../components/locations/getCampfireControls';
 import {
   getLunarControls,
   getTinyMoonControls,
@@ -35,6 +36,7 @@ const SCENE_LABEL = 'All My Friends Are Ghosts';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
 const LIGHTING_FOLDER_PATH = `${SCENE_LABEL}.Lighting`;
 const BLACK_HOLE_FOLDER_PATH = `${SCENE_LABEL}.Black Hole`;
+const CAMPFIRE_FOLDER_PATH = `${SCENE_LABEL}.Campfire`;
 const COLLAPSED = { collapsed: true };
 
 export default function useSceneControls() {
@@ -99,6 +101,7 @@ export default function useSceneControls() {
     Wing: getWingControls(p),
     'Tiny Moon': getTinyMoonControls(p),
     'Lunar Surface': getLunarControls(p),
+    Campfire: getCampfireControls(p, CAMPFIRE_FOLDER_PATH),
   }));
 
   attachSetControls(setControls);

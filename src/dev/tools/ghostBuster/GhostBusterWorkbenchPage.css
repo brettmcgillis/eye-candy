@@ -1,0 +1,25 @@
+.gb-live {
+  display: grid;
+  gap: 10px;
+}
+
+.gb-live__toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.gb-live__toggle {
+  align-items: center;
+  display: inline-flex;
+  font-size: 13px;
+  gap: 6px;
+}
+
+.gb-live__stage {
+  background: #000;
+  border-radius: 8px;
+  margin: 0 auto;
+  overflow: hidden;
+}

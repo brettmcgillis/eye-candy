@@ -31,6 +31,7 @@ const CAMERA = {
 };
 
 const LIGHTING = {
+  lightEnabled: true,
   lightHemiSkyColor: '#9fb4d8',
   lightHemiGroundColor: '#1a1d26',
   lightHemiIntensity: 0.4,
@@ -180,6 +181,15 @@ const MOONS = {
   lunarLightColor: '#8d8a84',
 };
 
+const CAMPFIRE = {
+  campfirePosition: xyz(-1.9, 0, 0),
+  campfireBurnMode: 'hold',
+  campfireFireLife: 0.8,
+  campfireBurnSeconds: 120,
+  campfireResolution: 480,
+  campfireGhostLight: 1,
+};
+
 const BASE = {
   ...CAMERA,
   ...LIGHTING,
@@ -190,6 +200,7 @@ const BASE = {
   ...OCEAN,
   ...WING,
   ...MOONS,
+  ...CAMPFIRE,
 };
 
 export default BASE;

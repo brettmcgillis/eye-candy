@@ -10,7 +10,9 @@ import { useFrame } from '@react-three/fiber';
 
 import * as THREE from 'three';
 
-import GhostCharacter from '@elements/WebGPU/ghost/GhostCharacter';
+import GhostCharacter, {
+  fabricFromControls,
+} from '@elements/WebGPU/ghost/GhostCharacter';
 import { GridMaterial } from '@materials/WebGPU/gridMaterial';
 
 import GhostPlacard from './components/GhostPlacard';
@@ -281,6 +283,7 @@ export default function GhostBuster() {
         sheenColor={controls.sheenColor}
         clearcoat={controls.clearcoat}
         clearcoatRoughness={controls.clearcoatRoughness}
+        fabric={fabricFromControls(controls)}
         innerRoughness={controls.innerRoughness ?? null}
         innerMetalness={controls.innerMetalness ?? null}
         outerTextureUrl={controls.outerTextureUrl || null}

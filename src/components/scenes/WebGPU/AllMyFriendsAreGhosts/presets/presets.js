@@ -1,4 +1,5 @@
 import {
+  LOCATION_CAMPFIRE,
   LOCATION_LUNAR_SURFACE,
   LOCATION_OCEAN,
   LOCATION_TINY_MOON,
@@ -467,6 +468,20 @@ export const PRESETS = {
     ghostPosition: xyz(0, 2.2, 0),
     ghostScale: 2.6,
     ghostBaseWind: 0.1,
+  },
+
+  Campfire: {
+    ...BASE,
+    location: LOCATION_CAMPFIRE,
+    starsVisible: false,
+    lightEnabled: false,
+    splinePreset: 'Campfire Drift',
+    splineDesktopTarget: xyz(-0.98, 0.7, 0),
+    splineMobileTarget: xyz(-0.98, 0.7, 0),
+    splineDesktopFov: 50,
+    ghostPosition: xyz(0, 1.55, 0),
+    ghostScale: 2,
+    ghostBaseWind: 0.12,
   },
 };
 

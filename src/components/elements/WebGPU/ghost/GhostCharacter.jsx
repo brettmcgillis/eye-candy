@@ -29,6 +29,20 @@ import {
   stepGhostRig,
 } from './ghostRig';
 
+// A skin's flat Weave keys as ClothMesh's `fabric`; null keeps the plain
+// material, so skins without a weave render exactly as before.
+export function fabricFromControls(controls) {
+  if (!(controls.fabricAmount > 0)) return null;
+  return {
+    amount: controls.fabricAmount,
+    depth: controls.fabricDepth,
+    hemWidth: controls.fabricHem,
+    threads: controls.fabricThreads,
+    wearAmount: controls.fabricWear,
+    weaveShade: controls.fabricShade,
+  };
+}
+
 const GhostCharacter = forwardRef(function GhostCharacter(
   {
     // Animation config
@@ -98,6 +112,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     sheenColor = '#ffffff',
     clearcoat = 0,
     clearcoatRoughness = 0,
+    fabric = null,
     innerRoughness = null,
     innerMetalness = null,
     textureUrl = null,
@@ -298,6 +313,9 @@ const GhostCharacter = forwardRef(function GhostCharacter(
   useImperativeHandle(
     ref,
     () => ({
+      get mesh() {
+        return clothRef.current?.mesh;
+      },
       get sim() {
         return clothRef.current?.sim;
       },
@@ -378,7 +396,9 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     <>
       <group ref={groupRef}>
         <ClothMesh
-          key={`cloth-${segmentsX}-${segmentsY}-${clothWidth}-${clothHeight}`}
+          key={`cloth-${segmentsX}-${segmentsY}-${clothWidth}-${clothHeight}-${
+            fabric ? 'woven' : 'plain'
+          }`}
           ref={clothRef}
           width={clothWidth}
           height={clothHeight}
@@ -412,6 +432,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
           smoothOutline={smoothOutline}
           outlineFade={outlineFade}
           cutouts={CUTOUTS}
+          fabric={fabric}
           cutoutRimColor={cutoutRimColor}
           cutoutRimWidth={cutoutRimWidth}
           cutoutRimOffset={cutoutRimOffset}

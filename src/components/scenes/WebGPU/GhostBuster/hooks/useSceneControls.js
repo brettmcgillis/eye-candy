@@ -256,6 +256,53 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
               max: 1,
               step: 0.01,
             },
+            Weave: folder(
+              {
+                fabricAmount: {
+                  label: 'Weave',
+                  value: ini.fabricAmount,
+                  min: 0,
+                  max: 1,
+                  step: 0.05,
+                },
+                fabricThreads: {
+                  label: 'Thread Count',
+                  value: ini.fabricThreads,
+                  min: 10,
+                  max: 400,
+                  step: 5,
+                },
+                fabricDepth: {
+                  label: 'Weave Depth',
+                  value: ini.fabricDepth,
+                  min: 0,
+                  max: 1.5,
+                  step: 0.01,
+                },
+                fabricShade: {
+                  label: 'Weave Shading',
+                  value: ini.fabricShade,
+                  min: 0,
+                  max: 1,
+                  step: 0.01,
+                },
+                fabricHem: {
+                  label: 'Hem Width',
+                  value: ini.fabricHem,
+                  min: 0,
+                  max: 0.1,
+                  step: 0.002,
+                },
+                fabricWear: {
+                  label: 'Wear',
+                  value: ini.fabricWear,
+                  min: 0,
+                  max: 1,
+                  step: 0.05,
+                },
+              },
+              { collapsed: true }
+            ),
             'Space Portal': folder(
               {
                 outerTextureUrl: {

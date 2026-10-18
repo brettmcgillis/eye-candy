@@ -3,6 +3,7 @@ import React, { memo, useCallback, useMemo, useRef, useState } from 'react';
 import * as THREE from 'three/webgpu';
 
 import BedContainer from '@elements/BedContainer/BedContainer';
+import Studio from '@elements/Studio/Studio';
 import useSceneBackdrop from '@hooks/useSceneBackdrop';
 import { CameraRig } from '@modules/cameraRig';
 import { LightingRig } from '@modules/lightingRig';
@@ -10,7 +11,6 @@ import { PostRig } from '@modules/postRig';
 import { createBedPolygon } from '@utils/regularPolygon';
 
 import SandField from './components/SandField';
-import Studio from './components/Studio';
 import useSceneControls from './hooks/useSceneControls';
 import createFocusPicker from './utils/focusPicker';
 

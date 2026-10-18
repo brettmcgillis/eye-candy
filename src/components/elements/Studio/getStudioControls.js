@@ -1,6 +1,8 @@
 import { folder } from 'leva';
 
-export default function getStudioControls(p) {
+// `floorControl` replaces the default floorHeight control for scenes that
+// derive the floor height from their own keys and pass it to Studio.
+export default function getStudioControls(p, floorControl) {
   return folder(
     {
       backgroundColor: { label: 'Background', value: p.backgroundColor },
@@ -22,13 +24,15 @@ export default function getStudioControls(p) {
         max: 1,
         step: 0.01,
       },
-      floorHeight: {
-        label: 'Floor Height',
-        value: p.floorHeight,
-        min: -6,
-        max: 1,
-        step: 0.01,
-      },
+      ...(floorControl ?? {
+        floorHeight: {
+          label: 'Floor Height',
+          value: p.floorHeight,
+          min: -6,
+          max: 1,
+          step: 0.01,
+        },
+      }),
       roomRadius: {
         label: 'Room Radius',
         value: p.roomRadius,

@@ -4,6 +4,7 @@ import { folder, useControls } from 'leva';
 
 import getBedControls from '@elements/BedContainer/getBedControls';
 import getContainerControls from '@elements/BedContainer/getContainerControls';
+import getStudioControls from '@elements/Studio/getStudioControls';
 import usePresetsFolder from '@hooks/usePresetsFolder';
 import {
   getCameraControlsKey,
@@ -18,7 +19,6 @@ import { getPostControlsKey, useScenePostControls } from '@modules/postRig';
 
 import getFieldControls from '../components/getFieldControls';
 import getSandControls from '../components/getSandControls';
-import getStudioControls from '../components/getStudioControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import CAMERA from '../utils/camera';
 import LIGHTING from '../utils/lighting';

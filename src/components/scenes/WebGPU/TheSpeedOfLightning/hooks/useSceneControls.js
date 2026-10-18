@@ -2,6 +2,7 @@ import { useMemo, useRef } from 'react';
 
 import { folder, useControls } from 'leva';
 
+import getStudioControls from '@elements/Studio/getStudioControls';
 import usePresetsFolder from '@hooks/usePresetsFolder';
 import {
   getCameraControlsKey,
@@ -18,7 +19,6 @@ import getDischargeControls from '../components/getDischargeControls';
 import getEmissionControls from '../components/getEmissionControls';
 import getGrainControls from '../components/getGrainControls';
 import getImpactControls from '../components/getImpactControls';
-import getStudioControls from '../components/getStudioControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import CAMERA from '../utils/camera';
 import LIGHTING from '../utils/lighting';
@@ -69,7 +69,15 @@ export default function useSceneControls() {
     Grains: getGrainControls(p),
     Impact: getImpactControls(p),
     Emission: getEmissionControls(p),
-    Studio: getStudioControls(p),
+    Studio: getStudioControls(p, {
+      floorGapRatio: {
+        label: 'Floor Gap (x sand)',
+        value: p.floorGapRatio,
+        min: 0,
+        max: 6,
+        step: 0.1,
+      },
+    }),
     Post: folder(postControls, { collapsed: true }),
   }));
 

@@ -2,12 +2,12 @@ import React, { memo, useCallback, useMemo, useRef, useState } from 'react';
 
 import * as THREE from 'three/webgpu';
 
+import Studio from '@elements/Studio/Studio';
 import { CameraRig } from '@modules/cameraRig';
 import { LightingRig } from '@modules/lightingRig';
 import { PostRig } from '@modules/postRig';
 
 import GrainField from './components/GrainField';
-import Studio from './components/Studio';
 import useSceneControls from './hooks/useSceneControls';
 import createFocusPicker from './utils/focusPicker';
 
@@ -30,6 +30,18 @@ function TheSpeedOfLightning() {
       setSpotLight(light);
     }
   }, []);
+
+  // The floor has to clear the bottom of the sand, not sit inside it — buried
+  // mid-layer, the lower grains fall below the floor and can cast neither
+  // shadow nor godray occlusion onto it.
+  const studioConfig = useMemo(() => {
+    const sandDepth = config.bedThickness + config.bedDuneHeight;
+    return {
+      ...config,
+      floorHeight:
+        config.bedBaseY - sandDepth - sandDepth * config.floorGapRatio,
+    };
+  }, [config]);
 
   const lights = useMemo(() => ({ spot: spotLight }), [spotLight]);
 
@@ -59,7 +71,7 @@ function TheSpeedOfLightning() {
         lighting={config.lighting}
         onLightChange={handleLightChange}
       />
-      <Studio config={config} />
+      <Studio config={studioConfig} />
       <GrainField config={config} focusRef={boltTipRef} trunkRef={trunkRef} />
       <PostRig
         focusTarget={boltTipRef}

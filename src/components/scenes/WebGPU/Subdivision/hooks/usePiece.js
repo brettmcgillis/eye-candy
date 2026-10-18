@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 
-import { RENDER_OPTIONS, SCENE_KEYS, buildPiece } from '@modules/subdivision';
+import { SCENE_NAMES, SCENE_OPTIONS, buildPiece } from '@modules/subdivision';
 import { useWebcamFrame } from '@modules/webcam';
 import { PALETTE_NONE, getPaletteStops } from '@utils/gradientPalette';
 
@@ -10,9 +10,9 @@ import useSourceImage from './useSourceImage';
 // cell, and the tree is rebuilt on every frame taken.
 const WEBCAM_FRAME_MAX = 480;
 
-const PIECE_KEYS = SCENE_KEYS.filter(
+const PIECE_KEYS = SCENE_NAMES.filter(
   (key) =>
-    !RENDER_OPTIONS[key].sceneOnly && RENDER_OPTIONS[key].section !== 'video'
+    !SCENE_OPTIONS[key].sceneOnly && SCENE_OPTIONS[key].section !== 'video'
 );
 
 // `canvas` is the viewport in CSS px: the scene lays the piece out on the

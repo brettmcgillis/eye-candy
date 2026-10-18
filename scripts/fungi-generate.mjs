@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 import { resolveViews, usageFor } from '../src/modules/fungi/renderOptions.mjs';
-import { readPackageVersion } from './lib/cliArgs.mjs';
 import {
-  encodeFrame,
   frameView,
   loadKernel,
   parseCli,
@@ -13,9 +11,9 @@ import {
   withCapturer,
 } from './lib/fungiRender.mjs';
 import { runStills } from './lib/generatorCli.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 runStills({
-  encode: encodeFrame,
   async item({ capturer, index, kernel, options, roll, save, step }) {
     const drawn = await step(`growing specimen ${index + 1}`, async () =>
       specimenAt(kernel, { index, options, roll })
@@ -47,11 +45,8 @@ runStills({
   kernelLabel: 'Fungi',
   loadKernel,
   nouns: 'specimens',
+  overlay: sceneIconFile('fungi'),
   parseCli,
-  prepare: async (options) => ({
-    ...options,
-    version: await readPackageVersion(),
-  }),
   resolveViews,
   script: 'fungi',
   setup: ({ kernel, options, typed }) => ({

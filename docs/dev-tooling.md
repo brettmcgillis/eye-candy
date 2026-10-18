@@ -50,7 +50,7 @@ Codex).
   `DevPageHeaderBar.jsx`, `DevPageTitle.jsx`, `DevTooltip.jsx`), or a clearly
   named shared folder under `src/dev` when it's non-shell dev-only behavior.
 - **Generative workbenches share `src/dev/renderWorkbench/`** (RorschachCLI,
-  ExhibitACLI, FloraCLI, FractalAutomataCLI, FungiCLI, KumikoCLI, BlockPartyCLI, BrutalistCLI, NestingBoxesCLI, HyperCubesCLI, NetworkTestCLI, IsoLinesCLI, IsoLinesReliefCLI, PushComesToShoveCLI, RugPullCLI, SubdivisionCLI, SubdivisionReliefCLI, TrucheterieCLI, Trucheterie3DCLI, and Fauna next).
+  ExhibitACLI, FloraCLI, FractalAutomataCLI, FungiCLI, GhostBusterCLI, KumikoCLI, BlockPartyCLI, BrutalistCLI, NestingBoxesCLI, HyperCubesCLI, NetworkTestCLI, IsoLinesCLI, IsoLinesReliefCLI, PushComesToShoveCLI, RugPullCLI, SubdivisionCLI, SubdivisionReliefCLI, TrucheterieCLI, Trucheterie3DCLI, and Fauna next).
   A facet-rolling generator's page is a `RollWorkbench` configuration — its
   kernel barrel, nouns, palette choices and preview stats — and nothing else;
   see `docs/render-workbench.md`. The parts it is built from (`useRenderJobs`,

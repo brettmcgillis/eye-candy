@@ -3,6 +3,7 @@ import {
   RENDER_OPTIONS,
   SCENE_KEYS,
   SOURCE_IMAGE_MAX,
+  canonicalArgv,
   defaultsFor,
   normalizeOptions,
 } from '../../src/modules/subdivisionRelief/renderOptions.mjs';
@@ -29,6 +30,7 @@ export const loadKernel = () => loadKernelModules(ENTRIES);
 
 export const parseCli = createParseCli({
   RENDER_OPTIONS,
+  canonicalArgv,
   defaultsFor,
   normalizeOptions,
 });
@@ -47,7 +49,7 @@ export function rollArgs({ look, relief }, { options, typed }) {
     base: options.base ? relief.configFrom(options.base) : {},
     keep: keepList(options),
     paletteNames: look.PALETTE_NAMES,
-    pinned: pinnedFrom({ options, typed }, SCENE_KEYS),
+    pinned: relief.sceneNamed(pinnedFrom({ options, typed }, SCENE_KEYS)),
     seeds: {
       field: options.fieldSeed ?? undefined,
       palette: options.paletteSeed ?? undefined,
@@ -62,9 +64,9 @@ export function rollArgs({ look, relief }, { options, typed }) {
 export async function pieceAt(kernel, { index, options, roll }) {
   const { look, relief, subdivision } = kernel;
   const seed =
-    options.seed == null
+    options.batch == null
       ? subdivision.randomSeed()
-      : subdivision.seedFor(options.seed, index);
+      : subdivision.seedFor(options.batch, index);
   const config = relief.rollReliefConfig(seed, roll);
   const image =
     config.field === 'image'

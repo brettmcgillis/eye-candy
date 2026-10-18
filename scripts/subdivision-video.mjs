@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import { usageFor } from '../src/modules/subdivision/renderOptions.mjs';
-import { readPackageVersion } from './lib/cliArgs.mjs';
 import { runVideo } from './lib/generatorCli.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 import {
   assertPalette,
   buildPieceFor,
@@ -15,10 +15,10 @@ import {
 
 // The scene's loop, clip by clip: grow level by level, hold, collapse.
 function timeline(options, top) {
-  if (options.mode === 'stills') {
-    return { growAt: () => Infinity, seconds: options.holdSeconds };
+  if (options.mode === 'montage') {
+    return { growAt: () => Infinity, seconds: options.hold };
   }
-  const { collapseSeconds, growSeconds, holdSeconds } = options;
+  const { collapseSeconds, growSeconds, hold: holdSeconds } = options;
   return {
     growAt(seconds) {
       if (seconds < growSeconds) return (seconds / growSeconds) * top;
@@ -34,6 +34,7 @@ runVideo({
   kernelLabel: 'Subdivision',
   loadKernel,
   nouns: 'pieces',
+  overlay: sceneIconFile('subdivision'),
   parseCli,
   plan({ kernel, options, parsed, typed }) {
     assertPalette(kernel, parsed);
@@ -41,9 +42,9 @@ runVideo({
     const items = Array.from({ length: options.count }, (_, index) =>
       pieceAt(kernel, { index, options, roll })
     );
-    const { fps, holdSeconds } = options;
+    const { fps, hold: holdSeconds } = options;
     const perItem =
-      options.mode === 'stills'
+      options.mode === 'montage'
         ? holdSeconds
         : options.growSeconds + holdSeconds + options.collapseSeconds;
     const frames = Math.max(1, Math.round(perItem * fps));
@@ -78,10 +79,6 @@ runVideo({
       }),
     };
   },
-  prepare: async (options) => ({
-    ...options,
-    version: await readPackageVersion(),
-  }),
   script: 'subdivision',
   size: rasterSize,
   title: 'subdivision',

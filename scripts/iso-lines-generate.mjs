@@ -8,6 +8,7 @@ import {
   rollArgs,
   withCapturer,
 } from './lib/isoLinesRender.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 runStills({
   doneLabel: 'rendered pieces',
@@ -59,6 +60,7 @@ runStills({
   kernelLabel: 'IsoLines',
   loadKernel,
   nouns: 'pieces',
+  overlay: sceneIconFile('iso-lines'),
   parseCli,
   progressLabel: 'rendering pieces',
   script: 'iso-lines',

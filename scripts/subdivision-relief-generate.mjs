@@ -3,8 +3,8 @@ import {
   resolveViews,
   usageFor,
 } from '../src/modules/subdivisionRelief/renderOptions.mjs';
-import { readPackageVersion } from './lib/cliArgs.mjs';
 import { runStills } from './lib/generatorCli.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 import {
   assertPalette,
   loadKernel,
@@ -53,11 +53,8 @@ runStills({
   kernelLabel: 'SubdivisionRelief',
   loadKernel,
   nouns: 'pieces',
+  overlay: sceneIconFile('subdivision-relief'),
   parseCli,
-  prepare: async (options) => ({
-    ...options,
-    version: await readPackageVersion(),
-  }),
   progressLabel: 'rendering views',
   resolveViews,
   script: 'subdivision-relief',

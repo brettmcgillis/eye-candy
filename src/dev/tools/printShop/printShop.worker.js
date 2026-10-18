@@ -1,6 +1,6 @@
 import Module from 'manifold-3d';
 
-import { assemblePrint } from './kernel';
+import { assemblePrint, creasedNormals } from './kernel';
 import { getPrintable } from './printables';
 
 const images = new Map();
@@ -42,16 +42,19 @@ const manifold = Module({
   return wasm;
 });
 
-// The page gets Float32 copies of each body to draw.
+// The page gets each body split at creases and colour seams, with normals,
+// so the preview shades exactly as the GLB and the thumbnail do.
 function previewOf(body) {
   const { model } = body;
+  const creased = creasedNormals(model);
   return {
-    colors: model.vertexColors ? Float32Array.from(model.vertexColors) : null,
+    colors: creased.colors,
     id: body.id,
-    indices: Uint32Array.from(model.indices),
+    indices: creased.indices,
     label: body.label,
+    normals: creased.normals,
     parts: model.parts,
-    positions: Float32Array.from(model.positions),
+    positions: Float32Array.from(creased.positions),
     triPart: Uint8Array.from(model.triPart),
   };
 }
@@ -64,13 +67,14 @@ self.onmessage = async ({ data }) => {
     const result = await assemblePrint(printable, data.options, {
       loadImage,
       manifold: await manifold,
+      previewLattice: true,
     });
     const bodies = result.bodies.map(previewOf);
     // eslint-disable-next-line no-restricted-globals
     self.postMessage(
       { bodies, id, report: result.report, type: 'built' },
       bodies.flatMap((body) =>
-        [body.positions, body.indices, body.triPart, body.colors]
+        [body.positions, body.indices, body.triPart, body.colors, body.normals]
           .filter(Boolean)
           .map((array) => array.buffer)
       )

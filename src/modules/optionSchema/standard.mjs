@@ -1,5 +1,15 @@
 import { output, render, roll, still, video } from './specs.mjs';
 
+// The app's overlay chrome comes in the safe-area insets Instagram's UI
+// leaves clear.
+export const IG_PRESETS = ['story', 'reel', 'post'];
+
+const overlayChrome = (item) => ({
+  scope: 'shared',
+  section: 'overlay',
+  ...item,
+});
+
 // The render settings every generator CLI shares, in their usual form. Each
 // takes the per-generator wording it needs plus an `extra` override.
 const standard = {
@@ -82,6 +92,15 @@ const standard = {
       type: 'number',
       ...extra,
     }),
+  ig: (extra = {}) =>
+    overlayChrome({
+      choices: [...IG_PRESETS, 'none'],
+      default: 'post',
+      help: 'Safe-area insets; only applies with --overlay',
+      label: 'Safe area',
+      type: 'enum',
+      ...extra,
+    }),
   keep: (facets, extra = {}) =>
     roll({
       default: '',
@@ -104,6 +123,9 @@ const standard = {
     }),
   mode: (modes, value, help, extra = {}) =>
     video({
+      choiceAliases: modes.includes('montage')
+        ? { stills: 'montage' }
+        : undefined,
       choices: modes,
       default: value,
       help,
@@ -132,6 +154,21 @@ const standard = {
       type: 'string',
       ...extra,
     }),
+  overlay: (extra = {}) =>
+    overlayChrome({
+      default: false,
+      help: 'Burn the scene overlay (Reversal mark, scene icon, version, name and date) into the output',
+      label: 'Overlay',
+      type: 'boolean',
+      ...extra,
+    }),
+  // The three options that burn the overlay in, as one spread. `extra` is
+  // for `overlay` alone: a scene that has its own overlay toggle says so there.
+  overlayOptions: (extra = {}) => ({
+    ig: standard.ig(),
+    overlay: standard.overlay(extra),
+    viewport: standard.viewport(),
+  }),
   palettes: (facet, extra = {}) =>
     roll({
       array: true,
@@ -244,6 +281,19 @@ const standard = {
       help: 'Camera view for the clip',
       label: 'View',
       type: 'enum',
+      ...extra,
+    }),
+  viewport: (extra = {}) =>
+    overlayChrome({
+      default: 390,
+      help: 'CSS pixel width the overlay emulates; output width over this is the device pixel ratio it draws at. 390 matches an iPhone',
+      label: 'Viewport',
+      max: 8192,
+      min: 64,
+      nullable: true,
+      placeholder: 'N',
+      step: 1,
+      type: 'number',
       ...extra,
     }),
   views: (views, value, extra = {}) =>

@@ -10,6 +10,7 @@ import {
   withCapturer,
 } from './lib/networkTestRender.mjs';
 import { runStage } from './lib/progress.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 // Each network is one shot: how many frames it runs for, and a stepper that
 // is called once per frame, in order, on a fixed clock.
@@ -83,6 +84,7 @@ runVideo({
   kernelLabel: 'NetworkTest',
   loadKernel,
   nouns: 'networks',
+  overlay: sceneIconFile('network-test'),
   parseCli,
   async plan({ kernel, options, typed }) {
     const { net } = kernel;

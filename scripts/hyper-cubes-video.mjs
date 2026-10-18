@@ -8,6 +8,7 @@ import {
   structureAt,
   withCapturer,
 } from './lib/hyperCubesRender.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 // A morph clip is one stage: every structure after the first keeps the
 // first one's atmosphere, so only the cubes move.
@@ -95,6 +96,7 @@ runVideo({
   kernelLabel: 'HyperCubes',
   loadKernel,
   nouns: 'structures',
+  overlay: sceneIconFile('hyper-cubes'),
   parseCli,
   plan({ kernel, options, typed }) {
     const { cubes } = kernel;

@@ -12,6 +12,7 @@ import {
   withCapturer,
 } from './lib/blockPartyRender.mjs';
 import { capturerSvg, runStills, sidecarFor } from './lib/generatorCli.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 runStills({
   kernelLabel: 'Block Party',
@@ -35,6 +36,7 @@ runStills({
   },
   loadKernel,
   nouns: 'cities',
+  overlay: sceneIconFile('block-party'),
   parseCli,
   resolveViews,
   script: 'block-party',

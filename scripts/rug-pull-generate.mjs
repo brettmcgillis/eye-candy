@@ -12,6 +12,7 @@ import {
   viewsOf,
   withCapturer,
 } from './lib/rugPullRender.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 const GPU_VIEWS = ['flat', 'floor', 'wall'];
 
@@ -65,6 +66,7 @@ runStills({
   kernelLabel: 'Rug Pull',
   loadKernel,
   nouns: 'rugs',
+  overlay: sceneIconFile('rug-pull'),
   parseCli,
   progressLabel: 'weaving rugs',
   script: 'rug-pull',

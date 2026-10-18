@@ -10,6 +10,7 @@ import {
   treeAt,
   withCapturer,
 } from './lib/nestingBoxesRender.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 // Clip seconds per tree, and growth progress at a clip time. `loop` is one
 // whole grow → hold → shrink → rest cycle, so consecutive trees meet on the
@@ -43,6 +44,7 @@ runVideo({
   kernelLabel: 'Nesting Boxes',
   loadKernel,
   nouns: 'trees',
+  overlay: sceneIconFile('nesting-boxes'),
   parseCli,
   plan({ kernel, options, typed }) {
     const { boxes } = kernel;

@@ -179,6 +179,7 @@ export const RENDER_OPTIONS = {
   ...RIG,
   ...sharedRender({ facets: FACETS, name: 'iso-lines-relief' }),
   ...CAMERAS,
+  ...standard.overlayOptions(),
 };
 
 export const SURFACE_DEFAULTS = {
@@ -189,10 +190,6 @@ export const SURFACE_DEFAULTS = {
 
 const schema = createOptionSchema({
   options: RENDER_OPTIONS,
-  sectionLabels: {
-    color: 'colour',
-    roll: 'rolling',
-  },
   surfaceDefaults: SURFACE_DEFAULTS,
   views: VIEWS,
 });

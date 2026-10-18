@@ -8,6 +8,7 @@ import {
   withCapturer,
 } from './lib/brutalistRender.mjs';
 import { runVideo } from './lib/generatorCli.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 const DRIFT_FROM = 1.25;
 const DRIFT_TO = 0.85;
@@ -34,6 +35,7 @@ runVideo({
   kernelLabel: 'Brutalist',
   loadKernel,
   nouns: (options) => `structures (${options.stage})`,
+  overlay: sceneIconFile('brutalist'),
   parseCli,
   plan({ kernel, options, typed }) {
     const roll = rollArgs(kernel, { options, typed });

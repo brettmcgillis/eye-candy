@@ -653,6 +653,7 @@ export const RENDER_OPTIONS = bothStages({
   ...STUDIO,
   ...RIG,
   ...RENDER,
+  ...standard.overlayOptions(),
 });
 
 export const SURFACE_DEFAULTS = {
@@ -665,7 +666,6 @@ const schema = createOptionSchema({
   options: RENDER_OPTIONS,
   sectionLabels: {
     post: 'light & post',
-    roll: 'rolling',
   },
   surfaceDefaults: SURFACE_DEFAULTS,
   views: VIEWS,

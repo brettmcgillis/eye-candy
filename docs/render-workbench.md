@@ -19,16 +19,16 @@ One way to write a spec. Import the builders from
 `../optionSchema/index.mjs` (relative: the file must load in plain Node and
 in Vite's config loader, so it stays dependency-free).
 
-| Builder                                                                  | Makes                                                                                                                                                                                                                                                                             |
-| ------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `num(section, group, label, value, min, max, step, extra)`               | a scene number control                                                                                                                                                                                                                                                            |
-| `choice(section, group, label, choices, value, extra)`                   | a scene enum (`choiceLabels` names its choices)                                                                                                                                                                                                                                   |
-| `flag(…)`, `color(…)`, `spec(type, section, group, label, value, extra)` | a scene boolean, colour, or anything else                                                                                                                                                                                                                                         |
-| `rolled(facet, [min, max] \| null, item)`, `inFacet(facet, item)`        | lets the dice set it (in that window)                                                                                                                                                                                                                                             |
-| `sceneOnly(item)`                                                        | a scene control that is never a render option                                                                                                                                                                                                                                     |
-| `rigOf({ facet })`                                                       | a builder for light/post rig keys (`rig: true`, section `post`)                                                                                                                                                                                                                   |
-| `output`, `still`, `video`, `render`, `roll`                             | scope/section wrappers for literal render options                                                                                                                                                                                                                                 |
-| `standard.<key>(…)`                                                      | the shared render options: `batch`, `out`, `width`, `height`, `pixelRatio`, `count`, `png`, `webp`, `svg`, `views`, `svgStroke`, `svgOcclusion`, `samples`, `shadows`, `projection`, `fov`, `margin`, `keep`, `base`, `palettes`, `mode`, `view`, `fps`, `hold`, `turns`, `orbit` |
+| Builder                                                                  | Makes                                                                                                                                                                                                                                                                                                                            |
+| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `num(section, group, label, value, min, max, step, extra)`               | a scene number control                                                                                                                                                                                                                                                                                                           |
+| `choice(section, group, label, choices, value, extra)`                   | a scene enum (`choiceLabels` names its choices)                                                                                                                                                                                                                                                                                  |
+| `flag(…)`, `color(…)`, `spec(type, section, group, label, value, extra)` | a scene boolean, colour, or anything else                                                                                                                                                                                                                                                                                        |
+| `rolled(facet, [min, max] \| null, item)`, `inFacet(facet, item)`        | lets the dice set it (in that window)                                                                                                                                                                                                                                                                                            |
+| `sceneOnly(item)`                                                        | a scene control that is never a render option                                                                                                                                                                                                                                                                                    |
+| `rigOf({ facet })`                                                       | a builder for light/post rig keys (`rig: true`, section `post`)                                                                                                                                                                                                                                                                  |
+| `output`, `still`, `video`, `render`, `roll`                             | scope/section wrappers for literal render options                                                                                                                                                                                                                                                                                |
+| `standard.<key>(…)`                                                      | the shared render options: `batch`, `out`, `width`, `height`, `pixelRatio`, `count`, `png`, `webp`, `svg`, `views`, `svgStroke`, `svgOcclusion`, `samples`, `shadows`, `projection`, `fov`, `margin`, `keep`, `base`, `palettes`, `mode`, `view`, `fps`, `hold`, `turns`, `orbit`, `overlay`, `ig`, `viewport`, `overlayOptions` |
 
 `group` is the dotted folder path inside the section, or `null`. Every builder
 takes `extra` last and spreads it, so any field can be overridden. A kernel
@@ -38,17 +38,46 @@ may define named compositions of these (Flora's `gen`, Brutalist's
 `createOptionSchema({ options, sectionLabels, surfaceDefaults, views,
 configKeys, validate })` returns the CLI/workbench surface (`defaultsFor`,
 `normalizeOptions`, `usageFor`, `optionsFor`, `sectionsFor`, `facets`,
-`keysInFacet`) and the scene adapters (`SCENE_KEYS`, `LEVA_KEYS`,
-`GENERATOR_KEYS`, `keysWhere`, `sceneDefaults`, `configFrom`,
-`optionsFromConfig`, `presetFromConfig`, `sceneNameFor`, `resolveViews`).
+`keysInFacet`, `canonicalArgv`, `withAliases`) and the scene adapters
+(`SCENE_KEYS`, `LEVA_KEYS`, `GENERATOR_KEYS`, `keysWhere`, `sceneDefaults`,
+`configFrom`, `optionsFromConfig`, `presetFromConfig`, `sceneNameFor`,
+`sceneNamed`, `resolveViews`, and `SCENE_NAMES` / `LEVA_NAMES` /
+`SCENE_OPTIONS`, the same scene keys under their `sceneKey` names).
 Re-export what consumers use; don't rewrite them.
 
 - `normalizeOptions` already checks that a still has an image format, that
   width × pixelRatio fits 8192, and (given `views`) that `views` names real
   views. `validate` is only for the kernel's own rules.
-- `sectionLabels` lists only labels that differ from the section id.
+- `sectionLabels` lists only labels that differ from the section id. `roll`
+  is always "rolling" and `color` always "colour"; a light/post rig section
+  is "post" (post only), "light" (lights only) or "light & post" (both).
 - `configKeys` narrows which scene keys make up a config (Flora: one flower,
   not the arrangement).
+
+### Shared chrome
+
+Every workbench ends with the same render sections, after the kernel's own and
+always in this order: `output → svg → render → roll → video → overlay`
+(`SHARED_SECTIONS`). `sectionsFor` and `usageFor` sort them there, so a
+kernel's declaration order cannot change it, and a kernel section must not
+reuse one of these ids. The shared knobs have one name everywhere:
+
+- `batch` (`standard.batch`) is the seed that names a batch's generations and
+  seeds its rolls. A kernel whose scene calls it `seed` keeps that name for
+  presets with `sceneKey: 'seed'`.
+- `hold` (`standard.hold`), `fps`, `mode` and their timing live in `video`;
+  `margin` lives in `render`.
+- `montage` is the video mode that cuts one generation after another (it was
+  `stills`, the name the still kind already has).
+
+A renamed key keeps working through `aliases: ['old']` (job JSON, sidecars and
+`--old` flags, which `canonicalArgv` rewrites before `parseArgs`), and a
+renamed choice through `choiceAliases: { old: 'new' }`; `standard.mode` maps
+`stills` to `montage` itself. A scene that builds Leva straight from the specs
+reads `SCENE_NAMES` / `SCENE_OPTIONS` so its controls stay in preset key space,
+and `sceneNamed(options)` turns render options into scene keys for kernel calls.
+`npm run workbench-chrome:check` fails when a workbench breaks the order, uses
+an old key, mode or label.
 
 ## 2. Scene Leva — `@modules/schemaControls`
 
@@ -84,7 +113,13 @@ grouped by section. `sections` takes `open`, `choices`, `fields` (custom
 controls), `handled` (keys the page lays out itself), `pickers` (checkbox
 lists such as families) and `followWhen`. `preview.stats(config, metadata)`
 fills the gallery's stats; `controls` and `afterFields` are components for a
-tool's own form pieces. Flora, Trucheterie and Rorschach keep bespoke pages
+tool's own form pieces. The Format picker sets width, height and the
+overlay's `ig` safe area together (Post and Square → `post`, Reel → `reel`).
+`leadingTabs` (an array, or a function of the
+page's context — `{ jobsApi, kind, options, pins, setOption, setOptions }`)
+and `defaultTab` pass through to `ResultsPanel`, for a live view that reads
+and writes the form (GhostBusterCLI's Live tab); a preview with no `scene`
+offers no "Save as scene preset". Flora, Trucheterie and Rorschach keep bespoke pages
 built from the same parts. `ResultsPanel` takes `leadingTabs` ({ id, label, icon, render })
 for a tool with a live view ahead of Saved / Transient / Jobs (PrintShop's
 Preview), and `createRenderJobService({ itemFolders: true })` makes each
@@ -135,6 +170,12 @@ loadKernelModules(ENTRIES)`, `withCapturer` over `withRenderer`, and shared
   animated grain, wind and blinks play at video speed. A bespoke video loop
   calls `setClock` itself.
 
+- A generator whose stage is React rather than a three-only rig
+  (GhostBuster) mounts it with R3F on the headless renderer: R3F loads
+  through Vite (`loadModules(entries, { noExternal: ['@react-three/fiber'] })`)
+  so it shares the stage's three, and `renderer.setOutputRenderTarget` makes
+  the capture target its canvas. See `docs/ghost-buster-pipeline.md`.
+
 Rorschach's CLIs predate this and stay bespoke.
 
 ## 6. Spinning up a new generator
@@ -151,4 +192,41 @@ Rorschach's CLIs predate this and stay bespoke.
 5. Server: `src/dev/server/<tool>/plugin.js` over `createSchemaToolPlugin`,
    registered in `devServerPlugins.js`.
 6. Check: `scripts/<slug>-check.mjs` calling `checkWorkbenchPage` from
-   `scripts/lib/workbenchPage.mjs` among its drift checks.
+   `scripts/lib/workbenchPage.mjs` among its drift checks, and a clean
+   `npm run workbench-chrome:check`.
+7. Overlay (§7): `...standard.overlayOptions()` in the kernel's
+   `RENDER_OPTIONS`, `overlay: sceneIconFile('<slug>')` in both CLIs, the tool
+   in `OVERLAY_TOOLS`, then `npm run scene-icons` and `npm run overlay:check`.
+
+## 7. Overlay burn-in
+
+Every render workbench can burn the app's overlay chrome (the Reversal mark,
+the scene's icon, version, name and date) into its stills and video frames,
+so a render posts looking like the app does. It is one mechanism, wired the
+same way for every tool:
+
+- **Options.** `...standard.overlayOptions()` in the kernel's `RENDER_OPTIONS`
+  declares `overlay` (off for renders), `ig` (the safe-area insets: `story`,
+  `reel`, `post` or `none`) and `viewport` (the CSS width the overlay emulates;
+  output width over it is the device pixel ratio it draws at). They are
+  render options, never scene controls. A scene that has its own toggle names
+  it in the argument (`standard.overlayOptions({ default: true, scene: true,
+sceneKey: 'showOverlay' })`, as Flora and Fungi do). The workbench page
+  shows them as the Overlay section with no page code.
+- **CLIs.** A tool's `runStills` / `runVideo` call names the icon its scene
+  wears: `overlay: sceneIconFile('<slug>')`. The drivers read the package
+  version, composite the overlay onto every frame (`encodeFrame` for stills,
+  the frame stamp for video — a held still is stamped once) and leave SVG
+  output alone, since the chrome is raster. A video plan that replays frames
+  already finished (`plan.overlay: false`) is not stamped twice. Rorschach's
+  bespoke renderer calls `overlayLayer` itself, with the same `sceneIconFile`.
+- **The icon.** The overlay draws the icon the scene shows in Scenemoji, never
+  a hand-drawn copy. `scripts/lib/sceneIcons.mjs` reads the scene's
+  `scene.config.jsx` — the react-icons component and the colour it is drawn in,
+  or the `iconFile()` image a scene ships — and `npm run scene-icons` writes
+  `public/icons/<scene id>.svg` from it. Change a scene's icon, rerun it, and
+  commit the SVG. The overlay deliberately leaves out the area icon (the
+  wrench on WIP scenes), so a posted image never reads as unfinished work.
+- **The check.** `npm run overlay:check` fails when a render workbench is not
+  in `OVERLAY_TOOLS`, lacks the three options, does not name its scene's icon
+  in a CLI, or has an icon file that no longer matches its scene.

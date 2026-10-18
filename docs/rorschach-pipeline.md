@@ -739,7 +739,7 @@ where it is still travelling.
 
 Never carried across a test boundary — a new seed is a new blot, and carrying
 the last one's pigment into it bleeds one test into the next. That also means a
-stills montage never reaches it, and turntable and cinematic never do either,
+montage never reaches it, and turntable and cinematic never do either,
 since their ink is identical between frames and hits the cache first.
 
 **The overlay used to cost more than the frame did.** `applyOverlay` took an
@@ -753,7 +753,7 @@ PNG-encoded, written to disk, and then decoded again by ffmpeg in a second pass
 over the whole clip. `scripts/lib/frameSink.mjs` spawns ffmpeg on a rawvideo
 pipe instead, so the encode is gone, the write is gone, ffmpeg's decode is gone,
 and — the part that does not show up in a per-frame number — the encode now runs
-_while_ the next frame renders. The temp directory goes with it; only a stills
+_while_ the next frame renders. The temp directory goes with it; only a
 montage still writes files first, because a set of images with a duration and a
 crossfade each is the concat demuxer's job.
 
@@ -853,7 +853,7 @@ changing. It only means anything with `--ink`.
 ```sh
 npm run rorschach:video -- \
   --mode breathe --ink --no-lines \
-  --seed 12345 --hold 8 --fps 30 \
+  --batch 12345 --hold 8 --fps 30 \
   --inkPatternWash 0.9 --inkPatternFlow 0.2 --inkPatternSpeed 1 \
   --out output/rorschach-breathe.mp4
 ```

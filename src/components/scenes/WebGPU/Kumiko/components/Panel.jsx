@@ -3,7 +3,7 @@ import React, { memo, useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 
 import useImageBytes from '@hooks/useImageBytes';
-import { SCENE_KEYS } from '@modules/kumiko';
+import { SCENE_NAMES } from '@modules/kumiko';
 import { createPanelRig } from '@modules/kumikoRender';
 import { useWebcamFrame } from '@modules/webcam';
 
@@ -34,7 +34,7 @@ const BAKE_KEYS = [
   'borderDepth',
 ];
 const SCENE_ONLY = ['cellEase', 'webcam', 'webcamFacing', 'webcamRate'];
-const PLAN_KEYS = SCENE_KEYS.filter(
+const PLAN_KEYS = SCENE_NAMES.filter(
   (key) => ![...LOOK_KEYS, ...BAKE_KEYS, ...SCENE_ONLY].includes(key)
 );
 

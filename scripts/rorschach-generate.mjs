@@ -8,6 +8,7 @@ import sharp from 'sharp';
 
 import {
   RENDER_OPTIONS,
+  canonicalArgv,
   defaultsFor,
   normalizeOptions,
   resolveIgPreset,
@@ -40,7 +41,7 @@ function usage() {
 }
 
 async function main() {
-  const args = parseArgs(process.argv.slice(2), DEFAULTS);
+  const args = parseArgs(canonicalArgv(process.argv.slice(2)), DEFAULTS);
   if (args.help) {
     usage();
     return;
@@ -97,8 +98,8 @@ async function main() {
   try {
     for (let index = 0; index < options.count; index += 1) {
       const seed =
-        typeof options.seed === 'number'
-          ? kernel.seedAt(options.seed, index)
+        typeof options.batch === 'number'
+          ? kernel.seedAt(options.batch, index)
           : kernel.randomSeed();
       progress.log(
         `test ${index + 1}/${options.count}: generating seed ${seed}`

@@ -1,7 +1,7 @@
 import { PRESETS as FLAT_PRESETS } from '@components/scenes/WebGPU/Subdivision/presets/presets';
 import {
   RENDER_OPTIONS,
-  SCENE_KEYS,
+  SCENE_NAMES,
   sceneDefaults,
 } from '@modules/subdivisionRelief';
 
@@ -48,7 +48,7 @@ const FROM_SUBDIVISION = Object.fromEntries(
     name,
     {
       ...Object.fromEntries(
-        Object.entries(preset).filter(([key]) => SCENE_KEYS.includes(key))
+        Object.entries(preset).filter(([key]) => SCENE_NAMES.includes(key))
       ),
       ...RELIEF[name],
     },

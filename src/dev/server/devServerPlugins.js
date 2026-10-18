@@ -7,12 +7,15 @@ import exhibitAPlugin from './exhibitA/plugin';
 import floraPlugin from './flora/plugin';
 import fractalAutomataPlugin from './fractalAutomata/plugin';
 import fungiPlugin from './fungi/plugin';
+import ghostBusterPlugin from './ghostBuster/plugin';
 import gltfjsxPlugin from './gltfjsx/plugin';
 import glyphsPlugin from './glyphs/plugin';
 import hyperCubesPlugin from './hyperCubes/plugin';
+import imperfectionPlugin from './imperfection/plugin';
 import inventoryPlugin from './inventory/plugin';
 import isoLinesPlugin from './isoLines/plugin';
 import isoLinesReliefPlugin from './isoLinesRelief/plugin';
+import isoMeterPlugin from './isoMeter/plugin';
 import kumikoPlugin from './kumiko/plugin';
 import nestingBoxesPlugin from './nestingBoxes/plugin';
 import networkTestPlugin from './networkTest/plugin';
@@ -37,12 +40,15 @@ export default function devServerPlugins() {
     floraPlugin(),
     fractalAutomataPlugin(),
     fungiPlugin(),
+    ghostBusterPlugin(),
     glyphsPlugin(),
     gltfjsxPlugin(),
     hyperCubesPlugin(),
+    imperfectionPlugin(),
     inventoryPlugin(),
     isoLinesPlugin(),
     isoLinesReliefPlugin(),
+    isoMeterPlugin(),
     kumikoPlugin(),
     nestingBoxesPlugin(),
     networkTestPlugin(),

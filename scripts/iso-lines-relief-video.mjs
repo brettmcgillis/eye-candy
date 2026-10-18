@@ -9,6 +9,7 @@ import {
   withCapturer,
 } from './lib/isoLinesReliefRender.mjs';
 import { runStage } from './lib/progress.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 // Each piece is one shot: how many frames it runs for, and a stepper called
 // once per frame, in order, on a fixed clock. build, rise and turntable hold
@@ -62,6 +63,7 @@ runVideo({
   kernelLabel: 'IsoLinesRelief',
   loadKernel,
   nouns: 'pieces',
+  overlay: sceneIconFile('iso-lines-relief'),
   parseCli,
   async plan({ kernel, options, typed }) {
     const { iso, relief } = kernel;

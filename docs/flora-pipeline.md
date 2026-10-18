@@ -14,7 +14,7 @@ Flora.
         │                              │
   WebGPU/Flora scene          scripts/lib/floraRender.mjs
   (R3F, Leva)                   ├─ flora-generate.mjs   stills + bouquets
-                                └─ flora-video.mjs      lifecycle / growth / turntable / stills
+                                └─ flora-video.mjs      lifecycle / growth / turntable / montage
                                         │
                      src/dev/server/flora → src/dev/tools/flora (FloraCLI)
 ```
@@ -265,10 +265,11 @@ like Rorschach's four axes.
 
 `--overlay` composites the app's overlay chrome into stills and video frames,
 the same burn-in Rorschach does and from the same code
-(`scripts/lib/overlayLayer.mjs`, cached per geometry). Every caller passes its
-own scene's icon explicitly (`icon: 'flora.svg'`, a file in `public/icons/`);
-there is no default, so a CLI that forgets it fails instead of wearing another
-scene's. `--ig` picks the
+(`scripts/lib/overlayLayer.mjs`, cached per geometry). Every CLI names its
+own scene's icon (`overlay: sceneIconFile('flora')`, a file in `public/icons/`
+generated from the scene by `npm run scene-icons`); there is no default, so a
+CLI that forgets it burns nothing in instead of wearing another scene's. See
+`docs/render-workbench.md` §7. `--ig` picks the
 safe-area insets and `--viewport` the CSS width being emulated. The overlay is
 laid out in CSS pixels against that viewport, so at `pixelRatio` above 1 it
 scales with the frame the way it does on a retina screen. It defaults on in

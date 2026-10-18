@@ -19,6 +19,8 @@
 //   sceneOnly    a scene control that is not a render option at all
 //   workbenchOnly  accepted from the workbench but not a CLI flag
 //   nullable     an empty value means "unset" rather than the default
+//   aliases      old names the key is still accepted under (flags, job JSON)
+//   choiceAliases  { oldChoice: choice } for an enum's renamed choices
 
 const HEX_COLOR = /^#[0-9a-f]{6}$/iu;
 
@@ -67,7 +69,7 @@ function coerce(key, spec, raw, fallback, fail) {
   }
 
   if (spec.type === 'enum') {
-    const value = String(raw);
+    const value = spec.choiceAliases?.[raw] ?? String(raw);
     if (!spec.choices.includes(value)) {
       throw fail(`${key} must be one of ${spec.choices.join(', ')}.`);
     }
@@ -93,6 +95,24 @@ function coerce(key, spec, raw, fallback, fail) {
     throw fail(`${key} must be one of ${spec.choices.join(', ')}.`);
   }
   return value;
+}
+
+// The render chrome every workbench shares, always after a kernel's own
+// sections and always in this order.
+export const SHARED_SECTIONS = [
+  'output',
+  'svg',
+  'render',
+  'roll',
+  'video',
+  'overlay',
+];
+const SHARED_LABELS = { color: 'colour', roll: 'rolling' };
+
+function orderSections(ids) {
+  const content = ids.filter((id) => !SHARED_SECTIONS.includes(id));
+  const shared = SHARED_SECTIONS.filter((id) => ids.includes(id));
+  return [...content, ...shared];
 }
 
 const FORMATS = { png: 'PNG', webp: 'WebP', svg: 'SVG' };
@@ -137,11 +157,39 @@ function checkOutput(options, fail, resolveViews) {
 export default function createOptionSchema({
   configKeys = (spec) => spec.scene,
   options,
-  sectionLabels = {},
+  sectionLabels: kernelLabels = {},
   surfaceDefaults = {},
   validate,
   views,
 }) {
+  const sectionLabels = { ...SHARED_LABELS, ...kernelLabels };
+  const ALIASES = new Map(
+    Object.entries(options).flatMap(([key, spec]) =>
+      (spec.aliases ?? []).map((alias) => [alias, key])
+    )
+  );
+  const canonicalKey = (name) => ALIASES.get(name) ?? name;
+
+  // A renamed key's old spelling reaches the new one when the new one is
+  // absent, so saved jobs and sidecars keep working.
+  function withAliases(raw) {
+    const resolved = { ...raw };
+    ALIASES.forEach((key, alias) => {
+      if (resolved[key] === undefined && raw[alias] !== undefined) {
+        resolved[key] = raw[alias];
+      }
+      delete resolved[alias];
+    });
+    return resolved;
+  }
+
+  // Old flag spellings on argv, rewritten before defaults are merged in.
+  const canonicalArgv = (argv) =>
+    argv.map((token) => {
+      const match = /^--(no-)?(\w+)$/u.exec(token);
+      if (!match || !ALIASES.has(match[2])) return token;
+      return `--${match[1] ?? ''}${ALIASES.get(match[2])}`;
+    });
   const resolveViews = views
     ? (list, fail = (message) => new Error(message)) =>
         resolveList(list, views, 'views', fail)
@@ -179,6 +227,7 @@ export default function createOptionSchema({
       if (!bySection.has(section)) bySection.set(section, []);
       bySection.get(section).push([key, spec]);
     });
+    const ordered = orderSections([...bySection.keys()]);
 
     const width =
       Math.max(
@@ -186,9 +235,9 @@ export default function createOptionSchema({
       ) + 2;
 
     const lines = [];
-    bySection.forEach((sectionEntries, section) => {
+    ordered.forEach((section) => {
       lines.push(``, ` ${sectionLabels[section] ?? section}`);
-      sectionEntries.forEach(([key, spec]) => {
+      bySection.get(section).forEach(([key, spec]) => {
         const shown = defaults[key];
         const suffix =
           spec.type === 'boolean' || shown == null
@@ -210,10 +259,11 @@ export default function createOptionSchema({
     { fail = (message) => new Error(message), surface = `cli-${kind}` } = {}
   ) {
     const defaults = defaultsFor(kind, surface);
+    const given = withAliases(raw);
     const normalized = Object.fromEntries(
       optionsFor(kind, surface).map(([key, spec]) => [
         key,
-        coerce(key, spec, raw[key], defaults[key], fail),
+        coerce(key, spec, given[key], defaults[key], fail),
       ])
     );
     checkOutput(normalized, fail, resolveViews);
@@ -244,9 +294,9 @@ export default function createOptionSchema({
       if (!bySection.has(section)) bySection.set(section, []);
       bySection.get(section).push(key);
     });
-    return [...bySection].map(([id, keys]) => ({
+    return orderSections([...bySection.keys()]).map((id) => ({
       id,
-      keys,
+      keys: bySection.get(id),
       label: sectionLabels[id] ?? id,
     }));
   }
@@ -258,6 +308,20 @@ export default function createOptionSchema({
 
   const SCENE_KEYS = keysWhere((spec) => spec.scene);
   const sceneNameFor = (key) => options[key].sceneKey ?? key;
+  // The same scene controls under the names scenes and presets use, for a
+  // scene that builds Leva straight from the specs.
+  const LEVA_KEYS = keysWhere((spec) => spec.scene && !spec.rig);
+  const SCENE_NAMES = SCENE_KEYS.map(sceneNameFor);
+  const SCENE_OPTIONS = Object.fromEntries(
+    SCENE_KEYS.map((key) => [sceneNameFor(key), options[key]])
+  );
+  const sceneNamed = (values) =>
+    Object.fromEntries(
+      Object.entries(values).map(([key, value]) => [
+        key in options ? sceneNameFor(key) : key,
+        value,
+      ])
+    );
   const defaultsOf = (keys) =>
     Object.fromEntries(
       keys.map((key) => [sceneNameFor(key), options[key].default])
@@ -301,16 +365,18 @@ export default function createOptionSchema({
 
   return {
     GENERATOR_KEYS,
-    LEVA_KEYS: keysWhere((spec) => spec.scene && !spec.rig),
+    LEVA_KEYS,
+    LEVA_NAMES: LEVA_KEYS.map(sceneNameFor),
     SCENE_KEYS,
+    SCENE_NAMES,
+    SCENE_OPTIONS,
+    canonicalArgv,
+    canonicalKey,
     configFrom,
     defaultsFor,
     defaultsOf,
     facets,
-    generatorDefaults: () =>
-      Object.fromEntries(
-        GENERATOR_KEYS.map((key) => [key, options[key].default])
-      ),
+    generatorDefaults: () => defaultsOf(GENERATOR_KEYS),
     keysInFacet,
     keysWhere,
     normalizeOptions,
@@ -320,7 +386,9 @@ export default function createOptionSchema({
     resolveViews,
     sceneDefaults,
     sceneNameFor,
+    sceneNamed,
     sectionsFor,
     usageFor,
+    withAliases,
   };
 }

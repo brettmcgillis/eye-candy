@@ -26,7 +26,7 @@ async function repoAliases() {
 // aliases, extensionless imports and JSON the browser build does — the two
 // renderers execute literally the same files. `entries` are repo-rooted paths
 // (`/src/modules/flora/index.js`); the result is keyed the same way.
-export default async function loadModules(entries) {
+export default async function loadModules(entries, { noExternal } = {}) {
   const server = await createServer({
     appType: 'custom',
     configFile: false,
@@ -37,6 +37,7 @@ export default async function loadModules(entries) {
     resolve: { alias: await repoAliases() },
     root: REPO_ROOT,
     server: { middlewareMode: true },
+    ...(noExternal && { ssr: { noExternal } }),
   });
 
   try {

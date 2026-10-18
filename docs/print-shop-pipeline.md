@@ -31,6 +31,7 @@ src/dev/tools/printShop/
 scripts/print-shop-export.mjs   CLI; batches variants × sizes; --job for the tool
 scripts/print-shop-check.mjs    drift checks
 scripts/print-shop-marks.mjs    re-bake the mark outlines from public/models
+scripts/print-shop-models.mjs   re-bake scene GLBs a printable poses (pigeon + camera head)
 src/dev/server/printShop/       job runner: spawns the CLI per batch
 ```
 
@@ -48,7 +49,13 @@ One folder, `printables/<id>/printable.js`, default-exporting:
 | `sectionLabels` | labels for its own sections                                                                                                                                      |
 | `build(o, env)` | async; returns a **piece** in the scene's own units, Y-up. `env.loadImage(url)` → `{ width, height, data }` RGBA (sharp in the CLI, OffscreenCanvas in the page) |
 
-A piece is `{ surface, parts, vertexColors?, mountAxis?, stats?, warnings? }`:
+A printable may also declare `mounts` (the mount choices it offers) and
+`signatureSpots` (`baseTop`, `baseUnder`, `inside`, `back`); options that only
+serve the others drop out of its form and CLI.
+
+A piece is either a **sheet** — `{ surface, parts, vertexColors?, mountAxis?,
+lattice?, stats?, warnings? }` — or **solids** — `{ solids, solidParts,
+mountColor?, markColor?, vertexColors?, stats?, warnings? }`:
 
 - `surface` — an **open** indexed sheet (`kernel/mesh.js` shape). The kernel
   thickens it; its winding's front face is the `front` skin. Attributes it
@@ -58,10 +65,15 @@ A piece is `{ surface, parts, vertexColors?, mountAxis?, stats?, warnings? }`:
   3MF base materials and GLB materials.
 - `mountAxis` — `[x, z]` the base stem / loop hang from (default: through the
   highest point).
+- `solids` — closed meshes in scene units, each `{ positions, indices,
+colors, part }`; `solidParts` names their parts in order (`{ id, label,
+color }`). The kernel scales them, fills any hollow part (its cavities are
+  dropped, so a shell around another part fuses with it), unions them with
+  the mount and signature, and — with no mount — cuts the feet flat by
+  `footTrim` so it stands. Mount `plinth` is a disc under whatever reaches
+  within `plinthSink` of the bottom, sunk that far in.
 
-The page, worker and CLI pick it up with no other change. A piece that is
-already a closed solid is not supported yet: extend `assemble.js` with a
-`solid` path rather than faking a sheet.
+The page, worker and CLI pick it up with no other change.
 
 ## The shared stages (`assemble.js`)
 
@@ -88,23 +100,32 @@ already a closed solid is not supported yet: extend `assemble.js` with a
    vertices at property seams, so `toModel` re-welds with
    `mergeFromVert`/`mergeToVert` or the result reads as thousands of open
    edges.
-   - `base` + `standJoin: fused`: disc and a stem flaring 45° into a pad whose
+   - `base` ("Base + stem, one piece"): disc and a stem flaring 45° into a pad whose
      top sits in the wall all round, unioned with the shell — one piece.
-   - `base` + `removable`: the stand (disc ∪ stem) is its own body. The piece
+   - `socket` ("Base + stem, two pieces"): the stand (disc ∪ stem) is its own body. The piece
      gains a flared sleeve hung from the inside of the head, bored to
      `stemRadius + socketFit`, `socketDepth` deep; the stem tip stops
      `socketFit` short of the bore top. The check measures the assembled
      overlap (0) and that a raised stand hits the bore.
+   - `rest` ("Base + stem, two pieces (flat rest)"): the piece gains a
+     flat-bottomed platform hung inside the head (`restRadius`, auto from
+     the stem and piece size); the stand's stem flares 45° to a flat top of
+     the same radius, `restGap` below it. The check confirms the two clear
+     each other and bear when the stand is pushed up.
    - `loop`: an upright torus sunk into the top, unioned.
+   - Booleans can leave zero-volume slivers where faces only graze; they
+     are dropped after every body's boolean.
 7. **Signature**: a two-layer mark (`marks.js`) — the base outline cut
-   `signatureDepth`, the glyph twice that — on the stand base's underside
-   (always cut, so it still sits flat; mirrored correctly via a right-handed
-   surface frame) and/or the piece's back, found by a ray from −Z at
-   `signatureHeight`. On the piece it is cut or raised (`signatureStyle`)
-   and capped at 3/8 of the wall when cut. Size 0 = auto (base: 30% of the
-   disc; piece: 14% of its height). Bret and Reversal are flat outlines
-   projected from their GLBs' faces (the meshes are not closed solids, so a
-   projection of the solid was not an option).
+   `signatureDepth`, the glyph twice that — at any of four spots, each a
+   flag: **base top** (in front of the stem, reading upright from the
+   front; cut or raised), **under the base** (always cut, so it sits flat),
+   **inside the piece** (cut into the underside of a flat platform hung in
+   the head — the same platform the "flat rest" stand seats on; one-piece
+   and socket stands fill that space, so they warn instead), and the
+   **back** (curved: the cutter is refined and warped to follow the
+   surface, so the depth holds to its edges). Size 0 = auto per spot.
+   Bret and Reversal are flat outlines projected from their GLBs' faces
+   (the meshes are not closed solids).
 8. **Seat** the assembly on the bed (centred, lowest point at 0); exports
    re-seat each body on its own bed (`seatModel`). **Check** each body:
    watertight (every directed edge once, its reverse once), one shell,
@@ -134,6 +155,20 @@ GLB stays Y-up in metres with COLOR_0 linear.
 
 ## Gh0st
 
+- **Colour is what the scene shows, minus lighting**: albedo (textured,
+  eyelined) plus the emissive glow ClothMesh adds per side
+  (`colour × intensity × (1 − d·falloff)²` from `emissiveCenter`), clamped,
+  sRGB-encoded. Part colours (3MF base materials) are each side's average.
+  `textureProjection: 'screen'` projects through GhostBuster's default
+  camera ((0, 1, 3.5) on the origin, fov 50) at `screenAspect`; TSL's
+  `screenUV` was measured headlessly to run from the top-left, y down.
+- **Wireframe** (`debugWireframe`, i.e. Matrix; or forced with Surface →
+  Wireframe): struts of `strutRadius` along every edge of the render
+  mesh's live triangles whose ends both show, balls at the nodes
+  (`kernel/lattice.js`). The preview overlays them (`env.previewLattice`);
+  a print unions them in manifold (~20 s for Matrix). Hem and back
+  signatures do not apply to a wireframe.
+
 - **Pose is a settled drape, not a capture.** `settle.js` runs
   GhostCharacter's frame loop (`@elements/WebGPU/ghost/ghostRig`, the same
   `stepGhostRig` the element calls) at 60 fps with six cloth steps per frame,
@@ -161,3 +196,25 @@ GLB stays Y-up in metres with COLOR_0 linear.
   result is sRGB-encoded — what a viewer of the scene sees, minus lighting.
 - The cloth has no self-collision, so some presets (Nebula, Tinfoil, Starfield)
   pass their hem through itself; expect many fold spots there.
+
+## Surveillance pigeon
+
+- **Models are baked, not loaded**: `npm run print-shop:models` decodes
+  `pigeon.glb` and `security_camera.glb` (Draco, WebP), samples each texture
+  onto its vertices, keeps what `CameraHead` keeps (the two highest meshes,
+  raw geometry), welds and **closes** the camera's open shells (planar caps,
+  nested openings as one cap with holes, a second pass for outlines that
+  touch themselves, zero-area slits zipped by splitting their edge) and
+  writes three.js JSON next to the printable.
+- **Posing is three's own**: ObjectLoader rebuilds the rig; the root bone
+  and skinned mesh hang straight off one group as `FakeBird` renders them;
+  `AnimationMixer.setTime` + `applyBoneTransform` pose it; the camera head
+  takes FakeBird's neck/head joint-triangle aim with the scene's
+  `camScale`/`camOffset`/`camRot`, then CameraHead's pan and unit-box
+  normalisation. Poses are named moments of the idle clip and the camera
+  sweep (±`sweepRange`); Custom takes any clip time and pan.
+- The legs are the weak point (~0.62 mm at 60 mm tall); the printable warns
+  against the material's minimum and comfortable thickness with the size
+  that clears each.
+- Colour is per triangle corner (`cornerColors`), so the base and signature
+  keep flat colours where they meet the textured feet.

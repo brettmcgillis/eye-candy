@@ -489,6 +489,7 @@ export const RENDER_OPTIONS = {
   ...AGE,
   ...ROOM,
   ...RENDER,
+  ...standard.overlayOptions(),
 };
 
 export const SURFACE_DEFAULTS = {
@@ -499,7 +500,6 @@ export const SURFACE_DEFAULTS = {
 const SECTION_LABELS = {
   border: 'borders',
   mine: 'house motifs',
-  roll: 'rolling',
   room: 'room & drape',
 };
 

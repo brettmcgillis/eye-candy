@@ -320,7 +320,7 @@ export default function TrucheterieWorkbenchPage() {
                     'fps',
                     'hold',
                     ...(options.mode === 'growth' ? ['growSeconds'] : []),
-                    ...(options.mode === 'stills' ? [] : ['paletteDrift']),
+                    ...(options.mode === 'montage' ? [] : ['paletteDrift']),
                   ].map((key) => (
                     <SchemaField
                       key={key}

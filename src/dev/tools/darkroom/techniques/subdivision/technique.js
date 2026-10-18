@@ -1,7 +1,7 @@
 import { PRESETS } from '@components/scenes/WebGPU/Subdivision/presets/presets';
 import {
-  RENDER_OPTIONS,
-  SCENE_KEYS,
+  SCENE_NAMES,
+  SCENE_OPTIONS,
   SOURCE_IMAGE_MAX,
   buildPiece,
   renderFillSvg,
@@ -12,13 +12,13 @@ import { PALETTE_NONE, getPaletteStops } from '@utils/gradientPalette';
 import drawSvg from '../shared/drawSvg';
 import { PALETTE_OR_NONE, fromSchema, webcamPresets } from '../shared/specs';
 
-const KEYS = SCENE_KEYS.filter(
+const KEYS = SCENE_NAMES.filter(
   (key) =>
-    !RENDER_OPTIONS[key].sceneOnly &&
-    RENDER_OPTIONS[key].section !== 'video' &&
+    !SCENE_OPTIONS[key].sceneOnly &&
+    SCENE_OPTIONS[key].section !== 'video' &&
     key !== 'sourceImage'
 );
-const OPTIONS = fromSchema(RENDER_OPTIONS, KEYS);
+const OPTIONS = fromSchema(SCENE_OPTIONS, KEYS);
 OPTIONS.seed = { ...OPTIONS.seed, default: 'darkroom' };
 
 const SECTIONS = [
@@ -27,7 +27,7 @@ const SECTIONS = [
   ['palette', 'Palette & look'],
   ['output', 'Seed'],
 ].map(([section, title]) => ({
-  keys: KEYS.filter((key) => RENDER_OPTIONS[key].section === section),
+  keys: KEYS.filter((key) => SCENE_OPTIONS[key].section === section),
   title,
 }));
 

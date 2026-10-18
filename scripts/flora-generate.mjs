@@ -1,10 +1,8 @@
 #!/usr/bin/env node
 import { resolveViews, usageFor } from '../src/modules/flora/renderOptions.mjs';
-import { readPackageVersion } from './lib/cliArgs.mjs';
 import {
   assertPalette,
   buildFlowers,
-  encodeFrame,
   flowersAt,
   frameView,
   loadKernel,
@@ -16,9 +14,9 @@ import {
   withCapturer,
 } from './lib/floraRender.mjs';
 import { runStills } from './lib/generatorCli.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 runStills({
-  encode: encodeFrame,
   async item({ capturer, index, kernel, options, roll, save, step }) {
     const drawn = flowersAt(kernel, { index, options, roll });
     const itemOptions = resolveItemOptions(kernel, options, drawn.seed);
@@ -57,11 +55,8 @@ runStills({
   loadKernel,
   nouns: (options) =>
     options.bouquetSize > 0 || options.bouquet ? 'bouquets' : 'flowers',
+  overlay: sceneIconFile('flora'),
   parseCli,
-  prepare: async (options) => ({
-    ...options,
-    version: await readPackageVersion(),
-  }),
   resolveViews,
   script: 'flora',
   setup({ kernel, options, parsed, typed }) {

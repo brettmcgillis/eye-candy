@@ -1,6 +1,7 @@
 // A small z-buffered software rasterizer, so every print (batches from the
 // CLI included) gets the same gallery thumbnail with no GPU: an orthographic
 // three-quarter view, part colours under a key/fill light, on a neutral grey.
+import creasedNormals from './normals';
 
 const DEG = Math.PI / 180;
 
@@ -62,8 +63,19 @@ export default function renderThumbnail(
   }
 
   bodies.forEach(({ model }) => {
-    const { indices, parts, positions: p, triPart, vertexColors } = model;
+    const { parts, triPart } = model;
+    const creased = creasedNormals(model);
+    const { indices, normals, positions: p } = creased;
     const partRgb = parts.map((part) => hexToRgb(part.color));
+    const lit = new Float32Array(p.length / 3);
+    for (let v = 0; v < lit.length; v += 1) {
+      const n = [normals[v * 3], normals[v * 3 + 1], normals[v * 3 + 2]];
+      lit[v] =
+        0.28 +
+        0.62 * Math.max(0, dot(n, key)) +
+        0.18 * Math.max(0, dot(n, toward));
+    }
+    const colorOf = (v, k) => creased.colors[v * 3 + k];
     const sx = new Float32Array(p.length / 3);
     const sy = new Float32Array(p.length / 3);
     const sz = new Float32Array(p.length / 3);
@@ -81,24 +93,9 @@ export default function renderThumbnail(
         (sx[b] - sx[a]) * (sy[c] - sy[a]) - (sx[c] - sx[a]) * (sy[b] - sy[a]);
       // Screen y runs down, so a front face is clockwise here.
       if (area < 0) {
-        const ux = p[b * 3] - p[a * 3];
-        const uy = p[b * 3 + 1] - p[a * 3 + 1];
-        const uz = p[b * 3 + 2] - p[a * 3 + 2];
-        const vx = p[c * 3] - p[a * 3];
-        const vy = p[c * 3 + 1] - p[a * 3 + 1];
-        const vz = p[c * 3 + 2] - p[a * 3 + 2];
-        const n = [uy * vz - uz * vy, uz * vx - ux * vz, ux * vy - uy * vx];
-        const length = Math.hypot(...n) || 1;
-        const diffuse = Math.max(0, dot(n, key) / length);
-        const facing = Math.max(0, dot(n, toward) / length);
-        const shade = 0.28 + 0.62 * diffuse + 0.18 * facing;
-        const rgb = vertexColors
+        const rgb = creased.colors
           ? [0, 1, 2].map(
-              (k) =>
-                (vertexColors[a * 3 + k] +
-                  vertexColors[b * 3 + k] +
-                  vertexColors[c * 3 + k]) /
-                3
+              (k) => (colorOf(a, k) + colorOf(b, k) + colorOf(c, k)) / 3
             )
           : partRgb[triPart[t / 3]];
         const x0 = Math.max(0, Math.floor(Math.min(sx[a], sx[b], sx[c])));
@@ -127,6 +124,7 @@ export default function renderThumbnail(
               const o = y * width + x;
               if (z > depth[o]) {
                 depth[o] = z;
+                const shade = w0 * lit[a] + w1 * lit[b] + w2 * lit[c];
                 pixels[o * 4] = Math.min(1, rgb[0] * shade) * 255;
                 pixels[o * 4 + 1] = Math.min(1, rgb[1] * shade) * 255;
                 pixels[o * 4 + 2] = Math.min(1, rgb[2] * shade) * 255;

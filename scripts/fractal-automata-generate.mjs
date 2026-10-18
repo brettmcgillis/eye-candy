@@ -13,6 +13,7 @@ import {
   withCapturer,
 } from './lib/fractalAutomataRender.mjs';
 import { runStills } from './lib/generatorCli.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 runStills({
   async item({ batch, capturer, index, kernel, options, roll, save, step }) {
@@ -33,6 +34,7 @@ runStills({
   kernelLabel: 'Fractal Automata',
   loadKernel,
   nouns: 'structures',
+  overlay: sceneIconFile('fractal-automata'),
   parseCli,
   resolveViews,
   script: 'fractal-automata',

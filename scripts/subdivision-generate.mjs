@@ -1,34 +1,27 @@
 #!/usr/bin/env node
 import { usageFor } from '../src/modules/subdivision/renderOptions.mjs';
-import { readPackageVersion } from './lib/cliArgs.mjs';
 import { runStills } from './lib/generatorCli.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 import {
   assertPalette,
   buildPieceFor,
+  fillFrame,
   loadKernel,
   parseCli,
   pieceAt,
   plotSvg,
-  rasterise,
   rollArgs,
   sidecarFor,
 } from './lib/subdivisionRender.mjs';
 
 runStills({
   doneLabel: 'rendered pieces',
-  async item({ formats, index, kernel, options, roll, save, step }) {
+  async item({ index, kernel, options, roll, save, step }) {
     const { config, seed } = pieceAt(kernel, { index, options, roll });
     await step(`rendering ${seed}`, async () => {
       const piece = await buildPieceFor(kernel, config, options);
       const out = await save(seed, sidecarFor({ config, options, piece }));
-      await Promise.all(
-        formats.map(async (format) =>
-          out.file(
-            `piece.${format}`,
-            await rasterise(kernel, piece, config, options, format)
-          )
-        )
-      );
+      await out.image('piece', () => fillFrame(kernel, piece, config, options));
       if (options.svg) {
         await out.file('piece.svg', plotSvg(kernel, piece, config, options));
       }
@@ -37,11 +30,8 @@ runStills({
   kernelLabel: 'Subdivision',
   loadKernel,
   nouns: 'pieces',
+  overlay: sceneIconFile('subdivision'),
   parseCli,
-  prepare: async (options) => ({
-    ...options,
-    version: await readPackageVersion(),
-  }),
   progressLabel: 'rendering pieces',
   script: 'subdivision',
   setup({ kernel, options, parsed, typed }) {

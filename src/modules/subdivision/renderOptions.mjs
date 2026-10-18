@@ -28,7 +28,7 @@ export const FIELDS = [
   'radial',
 ];
 export const COLOR_MODES = ['depth', 'value', 'random', 'position', 'source'];
-export const VIDEO_MODES = ['growth', 'stills'];
+export const VIDEO_MODES = ['growth', 'montage'];
 export const INKS = ['palette', 'black'];
 // A source image is decoded at most this big on every side, CLI and scene.
 export const SOURCE_IMAGE_MAX = 1024;
@@ -43,19 +43,13 @@ const gen = (section, label, value, min, max, step, facet, roll, extra) =>
   });
 
 const GENERATOR = {
-  seed: {
-    default: null,
+  batch: standard.batch({
+    aliases: ['seed'],
     generator: true,
     help: 'Seed; a batch uses seed, seed-1, seed-2… Omit for a random seed',
-    label: 'Seed',
-    nullable: true,
-    placeholder: 'WORD',
     scene: true,
-    scope: 'shared',
-    section: 'output',
-    text: true,
-    type: 'seed',
-  },
+    sceneKey: 'seed',
+  }),
 
   lattice: choice('structure', null, 'Lattice', LATTICES, 'quad', {
     facet: 'structure',
@@ -327,10 +321,18 @@ const LOOP = {
   growSeconds: num('video', null, 'Grow (s)', 6, 0.5, 60, 0.5, {
     scope: 'video',
   }),
-  holdSeconds: num('video', null, 'Hold (s)', 4, 0, 60, 0.5, {
-    help: 'Seconds a finished piece holds (growth), or each piece shows (stills)',
-    scope: 'video',
-  }),
+  hold: standard.hold(
+    4,
+    'Seconds a finished piece holds (growth), or each piece shows (montage)',
+    {
+      aliases: ['holdSeconds'],
+      group: null,
+      label: 'Hold (s)',
+      max: 60,
+      scene: true,
+      sceneKey: 'holdSeconds',
+    }
+  ),
   collapseSeconds: num('video', null, 'Collapse (s)', 2, 0.25, 30, 0.25, {
     scope: 'video',
   }),
@@ -390,7 +392,7 @@ const RENDER = {
   mode: standard.mode(
     VIDEO_MODES,
     'growth',
-    'growth: each piece grows level by level, holds, collapses; stills: a cut per piece'
+    'growth: each piece grows level by level, holds, collapses; montage: a cut per piece'
   ),
   fps: standard.fps(),
 
@@ -406,17 +408,17 @@ export const RENDER_OPTIONS = {
   ...LOOP,
   ...SCENE,
   ...RENDER,
+  ...standard.overlayOptions(),
 };
 
 const SECTION_LABELS = {
   palette: 'palette & look',
-  roll: 'rolling',
 };
 
 export const SURFACE_DEFAULTS = {
-  'cli-still': { seed: null },
-  'cli-video': { count: 3, out: 'output/subdivision.mp4', seed: null },
-  workbench: { count: 6, seed: null },
+  'cli-still': { batch: null },
+  'cli-video': { count: 3, out: 'output/subdivision.mp4', batch: null },
+  workbench: { count: 6, batch: null },
 };
 
 const schema = createOptionSchema({
@@ -433,6 +435,9 @@ const schema = createOptionSchema({
 export const {
   GENERATOR_KEYS,
   SCENE_KEYS,
+  SCENE_NAMES,
+  SCENE_OPTIONS,
+  canonicalArgv,
   configFrom,
   defaultsFor,
   facets,
@@ -442,6 +447,8 @@ export const {
   optionsFromConfig,
   presetFromConfig,
   sceneDefaults,
+  sceneNameFor,
+  sceneNamed,
   sectionsFor,
   usageFor,
 } = schema;

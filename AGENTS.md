@@ -103,6 +103,16 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   `@modules/fungiRender` (the shared specimen rig), the headless CLIs, and
   FungiCLI. Run `npm run fungi:check` after changing any of them.
 
+## Required reading before touching GhostBuster skins / GhostBusterCLI
+
+- **`docs/ghost-buster-pipeline.md`** — the ghost skin library
+  (`@presets/ghost/ghostSkins`, authored in GhostBuster and read by every
+  ghost consumer), `@modules/ghostBuster` (three-free option schema, roll,
+  framing, lattice and plot SVG), `@modules/ghostBusterRender` (the real R3F
+  stage, mounted headlessly by the CLIs and live by the workbench), the
+  headless CLIs and GhostBusterCLI with its Live tab. Run
+  `npm run ghost-buster:check` after changing any of them.
+
 ## Required reading before touching Kumiko
 
 - **`docs/kumiko-pipeline.md`** — the Fungi arrangement for kumiko panels:
@@ -170,6 +180,16 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   the look), the headless CLIs, and PushComesToShoveCLI. Run
   `npm run push-comes-to-shove:check` after changing any of them.
 
+## Required reading before touching Imperfection
+
+- **`docs/imperfection-pipeline.md`** — the TSL port of the Imperfection
+  Shadertoy bundles: `@modules/imperfection` (three-free reference
+  composition verbatim, lite/wild presets, layout warp, palette shifts, roll
+  and option schema; the scene's Leva is generated from it),
+  `@modules/imperfectionRender` (the ported passes and `createPaintRig`), the
+  headless CLIs and ImperfectionCLI. Run `npm run imperfection:check` after
+  changing any of them.
+
 ## Required reading before touching IsoLines / IsoLinesRelief
 
 - **`docs/iso-lines-pipeline.md`** — the flat pair half and the shared
@@ -183,6 +203,18 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   `@modules/isoLinesReliefRender` (`createReliefRig`), its CLIs,
   IsoLinesReliefCLI and its Darkroom technique. Run `npm run iso-lines:check`
   and `npm run iso-lines-relief:check` after changing either.
+
+## Required reading before touching IsoMeter
+
+- **`docs/iso-meter-pipeline.md`** — the port of Vanhoutte's Isoverse:
+  `@modules/isoMeter` (three-free RNG/noise mirrors, the triangle lattice,
+  the three pieces, palette remap, voxel meshing, painters, option schema and
+  roll; the scene's Leva is generated from it), `@modules/isoMeterRender`
+  (the voxel objects, Winterkammer stage and framing the scene and the voxel
+  CLI share), the WebGPU scene's flat, Canvas2D and voxel views, the headless
+  CLIs and IsoMeterCLI. Run
+  `npm run iso-meter:check` after changing any of them; its goldens come from
+  the live originals.
 
 ## Required reading before touching Subdivision
 

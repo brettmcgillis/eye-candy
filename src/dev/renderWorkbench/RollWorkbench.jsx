@@ -12,9 +12,9 @@ import usePins from './usePins';
 import useRenderJobs from './useRenderJobs';
 
 const PROFILES = {
-  post: { height: 1350, label: 'Post', width: 1080 },
-  reel: { height: 1920, label: 'Reel', width: 1080 },
-  square: { height: 1080, label: 'Square', width: 1080 },
+  post: { height: 1350, ig: 'post', label: 'Post', width: 1080 },
+  reel: { height: 1920, ig: 'reel', label: 'Reel', width: 1080 },
+  square: { height: 1080, ig: 'post', label: 'Square', width: 1080 },
 };
 const PROFILE_OPTIONS = Object.entries(PROFILES).map(([value, item]) => ({
   icon: <FiSquare />,
@@ -46,10 +46,12 @@ export default function RollWorkbench({
   afterFields: AfterFields,
   baseLabel = groupLabel,
   controls: Controls,
+  defaultTab,
   hint,
   initialOptions,
   jobTitle,
   kinds = ['still', 'video'],
+  leadingTabs,
   name,
   noun,
   preview,
@@ -107,14 +109,18 @@ export default function RollWorkbench({
     []
   );
 
-  const selectProfile = useCallback((next) => {
-    setProfile(next);
-    setOptions((current) => ({
-      ...current,
-      height: PROFILES[next].height,
-      width: PROFILES[next].width,
-    }));
-  }, []);
+  const selectProfile = useCallback(
+    (next) => {
+      setProfile(next);
+      setOptions((current) => ({
+        ...current,
+        height: PROFILES[next].height,
+        ...(RENDER_OPTIONS.ig ? { ig: PROFILES[next].ig } : {}),
+        width: PROFILES[next].width,
+      }));
+    },
+    [RENDER_OPTIONS]
+  );
 
   // A generation's config fills the form; what to hold is the next decision.
   const useAsBase = useCallback(
@@ -178,7 +184,7 @@ export default function RollWorkbench({
     [jobTitle, name]
   );
 
-  const context = { kind, options, pins, setOption, setOptions };
+  const context = { jobsApi, kind, options, pins, setOption, setOptions };
   const what = kind === 'still' ? 'stills' : 'video';
 
   return (
@@ -319,8 +325,14 @@ export default function RollWorkbench({
           results={
             <ResultsPanel
               collectionTitle={titleOf}
+              defaultTab={defaultTab}
               jobTitle={titleOf}
               jobsApi={jobsApi}
+              leadingTabs={
+                typeof leadingTabs === 'function'
+                  ? leadingTabs(context)
+                  : leadingTabs
+              }
               renderDetails={renderDetails}
               selectionActions={selectionActions}
             />

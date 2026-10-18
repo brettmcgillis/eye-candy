@@ -4,12 +4,7 @@ import {
   defaultsFor,
   normalizeOptions,
 } from '../../src/modules/trucheterieBlob/renderOptions.mjs';
-import {
-  createParseCli,
-  encodeFrame as encode,
-  overlayFor,
-  withRenderer,
-} from './generatorCli.mjs';
+import { createParseCli, withRenderer } from './generatorCli.mjs';
 import { createHeadlessRenderer, loadThree } from './headlessWebgpu.mjs';
 import loadModules from './loadModules.mjs';
 import { withResolvedDesign } from './trucheterieDesigns.mjs';
@@ -139,9 +134,6 @@ export function renderSvg(kernel, field, config, options) {
     width: options.width,
   });
 }
-
-export const encodeFrame = (frame, format, options = {}) =>
-  encode(frame, format, overlayFor('trucheterie.svg', options));
 
 // One renderer per output size, reused across frames. The field is flat and
 // unlit, so this needs no lighting rig and no perspective camera: an

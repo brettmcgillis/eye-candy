@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 import { usageFor } from '../src/modules/subdivisionRelief/renderOptions.mjs';
-import { readPackageVersion } from './lib/cliArgs.mjs';
 import { runVideo } from './lib/generatorCli.mjs';
 import { runStage } from './lib/progress.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 import {
   assertPalette,
   loadKernel,
@@ -28,11 +28,13 @@ runVideo({
   kernelLabel: 'SubdivisionRelief',
   loadKernel,
   nouns: 'pieces',
+  overlay: sceneIconFile('subdivision-relief'),
   parseCli,
   async plan({ kernel, options, parsed, typed }) {
     assertPalette(kernel, parsed);
     const { relief } = kernel;
     const roll = rollArgs(kernel, { options, typed });
+    const loop = relief.sceneNamed(options);
     const items = await runStage(`laying out ${options.count} pieces`, () =>
       Promise.all(
         Array.from({ length: options.count }, (_, index) =>
@@ -41,9 +43,7 @@ runVideo({
       )
     );
     const seconds =
-      options.mode === 'growth'
-        ? relief.cycleSeconds(options)
-        : options.holdSeconds;
+      options.mode === 'growth' ? relief.cycleSeconds(loop) : options.hold;
     const frames = Math.max(1, Math.round(seconds * options.fps));
 
     return {
@@ -67,7 +67,7 @@ runVideo({
               {
                 grow:
                   options.mode === 'growth'
-                    ? relief.growAt(clock.seconds, options, top)
+                    ? relief.growAt(clock.seconds, loop, top)
                     : top,
                 motion: relief.motionAt(drawn.config, clock.seconds),
               }
@@ -78,10 +78,6 @@ runVideo({
       }),
     };
   },
-  prepare: async (options) => ({
-    ...options,
-    version: await readPackageVersion(),
-  }),
   script: 'subdivision-relief',
   title: 'subdivision relief',
   usageFor,

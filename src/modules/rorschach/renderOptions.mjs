@@ -11,18 +11,20 @@
 // stay dependency-free. Everything needing three.js or an alias belongs in a
 // sibling `.js` module instead. Its one import is the shared option-schema
 // machinery, which is dependency-free by the same rule.
-import createOptionSchema, { standard } from '../optionSchema/index.mjs';
+import createOptionSchema, {
+  IG_PRESETS,
+  standard,
+} from '../optionSchema/index.mjs';
 
 export const VIEWS = ['front', 'back', 'top', 'bottom'];
 export const VIDEO_MODES = [
-  'stills',
+  'montage',
   'growth',
   'breathe',
   'turntable',
   'cinematic',
 ];
 export const GROWTH_PRESENTATIONS = ['grid', 'sequential'];
-export const IG_PRESETS = ['story', 'reel', 'post'];
 export const PAPER_ORIENTATION_NAMES = ['vertical', 'horizontal'];
 export const INK_BLOOM_SOURCES = ['thickness', 'wetness'];
 
@@ -44,17 +46,16 @@ export const RENDER_OPTIONS = {
     help: 'Renders at width×ratio by height×ratio; a still’s stroke width scales with it, so a 2x still is the 1x still, sharper',
     step: 1,
   }),
-  seed: {
-    scope: 'shared',
-    section: 'output',
-    type: 'seed',
-    default: null,
-    min: 0,
-    max: 999999,
-    step: 1,
-    placeholder: 'S',
+  batch: standard.batch({
+    aliases: ['seed'],
     help: 'First seed; omit for a random seed per test',
-  },
+    max: 999999,
+    min: 0,
+    placeholder: 'S',
+    sceneKey: 'seed',
+    step: 1,
+    text: false,
+  }),
   count: standard.count('tests', { max: 100 }),
   renderer: {
     scope: 'shared',
@@ -179,34 +180,7 @@ export const RENDER_OPTIONS = {
     placeholder: 'N',
     help: 'Brightness a color must exceed to bloom',
   },
-  overlay: {
-    scope: 'shared',
-    section: 'overlay',
-    sceneKey: 'showOverlay',
-    type: 'boolean',
-    default: false,
-    help: 'Burn the scene overlay into the output',
-  },
-  ig: {
-    scope: 'shared',
-    section: 'overlay',
-    type: 'enum',
-    default: 'post',
-    choices: [...IG_PRESETS, 'none'],
-    help: 'Safe-area insets; only applies with --overlay',
-  },
-  viewport: {
-    scope: 'shared',
-    section: 'overlay',
-    type: 'number',
-    default: 390,
-    min: 64,
-    max: 8192,
-    step: 1,
-    nullable: true,
-    placeholder: 'N',
-    help: 'CSS pixel width the overlay emulates; output width over this is the device pixel ratio it draws at',
-  },
+  ...standard.overlayOptions({ sceneKey: 'showOverlay' }),
 
   lines: {
     scope: 'shared',
@@ -1058,12 +1032,10 @@ export const RENDER_OPTIONS = {
   svg: standard.svg('Also write editable SVG output'),
   webp: standard.webp({ help: 'Also write lossless WebP output' }),
 
-  mode: standard.mode(VIDEO_MODES, 'stills', 'Which video mode to render', {
-    section: 'output',
-  }),
+  mode: standard.mode(VIDEO_MODES, 'montage', 'Which video mode to render'),
   fps: {
     scope: 'video',
-    section: 'output',
+    section: 'video',
     type: 'number',
     default: 30,
     min: 1,
@@ -1074,7 +1046,7 @@ export const RENDER_OPTIONS = {
   },
   hold: {
     scope: 'video',
-    section: 'timing',
+    section: 'video',
     type: 'number',
     default: 2,
     min: 0.1,
@@ -1085,22 +1057,22 @@ export const RENDER_OPTIONS = {
   },
   crossfade: {
     scope: 'video',
-    section: 'timing',
+    section: 'video',
     type: 'number',
     default: 0.5,
     min: 0,
     max: 30,
     step: 0.1,
     placeholder: 'S',
-    help: 'stills: seconds of fade between stills, 0 to cut',
+    help: 'montage: seconds of fade between stills, 0 to cut',
   },
   view: standard.view(VIEWS, 'front', {
-    section: 'timing',
-    help: 'stills: which view to use',
+    section: 'video',
+    help: 'montage: which view to use',
   }),
   growthView: {
     scope: 'video',
-    section: 'timing',
+    section: 'video',
     type: 'enum',
     default: 'front',
     choices: [...VIEWS, 'all'],
@@ -1108,7 +1080,7 @@ export const RENDER_OPTIONS = {
   },
   growthPresentation: {
     scope: 'video',
-    section: 'timing',
+    section: 'video',
     type: 'enum',
     default: 'grid',
     choices: GROWTH_PRESENTATIONS,
@@ -1116,7 +1088,7 @@ export const RENDER_OPTIONS = {
   },
   turns: {
     scope: 'video',
-    section: 'timing',
+    section: 'video',
     type: 'number',
     default: 1,
     min: 0.1,
@@ -1127,7 +1099,7 @@ export const RENDER_OPTIONS = {
   },
   systems: {
     scope: 'video',
-    section: 'timing',
+    section: 'video',
     type: 'number',
     default: 3,
     min: 1,
@@ -1138,16 +1110,16 @@ export const RENDER_OPTIONS = {
   },
   imageFormat: {
     scope: 'video',
-    section: 'source',
+    section: 'video',
     type: 'enum',
     default: 'png',
     choices: ['png', 'webp'],
     placeholder: 'F',
-    help: 'stills/growth: format of retained source images',
+    help: 'montage/growth: format of retained source images',
   },
   in: {
     scope: 'video',
-    section: 'source',
+    section: 'video',
     // Set by the dev server from the job's own output directory; there is
     // nothing for an operator to type here.
     cliOnly: true,
@@ -1155,11 +1127,11 @@ export const RENDER_OPTIONS = {
     default: null,
     nullable: true,
     placeholder: 'DIR',
-    help: 'stills: use PNGs from a rorschach:generate run instead',
+    help: 'montage: use PNGs from a rorschach:generate run instead',
   },
   stillsOut: {
     scope: 'video',
-    section: 'source',
+    section: 'video',
     // Set by the dev server from the job's own output directory; there is
     // nothing for an operator to type here.
     cliOnly: true,
@@ -1167,11 +1139,11 @@ export const RENDER_OPTIONS = {
     default: null,
     nullable: true,
     placeholder: 'DIR',
-    help: 'stills/growth: keep generated source images in this directory',
+    help: 'montage/growth: keep generated source images in this directory',
   },
   keepImages: {
     scope: 'video',
-    section: 'source',
+    section: 'video',
     type: 'boolean',
     default: true,
     // The CLI has no --keepImages; the workbench turns this into a --stillsOut
@@ -1267,15 +1239,8 @@ export const SURFACE_DEFAULTS = {
   },
 };
 
-const SECTION_LABELS = {
-  timing: 'mode timing',
-  roll: 'rolling',
-  source: 'source frames',
-};
-
 const schema = createOptionSchema({
   options: RENDER_OPTIONS,
-  sectionLabels: SECTION_LABELS,
   surfaceDefaults: SURFACE_DEFAULTS,
   validate(kind, options, fail) {
     if (kind === 'still' && !options.png && !options.svg && !options.webp) {
@@ -1291,11 +1256,13 @@ const schema = createOptionSchema({
 });
 
 export const {
+  canonicalArgv,
   defaultsFor,
   facets,
   keysInFacet,
   normalizeOptions,
   optionsFor,
+  sectionsFor,
   usageFor,
 } = schema;
 

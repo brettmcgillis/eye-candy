@@ -99,7 +99,7 @@ export default function RollPreviewDetails({
             <FiRefreshCw /> Roll variations
           </button>
         ) : null}
-        {metadata.preset ? (
+        {metadata.preset && scene ? (
           <SavePreset
             metadata={metadata}
             placeholder={placeholder?.(metadata)}

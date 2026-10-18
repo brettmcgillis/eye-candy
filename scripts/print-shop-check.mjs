@@ -171,29 +171,59 @@ async function checkClothMirror() {
   );
 }
 
+const PLAIN = {
+  signature: 'none',
+  signatureBack: false,
+  signatureBaseTop: false,
+  signatureBaseUnder: false,
+  signatureInside: false,
+};
 const CASES = [
-  { mount: 'none' },
-  { mount: 'base' },
+  { ...PLAIN, mount: 'none' },
+  { ...PLAIN, mount: 'base' },
+  { ...PLAIN, mount: 'socket', signature: 'bret', signatureBaseUnder: true },
   {
-    mount: 'base',
+    ...PLAIN,
+    mount: 'rest',
     signature: 'bret',
-    signaturePlace: 'both',
-    standJoin: 'removable',
+    signatureBaseTop: true,
+    signatureInside: true,
   },
   {
+    ...PLAIN,
     mount: 'base',
     signature: 'argyle',
-    signaturePlace: 'both',
-    standJoin: 'fused',
-  },
-  {
-    mount: 'hem',
-    signature: 'reversal',
-    signaturePlace: 'piece',
+    signatureBack: true,
+    signatureBaseTop: true,
     signatureStyle: 'emboss',
   },
-  { mount: 'loop' },
+  {
+    ...PLAIN,
+    mount: 'hem',
+    signature: 'reversal',
+    signatureBack: true,
+    signatureStyle: 'emboss',
+  },
+  { ...PLAIN, mount: 'loop', signature: 'bret', signatureInside: true },
+  { ...PLAIN, mount: 'rest', variant: 'Matrix' },
 ];
+
+// Cases only some printables have: the pigeon's poses, each with and
+// without its base.
+const EXTRA_CASES = {
+  pigeon: [
+    { ...PLAIN, mount: 'plinth', signature: 'bret', signatureBaseTop: true },
+    {
+      ...PLAIN,
+      mount: 'plinth',
+      signatureBaseUnder: true,
+      signature: 'argyle',
+      variant: 'Sweeping left',
+    },
+    { ...PLAIN, mount: 'none', variant: 'Looking down' },
+    { ...PLAIN, mount: 'none', variant: 'Head turned' },
+  ],
+};
 
 async function checkPrintables() {
   const shop = await loadPrintShop();
@@ -203,14 +233,18 @@ async function checkPrintables() {
   // eslint-disable-next-line no-restricted-syntax
   for (const printable of PRINTABLES) {
     const schema = schemaFor(printable.id);
+    const mounts = schema.RENDER_OPTIONS.mount.choices;
+    const cases = [
+      ...CASES.filter((sent) => mounts.includes(sent.mount)),
+      ...(EXTRA_CASES[printable.id] ?? []),
+    ];
     // eslint-disable-next-line no-restricted-syntax
-    for (const sent of CASES) {
+    for (const sent of cases) {
       const options = schema.normalizeOptions('export', sent);
       // eslint-disable-next-line no-await-in-loop
       const { bodies, report } = await assemblePrint(printable, options, env);
       const label = `${printable.id} ${JSON.stringify(sent)}`;
-      const expected =
-        options.mount === 'base' && options.standJoin === 'removable' ? 2 : 1;
+      const expected = ['socket', 'rest'].includes(options.mount) ? 2 : 1;
       check(
         bodies.length === expected,
         `${label}: ${bodies.length} body/bodies`
@@ -221,6 +255,30 @@ async function checkPrintables() {
           `${label} ${body}: watertight, one shell, ${analysis.volumeCm3.toFixed(1)} cm³`
         );
       });
+      if (['socket', 'rest'].includes(options.mount)) {
+        const [piece, stand] = bodies.map(({ model }) => {
+          const mesh = new env.manifold.Mesh({
+            numProp: 3,
+            triVerts: model.indices,
+            vertProperties: Float32Array.from(model.positions),
+          });
+          mesh.merge();
+          return new env.manifold.Manifold(mesh);
+        });
+        const overlap = piece.intersect(stand).volume();
+        const seated = piece
+          .intersect(
+            stand.translate([0, options.mount === 'rest' ? 0.3 : 2, 0])
+          )
+          .volume();
+        check(
+          overlap < 0.01 && seated > 1,
+          `${label}: the stand clears the piece (${overlap.toFixed(3)} mm³) and bears on it when pushed up (${seated.toFixed(1)} mm³)`
+        );
+      }
+      if (options.mount === 'none' && report.stability) {
+        check(report.stability.stable, `${label}: stands on its own`);
+      }
       if (options.mount === 'hem')
         check(report.stability?.stable, `${label}: stands on its hem`);
       if (sent.mount === 'none') {

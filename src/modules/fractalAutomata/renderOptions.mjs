@@ -483,6 +483,7 @@ export const RENDER_OPTIONS = {
   ...LIGHTING,
   ...GODRAYS,
   ...RENDER,
+  ...standard.overlayOptions(),
 };
 
 export const SURFACE_DEFAULTS = {
@@ -500,7 +501,7 @@ const schema = createOptionSchema({
   sectionLabels: {
     detail: 'voxel detail',
     field: 'voxel field',
-    roll: 'rolling',
+    lighting: 'light',
   },
   surfaceDefaults: SURFACE_DEFAULTS,
   views: VIEWS,

@@ -3,7 +3,7 @@ import { createRng, rollConfig as rollPieceConfig } from '@modules/subdivision';
 
 import {
   RENDER_OPTIONS,
-  SCENE_KEYS,
+  SCENE_NAMES,
   keysInFacet,
   sceneDefaults,
 } from './renderOptions.mjs';
@@ -49,7 +49,9 @@ export default function rollReliefConfig(
     paletteNames,
     seeds,
   });
-  const config = Object.fromEntries(SCENE_KEYS.map((key) => [key, piece[key]]));
+  const config = Object.fromEntries(
+    SCENE_NAMES.map((key) => [key, piece[key]])
+  );
 
   if (!keep.includes('relief')) {
     rollRelief(config, createRng(`${seeds.relief ?? seed}:relief`));

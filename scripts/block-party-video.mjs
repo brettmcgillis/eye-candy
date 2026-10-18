@@ -9,6 +9,7 @@ import {
   withCapturer,
 } from './lib/blockPartyRender.mjs';
 import { azimuthOffset, runVideo } from './lib/generatorCli.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 const BUILD_TAIL = 0.05;
 
@@ -33,6 +34,7 @@ runVideo({
   kernelLabel: 'Block Party',
   loadKernel,
   nouns: 'cities',
+  overlay: sceneIconFile('block-party'),
   parseCli,
   plan({ kernel, options, typed }) {
     const { city } = kernel;

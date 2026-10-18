@@ -1,10 +1,11 @@
 import { choice, flag, num } from '@modules/optionSchema/index.mjs';
-import { SCENE_PRESETS } from '@scenes/WebGPU/GhostBuster/presets/scenePresets';
+import GHOST_SKINS from '@presets/ghost/ghostSkins';
 
+import { meanHex } from '../../kernel';
 import settleGhost, { rotateXZ } from './settle';
-import buildGhostSurface from './surface';
+import buildGhostSurface, { buildGhostLattice } from './surface';
 
-const VARIANTS = Object.keys(SCENE_PRESETS);
+const VARIANTS = Object.keys(GHOST_SKINS);
 const ANIMATIONS = ['none', 'wave', 'clap'];
 
 // GhostCharacter prop defaults for keys GhostBuster's presets leave out (its
@@ -26,8 +27,8 @@ const CHARACTER_DEFAULTS = {
 export function variantParams(variant) {
   const params = {
     ...CHARACTER_DEFAULTS,
-    ...SCENE_PRESETS.Original,
-    ...SCENE_PRESETS[variant],
+    ...GHOST_SKINS.Original,
+    ...GHOST_SKINS[variant],
   };
   if (!params.innerColor) params.innerColor = params.color;
   return params;
@@ -38,8 +39,15 @@ export default {
   label: 'Gh0st',
   source: 'WebGPU/GhostBuster',
   description:
-    'The GhostBuster cloth ghost, settled into a drape and thickened into a hollow shell.',
-  defaults: { mount: 'base', size: 80 },
+    'The GhostBuster cloth ghost, settled into a drape and thickened into a hollow shell (or, for wireframe variants, a lattice of wires).',
+  defaults: {
+    mount: 'rest',
+    signature: 'bret',
+    signatureBaseTop: true,
+    signatureInside: true,
+    size: 80,
+  },
+  mounts: ['none', 'base', 'socket', 'rest', 'hem', 'loop'],
   sectionLabels: { piece: 'Ghost', pose: 'Pose', surface: 'Surface' },
   variants: VARIANTS,
   options: {
@@ -60,6 +68,26 @@ export default {
     detail: num('surface', null, 'Detail per cloth cell', 4, 1, 8, 1),
     threshold: num('surface', null, 'Edge at opacity', 0.5, 0.05, 0.95, 0.05),
     bakeTextures: flag('surface', null, 'Bake textures to colour', true),
+    screenAspect: num(
+      'surface',
+      null,
+      'Screen aspect (screen textures)',
+      1.78,
+      0.5,
+      3,
+      0.01
+    ),
+    wireframe: choice(
+      'surface',
+      null,
+      'Wireframe',
+      ['auto', 'on', 'off'],
+      'auto',
+      {
+        choiceLabels: { auto: 'As the variant (Matrix)', off: 'Off', on: 'On' },
+      }
+    ),
+    strutRadius: num('surface', null, 'Wire radius (mm)', 0.45, 0.2, 3, 0.05),
   },
 
   async build(options, env) {
@@ -86,11 +114,22 @@ export default {
       );
     }
 
-    const surface = buildGhostSurface(settled, p, {
-      detail: options.detail,
+    const look = {
+      aspect: options.screenAspect,
       images,
       threshold: options.threshold,
+    };
+    const surface = buildGhostSurface(settled, p, {
+      ...look,
+      detail: options.detail,
     });
+    const wire =
+      options.wireframe === 'on' ||
+      (options.wireframe === 'auto' && Boolean(p.debugWireframe));
+    const lattice = wire
+      ? { ...buildGhostLattice(settled, p, look), radius: options.strutRadius }
+      : null;
+    const average = (name) => meanHex(surface.attributes[name].array);
     const { head, transform } = settled;
     const [hx, , hz] = rotateXZ(
       transform.rotationX,
@@ -101,21 +140,31 @@ export default {
     );
     return {
       mountAxis: [hx, hz],
+      lattice,
+      // As the scene shows each side (glow and texture included), for a
+      // print in one filament per part.
       parts: {
-        back: { color: p.color, label: 'Outside' },
-        edge: { color: p.color, label: 'Edge' },
-        front: { color: p.innerColor, label: 'Inside' },
-        mount: { color: p.color, label: 'Mount' },
+        back: { color: average('back'), label: 'Outside' },
+        edge: { color: average('back'), label: 'Edge' },
+        front: { color: average('front'), label: 'Inside' },
+        mount: { color: average('back'), label: 'Mount' },
       },
       stats: {
         segments: p.clothSegments,
         textured: Boolean(images.outer || images.inner),
         variant: options.variant,
+        wireframe: wire,
       },
       surface,
-      vertexColors: Boolean(
-        images.outer || images.inner || p.cutoutRimWidth > 0
-      ),
+      vertexColors:
+        !wire &&
+        Boolean(
+          images.outer ||
+          images.inner ||
+          p.cutoutRimWidth > 0 ||
+          p.outerEmissiveIntensity > 0 ||
+          p.innerEmissiveIntensity > 0
+        ),
       warnings,
     };
   },

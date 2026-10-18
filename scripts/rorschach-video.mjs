@@ -11,6 +11,7 @@ import sharp from 'sharp';
 import {
   RENDER_OPTIONS,
   VIEWS,
+  canonicalArgv,
   defaultsFor,
   normalizeOptions,
   resolveIgPreset,
@@ -81,10 +82,10 @@ function run(command, args, onProgress) {
 }
 
 async function writeVideoMetadata(out, options, presets) {
-  let resolvedSeed = options.seed;
+  let resolvedSeed = options.batch;
   if (typeof resolvedSeed !== 'number') {
     resolvedSeed =
-      options.mode === 'stills' ? null : (presets[0]?.seed ?? null);
+      options.mode === 'montage' ? null : (presets[0]?.seed ?? null);
   }
   return writeVideoSidecar(out, {
     presets,
@@ -243,8 +244,8 @@ async function renderStills(kernel, { options, renderOptions, roll, tmp }) {
   const progress = createProgress('rendering stills', options.count);
   for (let i = 0; i < options.count; i += 1) {
     const seed =
-      typeof options.seed === 'number'
-        ? kernel.seedAt(options.seed, i)
+      typeof options.batch === 'number'
+        ? kernel.seedAt(options.batch, i)
         : kernel.randomSeed();
     progress.log(`test ${i + 1}/${options.count}: generating seed ${seed}`);
 
@@ -285,7 +286,7 @@ async function renderStills(kernel, { options, renderOptions, roll, tmp }) {
 
 async function renderTurntable(kernel, { options, roll, sink }) {
   const seed =
-    typeof options.seed === 'number' ? options.seed : kernel.randomSeed();
+    typeof options.batch === 'number' ? options.batch : kernel.randomSeed();
   const config = kernel.rollTestConfig(seed, roll);
   const test = buildTest(kernel, config, options);
   const total = Math.round(options.hold * options.fps * options.turns);
@@ -313,7 +314,7 @@ async function renderTurntable(kernel, { options, roll, sink }) {
 
 async function renderGrowth(kernel, { options, renderOptions, roll, sink }) {
   const first =
-    typeof options.seed === 'number' ? options.seed : kernel.randomSeed();
+    typeof options.batch === 'number' ? options.batch : kernel.randomSeed();
   const framesPerTest = Math.max(2, Math.round(options.hold * options.fps));
   const views = options.growthView === 'all' ? VIEWS : [options.growthView];
   const grid =
@@ -462,7 +463,7 @@ async function renderGrowth(kernel, { options, renderOptions, roll, sink }) {
 // reproducible and a dropped frame cannot desynchronise the rest.
 async function renderBreathe(kernel, { options, roll, sink }) {
   const seed =
-    typeof options.seed === 'number' ? options.seed : kernel.randomSeed();
+    typeof options.batch === 'number' ? options.batch : kernel.randomSeed();
   const config = kernel.rollTestConfig(seed, roll);
   const test = buildTest(kernel, config, options);
   const total = Math.round(options.hold * options.fps);
@@ -500,7 +501,7 @@ async function renderBreathe(kernel, { options, roll, sink }) {
 
 async function renderCinematic(kernel, { options, roll, sink }) {
   const first =
-    typeof options.seed === 'number' ? options.seed : kernel.randomSeed();
+    typeof options.batch === 'number' ? options.batch : kernel.randomSeed();
   const total = Math.round(options.hold * options.fps * options.systems);
   process.stdout.write(
     `rendering cinematic: ${options.systems} systems, ${total} frames\n`
@@ -551,7 +552,7 @@ async function renderCinematic(kernel, { options, roll, sink }) {
 }
 
 async function main() {
-  const args = parseArgs(process.argv.slice(2), DEFAULTS);
+  const args = parseArgs(canonicalArgv(process.argv.slice(2)), DEFAULTS);
   if (args.help) {
     usage();
     return;
@@ -588,7 +589,7 @@ async function main() {
   const kernel = await runStage('loading the Rorschach kernel', loadKernel);
   const roll = rollArgs(kernel, { options, typed });
   const persistentStills =
-    options.mode === 'stills' &&
+    options.mode === 'montage' &&
     !options.in &&
     typeof options.stillsOut === 'string';
   // Only a stills montage still puts anything on disk before encoding: it is a
@@ -600,13 +601,13 @@ async function main() {
     tmp = path.resolve(REPO_ROOT, options.stillsOut);
     await rm(tmp, { force: true, recursive: true });
     await mkdir(tmp, { recursive: true });
-  } else if (options.mode === 'stills') {
+  } else if (options.mode === 'montage') {
     tmp = await mkdtemp(path.join(os.tmpdir(), 'rorschach-'));
   }
 
   try {
     let presets;
-    if (options.mode === 'stills') {
+    if (options.mode === 'montage') {
       const rendered = await renderStills(kernel, {
         options,
         renderOptions,

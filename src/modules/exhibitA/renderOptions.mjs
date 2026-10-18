@@ -1146,6 +1146,7 @@ export const RENDER_OPTIONS = {
   ...RIG,
   ...QUALITY,
   ...RENDER,
+  ...standard.overlayOptions(),
 };
 
 export const SURFACE_DEFAULTS = {
@@ -1170,9 +1171,6 @@ export function resolveFamilies(list, fail = (message) => new Error(message)) {
 
 const schema = createOptionSchema({
   options: RENDER_OPTIONS,
-  sectionLabels: {
-    roll: 'rolling',
-  },
   surfaceDefaults: SURFACE_DEFAULTS,
   validate(kind, options, fail) {
     resolveFamilies(options.families, fail);

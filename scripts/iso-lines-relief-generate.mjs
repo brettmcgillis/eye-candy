@@ -11,6 +11,7 @@ import {
   rollArgs,
   withCapturer,
 } from './lib/isoLinesReliefRender.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 runStills({
   doneLabel: 'rendered pieces',
@@ -78,6 +79,7 @@ runStills({
   kernelLabel: 'IsoLinesRelief',
   loadKernel,
   nouns: 'pieces',
+  overlay: sceneIconFile('iso-lines-relief'),
   parseCli,
   resolveViews,
   script: 'iso-lines-relief',

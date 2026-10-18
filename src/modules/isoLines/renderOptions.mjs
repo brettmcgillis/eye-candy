@@ -9,6 +9,7 @@ import createOptionSchema, {
   num,
   rolled,
   sceneOnly,
+  standard,
 } from '../optionSchema/index.mjs';
 import {
   COLOR,
@@ -62,6 +63,7 @@ export const RENDER_OPTIONS = {
   ...MOTION,
   ...RIG,
   ...sharedRender({ facets: FACETS, name: 'iso-lines' }),
+  ...standard.overlayOptions(),
 };
 
 export const SURFACE_DEFAULTS = {
@@ -72,10 +74,6 @@ export const SURFACE_DEFAULTS = {
 
 const schema = createOptionSchema({
   options: RENDER_OPTIONS,
-  sectionLabels: {
-    color: 'colour',
-    roll: 'rolling',
-  },
   surfaceDefaults: SURFACE_DEFAULTS,
 });
 

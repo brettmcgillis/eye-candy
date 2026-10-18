@@ -13,6 +13,7 @@ import {
   withCapturer,
 } from './lib/exhibitARender.mjs';
 import { runVideo } from './lib/generatorCli.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 // A draw only moves a mesh exhibit; the ray-marched families have nothing to
 // build up, so an unpinned draw roll leaves them out.
@@ -62,6 +63,7 @@ runVideo({
   kernelLabel: 'ExhibitA',
   loadKernel,
   nouns: 'exhibits',
+  overlay: sceneIconFile('exhibit-a'),
   parseCli,
   plan({ kernel, options, parsed }) {
     const { exhibit } = kernel;

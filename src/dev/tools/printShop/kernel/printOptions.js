@@ -9,14 +9,19 @@ import { PROFILES, PROFILE_IDS } from './profiles';
 
 export const FORMATS = ['stl', '3mf', 'glb'];
 
-const MOUNTS = ['none', 'base', 'hem', 'loop'];
+const MOUNTS = ['none', 'base', 'socket', 'rest', 'plinth', 'hem', 'loop'];
 const MOUNT_LABELS = {
-  base: 'Printed base + stem',
+  base: 'Base + stem, one piece',
+  plinth: 'Base under it',
+  rest: 'Base + stem, two pieces (flat rest)',
+  socket: 'Base + stem, two pieces (socket)',
   hem: 'Stands on its hem',
   loop: 'Hanging loop',
   none: 'None',
 };
-const onMount = (mount) => ({ when: { mount: [mount] } });
+const onMount = (...mounts) => ({ when: { mount: mounts } });
+const MARKED = ['argyle', 'bret', 'reversal'];
+const onMark = { when: { signature: MARKED } };
 
 const text = (section, label, extra = {}) => ({
   default: null,
@@ -66,7 +71,7 @@ export const PRINT_OPTIONS = {
     0,
     200,
     0.5,
-    onMount('base')
+    onMount('base', 'socket', 'rest', 'plinth')
   ),
   baseHeight: num(
     'mount',
@@ -76,7 +81,7 @@ export const PRINT_OPTIONS = {
     1,
     40,
     0.5,
-    onMount('base')
+    onMount('base', 'socket', 'rest', 'plinth')
   ),
   baseGap: num(
     'mount',
@@ -86,7 +91,7 @@ export const PRINT_OPTIONS = {
     0,
     150,
     0.5,
-    onMount('base')
+    onMount('base', 'socket', 'rest', 'plinth')
   ),
   stemRadius: num(
     'mount',
@@ -96,18 +101,30 @@ export const PRINT_OPTIONS = {
     0.8,
     15,
     0.1,
-    onMount('base')
+    onMount('base', 'socket', 'rest', 'plinth')
   ),
-  standJoin: choice('mount', null, 'Stand', ['fused', 'removable'], 'fused', {
-    choiceLabels: { fused: 'One piece', removable: 'Lifts off (socket)' },
-    when: { mount: ['base'] },
-  }),
   socketFit: num('mount', null, 'Socket clearance (mm)', 0.3, 0.05, 1.5, 0.05, {
-    when: { mount: ['base'], standJoin: ['removable'] },
+    when: { mount: ['socket'] },
   }),
   socketDepth: num('mount', null, 'Socket depth (mm)', 8, 3, 30, 0.5, {
-    when: { mount: ['base'], standJoin: ['removable'] },
+    when: { mount: ['socket'] },
   }),
+  restRadius: num(
+    'mount',
+    null,
+    'Platform radius (mm, 0 = auto)',
+    0,
+    0,
+    30,
+    0.5,
+    {
+      when: { mount: ['rest'] },
+    }
+  ),
+  restGap: num('mount', null, 'Platform clearance (mm)', 0, 0, 1, 0.05, {
+    when: { mount: ['rest'] },
+  }),
+
   hemLevel: flag('mount', null, 'Level it to stand', true, onMount('hem')),
   hemTrim: num(
     'mount',
@@ -148,37 +165,35 @@ export const PRINT_OPTIONS = {
       reversal: 'Reversal',
     },
   }),
-  signaturePlace: choice(
+  signatureBaseTop: flag('signature', null, 'On the base top', false, onMark),
+  signatureInside: flag(
     'signature',
     null,
-    'On',
-    ['base', 'piece', 'both'],
-    'base',
-    {
-      choiceLabels: {
-        base: 'Stand base (underside)',
-        both: 'Both',
-        piece: 'The piece (back)',
-      },
-      when: { signature: ['argyle', 'bret', 'reversal'] },
-    }
+    'Inside the piece (on a flat platform)',
+    false,
+    onMark
+  ),
+  signatureBaseUnder: flag('signature', null, 'Under the base', false, onMark),
+  signatureBack: flag(
+    'signature',
+    null,
+    'On the back of the piece',
+    false,
+    onMark
   ),
   signatureStyle: choice(
     'signature',
     null,
-    'Style on the piece',
+    'Style',
     ['deboss', 'emboss'],
     'deboss',
     {
-      choiceLabels: { deboss: 'Cut in', emboss: 'Raised' },
-      when: {
-        signature: ['argyle', 'bret', 'reversal'],
-        signaturePlace: ['piece', 'both'],
-      },
+      choiceLabels: { deboss: 'Cut in', emboss: 'Raised (base top, back)' },
+      ...onMark,
     }
   ),
   signatureSize: num('signature', null, 'Size (mm, 0 = auto)', 0, 0, 60, 0.5, {
-    when: { signature: ['argyle', 'bret', 'reversal'] },
+    ...onMark,
   }),
   signatureDepth: num(
     'signature',
@@ -189,22 +204,19 @@ export const PRINT_OPTIONS = {
     3,
     0.05,
     {
-      when: { signature: ['argyle', 'bret', 'reversal'] },
+      ...onMark,
     }
   ),
   signatureHeight: num(
     'signature',
     null,
-    'Height on the piece (0–1)',
+    'Height on the back (0–1)',
     0.65,
     0.05,
     0.95,
     0.05,
     {
-      when: {
-        signature: ['argyle', 'bret', 'reversal'],
-        signaturePlace: ['piece', 'both'],
-      },
+      when: { signature: MARKED, signatureBack: [true] },
     }
   ),
 
@@ -240,10 +252,35 @@ const SECTION_LABELS = {
 
 // One schema per printable: the shared print table plus the printable's own,
 // with its preferred defaults (a floating ghost wants a base).
+const SIGNATURE_SPOTS = {
+  back: 'signatureBack',
+  baseTop: 'signatureBaseTop',
+  baseUnder: 'signatureBaseUnder',
+  inside: 'signatureInside',
+};
+
+// A printable offers only the mounts and signature spots that fit it
+// (`mounts`, `signatureSpots`); options that only serve the others drop out
+// of its form and its CLI.
+function fitsPrintable(printable, spec, key) {
+  const mounts = printable.mounts ?? MOUNTS;
+  const spots = printable.signatureSpots ?? Object.keys(SIGNATURE_SPOTS);
+  const spot = Object.entries(SIGNATURE_SPOTS).find(([, name]) => name === key);
+  if (spot && !spots.includes(spot[0])) return false;
+  const when = spec.when?.mount;
+  return !when || when.some((mount) => mounts.includes(mount));
+}
+
 export function createPrintSchema(printable) {
   const options = {};
+  const mounts = printable.mounts ?? MOUNTS;
   Object.entries({ ...printable.options, ...PRINT_OPTIONS }).forEach(
-    ([key, spec]) => {
+    ([key, raw]) => {
+      if (!fitsPrintable(printable, raw, key)) return;
+      const spec =
+        key === 'mount'
+          ? { ...raw, choices: raw.choices.filter((m) => mounts.includes(m)) }
+          : raw;
       options[key] =
         key in (printable.defaults ?? {})
           ? { ...spec, default: printable.defaults[key] }

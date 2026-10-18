@@ -4,6 +4,7 @@ import {
   usageFor,
 } from '../src/modules/trucheterie3d/renderOptions.mjs';
 import { runStills } from './lib/generatorCli.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 import {
   assertPalette,
   fieldAt,
@@ -32,6 +33,7 @@ runStills({
   kernelLabel: 'Trucheterie3D',
   loadKernel,
   nouns: 'fields',
+  overlay: sceneIconFile('trucheterie3d'),
   parseCli,
   resolveViews,
   script: 'trucheterie3d',

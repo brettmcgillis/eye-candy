@@ -9,6 +9,7 @@ import {
   withCapturer,
 } from './lib/isoLinesRender.mjs';
 import { runStage } from './lib/progress.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 // Each piece is one shot of the field flowing for `hold` seconds, on a
 // fixed clock.
@@ -26,6 +27,7 @@ runVideo({
   kernelLabel: 'IsoLines',
   loadKernel,
   nouns: 'pieces',
+  overlay: sceneIconFile('iso-lines'),
   parseCli,
   async plan({ kernel, options, typed }) {
     const { iso } = kernel;

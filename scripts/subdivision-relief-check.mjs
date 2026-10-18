@@ -13,7 +13,8 @@ import process from 'node:process';
 import { RENDER_OPTIONS as PIECE_OPTIONS } from '../src/modules/subdivision/renderOptions.mjs';
 import {
   RENDER_OPTIONS,
-  SCENE_KEYS,
+  SCENE_NAMES,
+  SCENE_OPTIONS,
   normalizeOptions,
 } from '../src/modules/subdivisionRelief/renderOptions.mjs';
 import { createHeadlessRenderer } from './lib/headlessWebgpu.mjs';
@@ -76,10 +77,10 @@ function checkSharedSpecs() {
 
 // Leva clamps an out-of-range preset silently.
 function checkPresets({ PRESETS: presets }) {
-  const scene = new Set(SCENE_KEYS);
+  const scene = new Set(SCENE_NAMES);
   Object.entries(presets).forEach(([name, preset]) => {
     Object.entries(preset).forEach(([key, value]) => {
-      const spec = RENDER_OPTIONS[key];
+      const spec = SCENE_OPTIONS[key];
       check(scene.has(key), `preset "${name}" sets "${key}", not a scene key.`);
       if (spec?.type === 'number') {
         check(
@@ -103,13 +104,13 @@ function checkRolls({ look, relief }) {
   for (let i = 0; i < 30; i += 1) {
     const config = relief.rollReliefConfig(`check-${i}`, { paletteNames });
     check(
-      Object.keys(config).every((key) => SCENE_KEYS.includes(key)),
+      Object.keys(config).every((key) => SCENE_NAMES.includes(key)),
       `roll check-${i} carries keys outside the scene schema.`
     );
     Object.entries(config)
-      .filter(([key]) => RENDER_OPTIONS[key]?.type === 'number')
+      .filter(([key]) => SCENE_OPTIONS[key]?.type === 'number')
       .forEach(([key, value]) => {
-        const { max, min } = RENDER_OPTIONS[key];
+        const { max, min } = SCENE_OPTIONS[key];
         check(
           value >= min && value <= max,
           `roll check-${i} sets ${key} = ${value}, outside [${min}, ${max}].`
@@ -136,7 +137,7 @@ function checkRolls({ look, relief }) {
     });
     relief
       .keysInFacet(facet)
-      .filter((key) => SCENE_KEYS.includes(key))
+      .filter((key) => SCENE_NAMES.includes(key))
       .forEach((key) =>
         check(
           held[key] === source[key],

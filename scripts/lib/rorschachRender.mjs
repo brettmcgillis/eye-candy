@@ -5,6 +5,7 @@ import createCapturer from './gpuCapture.mjs';
 import loadModules, { REPO_ROOT } from './loadModules.mjs';
 import overlayLayer from './overlayLayer.mjs';
 import { runStage } from './progress.mjs';
+import { sceneIconFile } from './sceneIcons.mjs';
 
 export { REPO_ROOT };
 // The kernel's barrel — the single entry point the headless renderers are
@@ -191,7 +192,7 @@ async function compositeOverlay(image, options, output = 'png') {
 
   const overlay = await overlayLayer({
     height: options.height,
-    icon: 'rorschach.webp',
+    icon: sceneIconFile('rorschach'),
     ig: options.ig,
     version: options.version,
     viewport: options.viewport,

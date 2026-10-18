@@ -6,6 +6,7 @@ import sharp from 'sharp';
 import {
   RENDER_OPTIONS,
   SCENE_KEYS,
+  canonicalArgv,
   defaultsFor,
   normalizeOptions,
 } from '../../src/modules/kumiko/renderOptions.mjs';
@@ -36,6 +37,7 @@ export const loadKernel = () => loadKernelModules(ENTRIES);
 
 export const parseCli = createParseCli({
   RENDER_OPTIONS,
+  canonicalArgv,
   defaultsFor,
   normalizeOptions,
 });
@@ -55,7 +57,7 @@ export function rollArgs(kernel, { options, typed }) {
     pinned: Object.fromEntries(
       [...typed]
         .filter((key) => scene.has(key))
-        .map((key) => [key, options[key]])
+        .map((key) => [kumiko.sceneNameFor(key), options[key]])
     ),
   };
 }
@@ -89,9 +91,9 @@ export async function loadSourceImage(source) {
 // What a batch draws at `index`: seeds follow seed, seed-1, seed-2….
 export async function panelAt(kernel, { index, options, roll }) {
   const { kumiko, look } = kernel;
-  const baseSeed = options.seed ?? kumiko.randomSeed();
+  const baseSeed = options.batch ?? kumiko.randomSeed();
   const seed =
-    options.seed == null ? baseSeed : kumiko.seedFor(baseSeed, index);
+    options.batch == null ? baseSeed : kumiko.seedFor(baseSeed, index);
   const config = kumiko.rollKumikoConfig(seed, roll);
   const image = await loadSourceImage(config.sourceImage);
   return {
@@ -123,17 +125,6 @@ export function renderFlatSvg(
     stroke: options.svgStroke,
     style,
   });
-}
-
-export async function encodeImage(input, format) {
-  const image = sharp(
-    input.data ?? input,
-    input.data
-      ? { raw: { channels: 4, height: input.height, width: input.width } }
-      : {}
-  );
-  if (format === 'webp') return image.webp({ lossless: true }).toBuffer();
-  return image.png().toBuffer();
 }
 
 // Headless 3D stills: the scene's rig, lights and tone mapping.

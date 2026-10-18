@@ -18,10 +18,21 @@ import {
 import { REPO_ROOT, loadKernel } from './lib/rorschachRender.mjs';
 
 const KERNEL_DIR = path.join(REPO_ROOT, 'src', 'modules', 'rorschach');
-const WORKBENCH = path.join(
-  REPO_ROOT,
-  'src/dev/tools/rorschach/RorschachWorkbenchPage.jsx'
-);
+const TOOL_DIR = path.join(REPO_ROOT, 'src/dev/tools/rorschach');
+
+// The page lays its form out across its own file and its components/ sections.
+async function readWorkbench() {
+  const components = path.join(TOOL_DIR, 'components');
+  const files = [
+    path.join(TOOL_DIR, 'RorschachWorkbenchPage.jsx'),
+    ...(await readdir(components))
+      .filter((name) => name.endsWith('.jsx'))
+      .map((name) => path.join(components, name)),
+  ];
+  return (await Promise.all(files.map((file) => readFile(file, 'utf8')))).join(
+    '\n'
+  );
+}
 const SCENE_CONTROLS = path.join(
   REPO_ROOT,
   'src/components/scenes/WebGPU/Rorschach/hooks/useSceneControls.js'
@@ -100,7 +111,7 @@ async function checkHeadlessCallsResolve(kernel) {
 // they were CLI-flag-only and untestable from the dev page. Verifying only that
 // workbench fields name real options never notices that.
 async function checkEveryOptionHasAControl() {
-  const source = await readFile(WORKBENCH, 'utf8');
+  const source = await readWorkbench();
   const bound = new Set([
     ...[...source.matchAll(/option="(\w+)"/gu)].map(([, name]) => name),
     ...[...source.matchAll(/setOption\('(\w+)'/gu)].map(([, name]) => name),
@@ -118,7 +129,7 @@ async function checkEveryOptionHasAControl() {
 }
 
 async function checkWorkbenchFieldsExist() {
-  const source = await readFile(WORKBENCH, 'utf8');
+  const source = await readWorkbench();
   const used = [...source.matchAll(/option="(\w+)"/gu)].map(([, name]) => name);
   check(
     used.length > 0,

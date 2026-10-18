@@ -1,8 +1,6 @@
 #!/usr/bin/env node
 import { usageFor } from '../src/modules/fungi/renderOptions.mjs';
-import { readPackageVersion } from './lib/cliArgs.mjs';
 import {
-  encodeFrame,
   frameView,
   loadKernel,
   parseCli,
@@ -11,6 +9,7 @@ import {
   withCapturer,
 } from './lib/fungiRender.mjs';
 import { azimuthOffset, runVideo } from './lib/generatorCli.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 // Seconds of clip per specimen, and its levels at a clip time. The lifecycle
 // clock runs at the specimen's own timeScale, the way the scene does.
@@ -47,6 +46,7 @@ runVideo({
   kernelLabel: 'Fungi',
   loadKernel,
   nouns: 'specimens',
+  overlay: sceneIconFile('fungi'),
   parseCli,
   plan({ kernel, options, typed }) {
     const roll = rollArgs(kernel, { options, typed });
@@ -69,7 +69,7 @@ runVideo({
             bounds = capturer.load(drawn);
           },
           async frame(capturer, clock) {
-            if (options.mode === 'stills' && still) return still;
+            if (options.mode === 'montage' && still) return still;
             const image = await capturer.capture({
               ...frameView(kernel, {
                 azimuthOffset: azimuthOffset(options, clock),
@@ -79,9 +79,7 @@ runVideo({
               }),
               levels: levels(clock.seconds),
             });
-            still = options.overlay
-              ? await encodeFrame(image, 'raw', options)
-              : image.data;
+            still = image.data;
             return still;
           },
           frames,
@@ -89,10 +87,6 @@ runVideo({
       }),
     };
   },
-  prepare: async (options) => ({
-    ...options,
-    version: await readPackageVersion(),
-  }),
   script: 'fungi',
   title: 'fungi',
   usageFor,

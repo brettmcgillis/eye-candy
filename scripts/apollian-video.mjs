@@ -9,6 +9,7 @@ import {
   withCapturer,
 } from './lib/apollianRender.mjs';
 import { azimuthOffset, runVideo } from './lib/generatorCli.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 // A morph clip is one stage and one family: every object after the first
 // takes the first one's family, packing and stage, so only the form, slice
@@ -99,6 +100,7 @@ runVideo({
   kernelLabel: 'Apollian',
   loadKernel,
   nouns: 'objects',
+  overlay: sceneIconFile('apollian'),
   parseCli,
   plan({ kernel, options, typed }) {
     const { apollian } = kernel;

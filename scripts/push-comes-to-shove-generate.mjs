@@ -11,6 +11,7 @@ import {
   rollArgs,
   withCapturer,
 } from './lib/pushComesToShoveRender.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 runStills({
   async item({ batch, capturer, index, kernel, options, roll, save, step }) {
@@ -33,6 +34,7 @@ runStills({
   kernelLabel: 'Push Comes to Shove',
   loadKernel,
   nouns: 'panels',
+  overlay: sceneIconFile('push-comes-to-shove'),
   parseCli,
   resolveViews,
   script: 'push-comes-to-shove',

@@ -1,15 +1,14 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import {
   RENDER_OPTIONS,
+  canonicalArgv,
   defaultsFor,
   normalizeOptions,
 } from '../../src/modules/fungi/renderOptions.mjs';
 import {
   DEG,
   createParseCli,
-  encodeFrame as encode,
   loadKernelModules,
-  overlayFor,
   withRenderer,
 } from './generatorCli.mjs';
 import { createHeadlessRenderer } from './headlessWebgpu.mjs';
@@ -25,6 +24,7 @@ export const loadKernel = () => loadKernelModules(ENTRIES);
 
 export const parseCli = createParseCli({
   RENDER_OPTIONS,
+  canonicalArgv,
   defaultsFor,
   normalizeOptions,
 });
@@ -55,8 +55,9 @@ export function rollArgs(kernel, { options, typed }) {
 // scene's regrow loop seeds its generations.
 export function specimenAt(kernel, { index, options, roll }) {
   const { fungi } = kernel;
-  const baseSeed = options.seed ?? fungi.randomSeed();
-  const seed = options.seed == null ? baseSeed : fungi.seedFor(baseSeed, index);
+  const baseSeed = options.batch ?? fungi.randomSeed();
+  const seed =
+    options.batch == null ? baseSeed : fungi.seedFor(baseSeed, index);
   const config = fungi.rollFungiConfig(seed, roll);
   return { config, seed, specimen: fungi.buildSpecimen(config) };
 }
@@ -255,9 +256,6 @@ export async function renderSvg(
 export function sidecarFor({ config, options }) {
   return { preset: config, render: { ...options, base: undefined } };
 }
-
-export const encodeFrame = (frame, format, options = {}) =>
-  encode(frame, format, overlayFor('fungi.svg', options));
 
 export const withCapturer = (kernel, options, work) =>
   withRenderer(

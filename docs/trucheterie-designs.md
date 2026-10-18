@@ -117,6 +117,11 @@ Run `npm run trucheterie:check` after changing anything below, and
   `src/modules/trucheterieBlob/designs/<name>.json` through the dev-server
   plugin. Once saved, it links to both workbenches with `?design=<name>`
   preselected, and shows the CLI command.
+- Its Preview section exposes the scene's lane palette and modes, exact
+  versus blended colors, shuffle seed and shuffle action, monochrome and
+  its color, stroke color, silhouette fill (Tile Background), and Scene
+  Background. Grid rotation and colors are view settings, not saved design
+  data; saved designs continue to hold only cells and connections.
 - Both CLIs resolve `--blobDesign` as a design code, a `.json` path, or a
   saved design's name, and pin the resolved code, so sidecars and promoted
   presets carry the design itself. Each generation's seed still rolls the

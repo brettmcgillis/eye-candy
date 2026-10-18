@@ -104,7 +104,7 @@ export default function OptionSections({ kind, options, setOption }) {
           </fieldset>
         </>
       ) : null}
-      {kind === 'video' && ['stills', 'growth'].includes(options.mode) ? (
+      {kind === 'video' && ['montage', 'growth'].includes(options.mode) ? (
         <fieldset className="rw-fieldset rw-formats">
           <legend>Source images</legend>
           <label htmlFor="fw-image-format">

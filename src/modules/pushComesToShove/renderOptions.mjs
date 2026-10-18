@@ -426,6 +426,7 @@ export const RENDER_OPTIONS = {
   ...SOLVER,
   ...RIG,
   ...RENDER,
+  ...standard.overlayOptions(),
 };
 
 export const SURFACE_DEFAULTS = {
@@ -440,9 +441,6 @@ export const SURFACE_DEFAULTS = {
 
 const schema = createOptionSchema({
   options: RENDER_OPTIONS,
-  sectionLabels: {
-    roll: 'rolling',
-  },
   surfaceDefaults: SURFACE_DEFAULTS,
   validate(kind, options, fail) {
     if (

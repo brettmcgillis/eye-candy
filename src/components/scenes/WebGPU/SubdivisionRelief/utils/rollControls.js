@@ -1,13 +1,13 @@
 import { randomSeed } from '@modules/subdivision';
 import {
-  RENDER_OPTIONS,
-  SCENE_KEYS,
+  SCENE_NAMES,
+  SCENE_OPTIONS,
   facets,
   rollReliefConfig,
 } from '@modules/subdivisionRelief';
 import { PALETTE_NAMES } from '@modules/subdivisionReliefRender';
 
-const PIECE_KEYS = SCENE_KEYS.filter((key) => !RENDER_OPTIONS[key].sceneOnly);
+const PIECE_KEYS = SCENE_NAMES.filter((key) => !SCENE_OPTIONS[key].sceneOnly);
 const SEED_KEYS = ['splitSeed', 'fieldNoise', 'colorSeed', 'heightSeed'];
 
 const pieceOf = (config) =>

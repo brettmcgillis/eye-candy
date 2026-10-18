@@ -11,6 +11,7 @@ import {
   structureAt,
   withCapturer,
 } from './lib/hyperCubesRender.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 runStills({
   kernelLabel: 'HyperCubes',
@@ -32,6 +33,7 @@ runStills({
   },
   loadKernel,
   nouns: 'structures',
+  overlay: sceneIconFile('hyper-cubes'),
   parseCli,
   resolveViews,
   script: 'hyper-cubes',

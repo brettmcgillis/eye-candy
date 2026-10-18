@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 import { usageFor } from '../src/modules/trucheterie3d/renderOptions.mjs';
 import { azimuthOffset, runVideo } from './lib/generatorCli.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 import {
   assertPalette,
   fieldAt,
@@ -57,6 +58,7 @@ runVideo({
   kernelLabel: 'Trucheterie3D',
   loadKernel,
   nouns: 'fields',
+  overlay: sceneIconFile('trucheterie3d'),
   parseCli,
   plan({ kernel, options, parsed, typed }) {
     assertPalette(kernel, parsed);

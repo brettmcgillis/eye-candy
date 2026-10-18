@@ -1,6 +1,6 @@
-import createOptionSchema, { resolveList } from './schema.mjs';
+import createOptionSchema, { SHARED_SECTIONS, resolveList } from './schema.mjs';
 
-export { resolveList };
+export { SHARED_SECTIONS, resolveList };
 export * from './specs.mjs';
-export { default as standard } from './standard.mjs';
+export { IG_PRESETS, default as standard } from './standard.mjs';
 export default createOptionSchema;

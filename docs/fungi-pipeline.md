@@ -13,7 +13,7 @@ This file records what is specific to Fungi.
         │                              │
   WebGPU/Fungi scene          scripts/lib/fungiRender.mjs
   (R3F, Leva)                   ├─ fungi-generate.mjs   stills
-                                └─ fungi-video.mjs      lifecycle / growth / turntable / stills
+                                └─ fungi-video.mjs      lifecycle / growth / turntable / montage
                                         │
                      src/dev/server/fungi → src/dev/tools/fungi (FungiCLI)
 ```

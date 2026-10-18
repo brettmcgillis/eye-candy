@@ -196,7 +196,6 @@ const RENDER = {
   count: standard.count('fields'),
   margin: standard.margin(0.08, 'Padding around the drawn field', {
     max: 1,
-    section: 'output',
   }),
   png: standard.png(),
   webp: standard.webp(),
@@ -228,46 +227,17 @@ const RENDER = {
   structureSeed: rollSeed('structure'),
   paletteSeed: rollSeed('palette'),
 
-  overlay: {
-    default: false,
-    help: 'Burn a branded safe-area overlay into the output',
-    label: 'Overlay',
-    scope: 'shared',
-    section: 'overlay',
-    type: 'boolean',
-  },
-  ig: {
-    choices: ['story', 'reel', 'post', 'none'],
-    default: 'post',
-    help: 'Safe-area insets; only applies with --overlay',
-    label: 'Safe area',
-    scope: 'shared',
-    section: 'overlay',
-    type: 'enum',
-  },
-  viewport: {
-    default: 390,
-    help: 'CSS pixel width the overlay emulates; 390 matches an iPhone',
-    label: 'Viewport',
-    max: 8192,
-    min: 64,
-    nullable: true,
-    placeholder: 'N',
-    scope: 'shared',
-    section: 'overlay',
-    step: 1,
-    type: 'number',
-  },
+  ...standard.overlayOptions(),
 
   mode: standard.mode(
-    ['stills', 'growth', 'flow', 'stream'],
-    'stills',
-    'stills: a cut per field; growth: a front spreads from the centre, drawing each ring, then recedes; flow: the grown field with its palette flowing through the channels; stream: Spectrum lanes, the gradient travelling along every lane'
+    ['montage', 'growth', 'flow', 'stream'],
+    'montage',
+    'montage: a cut per field; growth: a front spreads from the centre, drawing each ring, then recedes; flow: the grown field with its palette flowing through the channels; stream: Spectrum lanes, the gradient travelling along every lane'
   ),
   fps: standard.fps(),
   hold: standard.hold(
     3,
-    'Seconds per field (stills, flow, stream), or held once fully grown (growth)',
+    'Seconds per field (montage, flow, stream), or held once fully grown (growth)',
     { max: 60 }
   ),
   growSeconds: {
@@ -300,7 +270,6 @@ export const RENDER_OPTIONS = { ...GENERATOR, ...LOOK, ...RENDER };
 
 const SECTION_LABELS = {
   field: 'blob field',
-  roll: 'rolling',
 };
 
 export const SURFACE_DEFAULTS = {

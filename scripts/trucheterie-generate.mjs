@@ -1,11 +1,10 @@
 #!/usr/bin/env node
 import { usageFor } from '../src/modules/trucheterieBlob/renderOptions.mjs';
-import { readPackageVersion } from './lib/cliArgs.mjs';
 import { runStills } from './lib/generatorCli.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 import {
   assertPalette,
   buildField,
-  encodeFrame,
   fieldAt,
   loadKernel,
   parseCli,
@@ -17,7 +16,6 @@ import {
 
 runStills({
   doneLabel: 'rendered fields',
-  encode: encodeFrame,
   async item({ capturer, index, kernel, options, roll, save, step }) {
     const drawn = fieldAt(kernel, { index, options, roll });
     await step(`rendering ${drawn.seed}`, async () => {
@@ -43,11 +41,8 @@ runStills({
   kernelLabel: 'Trucheterie blob-field',
   loadKernel,
   nouns: 'fields',
+  overlay: sceneIconFile('trucheterie'),
   parseCli,
-  prepare: async (options) => ({
-    ...options,
-    version: await readPackageVersion(),
-  }),
   progressLabel: 'rendering fields',
   script: 'trucheterie',
   setup({ kernel, options, parsed, typed }) {

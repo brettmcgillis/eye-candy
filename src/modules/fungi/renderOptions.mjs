@@ -30,8 +30,7 @@ export const ARCHETYPES = [
 ];
 export const HABITS = ['auto', 'solitary', 'clump', 'troop'];
 export const VIEWS = ['front', 'right', 'back', 'left'];
-export const VIDEO_MODES = ['lifecycle', 'growth', 'turntable', 'stills'];
-export const IG_PRESETS = ['story', 'reel', 'post'];
+export const VIDEO_MODES = ['lifecycle', 'growth', 'turntable', 'montage'];
 
 // Azimuth and elevation, in degrees, of each named view around the target.
 export const VIEW_ANGLES = {
@@ -49,19 +48,14 @@ const gen = (section, label, value, min, max, step, facet, roll) =>
   });
 
 const GENERATOR = {
-  seed: {
+  batch: standard.batch({
+    aliases: ['seed'],
     default: 'fungi',
     generator: true,
     help: 'Specimen seed; a batch uses seed, seed-1, seed-2… like the scene regrow loop. Omit for a random seed',
-    label: 'Seed',
-    nullable: true,
-    placeholder: 'WORD',
     scene: true,
-    scope: 'shared',
-    section: 'output',
-    text: true,
-    type: 'seed',
-  },
+    sceneKey: 'seed',
+  }),
 
   archetype: inFacet(
     'form',
@@ -174,40 +168,13 @@ const RENDER = {
   clusterSeed: rollSeed('cluster'),
   paletteSeed: rollSeed('palette'),
 
-  overlay: {
-    // The scene shows its button bar by default; a render burns nothing in
-    // unless asked, which is what the surface defaults below say.
+  // The scene shows its button bar by default; a render burns nothing in
+  // unless asked, which is what the surface defaults below say.
+  ...standard.overlayOptions({
     default: true,
-    help: 'Burn the scene overlay into the output',
-    label: 'Overlay',
     scene: true,
     sceneKey: 'showOverlay',
-    scope: 'shared',
-    section: 'overlay',
-    type: 'boolean',
-  },
-  ig: {
-    choices: [...IG_PRESETS, 'none'],
-    default: 'post',
-    help: 'Safe-area insets; only applies with --overlay',
-    label: 'Safe area',
-    scope: 'shared',
-    section: 'overlay',
-    type: 'enum',
-  },
-  viewport: {
-    default: 390,
-    help: 'CSS pixel width the overlay emulates. Defaults to 390 with --ig, else 1440',
-    label: 'Viewport',
-    max: 8192,
-    min: 64,
-    nullable: true,
-    placeholder: 'N',
-    scope: 'shared',
-    section: 'overlay',
-    step: 1,
-    type: 'number',
-  },
+  }),
 
   margin: standard.margin(0.1, 'Padding around the specimen’s bounds', {
     max: 1,
@@ -227,13 +194,13 @@ const RENDER = {
   mode: standard.mode(
     VIDEO_MODES,
     'lifecycle',
-    'lifecycle: grow→spore→rot→unravel per specimen; growth: grow and hold; turntable: orbit a grown specimen; stills: a cut per specimen'
+    'lifecycle: grow→spore→rot→unravel per specimen; growth: grow and hold; turntable: orbit a grown specimen; montage: a cut per specimen'
   ),
   view: standard.view(VIEWS, 'front'),
   fps: standard.fps(),
   hold: standard.hold(
     4,
-    'Seconds per specimen (turntable, stills) or held at the end (growth)',
+    'Seconds per specimen (turntable, montage) or held at the end (growth)',
     { max: 120 }
   ),
   turns: standard.turns('specimen'),
@@ -246,22 +213,19 @@ const RENDER = {
 export const RENDER_OPTIONS = { ...GENERATOR, ...LOOK, ...MOTION, ...RENDER };
 
 export const SURFACE_DEFAULTS = {
-  'cli-still': { overlay: false, seed: null },
+  'cli-still': { overlay: false, batch: null },
   'cli-video': {
     count: 3,
     height: 1920,
     out: 'output/fungi.mp4',
     overlay: false,
-    seed: null,
+    batch: null,
   },
-  workbench: { count: 6, overlay: false, seed: null },
+  workbench: { count: 6, overlay: false, batch: null },
 };
 
 const schema = createOptionSchema({
   options: RENDER_OPTIONS,
-  sectionLabels: {
-    roll: 'rolling',
-  },
   surfaceDefaults: SURFACE_DEFAULTS,
   views: VIEWS,
 });
@@ -269,6 +233,7 @@ const schema = createOptionSchema({
 export const {
   GENERATOR_KEYS,
   SCENE_KEYS,
+  canonicalArgv,
   configFrom,
   defaultsFor,
   facets,

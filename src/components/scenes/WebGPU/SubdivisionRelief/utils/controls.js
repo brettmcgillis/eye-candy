@@ -1,7 +1,11 @@
 import { button } from 'leva';
 
 import createSchemaFolders from '@modules/schemaControls';
-import { LEVA_KEYS, RENDER_OPTIONS } from '@modules/subdivisionRelief';
+import {
+  LEVA_NAMES,
+  RENDER_OPTIONS,
+  SCENE_OPTIONS,
+} from '@modules/subdivisionRelief';
 import { PALETTE_NAMES, PALETTE_NONE } from '@modules/subdivisionReliefRender';
 import { WEBCAM_FACING_OPTIONS } from '@modules/webcam';
 import isMobileDevice from '@utils/isMobileDevice';
@@ -43,9 +47,9 @@ const schemaFolders = createSchemaFolders({
     },
   },
   folders: FOLDERS,
-  keys: LEVA_KEYS,
+  keys: LEVA_NAMES,
   label: SCENE_LABEL,
-  options: RENDER_OPTIONS,
+  options: SCENE_OPTIONS,
 });
 
 // The canvas is a render size in the schema, not a scene key, so its

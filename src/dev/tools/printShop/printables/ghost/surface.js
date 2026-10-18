@@ -201,17 +201,45 @@ function sampler(image, tile) {
   };
 }
 
+// GhostBuster's default view (camera at (0, 1, 3.5) on the origin, fov 50):
+// a 'screen' projected texture is laid on as the scene shows it from there.
+// TSL's screenUV runs from the top-left, y down (measured headlessly).
+const CAMERA = { fov: 50, position: [0, 1, 3.5], target: [0, 0, 0] };
+
+export function screenProjector(aspect) {
+  const [px, py, pz] = CAMERA.position;
+  let f = CAMERA.target.map((value, k) => value - CAMERA.position[k]);
+  const fl = Math.hypot(...f);
+  f = f.map((value) => value / fl);
+  let r = [-f[2], 0, f[0]];
+  const rl = Math.hypot(...r);
+  r = r.map((value) => value / rl);
+  const u = [
+    r[1] * f[2] - r[2] * f[1],
+    r[2] * f[0] - r[0] * f[2],
+    r[0] * f[1] - r[1] * f[0],
+  ];
+  const t = Math.tan((CAMERA.fov * Math.PI) / 360);
+  return ([x, y, z]) => {
+    const d = [x - px, y - py, z - pz];
+    const depth = d[0] * f[0] + d[1] * f[1] + d[2] * f[2];
+    const sx = (d[0] * r[0] + d[1] * r[1] + d[2] * r[2]) / (depth * t * aspect);
+    const sy = (d[0] * u[0] + d[1] * u[1] + d[2] * u[2]) / (depth * t);
+    return [sx * 0.5 + 0.5, 0.5 - sy * 0.5];
+  };
+}
+
 // ClothMesh's buildTexturedColor: the texture is sampled raw (no sRGB decode
-// on a node sample), composited over the base colour in linear, then the
-// display encodes sRGB — which is what a viewer of the scene sees.
-function texturedColor(p, sample, baseHex, u, v, worldX, worldZ) {
+// on a node sample) and composited over the base colour in linear.
+function texturedColor(p, sample, baseHex, uv, world, screen) {
   const base = hexToRgb(baseHex).map(toLinear);
   if (!sample) return base;
-  let su = u - 0.5;
-  let sv = v - 0.5;
+  let [su, sv] = [uv[0] - 0.5, uv[1] - 0.5];
   if (p.textureProjection === 'world') {
-    su = worldX;
-    sv = worldZ;
+    [su, sv] = [world[0], world[2]];
+  } else if (p.textureProjection === 'screen') {
+    const [x, y] = screen(world);
+    [su, sv] = [x - 0.5, y - 0.5];
   }
   su /= p.textureScaleX;
   sv /= p.textureScaleY;
@@ -225,12 +253,53 @@ function texturedColor(p, sample, baseHex, u, v, worldX, worldZ) {
   });
 }
 
+// ClothMesh's emissiveNode: each side's colour × intensity, faded from
+// emissiveCenter by `(1 − d·falloff)²` when there is a falloff.
+function emissive(p, side, uv) {
+  const hex = side === 'outer' ? p.outerEmissiveColor : p.innerEmissiveColor;
+  const intensity =
+    side === 'outer' ? p.outerEmissiveIntensity : p.innerEmissiveIntensity;
+  if (!hex || !intensity) return [0, 0, 0];
+  const glow =
+    p.emissiveFalloff > 0
+      ? clamp01(
+          1 -
+            Math.hypot(uv[0] - p.emissiveCenterU, uv[1] - p.emissiveCenterV) *
+              p.emissiveFalloff
+        ) ** 2
+      : 1;
+  return hexToRgb(hex).map((c) => toLinear(c) * intensity * glow);
+}
+
+// What a viewer of the scene sees on each side, minus the lighting: albedo
+// (textured, eyelined) plus the glow it emits, sRGB-encoded.
+export function createGhostColour(p, images, aspect) {
+  const outerSample = sampler(images.outer, p.textureTile);
+  const innerSample = sampler(images.inner, p.textureTile);
+  const screen = screenProjector(aspect);
+  const rimColor = hexToRgb(p.cutoutRimColor).map(toLinear);
+  return (uv, world) => {
+    const rim = rimFactor(p, uv[0], uv[1]);
+    const albedo = texturedColor(p, outerSample, p.color, uv, world, screen);
+    const outer = albedo.map((c, k) => c + (rimColor[k] - c) * rim);
+    const inner = innerSample
+      ? texturedColor(p, innerSample, p.color, uv, world, screen)
+      : hexToRgb(p.innerColor || p.color).map(toLinear);
+    const outerGlow = emissive(p, 'outer', uv);
+    const innerGlow = emissive(p, 'inner', uv);
+    return {
+      back: outer.map((c, k) => toSrgb(clamp01(c + outerGlow[k]))),
+      front: inner.map((c, k) => toSrgb(clamp01(c + innerGlow[k]))),
+    };
+  };
+}
+
 // Refines the settled cloth `detail`× per quad with bicubic interpolation and
 // cuts it where the scene would show it at `threshold` opacity or more.
 export default function buildGhostSurface(
   settled,
   p,
-  { detail, threshold, images }
+  { aspect, detail, images, threshold }
 ) {
   const { topology } = settled;
   const { edgePinned, segmentsX, segmentsY } = topology;
@@ -244,9 +313,7 @@ export default function buildGhostSurface(
   const field = new Float64Array(count);
   const front = new Float64Array(count * 3);
   const back = new Float64Array(count * 3);
-  const outerSample = sampler(images.outer, p.textureTile);
-  const innerSample = sampler(images.inner, p.textureTile);
-  const innerBase = p.innerColor || p.color;
+  const colourOf = createGhostColour(p, images, aspect);
 
   const at = (array, size, gx, gy, c) => {
     const x = Math.min(segmentsX - 1, Math.max(0, gx));
@@ -301,18 +368,12 @@ export default function buildGhostSurface(
         bilinear(grid.opacity, fx, fy) * pixelOpacity(p, edgePinned, u, v);
       field[n] = Math.min(opacity - threshold, bilinear(grid.domain, fx, fy));
 
-      const wx = positions[n * 3];
-      const wz = positions[n * 3 + 2];
-      const outer = texturedColor(p, outerSample, p.color, u, v, wx, wz);
-      const rim = rimFactor(p, u, v);
-      const rimColor = hexToRgb(p.cutoutRimColor).map(toLinear);
-      const inner = innerSample
-        ? texturedColor(p, innerSample, p.color, u, v, wx, wz)
-        : hexToRgb(innerBase).map(toLinear);
-      for (let c = 0; c < 3; c += 1) {
-        back[n * 3 + c] = toSrgb(outer[c] + (rimColor[c] - outer[c]) * rim);
-        front[n * 3 + c] = toSrgb(inner[c]);
-      }
+      const colour = colourOf(
+        [u, v],
+        [positions[n * 3], positions[n * 3 + 1], positions[n * 3 + 2]]
+      );
+      back.set(colour.back, n * 3);
+      front.set(colour.front, n * 3);
     }
   }
 
@@ -336,4 +397,59 @@ export default function buildGhostSurface(
     uv: { array: uv, size: 2 },
   });
   return clipMesh(mesh, field);
+}
+
+// debugWireframe draws the render mesh's triangle edges (both triangles of
+// every live quad, so one diagonal per cell); an edge shows where the cloth
+// is opaque at both ends. Nodes are the render vertices, in scene units.
+export function buildGhostLattice(settled, p, { aspect, images, threshold }) {
+  const { topology } = settled;
+  const { edgePinned, meshIdx, quadDead, segmentsX, segmentsY } = topology;
+  const grid = renderGrid(settled);
+  const colourOf = createGhostColour(p, images, aspect);
+  const shown = new Uint8Array(segmentsX * segmentsY);
+  const colors = new Float64Array(segmentsX * segmentsY * 3);
+  for (let gy = 0; gy < segmentsY; gy += 1) {
+    for (let gx = 0; gx < segmentsX; gx += 1) {
+      const m = meshIdx(gx, gy);
+      const u = (gx + 0.5) / segmentsX;
+      const v = 1 - (gy + 0.5) / segmentsY;
+      const opacity = grid.opacity[m] * pixelOpacity(p, edgePinned, u, v);
+      shown[m] = !quadDead[m] && opacity >= threshold ? 1 : 0;
+      colors.set(
+        colourOf([u, v], Array.from(grid.positions.slice(m * 3, m * 3 + 3)))
+          .back,
+        m * 3
+      );
+    }
+  }
+  const edges = new Set();
+  const add = (a, b) => {
+    if (shown[a] && shown[b]) edges.add(Math.min(a, b) * 1e6 + Math.max(a, b));
+  };
+  for (let x = 1; x < segmentsX; x += 1) {
+    for (let y = 1; y < segmentsY; y += 1) {
+      const q00 = meshIdx(x, y);
+      const q10 = meshIdx(x - 1, y);
+      const q11 = meshIdx(x - 1, y - 1);
+      const q01 = meshIdx(x, y - 1);
+      if (topology.triangleAlive(q00, q10, q11)) {
+        add(q00, q10);
+        add(q10, q11);
+        add(q11, q00);
+      }
+      if (topology.triangleAlive(q00, q11, q01)) {
+        add(q00, q11);
+        add(q11, q01);
+        add(q01, q00);
+      }
+    }
+  }
+  return {
+    colors,
+    edges: Uint32Array.from(
+      [...edges].flatMap((key) => [Math.floor(key / 1e6), key % 1e6])
+    ),
+    nodes: grid.positions,
+  };
 }

@@ -3,8 +3,8 @@ import * as THREE from 'three/webgpu';
 
 import { PRESETS } from '@components/scenes/WebGPU/Kumiko/presets/presets';
 import {
-  RENDER_OPTIONS,
-  SCENE_KEYS,
+  SCENE_NAMES,
+  SCENE_OPTIONS,
   buildLeaves,
   buildPanel,
   renderKumikoSvg,
@@ -32,16 +32,16 @@ const VIEW_ANGLES = {
   raking: [-58, 6],
 };
 
-const KEYS = SCENE_KEYS.filter(
+const KEYS = SCENE_NAMES.filter(
   (key) =>
-    (!RENDER_OPTIONS[key].sceneOnly || key === 'cellEase') &&
+    (!SCENE_OPTIONS[key].sceneOnly || key === 'cellEase') &&
     key !== 'sourceImage'
 );
 const OPTIONS = {
   view: choice('View', ['flat', 'front', 'angle', 'raking'], 'flat'),
   fitPanel: flag('Panel takes the source aspect', true),
   margin: num('Margin', 0.06, 0, 0.5, 0.01),
-  ...fromSchema(RENDER_OPTIONS, KEYS),
+  ...fromSchema(SCENE_OPTIONS, KEYS),
 };
 OPTIONS.seed = { ...OPTIONS.seed, default: 'kumiko' };
 
@@ -57,7 +57,7 @@ const SECTIONS = [
     ['build', '3D build'],
     ['output', 'Seed'],
   ].map(([section, title]) => ({
-    keys: KEYS.filter((key) => RENDER_OPTIONS[key].section === section),
+    keys: KEYS.filter((key) => SCENE_OPTIONS[key].section === section),
     title,
   })),
 ];

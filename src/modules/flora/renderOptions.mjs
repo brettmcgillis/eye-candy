@@ -19,9 +19,8 @@ export const VIEWS = ['front', 'right', 'back', 'left'];
 export const BOUQUET_STYLES = ['dome', 'fan', 'ikebana'];
 // A batch item rolls its own style, seeded off its own draw.
 export const BOUQUET_STYLE_ALL = 'all';
-export const VIDEO_MODES = ['lifecycle', 'growth', 'turntable', 'stills'];
+export const VIDEO_MODES = ['lifecycle', 'growth', 'turntable', 'montage'];
 export const TURNTABLE_SPANS = ['flower', 'video'];
-export const IG_PRESETS = ['story', 'reel', 'post'];
 // The crown forms a plant may be built from; `auto` lets every head pick its
 // own, which is what Flora did before the form became a gene.
 export const CROWN_FORMS = [
@@ -91,19 +90,14 @@ ORNAMENT_MIX.d6Amount.default = 0.25;
 ORNAMENT_MIX.d6Wire.default = 1;
 
 const GENERATOR = {
-  seed: {
+  batch: standard.batch({
+    aliases: ['seed'],
     default: 'flora',
     generator: true,
     help: 'Specimen seed; a batch uses seed, seed-1, seed-2… like the scene regrow loop. Omit for a random seed',
-    label: 'Seed',
-    nullable: true,
-    placeholder: 'WORD',
     scene: true,
-    scope: 'shared',
-    section: 'output',
-    text: true,
-    type: 'seed',
-  },
+    sceneKey: 'seed',
+  }),
 
   stemHeight: gen('stem', 'Height', 6.5, 1, 12, 0.1, 'form', [4.5, 8.5]),
   stemSegments: num('generator', null, 'Stem segments', 48, 8, 256, 1, {
@@ -409,41 +403,14 @@ const RENDER = {
   paletteSeed: rollSeed('palette'),
   ornamentsSeed: rollSeed('ornaments'),
 
-  overlay: {
-    // The scene shows its button bar by default; a render burns nothing in
-    // unless asked, which is what the surface defaults below say.
+  // The scene shows its button bar by default; a render burns nothing in
+  // unless asked, which is what the surface defaults below say. The scene
+  // calls the toggle showOverlay, the way Rorschach does.
+  ...standard.overlayOptions({
     default: true,
-    help: 'Burn the scene overlay into the output',
-    label: 'Overlay',
     scene: true,
-    // The scene calls it showOverlay, the way Rorschach does.
     sceneKey: 'showOverlay',
-    scope: 'shared',
-    section: 'overlay',
-    type: 'boolean',
-  },
-  ig: {
-    choices: [...IG_PRESETS, 'none'],
-    default: 'post',
-    help: 'Safe-area insets; only applies with --overlay',
-    label: 'Safe area',
-    scope: 'shared',
-    section: 'overlay',
-    type: 'enum',
-  },
-  viewport: {
-    default: 390,
-    help: 'CSS pixel width the overlay emulates; 390 matches an iPhone',
-    label: 'Viewport',
-    max: 8192,
-    min: 64,
-    nullable: true,
-    placeholder: 'N',
-    scope: 'shared',
-    section: 'overlay',
-    step: 1,
-    type: 'number',
-  },
+  }),
 
   framing: render({
     choices: ['fit', 'scene'],
@@ -530,35 +497,35 @@ const RENDER = {
   mode: standard.mode(
     VIDEO_MODES,
     'lifecycle',
-    'lifecycle: grow→bloom→hold→unravel per flower; growth: grow and bloom; turntable: orbit a grown flower; stills: a cut per flower'
+    'lifecycle: grow→bloom→hold→unravel per flower; growth: grow and bloom; turntable: orbit a grown flower; montage: a cut per flower'
   ),
   imageFormat: {
     choices: ['png', 'webp'],
     default: 'png',
-    help: 'stills/growth: format of retained source images',
+    help: 'montage/growth: format of retained source images',
     label: 'Source format',
     scope: 'video',
-    section: 'source',
+    section: 'video',
     type: 'enum',
   },
   in: {
     cliOnly: true,
     default: null,
-    help: 'stills: use images from a flora:generate run instead',
+    help: 'montage: use images from a flora:generate run instead',
     nullable: true,
     placeholder: 'DIR',
     scope: 'video',
-    section: 'source',
+    section: 'video',
     type: 'string',
   },
   stillsOut: {
     cliOnly: true,
     default: null,
-    help: 'stills/growth: keep generated source images in this directory',
+    help: 'montage/growth: keep generated source images in this directory',
     nullable: true,
     placeholder: 'DIR',
     scope: 'video',
-    section: 'source',
+    section: 'video',
     type: 'string',
   },
   keepImages: {
@@ -566,7 +533,7 @@ const RENDER = {
     help: 'Keep generated source images alongside the video',
     label: 'Keep source images',
     scope: 'video',
-    section: 'source',
+    section: 'video',
     type: 'boolean',
     workbenchOnly: true,
   },
@@ -574,7 +541,7 @@ const RENDER = {
   fps: standard.fps(),
   hold: standard.hold(
     4,
-    'Seconds per flower (turntable, stills) or held at the end (growth)',
+    'Seconds per flower (turntable, montage) or held at the end (growth)',
     { max: 120 }
   ),
   turns: standard.turns('turntableSpan', {
@@ -602,23 +569,22 @@ const SECTION_LABELS = {
   generator: 'generator limits',
   ornamentMix: 'ornament mix',
   ornamentWire: 'ornament wireframe ratio',
-  roll: 'rolling',
   seeds: 'seed flight',
 };
 
 export const SURFACE_DEFAULTS = {
-  'cli-still': { overlay: false, seed: null },
+  'cli-still': { overlay: false, batch: null },
   'cli-video': {
     count: 3,
     overlay: false,
-    seed: null,
+    batch: null,
     height: 1920,
     out: 'output/flora.mp4',
   },
   workbench: {
     count: 6,
     overlay: false,
-    seed: null,
+    batch: null,
   },
 };
 
@@ -631,8 +597,8 @@ const schema = createOptionSchema({
   sectionLabels: SECTION_LABELS,
   surfaceDefaults: SURFACE_DEFAULTS,
   validate(kind, options, fail) {
-    if (kind === 'video' && options.in && options.mode !== 'stills') {
-      throw fail('--in is only supported with --mode stills.');
+    if (kind === 'video' && options.in && options.mode !== 'montage') {
+      throw fail('--in is only supported with --mode montage.');
     }
   },
   views: VIEWS,
@@ -641,6 +607,7 @@ const schema = createOptionSchema({
 export const {
   GENERATOR_KEYS,
   SCENE_KEYS,
+  canonicalArgv,
   configFrom,
   defaultsFor,
   facets,

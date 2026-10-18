@@ -11,6 +11,7 @@ import {
   withCapturer,
 } from './lib/brutalistRender.mjs';
 import { capturerSvg, runStills, sidecarFor } from './lib/generatorCli.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 runStills({
   async item({ batch, capturer, index, kernel, options, roll, save, step }) {
@@ -30,6 +31,7 @@ runStills({
   kernelLabel: 'Brutalist',
   loadKernel,
   nouns: (options) => `structures (${options.stage})`,
+  overlay: sceneIconFile('brutalist'),
   parseCli,
   resolveViews,
   script: 'brutalist',

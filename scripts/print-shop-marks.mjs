@@ -71,7 +71,7 @@ async function main() {
           ]);
         }
       }
-      const outline = new wasm.CrossSection(faces, 'Positive').simplify(0.0005);
+      const outline = new wasm.CrossSection(faces, 'Positive').simplify(0.0001);
       return {
         layer,
         polygons: outline

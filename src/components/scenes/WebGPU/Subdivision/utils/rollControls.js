@@ -1,13 +1,13 @@
 import {
-  RENDER_OPTIONS,
-  SCENE_KEYS,
+  SCENE_NAMES,
+  SCENE_OPTIONS,
   facets,
   randomSeed,
   rollConfig,
 } from '@modules/subdivision';
 import { PALETTE_NAMES } from '@utils/gradientPalette';
 
-const PIECE_KEYS = SCENE_KEYS.filter((key) => !RENDER_OPTIONS[key].sceneOnly);
+const PIECE_KEYS = SCENE_NAMES.filter((key) => !SCENE_OPTIONS[key].sceneOnly);
 const SEED_KEYS = ['splitSeed', 'fieldNoise', 'colorSeed'];
 
 const pieceOf = (config) =>

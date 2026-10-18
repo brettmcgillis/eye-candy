@@ -1,10 +1,9 @@
 #!/usr/bin/env node
 import { usageFor } from '../src/modules/trucheterieBlob/renderOptions.mjs';
-import { readPackageVersion } from './lib/cliArgs.mjs';
 import { runVideo } from './lib/generatorCli.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 import {
   assertPalette,
-  encodeFrame,
   fieldAt,
   loadKernel,
   parseCli,
@@ -42,11 +41,12 @@ runVideo({
   kernelLabel: 'Trucheterie blob-field',
   loadKernel,
   nouns: 'fields',
+  overlay: sceneIconFile('trucheterie'),
   parseCli,
   plan({ kernel, options, parsed, typed }) {
     assertPalette(kernel, parsed);
     const roll = rollArgs(kernel, { options, typed });
-    const animated = options.mode !== 'stills';
+    const animated = options.mode !== 'montage';
     const clip = timeline(options.mode, options);
     const frames = Math.max(1, Math.round(clip.seconds * options.fps));
     const items = Array.from({ length: options.count }, (_, index) => {
@@ -80,9 +80,7 @@ runVideo({
               margin: options.margin,
               transparentBackground: options.transparentBackground,
             });
-            still = options.overlay
-              ? await encodeFrame(image, 'raw', options)
-              : image.data;
+            still = image.data;
             return still;
           },
           frames,
@@ -90,10 +88,6 @@ runVideo({
       }),
     };
   },
-  prepare: async (options) => ({
-    ...options,
-    version: await readPackageVersion(),
-  }),
   script: 'trucheterie',
   title: 'trucheterie',
   usageFor,

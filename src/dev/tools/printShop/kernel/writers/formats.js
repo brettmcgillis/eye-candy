@@ -1,8 +1,10 @@
 import { faceNormal } from '../checks';
+import creasedNormals from '../normals';
 import zipStore from './zip';
 
 // Every writer takes a print model: millimetres, Y-up, triangles tagged with
-// a part (`triPart` → `parts[i]`), optional sRGB `vertexColors`. Slicers and
+// a part (`triPart` → `parts[i]`), optional sRGB `cornerColors` (three per
+// triangle corner). Slicers and
 // print services expect Z-up, so STL and 3MF rotate +Y onto +Z; glTF stays
 // Y-up and is written in metres.
 const zUp = (positions, v) => [
@@ -49,10 +51,11 @@ const escapeXml = (text) =>
   );
 
 // Parts become base materials, so a multi-material slicer can assign a
-// filament per part; baked texture colour rides along as a per-vertex colour
-// group for full-colour services, which take it over the base material.
+// filament per part; baked colour rides along as a colour group referenced
+// per triangle corner, for full-colour services, which take it over the
+// base material.
 export function write3mf(model, { title = 'Eye Candy print' } = {}) {
-  const { indices, parts, positions, triPart, vertexColors } = model;
+  const { cornerColors, indices, parts, positions, triPart } = model;
   const vertices = positions.length / 3;
   const lines = [];
   lines.push(
@@ -69,13 +72,21 @@ export function write3mf(model, { title = 'Eye Candy print' } = {}) {
     );
   });
   lines.push('</basematerials>');
-  if (vertexColors) {
+  const swatch = new Map();
+  const cornerSwatch = cornerColors
+    ? Array.from({ length: indices.length }, (_, corner) => {
+        const key = hex([
+          cornerColors[corner * 3],
+          cornerColors[corner * 3 + 1],
+          cornerColors[corner * 3 + 2],
+        ]);
+        if (!swatch.has(key)) swatch.set(key, swatch.size);
+        return swatch.get(key);
+      })
+    : null;
+  if (cornerSwatch) {
     lines.push('<m:colorgroup id="2">');
-    for (let v = 0; v < vertices; v += 1) {
-      lines.push(
-        `<m:color color="${hex([vertexColors[v * 3], vertexColors[v * 3 + 1], vertexColors[v * 3 + 2]])}FF" />`
-      );
-    }
+    swatch.forEach((_, color) => lines.push(`<m:color color="${color}FF" />`));
     lines.push('</m:colorgroup>');
   }
   lines.push(
@@ -93,8 +104,8 @@ export function write3mf(model, { title = 'Eye Candy print' } = {}) {
   for (let t = 0; t < indices.length / 3; t += 1) {
     const [a, b, c] = [indices[t * 3], indices[t * 3 + 1], indices[t * 3 + 2]];
     lines.push(
-      vertexColors
-        ? `<triangle v1="${a}" v2="${b}" v3="${c}" pid="2" p1="${a}" p2="${b}" p3="${c}" />`
+      cornerSwatch
+        ? `<triangle v1="${a}" v2="${b}" v3="${c}" pid="2" p1="${cornerSwatch[t * 3]}" p2="${cornerSwatch[t * 3 + 1]}" p3="${cornerSwatch[t * 3 + 2]}" />`
         : `<triangle v1="${a}" v2="${b}" v3="${c}" pid="1" p1="${triPart[t]}" />`
     );
   }
@@ -130,35 +141,16 @@ export function write3mf(model, { title = 'Eye Candy print' } = {}) {
 const toLinear = (c) =>
   c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
 
-function smoothNormals(positions, indices) {
-  const normals = new Float32Array(positions.length);
-  for (let t = 0; t < indices.length; t += 3) {
-    const [a, b, c] = [indices[t], indices[t + 1], indices[t + 2]];
-    const n = faceNormal(positions, a, b, c);
-    [a, b, c].forEach((v) => {
-      normals[v * 3] += n[0];
-      normals[v * 3 + 1] += n[1];
-      normals[v * 3 + 2] += n[2];
-    });
-  }
-  for (let i = 0; i < normals.length; i += 3) {
-    const length = Math.hypot(normals[i], normals[i + 1], normals[i + 2]) || 1;
-    normals[i] /= length;
-    normals[i + 1] /= length;
-    normals[i + 2] /= length;
-  }
-  return normals;
-}
-
 // A viewable twin of the print: one primitive per part over a shared vertex
 // buffer, baked colour as COLOR_0 (linear, as glTF requires).
 export function writeGlb(model, { title = 'Eye Candy print' } = {}) {
-  const { indices, parts, positions, triPart, vertexColors } = model;
+  const { parts, triPart } = model;
+  const creased = creasedNormals(model);
+  const { indices, normals, positions } = creased;
   const vertices = positions.length / 3;
   const metres = Float32Array.from(positions, (value) => value / 1000);
-  const normals = smoothNormals(positions, indices);
-  const colors = vertexColors
-    ? Float32Array.from(vertexColors, (value) => toLinear(value))
+  const colors = creased.colors
+    ? Float32Array.from(creased.colors, (value) => toLinear(value))
     : null;
   const byPart = parts.map((_, p) => {
     const list = [];

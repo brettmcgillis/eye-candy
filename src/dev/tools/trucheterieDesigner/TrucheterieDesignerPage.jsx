@@ -6,6 +6,8 @@ import {
   FiEye,
   FiLayers,
   FiLink,
+  FiRotateCcw,
+  FiRotateCw,
   FiSave,
   FiShuffle,
   FiTrash2,
@@ -34,7 +36,6 @@ import {
   resizeDesign,
   sceneDefaults,
 } from '@modules/trucheterieBlob';
-import { LANE_MODES, PALETTE_NAMES } from '@modules/trucheterieBlobRender';
 import {
   BlobDesignEditor,
   MAX_BRUSH,
@@ -43,10 +44,10 @@ import {
 
 import DevPageHeaderBar from '../../shell/DevPageHeaderBar';
 import './TrucheterieDesignerPage.css';
+import PreviewColors from './components/PreviewColors';
 
 const CANVAS_SIZE = 8;
 const CAMERA_DISTANCE = 12;
-const BACKGROUND = '#f5f2ea';
 const NAME = /^[a-z0-9][a-z0-9-]{0,63}$/u;
 
 const TOOL_OPTIONS = [
@@ -85,10 +86,9 @@ export default function TrucheterieDesignerPage() {
   const [tool, setTool] = useState('paint');
   const [brush, setBrush] = useState(2);
   const [autoConnect, setAutoConnect] = useState(true);
+  const [rotationSteps, setRotationSteps] = useState(0);
   const [pathsPerUnit, setPathsPerUnit] = useState(4);
-  const [palette, setPalette] = useState('None');
-  const [laneMode, setLaneMode] = useState('Cycle');
-  const [showStrokes, setShowStrokes] = useState(true);
+  const [preview, setPreview] = useState(() => sceneDefaults());
   const [message, setMessage] = useState(null);
 
   const history = useDesignHistory(code, setCode, { keyboard: true });
@@ -106,16 +106,13 @@ export default function TrucheterieDesignerPage() {
 
   const config = useMemo(
     () => ({
-      ...sceneDefaults(),
+      ...preview,
       blobCanvasSize: CANVAS_SIZE,
       blobDesign: code,
-      blobLaneMode: laneMode,
-      blobPalette: palette,
       blobPathsPerUnit: pathsPerUnit,
       blobSeed: name || 'designer',
-      blobShowStrokes: showStrokes,
     }),
-    [code, laneMode, name, palette, pathsPerUnit, showStrokes]
+    [code, name, pathsPerUnit, preview]
   );
 
   const onChange = useCallback((next) => setCode(encodeDesign(next)), []);
@@ -385,6 +382,33 @@ export default function TrucheterieDesignerPage() {
           <section className="rw-control-section">
             <h2>Preview</h2>
             <div className="rw-field-grid">
+              <div
+                aria-labelledby="tdz-rotation-label"
+                className="rw-field rw-field--wide"
+                role="group"
+              >
+                <span id="tdz-rotation-label">Grid rotation</span>
+                <div className="tdz-row">
+                  <button
+                    aria-label="Rotate grid 45 degrees counterclockwise"
+                    className="dev-button"
+                    onClick={() => setRotationSteps((steps) => (steps + 1) % 8)}
+                    title="Rotate grid 45 degrees counterclockwise"
+                    type="button"
+                  >
+                    <FiRotateCcw />
+                  </button>
+                  <button
+                    aria-label="Rotate grid 45 degrees clockwise"
+                    className="dev-button"
+                    onClick={() => setRotationSteps((steps) => (steps + 7) % 8)}
+                    title="Rotate grid 45 degrees clockwise"
+                    type="button"
+                  >
+                    <FiRotateCw />
+                  </button>
+                </div>
+              </div>
               <label className="rw-field" htmlFor="tdz-paths">
                 Paths per unit
                 <input
@@ -398,65 +422,32 @@ export default function TrucheterieDesignerPage() {
                   value={pathsPerUnit}
                 />
               </label>
-              <label className="rw-field" htmlFor="tdz-lane-mode">
-                Lane colors
-                <select
-                  id="tdz-lane-mode"
-                  onChange={(event) => setLaneMode(event.target.value)}
-                  value={laneMode}
-                >
-                  {LANE_MODES.map((mode) => (
-                    <option key={mode}>{mode}</option>
-                  ))}
-                </select>
-              </label>
-              <label className="rw-field rw-field--wide" htmlFor="tdz-palette">
-                Palette
-                <select
-                  id="tdz-palette"
-                  onChange={(event) => setPalette(event.target.value)}
-                  value={palette}
-                >
-                  {PALETTE_NAMES.map((paletteName) => (
-                    <option key={paletteName}>{paletteName}</option>
-                  ))}
-                </select>
-              </label>
-              <label
-                className="rw-field rw-field--checkbox"
-                htmlFor="tdz-strokes"
-              >
-                <input
-                  id="tdz-strokes"
-                  checked={showStrokes}
-                  onChange={(event) => setShowStrokes(event.target.checked)}
-                  type="checkbox"
-                />
-                Strokes
-              </label>
+              <PreviewColors onChange={setPreview} value={preview} />
             </div>
           </section>
         </div>
 
         <div className="dev-panel tdz-stage">
           <WebGPUCanvas>
-            <color args={[BACKGROUND]} attach="background" />
+            <color args={[preview.sceneBgColor]} attach="background" />
             <PerspectiveCamera
               fov={40}
               makeDefault
               position={[0, 0, CAMERA_DISTANCE]}
             />
             <OrbitControls enableRotate={false} makeDefault />
-            <BlobFieldMesh config={config} />
-            <BlobDesignEditor
-              autoConnect={autoConnect}
-              brush={brush}
-              canvasSize={CANVAS_SIZE}
-              design={design}
-              onChange={onChange}
-              onStrokeStart={history.checkpoint}
-              tool={tool}
-            />
+            <group rotation-z={(rotationSteps * Math.PI) / 4}>
+              <BlobFieldMesh config={config} />
+              <BlobDesignEditor
+                autoConnect={autoConnect}
+                brush={brush}
+                canvasSize={CANVAS_SIZE}
+                design={design}
+                onChange={onChange}
+                onStrokeStart={history.checkpoint}
+                tool={tool}
+              />
+            </group>
           </WebGPUCanvas>
         </div>
       </div>

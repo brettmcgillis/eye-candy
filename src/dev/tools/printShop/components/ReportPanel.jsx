@@ -47,6 +47,13 @@ export function ReportSummary({ report }) {
   ];
   return (
     <section className="ps-report">
+      {report.unmerged ? (
+        <p className="rw-hint">
+          The wires are drawn overlapping here. Generate print merges them into
+          one solid, which takes about 20 s, so its checks are the ones to
+          trust.
+        </p>
+      ) : null}
       <dl>
         {bodies.map((body) => (
           <BodyRows body={body} key={body.id} />

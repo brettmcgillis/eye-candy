@@ -368,11 +368,11 @@ export default function RorschachWorkbenchPage() {
                     value={options.pixelRatio}
                   />
                   <NumberField
-                    id="rw-seed"
-                    option="seed"
+                    id="rw-batch"
+                    option="batch"
                     label="Seed"
-                    onChange={(value) => setOption('seed', value)}
-                    value={options.seed}
+                    onChange={(value) => setOption('batch', value)}
+                    value={options.batch}
                   />
                   <label className="rw-field" htmlFor="rw-renderer">
                     Renderer
@@ -438,7 +438,7 @@ export default function RorschachWorkbenchPage() {
                           }
                           value={options.mode}
                         >
-                          <option value="stills">Stills montage</option>
+                          <option value="montage">Montage</option>
                           <option value="growth">Growth</option>
                           <option value="breathe">Breathe</option>
                           <option value="turntable">Turntable</option>
@@ -459,7 +459,7 @@ export default function RorschachWorkbenchPage() {
                         onChange={(value) => setOption('hold', value)}
                         value={options.hold}
                       />
-                      {options.mode === 'stills' ? (
+                      {options.mode === 'montage' ? (
                         <>
                           <NumberField
                             id="rw-shots"

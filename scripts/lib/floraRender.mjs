@@ -2,16 +2,11 @@
 import {
   ARRANGEMENT_KEYS,
   RENDER_OPTIONS,
+  canonicalArgv,
   defaultsFor,
   normalizeOptions,
 } from '../../src/modules/flora/renderOptions.mjs';
-import {
-  DEG,
-  createParseCli,
-  encodeFrame as encode,
-  overlayFor,
-  withRenderer,
-} from './generatorCli.mjs';
+import { DEG, createParseCli, withRenderer } from './generatorCli.mjs';
 import { createHeadlessRenderer, loadThree } from './headlessWebgpu.mjs';
 import loadModules from './loadModules.mjs';
 
@@ -42,6 +37,7 @@ export async function loadKernel() {
 
 export const parseCli = createParseCli({
   RENDER_OPTIONS,
+  canonicalArgv,
   defaultsFor,
   normalizeOptions,
 });
@@ -96,8 +92,9 @@ function sourceFlowers(kernel, options) {
 // filled flowers plus its arrangement seed.
 export function flowersAt(kernel, { index, options, roll }) {
   const { flora } = kernel;
-  const baseSeed = options.seed ?? flora.randomSeed();
-  const seed = options.seed == null ? baseSeed : flora.seedFor(baseSeed, index);
+  const baseSeed = options.batch ?? flora.randomSeed();
+  const seed =
+    options.batch == null ? baseSeed : flora.seedFor(baseSeed, index);
   const sources = sourceFlowers(kernel, options);
 
   if (Math.max(options.bouquetSize, sources.length) === 0) {
@@ -426,9 +423,6 @@ export function sidecarFor({ bouquet, configs, options, seed }) {
     ? { bouquet: { flowers: configs, seed }, render }
     : { preset: configs[0], render };
 }
-
-export const encodeFrame = (frame, format, options = {}) =>
-  encode(frame, format, overlayFor('flora.svg', options));
 
 export const withCapturer = (kernel, options, work) =>
   withRenderer(

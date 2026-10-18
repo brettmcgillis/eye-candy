@@ -1,8 +1,8 @@
 import { useMemo } from 'react';
 
 import {
-  RENDER_OPTIONS,
-  SCENE_KEYS,
+  SCENE_NAMES,
+  SCENE_OPTIONS,
   buildReliefPiece,
 } from '@modules/subdivisionRelief';
 import { useWebcamFrame } from '@modules/webcam';
@@ -15,10 +15,10 @@ import useSourceImage from './useSourceImage';
 const WEBCAM_FRAME_MAX = 480;
 
 // Heights, motion and the loop never rebuild the tree.
-const PIECE_KEYS = SCENE_KEYS.filter(
+const PIECE_KEYS = SCENE_NAMES.filter(
   (key) =>
-    !RENDER_OPTIONS[key].sceneOnly &&
-    !['loop', 'motion', 'relief'].includes(RENDER_OPTIONS[key].section)
+    !SCENE_OPTIONS[key].sceneOnly &&
+    !['loop', 'motion', 'relief'].includes(SCENE_OPTIONS[key].section)
 );
 
 // `canvas` is the panel in px. The webcam, when on, is the source image

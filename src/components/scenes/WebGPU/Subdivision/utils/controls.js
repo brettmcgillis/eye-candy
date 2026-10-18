@@ -1,4 +1,4 @@
-import { RENDER_OPTIONS } from '@modules/subdivision';
+import { SCENE_OPTIONS } from '@modules/subdivision';
 import { WEBCAM_FACING_OPTIONS } from '@modules/webcam';
 import { PALETTE_NAMES, PALETTE_NONE } from '@utils/gradientPalette';
 import isMobileDevice from '@utils/isMobileDevice';
@@ -11,7 +11,7 @@ const PALETTE_OPTIONS = [PALETTE_NONE, ...PALETTE_NAMES];
 // Leva inputs straight from the option schema, so the scene's ranges,
 // defaults and labels cannot drift from the CLI's.
 export function schemaControl(key, saved = {}, extra = {}) {
-  const spec = RENDER_OPTIONS[key];
+  const spec = SCENE_OPTIONS[key];
   const value = saved[key] ?? spec.default;
   const base = { label: spec.label, ...extra };
 

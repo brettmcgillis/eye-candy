@@ -9,6 +9,7 @@ import {
   withCapturer,
 } from './lib/fractalAutomataRender.mjs';
 import { runVideo } from './lib/generatorCli.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 const TAU = Math.PI * 2;
 const GODRAY_ORBIT_SHARE = 0.45;
@@ -35,6 +36,7 @@ runVideo({
   kernelLabel: 'Fractal Automata',
   loadKernel,
   nouns: 'structures',
+  overlay: sceneIconFile('fractal-automata'),
   parseCli,
   plan({ kernel, options, typed }) {
     const rolled = rollArgs(kernel, { options, typed });

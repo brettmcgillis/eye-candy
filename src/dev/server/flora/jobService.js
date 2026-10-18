@@ -43,7 +43,7 @@ async function prepare(rootDir, { kind, outputDirectory, payload, service }) {
   };
   if (
     kind === 'video' &&
-    ['stills', 'growth'].includes(options.mode) &&
+    ['montage', 'growth'].includes(options.mode) &&
     options.keepImages
   ) {
     command.stillsOut = path.join(outputDirectory, 'stills');

@@ -14,8 +14,8 @@ import {
   CUT_DRIVERS,
   DRIVERS,
   LATTICES,
-  RENDER_OPTIONS,
-  SCENE_KEYS,
+  SCENE_NAMES,
+  SCENE_OPTIONS,
   defaultsFor,
   plotOptionsFrom,
   sceneDefaults,
@@ -273,9 +273,9 @@ function checkHoles({ subdivision }) {
 function checkPresets({ presets }) {
   Object.entries(presets.PRESETS).forEach(([name, preset]) => {
     Object.entries(preset).forEach(([key, value]) => {
-      const spec = RENDER_OPTIONS[key];
+      const spec = SCENE_OPTIONS[key];
       check(
-        SCENE_KEYS.includes(key),
+        SCENE_NAMES.includes(key),
         `preset "${name}": ${key} is not a scene key`
       );
       if (!spec) return;

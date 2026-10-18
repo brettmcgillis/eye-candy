@@ -4,6 +4,7 @@ import sharp from 'sharp';
 import {
   RENDER_OPTIONS,
   SOURCE_IMAGE_MAX,
+  canonicalArgv,
   defaultsFor,
   normalizeOptions,
 } from '../../src/modules/subdivision/renderOptions.mjs';
@@ -31,6 +32,7 @@ export async function loadKernel() {
 
 export const parseCli = createParseCli({
   RENDER_OPTIONS,
+  canonicalArgv,
   defaultsFor,
   normalizeOptions,
 });
@@ -56,7 +58,7 @@ export function rollArgs(kernel, { options, typed }) {
     pinned: Object.fromEntries(
       [...typed]
         .filter((key) => scene.has(key))
-        .map((key) => [key, options[key]])
+        .map((key) => [kernel.subdivision.sceneNameFor(key), options[key]])
     ),
     seeds: {
       field: options.fieldSeed ?? undefined,
@@ -68,9 +70,9 @@ export function rollArgs(kernel, { options, typed }) {
 
 export function pieceAt(kernel, { index, options, roll }) {
   const { subdivision } = kernel;
-  const baseSeed = options.seed ?? subdivision.randomSeed();
+  const baseSeed = options.batch ?? subdivision.randomSeed();
   const seed =
-    options.seed == null ? baseSeed : subdivision.seedFor(baseSeed, index);
+    options.batch == null ? baseSeed : subdivision.seedFor(baseSeed, index);
   return { config: subdivision.rollConfig(seed, roll), seed };
 }
 
@@ -109,12 +111,14 @@ function fillImage(kernel, piece, config, options, grow) {
   return sharp(Buffer.from(svg), { limitInputPixels: false });
 }
 
-// PNG/WebP are the fill SVG rasterised, so they cannot disagree with it.
-export async function rasterise(kernel, piece, config, options, format) {
-  const image = fillImage(kernel, piece, config, options);
-  return format === 'webp'
-    ? image.webp({ lossless: true }).toBuffer()
-    : image.png().toBuffer();
+// PNG/WebP are the fill SVG rasterised, so they cannot disagree with it. The
+// still driver encodes the frame (and stamps the overlay on it).
+export async function fillFrame(kernel, piece, config, options) {
+  const { data, info } = await fillImage(kernel, piece, config, options)
+    .ensureAlpha()
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  return { data, height: info.height, width: info.width };
 }
 
 // One video frame as raw RGBA, the piece at growth level `grow`.

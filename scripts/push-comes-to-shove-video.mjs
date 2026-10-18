@@ -13,6 +13,7 @@ import {
   rollArgs,
   withCapturer,
 } from './lib/pushComesToShoveRender.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 function blend(a, b, w) {
   const out = Buffer.allocUnsafe(a.length);
@@ -36,6 +37,7 @@ runVideo({
   kernelLabel: 'Push Comes to Shove',
   loadKernel,
   nouns: 'panels',
+  overlay: sceneIconFile('push-comes-to-shove'),
   parseCli,
   async plan({ kernel, options, typed }) {
     const { shove } = kernel;

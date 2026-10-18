@@ -6,11 +6,9 @@ import path from 'node:path';
 import sharp from 'sharp';
 
 import { usageFor } from '../src/modules/flora/renderOptions.mjs';
-import { readPackageVersion } from './lib/cliArgs.mjs';
 import {
   assertPalette,
   buildFlowers,
-  encodeFrame,
   flowersAt,
   frameView,
   loadKernel,
@@ -21,6 +19,7 @@ import {
   withCapturer,
 } from './lib/floraRender.mjs';
 import { REPO_ROOT, runVideo } from './lib/generatorCli.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 const GROWN = { bloom: 1, exit: 0, growth: 1 };
 
@@ -137,7 +136,7 @@ function flowerShots(kernel, options, roll) {
       async exit({ progress }) {
         if (
           !options.stillsOut ||
-          !['stills', 'growth'].includes(options.mode) ||
+          !['montage', 'growth'].includes(options.mode) ||
           !still
         ) {
           return;
@@ -156,7 +155,7 @@ function flowerShots(kernel, options, roll) {
         );
       },
       async frame(capturer, clock) {
-        if (options.mode === 'stills' && still) return still;
+        if (options.mode === 'montage' && still) return still;
         const image = await capturer.capture({
           ...frameView(kernel, {
             azimuthOffset: azimuthFor(options, clock),
@@ -166,9 +165,7 @@ function flowerShots(kernel, options, roll) {
           }),
           levels: levels(clock.seconds),
         });
-        still = options.overlay
-          ? await encodeFrame(image, 'raw', options)
-          : image.data;
+        still = image.data;
         return still;
       },
       frames,
@@ -198,6 +195,8 @@ async function sourceShots(options) {
   }
   return {
     gpu: false,
+    // Re-cut stills carry whatever overlay they were rendered with.
+    overlay: false,
     presets: () => [],
     shots: files.map((file) => {
       let frame = null;
@@ -221,6 +220,7 @@ runVideo({
   kernelLabel: 'Flora',
   loadKernel,
   nouns: 'items',
+  overlay: sceneIconFile('flora'),
   parseCli,
   plan({ kernel, options, parsed, typed }) {
     assertPalette(kernel, parsed);
@@ -228,10 +228,6 @@ runVideo({
       ? sourceShots(options)
       : flowerShots(kernel, options, rollArgs(kernel, { options, typed }));
   },
-  prepare: async (options) => ({
-    ...options,
-    version: await readPackageVersion(),
-  }),
   script: 'flora',
   title: 'flora',
   usageFor,

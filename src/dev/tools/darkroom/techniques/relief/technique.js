@@ -6,8 +6,8 @@ import {
   createSceneLights,
 } from '@modules/lightingRig';
 import {
-  RENDER_OPTIONS,
-  SCENE_KEYS,
+  SCENE_NAMES,
+  SCENE_OPTIONS,
   SOURCE_IMAGE_MAX,
   WORLD_SCALE,
   buildReliefPiece,
@@ -31,15 +31,15 @@ const VIEW_DIRECTION = new THREE.Vector3(...SHOT.position)
   .normalize();
 const FRAMING = 1.18;
 
-const KEYS = SCENE_KEYS.filter(
+const KEYS = SCENE_NAMES.filter(
   (key) =>
-    !RENDER_OPTIONS[key].sceneOnly &&
-    RENDER_OPTIONS[key].section !== 'loop' &&
+    !SCENE_OPTIONS[key].sceneOnly &&
+    SCENE_OPTIONS[key].section !== 'loop' &&
     key !== 'sourceImage'
 );
 const OPTIONS = {
-  ...fromSchema(RENDER_OPTIONS, KEYS),
-  seed: { ...RENDER_OPTIONS.seed, default: 'relief' },
+  ...fromSchema(SCENE_OPTIONS, KEYS),
+  seed: { ...SCENE_OPTIONS.seed, default: 'relief' },
 };
 
 const SECTIONS = [

@@ -5,7 +5,6 @@ import {
 } from '../src/modules/kumiko/renderOptions.mjs';
 import { runStills } from './lib/generatorCli.mjs';
 import {
-  encodeImage,
   frameView,
   loadKernel,
   panelAt,
@@ -15,12 +14,12 @@ import {
   sidecarFor,
   withCapturer,
 } from './lib/kumikoRender.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 const solidOf = (views) => views.filter((view) => view !== 'flat');
 
 runStills({
   doneLabel: 'rendered panels',
-  encode: encodeImage,
   // `flat` is the 2D art; only the 3D views need the GPU.
   gpu: ({ formats, views }) => solidOf(views).length > 0 && formats.length > 0,
   async item({ capturer, index, kernel, options, roll, save, step, views }) {
@@ -58,6 +57,7 @@ runStills({
   kernelLabel: 'Kumiko',
   loadKernel,
   nouns: 'panels',
+  overlay: sceneIconFile('kumiko'),
   parseCli,
   progressLabel: 'rendering panels',
   resolveViews,

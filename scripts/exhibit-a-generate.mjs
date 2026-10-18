@@ -13,6 +13,7 @@ import {
   withCapturer,
 } from './lib/exhibitARender.mjs';
 import { runStills } from './lib/generatorCli.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 runStills({
   doneLabel: 'rendered',
@@ -31,6 +32,7 @@ runStills({
   kernelLabel: 'ExhibitA',
   loadKernel,
   nouns: 'exhibits',
+  overlay: sceneIconFile('exhibit-a'),
   parseCli,
   progressLabel: 'rendering',
   resolveViews,

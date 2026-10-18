@@ -4,7 +4,7 @@ import path from 'node:path';
 import process from 'node:process';
 import sharp from 'sharp';
 
-import { parseArgs, providedKeys } from './cliArgs.mjs';
+import { parseArgs, providedKeys, readPackageVersion } from './cliArgs.mjs';
 import createFrameSink from './frameSink.mjs';
 import { loadThree, setClock } from './headlessWebgpu.mjs';
 import loadModules, { REPO_ROOT } from './loadModules.mjs';
@@ -58,11 +58,12 @@ export async function readJsonOption(value) {
 // A typed flag is a pin; the set is read before defaults are merged.
 export function createParseCli({
   RENDER_OPTIONS,
+  canonicalArgv = (argv) => argv,
   defaultsFor,
   normalizeOptions,
 }) {
   return async function parseCli(kind, argv) {
-    const args = parseArgs(argv, defaultsFor(kind));
+    const args = parseArgs(canonicalArgv(argv), defaultsFor(kind));
     if (args.help) return { help: true };
     const raw = { ...args };
     await Promise.all(
@@ -105,21 +106,20 @@ export function sidecarFor({ config, name, options }) {
 const rgba = (data) =>
   Buffer.isBuffer(data) ? data : Buffer.from(data.buffer ?? data);
 
-// `overlay` (overlayLayer's arguments) composites the chrome onto the raw
-// pixels so a frame is encoded exactly once.
+// A frame is raw RGBA (`{ data, width, height }`) or anything sharp reads: an
+// encoded image, an SVG. `overlay` (overlayLayer's arguments) composites the
+// chrome onto the pixels so a frame is encoded exactly once.
 export async function encodeFrame(frame, format, overlay = null) {
-  let image = sharp(rgba(frame.data), {
-    raw: { channels: 4, height: frame.height, width: frame.width },
-  });
+  const raw = frame.data !== undefined;
+  let image = raw
+    ? sharp(rgba(frame.data), {
+        raw: { channels: 4, height: frame.height, width: frame.width },
+      })
+    : sharp(frame);
   if (overlay) {
+    const { height, width } = raw ? frame : await image.metadata();
     image = image.composite([
-      {
-        input: await overlayLayer({
-          ...overlay,
-          height: frame.height,
-          width: frame.width,
-        }),
-      },
+      { input: await overlayLayer({ ...overlay, height, width }) },
     ]);
   }
   if (format === 'raw') return image.ensureAlpha().raw().toBuffer();
@@ -127,9 +127,11 @@ export async function encodeFrame(frame, format, overlay = null) {
   return image.png().toBuffer();
 }
 
-// The overlay chrome a branded generator stamps on its frames.
+// The overlay chrome a generator stamps on its frames. A spec names the scene
+// icon it wears as `overlay: sceneIconFile('<slug>')` and the drivers do the
+// rest: `--overlay` composites it onto every still and video frame.
 export const overlayFor = (icon, options) =>
-  options.overlay
+  icon && options.overlay
     ? {
         icon,
         ig: options.ig === 'none' ? null : options.ig,
@@ -181,7 +183,7 @@ function runMain(main) {
     });
 }
 
-async function begin(kind, { parseCli, prepare, script, usageFor }) {
+async function begin(kind, { overlay, parseCli, prepare, script, usageFor }) {
   const parsed = await parseCli(kind, process.argv.slice(2));
   if (parsed.help) {
     const command = kind === 'still' ? 'generate' : 'video';
@@ -190,7 +192,10 @@ async function begin(kind, { parseCli, prepare, script, usageFor }) {
     );
     return null;
   }
-  const options = prepare ? await prepare(parsed.options) : parsed.options;
+  const prepared = prepare ? await prepare(parsed.options) : parsed.options;
+  const options = overlay
+    ? { ...prepared, version: await readPackageVersion() }
+    : prepared;
   return { ...parsed, options };
 }
 
@@ -238,9 +243,10 @@ export function runStills(spec) {
       spec.progressLabel ?? 'rendering views',
       options.count * units
     );
+    const overlay = overlayFor(spec.overlay, options);
     const encode = spec.encode
       ? (frame, format) => spec.encode(frame, format, options)
-      : (frame, format) => encodeFrame(frame, format);
+      : (frame, format) => encodeFrame(frame, format, overlay);
 
     const work = async (capturer) => {
       for (let index = 0; index < options.count; index += 1) {
@@ -303,7 +309,8 @@ export function runStills(spec) {
 }
 
 // The video CLI. `plan(ctx)` returns `{ shots, presets(), sidecar?(), gpu?,
-// finish?(write), cleanup?() }`; a shot is `{ frames, enter?(capturer),
+// finish?(write), cleanup?(), overlay?: false }` (false: the frames are
+// already finished, so `--overlay` leaves them alone); a shot is `{ frames, enter?(capturer),
 // frame(capturer, clock), exit?() }`, where `frame` returns the RGBA to write
 // (an image or its buffer, or null to hold it back) and `clock` is
 // `{ frame, frames, seconds, total, written }`.
@@ -337,6 +344,22 @@ export function runVideo(spec) {
       width: options.width * options.pixelRatio,
     };
     const sink = createFrameSink({ ...size, fps: options.fps, out });
+    // A plan that replays finished frames (`overlay: false`) already carries
+    // whatever chrome they were rendered with.
+    const overlay =
+      plan.overlay === false ? null : overlayFor(spec.overlay, options);
+    let stampedFrom = null;
+    let stampedTo = null;
+    // A held still comes back as the same buffer every frame: stamp it once.
+    const stamped = async (frame) => {
+      const data = frame.data ?? frame;
+      if (!overlay) return data;
+      if (data !== stampedFrom) {
+        stampedTo = await encodeFrame({ data, ...size }, 'raw', overlay);
+        stampedFrom = data;
+      }
+      return stampedTo;
+    };
 
     let written = 0;
     const work = async (capturer) => {
@@ -352,13 +375,13 @@ export function runVideo(spec) {
             total,
             written,
           });
-          if (image) await sink.write(image.data ?? image);
+          if (image) await sink.write(await stamped(image));
           written += 1;
           progress.update(written);
         }
         await shot.exit?.({ progress });
       }
-      await plan.finish?.((data) => sink.write(data));
+      await plan.finish?.(async (data) => sink.write(await stamped(data)));
     };
 
     try {

@@ -79,7 +79,7 @@ colours move to their own (mixed in linear light). Collapse runs it backwards
 into the root grid, so the canvas is always covered; grow 0 is the root grid,
 not an empty frame. `renderFillSvg` takes `grow` for video frames and the
 scene's cell shader is its GPU twin (each instance carries its parent's
-colour). `growSeconds`/`holdSeconds`/`collapseSeconds` are shared by the scene
+colour). `growSeconds`/`holdSeconds` (the `hold` option)/`collapseSeconds` are shared by the scene
 loop and the `growth` video. The scene's **Loop** off holds the finished piece.
 
 `growStyle: slide` swaps the split for HyperCubes' sliding cut (quad and rect;

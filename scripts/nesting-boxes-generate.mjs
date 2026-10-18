@@ -13,6 +13,7 @@ import {
   treeAt,
   withCapturer,
 } from './lib/nestingBoxesRender.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 runStills({
   kernelLabel: 'Nesting Boxes',
@@ -37,6 +38,7 @@ runStills({
   },
   loadKernel,
   nouns: 'trees',
+  overlay: sceneIconFile('nesting-boxes'),
   parseCli,
   resolveViews,
   script: 'nesting-boxes',

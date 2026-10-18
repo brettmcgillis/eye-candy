@@ -13,6 +13,7 @@ import {
   settledInstances,
   withCapturer,
 } from './lib/networkTestRender.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 runStills({
   // An SVG-only batch needs no GPU at all.
@@ -68,6 +69,7 @@ runStills({
   kernelLabel: 'NetworkTest',
   loadKernel,
   nouns: 'networks',
+  overlay: sceneIconFile('network-test'),
   parseCli,
   resolveViews,
   script: 'network-test',

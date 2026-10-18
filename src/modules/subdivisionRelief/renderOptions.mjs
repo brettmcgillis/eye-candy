@@ -55,7 +55,7 @@ const DROPPED = new Set([
 const LOOP_KEYS = new Set([
   'growStyle',
   'growSeconds',
-  'holdSeconds',
+  'hold',
   'collapseSeconds',
   'cycleMode',
   'loop',
@@ -91,8 +91,8 @@ const REPLACED = {
     help: 'Canvas width in px; the piece is laid out on this canvas',
   }),
   height: standard.height(1000, { help: 'Canvas height in px' }),
-  holdSeconds: {
-    ...PIECE_OPTIONS.holdSeconds,
+  hold: {
+    ...PIECE_OPTIONS.hold,
     help: 'Seconds a grown piece holds (growth), or each clip runs (motion, sway)',
   },
   keep: standard.keep(FACETS),
@@ -208,17 +208,23 @@ const CAMERAS = {
   reliefSeed: standard.rollSeed('relief', 'seed'),
 };
 
-export const RENDER_OPTIONS = { ...PIECE, ...RELIEF, ...MOTION, ...CAMERAS };
+export const RENDER_OPTIONS = {
+  ...PIECE,
+  ...RELIEF,
+  ...MOTION,
+  ...CAMERAS,
+  ...standard.overlayOptions(),
+};
 
 export const SURFACE_DEFAULTS = {
-  'cli-still': { seed: null },
-  'cli-video': { count: 2, out: 'output/subdivision-relief.mp4', seed: null },
-  workbench: { count: 6, seed: null },
+  'cli-still': { batch: null },
+  'cli-video': { count: 2, out: 'output/subdivision-relief.mp4', batch: null },
+  workbench: { count: 6, batch: null },
 };
 
 const schema = createOptionSchema({
   options: RENDER_OPTIONS,
-  sectionLabels: { palette: 'palette & look', roll: 'rolling' },
+  sectionLabels: { palette: 'palette & look' },
   surfaceDefaults: SURFACE_DEFAULTS,
   validate(kind, options, fail) {
     if (options.hatchMax < options.hatchMin) {
@@ -230,7 +236,11 @@ const schema = createOptionSchema({
 
 export const {
   LEVA_KEYS,
+  LEVA_NAMES,
   SCENE_KEYS,
+  SCENE_NAMES,
+  SCENE_OPTIONS,
+  canonicalArgv,
   configFrom,
   defaultsFor,
   facets,
@@ -241,6 +251,7 @@ export const {
   presetFromConfig,
   resolveViews,
   sceneDefaults,
+  sceneNamed,
   sectionsFor,
   usageFor,
 } = schema;

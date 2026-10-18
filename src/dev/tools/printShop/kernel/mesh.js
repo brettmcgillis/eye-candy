@@ -161,3 +161,20 @@ export function compactMesh(mesh) {
   );
   return createMesh(pick(mesh.positions, 3), indices, attributes);
 }
+
+// The average of an sRGB colour array, as a hex colour: a part's single
+// filament when a print is made in one colour per part.
+export function meanHex(rgb) {
+  const sum = [0, 0, 0];
+  for (let i = 0; i < rgb.length; i += 3) {
+    for (let k = 0; k < 3; k += 1) sum[k] += rgb[i + k];
+  }
+  const n = Math.max(1, rgb.length / 3);
+  return `#${sum
+    .map((value) =>
+      Math.round(Math.min(1, value / n) * 255)
+        .toString(16)
+        .padStart(2, '0')
+    )
+    .join('')}`;
+}

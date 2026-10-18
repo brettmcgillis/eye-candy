@@ -23,8 +23,8 @@ function useGeometry(body) {
       'position',
       new THREE.BufferAttribute(body.positions, 3)
     );
+    geometry.setAttribute('normal', new THREE.BufferAttribute(body.normals, 3));
     geometry.setIndex(new THREE.BufferAttribute(body.indices, 1));
-    geometry.computeVertexNormals();
 
     const count = body.positions.length / 3;
     const colors = new Float32Array(count * 3);

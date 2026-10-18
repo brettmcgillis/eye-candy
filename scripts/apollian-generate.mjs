@@ -14,6 +14,7 @@ import {
   withCapturer,
 } from './lib/apollianRender.mjs';
 import { runStills } from './lib/generatorCli.mjs';
+import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 runStills({
   doneLabel: 'rendered',
@@ -47,6 +48,7 @@ runStills({
   kernelLabel: 'Apollian',
   loadKernel,
   nouns: 'objects',
+  overlay: sceneIconFile('apollian'),
   parseCli,
   progressLabel: 'rendering',
   resolveViews,

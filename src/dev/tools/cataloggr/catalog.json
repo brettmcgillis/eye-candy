@@ -115,11 +115,15 @@
     },
     {
       "id": "idea-028",
-      "text": "Consider creative letterboxing for scenes. could be a 3d element to give it depth in the scene, catch shadows."
+      "text": "Consider creative letterboxing for scenes. Could be a 3d element to give it depth in the scene, catch shadows and provide framing.\nConsider creative composition for scenes. contain/arrange the subject(s) within a  Square, Rectangle, Circle, Torus, etc"
     },
     {
       "id": "idea-029",
       "text": "Radar scene. like a radar scanner, rotating clockwise, the radar 'reveals' geometry in the scene as it passes over it similar to that Lidar game. Over time the dots fade so they are gone before the sweep returns. if we use a slowly animated model we could get snapshots in time. a good start might be a view from inside, looking out a window, with stationary trees and animated birds outside."
+    },
+    {
+      "id": "idea-1792024738326-yyy3if",
+      "text": "Cathode Ray - Scene is all black, white frame (picture matte style). Within the bounds of the matte is a plane, over time rays are shot from the pixels on this plane back deeper into the scene, eventually colliding with a subject, similar to the radar idea"
     },
     {
       "id": "idea-030",
@@ -136,10 +140,6 @@
     {
       "id": "idea-1787939274190-u51hbq",
       "text": "Get spline editor,  smokeTest, fireTest, hotBox, out of app and into devToolz. I want a new paradigm for authoring a scenes assets, and then saving/writing that data back to the appropriate assets preset."
-    },
-    {
-      "id": "idea-1788374316206-6m3je8",
-      "text": "Could we do a piece in the style of gregory lysak?"
     },
     {
       "id": "idea-1788383030077-md8lyg",
@@ -207,7 +207,7 @@
     },
     {
       "id": "idea-1791652421511-yjebbt",
-      "text": "PrintShop candidates:\n- fake birds\n- trucheterie\n- papercuts\n- paper stack\n- flora?\n- isolines relief\n- kumiko\n- subdivision relief"
+      "text": "PrintShop candidates:\n- trucheterie\n- papercuts\n- paper stack\n- flora?\n- isolines relief\n- kumiko\n- subdivision relief"
     },
     {
       "id": "idea-1791652447623-35o1ch",

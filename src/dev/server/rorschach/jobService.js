@@ -36,7 +36,7 @@ function prepare(rootDir, { kind, outputDirectory, payload }) {
     command.out = outputDirectory;
   } else {
     command.out = path.join(outputDirectory, 'rorschach.mp4');
-    if (['growth', 'stills'].includes(options.mode) && options.keepImages) {
+    if (['growth', 'montage'].includes(options.mode) && options.keepImages) {
       command.stillsOut = path.join(outputDirectory, 'stills');
     }
     delete command.keepImages;

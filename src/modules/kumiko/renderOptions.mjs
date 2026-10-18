@@ -111,19 +111,14 @@ const POOL = Object.fromEntries(
 );
 
 const GENERATOR = {
-  seed: {
+  batch: standard.batch({
+    aliases: ['seed'],
     default: 'kumiko',
     generator: true,
     help: 'Panel seed; a batch uses seed, seed-1, seed-2…. Omit for a random seed',
-    label: 'Seed',
-    nullable: true,
-    placeholder: 'WORD',
     scene: true,
-    scope: 'shared',
-    section: 'output',
-    text: true,
-    type: 'seed',
-  },
+    sceneKey: 'seed',
+  }),
 
   panelWidth: num('panel', null, 'Panel width (mm)', 600, 100, 3000, 10),
   panelHeight: num('panel', null, 'Panel height (mm)', 900, 100, 3000, 10),
@@ -413,21 +408,20 @@ export const RENDER_OPTIONS = {
   ...IMAGE,
   ...BUILD,
   ...RENDER,
+  ...standard.overlayOptions(),
 };
 
 export const SURFACE_DEFAULTS = {
-  'cli-still': { seed: null },
-  workbench: { count: 6, seed: null },
+  'cli-still': { batch: null },
+  workbench: { count: 6, batch: null },
 };
 
 const schema = createOptionSchema({
   options: RENDER_OPTIONS,
   sectionLabels: {
     build: '3d build',
-    color: 'colour',
     mix: 'mixing',
     pool: 'pattern pool',
-    roll: 'rolling',
   },
   surfaceDefaults: SURFACE_DEFAULTS,
   views: VIEWS,
@@ -436,6 +430,9 @@ const schema = createOptionSchema({
 export const {
   GENERATOR_KEYS,
   SCENE_KEYS,
+  SCENE_NAMES,
+  SCENE_OPTIONS,
+  canonicalArgv,
   configFrom,
   defaultsFor,
   facets,
@@ -446,6 +443,7 @@ export const {
   presetFromConfig,
   resolveViews,
   sceneDefaults,
+  sceneNameFor,
   sectionsFor,
   usageFor,
 } = schema;

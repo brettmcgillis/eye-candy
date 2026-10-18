@@ -8,7 +8,7 @@ import {
   useSceneCameraControls,
 } from '@modules/cameraRig';
 import { useMediaRecorder } from '@modules/mediaRecorder';
-import { RENDER_OPTIONS, SCENE_KEYS } from '@modules/subdivision';
+import { SCENE_NAMES, SCENE_OPTIONS } from '@modules/subdivision';
 
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import CAMERA from '../utils/camera';
@@ -25,10 +25,10 @@ const FOLDERS = {
   structure: 'Structure',
 };
 const PATHS = Object.fromEntries(
-  SCENE_KEYS.map((key) => [key, FOLDERS[RENDER_OPTIONS[key].section]])
+  SCENE_NAMES.map((key) => [key, FOLDERS[SCENE_OPTIONS[key].section]])
 );
 const keysIn = (section) =>
-  SCENE_KEYS.filter((key) => RENDER_OPTIONS[key].section === section);
+  SCENE_NAMES.filter((key) => SCENE_OPTIONS[key].section === section);
 
 const ROLL_BUTTONS = {
   'New piece': 'all',

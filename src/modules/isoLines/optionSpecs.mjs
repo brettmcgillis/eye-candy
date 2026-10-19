@@ -360,6 +360,8 @@ export function sharedRender({ facets, name }) {
     svg: standard.svg(
       'Write a plottable SVG: the contours chained into paths, one pen per colour group'
     ),
+    dxf: standard.dxf(),
+    plotWidthMm: standard.plotWidthMm(),
     stillTime: still({
       default: 0,
       help: 'Seconds of field flow a still is frozen at',

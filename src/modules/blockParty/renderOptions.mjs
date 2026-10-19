@@ -457,6 +457,8 @@ const RENDER = {
   svg: standard.svg(
     'Write a plottable SVG per view: cell, card and tower edges, pit strata and stacked tower rings, one pen per colour'
   ),
+  dxf: standard.dxf(),
+  plotWidthMm: standard.plotWidthMm(),
   views: standard.views(VIEWS, 'front'),
   svgOcclusion: standard.svgOcclusion(
     'Drop line work hidden behind nearer geometry (uses a depth pass)'

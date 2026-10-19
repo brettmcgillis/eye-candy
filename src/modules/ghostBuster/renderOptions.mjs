@@ -27,7 +27,16 @@ export const VIEWS = [
 ];
 export const VIDEO_MODES = ['float', 'turntable'];
 export const SVG_STYLES = ['rings', 'spokes', 'grid', 'mesh', 'none'];
-export const SVG_SHADINGS = ['none', 'crosshatch', 'halftone', 'stipple'];
+export const SVG_SHADINGS = [
+  'none',
+  'crosshatch',
+  'halftone',
+  'stipple',
+  'squiggle',
+  'scribble',
+  'tsp',
+];
+export const SVG_OUTLINES = ['skin', 'none', 'outline', 'rings', 'glow'];
 export const DEFAULT_SKIN = 'Hero';
 
 // Degrees round the ghost from its face; `hero` is the generation's own
@@ -171,6 +180,8 @@ const RENDER = {
   svg: standard.svg(
     'Write a plottable SVG per view: cloth lines and edges, hidden lines removed'
   ),
+  dxf: standard.dxf(),
+  plotWidthMm: standard.plotWidthMm(),
   views: standard.views(VIEWS, 'hero'),
   capture: output({
     cliOnly: true,
@@ -205,8 +216,25 @@ const RENDER = {
     scene: false,
     scope: 'still',
   }),
+  svgOutline: choice('svg', null, 'SVG outline', SVG_OUTLINES, 'skin', {
+    help: "The Outline post effect as line work, on its own layer — skin: the skin's own Outline (when it has one); outline: the band's outer edge; rings: lines every stride across it; glow: rings crowding toward the ghost; none: off",
+    scene: false,
+    scope: 'still',
+  }),
+  svgOutlineWidth: num('svg', null, 'SVG outline width', 0, 0, 200, 1, {
+    help: "Band width in output px; 0 takes the skin's Outline thickness",
+    scene: false,
+    scope: 'still',
+    when: { svgOutline: ['skin', 'outline', 'rings', 'glow'] },
+  }),
+  svgOutlineStride: num('svg', null, 'SVG outline stride', 0, 0, 100, 0.5, {
+    help: "Gap between outline rings in output px; 0 takes the skin's ring stride",
+    scene: false,
+    scope: 'still',
+    when: { svgOutline: ['skin', 'rings'] },
+  }),
   svgShading: choice('svg', null, 'SVG shading', SVG_SHADINGS, 'none', {
-    help: 'Shade the ghost from its render, on its own layer — crosshatch: up to four hatch layers by darkness; halftone: filled dots sized by darkness; stipple: dots scattered by darkness',
+    help: 'Shade the ghost from its render, on its own layer — crosshatch: up to four hatch layers by darkness; halftone: filled dots sized by darkness; stipple: dots scattered by darkness; squiggle: one wave per row, taller and tighter in shadow; scribble: rows coiling into loops in shadow; tsp: the stipple joined into travelling lines',
     scene: false,
     scope: 'still',
   }),
@@ -214,19 +242,37 @@ const RENDER = {
     help: 'Hatch line, halftone cell or stipple spacing in output px',
     scene: false,
     scope: 'still',
-    when: { svgShading: ['crosshatch', 'halftone', 'stipple'] },
+    when: {
+      svgShading: [
+        'crosshatch',
+        'halftone',
+        'stipple',
+        'squiggle',
+        'scribble',
+        'tsp',
+      ],
+    },
   }),
   svgShadeAngle: num('svg', null, 'SVG shade angle', 45, -90, 90, 1, {
     help: 'Degrees the hatching and the halftone grid run at',
     scene: false,
     scope: 'still',
-    when: { svgShading: ['crosshatch', 'halftone'] },
+    when: { svgShading: ['crosshatch', 'halftone', 'squiggle', 'scribble'] },
   }),
   svgShadeGamma: num('svg', null, 'SVG shade gamma', 1, 0.3, 3, 0.05, {
     help: 'Above 1 keeps shading to the darkest areas; below 1 spreads it into the lights',
     scene: false,
     scope: 'still',
-    when: { svgShading: ['crosshatch', 'halftone', 'stipple'] },
+    when: {
+      svgShading: [
+        'crosshatch',
+        'halftone',
+        'stipple',
+        'squiggle',
+        'scribble',
+        'tsp',
+      ],
+    },
   }),
   svgFolds: flag('svg', null, 'SVG folds', true, {
     help: 'Trace where the cloth turns edge-on to the camera: the fold lines where it overlaps itself, on their own layer',

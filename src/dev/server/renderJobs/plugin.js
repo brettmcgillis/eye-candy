@@ -6,6 +6,7 @@ import { RenderJobRequestError } from './jobService';
 const MAX_BODY_BYTES = 256 * 1024;
 
 const CONTENT_TYPES = {
+  '.dxf': 'application/dxf',
   '.jpg': 'image/jpeg',
   '.json': 'application/json; charset=utf-8',
   '.mov': 'video/quicktime',

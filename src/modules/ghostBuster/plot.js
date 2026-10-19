@@ -1,4 +1,6 @@
 import { createProjector } from './framing';
+import { chain, simplifyLoop, smooth } from './lines';
+import outlineRuns, { outlineOf } from './outline';
 import shadePath from './shading';
 
 const clamp01 = (value) => Math.min(1, Math.max(0, value));
@@ -18,6 +20,46 @@ const unit3 = (v) => {
   return [v[0] / length, v[1] / length, v[2] / length];
 };
 
+const smoothstep = (e0, e1, x) => {
+  const t = clamp01((x - e0) / (e1 - e0));
+  return t * t * (3 - 2 * t);
+};
+
+// The shader's per-pixel holes and tatters (smoothEdges skins), sampled
+// from the same baked noise, bilinearly as the texture is.
+function createTear({ holeAmount, noise, pinned, tatterEdge }) {
+  const { size, table } = noise;
+  const sample = (u, v) => {
+    const fx = clamp01(u) * (size - 1);
+    const fy = clamp01(v) * (size - 1);
+    const x0 = Math.min(Math.floor(fx), size - 2);
+    const y0 = Math.min(Math.floor(fy), size - 2);
+    const tx = fx - x0;
+    const ty = fy - y0;
+    const at = (x, y) => table[y * size + x];
+    const a = at(x0, y0) * (1 - tx) + at(x0 + 1, y0) * tx;
+    const b = at(x0, y0 + 1) * (1 - tx) + at(x0 + 1, y0 + 1) * tx;
+    return a * (1 - ty) + b * ty;
+  };
+  const W = 0.08;
+  const holeThresh = 1 - holeAmount * 0.4;
+  const tatterDepth = tatterEdge * 0.5 + 0.0001;
+  return (u, v) => {
+    const n = sample(u, v);
+    const holeAlpha = 1 - smoothstep(holeThresh - W, holeThresh + W, n);
+    const minDist = Math.min(
+      pinned.left ? 1 : u,
+      pinned.right ? 1 : 1 - u,
+      pinned.top ? 1 : v,
+      pinned.bottom ? 1 : 1 - v
+    );
+    const tDepth = clamp01(minDist / tatterDepth);
+    const tatterThresh = 0.7 - tDepth * 0.65;
+    const raw = smoothstep(tatterThresh - W, tatterThresh + W, n);
+    return holeAlpha * (raw + (1 - raw) * tDepth);
+  };
+}
+
 // The draped cloth exactly as the GPU draws it: one render vertex per sim
 // quad (the mean of its corners, alpha included), dead quads dropped, and
 // each grid cell split into the two triangles the index buffer uses, so a
@@ -30,6 +72,7 @@ function createSurface({
   segmentsX,
   segmentsY,
   shapeDist,
+  tear = null,
 }) {
   const simAt = (x, y) => x * (segmentsY + 1) + y;
   const count = segmentsX * segmentsY;
@@ -94,11 +137,13 @@ function createSurface({
   const mix = (array, stride, offset, weights) =>
     weights.reduce((sum, [m, w]) => sum + array[m * stride + offset] * w, 0);
 
+  const tearAlpha = tear ? createTear(tear) : () => 1;
+
   // The drawn alpha; above ALPHA_CUT is cloth.
   function field(u, v) {
     const { alive, weights } = locate(u, v);
     if (!alive) return 0;
-    let f = mix(rAlpha, 1, 0, weights);
+    let f = mix(rAlpha, 1, 0, weights) * tearAlpha(u, v);
     cutouts.forEach(({ fade, radius, u: cu, v: cv }) => {
       const width = fade ?? radius * 0.4;
       const inner = radius - width;
@@ -239,41 +284,6 @@ function isoSegments(fn, resolution, level, keep = null) {
   return segments;
 }
 
-// Joins segments that share an end into polylines, so a pen lifts once per
-// edge rather than once per cell.
-function chain(segments) {
-  const key = ([u, v]) => `${Math.round(u * 1e6)},${Math.round(v * 1e6)}`;
-  const ends = new Map();
-  segments.forEach((segment, index) => {
-    segment.forEach((p) => {
-      const k = key(p);
-      if (!ends.has(k)) ends.set(k, []);
-      ends.get(k).push(index);
-    });
-  });
-  const used = new Uint8Array(segments.length);
-  const next = (p) => (ends.get(key(p)) ?? []).find((index) => !used[index]);
-  const lines = [];
-  segments.forEach((segment, start) => {
-    if (used[start]) return;
-    used[start] = 1;
-    const line = [...segment];
-    for (let grow = 0; grow < 2; grow += 1) {
-      for (;;) {
-        const tail = line[line.length - 1];
-        const index = next(tail);
-        if (index === undefined) break;
-        used[index] = 1;
-        const [a, b] = segments[index];
-        line.push(key(a) === key(tail) ? b : a);
-      }
-      line.reverse();
-    }
-    lines.push(line);
-  });
-  return lines;
-}
-
 // Marching squares over the depth pass's coverage: the outline of the cloth
 // as the camera sees it, in mask pixels (cell corners at pixel centres).
 function maskSegments({ covered, height, width }) {
@@ -302,70 +312,6 @@ function maskSegments({ covered, height, width }) {
   return segments;
 }
 
-// Ramer–Douglas–Peucker: the pixel staircase becomes a few true strokes.
-function simplify(points, tolerance) {
-  if (points.length < 3) return points;
-  const [ax, ay] = points[0];
-  const [bx, by] = points[points.length - 1];
-  const length = Math.hypot(bx - ax, by - ay) || 1;
-  let worst = 0;
-  let index = 0;
-  for (let i = 1; i < points.length - 1; i += 1) {
-    const [px, py] = points[i];
-    const d = Math.abs((bx - ax) * (ay - py) - (ax - px) * (by - ay)) / length;
-    if (d > worst) {
-      worst = d;
-      index = i;
-    }
-  }
-  if (worst <= tolerance) return [points[0], points[points.length - 1]];
-  return [
-    ...simplify(points.slice(0, index + 1), tolerance).slice(0, -1),
-    ...simplify(points.slice(index), tolerance),
-  ];
-}
-
-// A closed loop's ends coincide, which leaves RDP no chord to measure from;
-// it is split at the point farthest from its start instead.
-function simplifyLoop(points, tolerance) {
-  const [x0, y0] = points[0];
-  const [ex, ey] = points[points.length - 1];
-  if (points.length < 4 || x0 !== ex || y0 !== ey) {
-    return simplify(points, tolerance);
-  }
-  let far = 1;
-  let best = -1;
-  points.forEach(([x, y], i) => {
-    const d = Math.hypot(x - x0, y - y0);
-    if (d > best) {
-      best = d;
-      far = i;
-    }
-  });
-  return [
-    ...simplify(points.slice(0, far + 1), tolerance).slice(0, -1),
-    ...simplify(points.slice(far), tolerance),
-  ];
-}
-
-// One round of Chaikin corner cutting, keeping a closed loop closed.
-function smooth(points) {
-  if (points.length < 3) return points;
-  const closed =
-    points[0][0] === points[points.length - 1][0] &&
-    points[0][1] === points[points.length - 1][1];
-  const out = closed ? [] : [points[0]];
-  for (let i = 0; i < points.length - 1; i += 1) {
-    const [ax, ay] = points[i];
-    const [bx, by] = points[i + 1];
-    out.push([ax * 0.75 + bx * 0.25, ay * 0.75 + by * 0.25]);
-    out.push([ax * 0.25 + bx * 0.75, ay * 0.25 + by * 0.75]);
-  }
-  if (closed) out.push(out[0]);
-  else out.push(points[points.length - 1]);
-  return out;
-}
-
 const pathOf = (runs) =>
   runs
     .map((run) => `M${run.map((p) => `${round(p.x)} ${round(p.y)}`).join('L')}`)
@@ -388,6 +334,7 @@ export default function renderGhostSvg({
   height,
   lattice,
   lines = 40,
+  outline = null,
   paper = '#ffffff',
   coverage = null,
   image = null,
@@ -481,7 +428,7 @@ export default function renderGhostSvg({
     );
   const foldPaths = foldRuns.filter((run) => strokeLength(run) >= 6);
 
-  const outline =
+  const silhouetteRuns =
     silhouette && coverage
       ? chain(maskSegments(coverage)).map((loop) =>
           smooth(simplifyLoop(loop, 0.6)).map(([x, y]) => ({
@@ -490,6 +437,9 @@ export default function renderGhostSvg({
           }))
         )
       : [];
+
+  const halo =
+    outline && coverage ? outlineRuns({ coverage, outline, pixelRatio }) : [];
 
   const shading = shade
     ? shadePath({
@@ -507,20 +457,23 @@ export default function renderGhostSvg({
     `<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" ` +
     `width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="background-color:${paper}">` +
     `${layer(0, 'contours', stroke, pathOf(paths))}` +
-    `${outline.length ? layer(1, 'silhouette', stroke, pathOf(outline)) : ''}` +
+    `${silhouetteRuns.length ? layer(1, 'silhouette', stroke, pathOf(silhouetteRuns)) : ''}` +
     `${shading ? layer(2, 'shading', stroke, shading) : ''}` +
-    `${foldPaths.length ? layer(3, 'folds', stroke, pathOf(foldPaths)) : ''}</svg>`
+    `${foldPaths.length ? layer(3, 'folds', stroke, pathOf(foldPaths)) : ''}` +
+    `${halo.length ? layer(4, 'outline', stroke, pathOf(halo)) : ''}</svg>`
   );
 }
 
-// The render options a plot reads, as renderGhostSvg's arguments; a caller
-// adds the camera, lattice, image and depth it captured.
-export function plotArgs(options) {
+// The render options a plot reads, as renderGhostSvg's arguments (the skin
+// supplies its Outline settings); a caller adds the camera, lattice, image
+// and depth it captured.
+export function plotArgs(options, skin = null) {
   return {
     edges: options.svgEdges,
     folds: options.svgFolds,
     height: options.height,
     lines: options.svgLines,
+    outline: outlineOf(options, skin),
     paper: options.svgPaper,
     pixelRatio: options.pixelRatio,
     shade:
@@ -544,5 +497,6 @@ export const needsDepth = (options) =>
   Boolean(
     options.svgOcclusion ||
     options.svgSilhouette ||
+    (options.svgOutline && options.svgOutline !== 'none') ||
     (options.svgShading && options.svgShading !== 'none')
   );

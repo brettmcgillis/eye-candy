@@ -1,5 +1,5 @@
-const FORMAT_ORDER = ['png', 'webp', 'svg', 'mp4'];
-const MEDIA_ASSET_PATTERN = /\.(png|svg|webp|mp4)$/u;
+const FORMAT_ORDER = ['png', 'webp', 'svg', 'dxf', 'mp4'];
+const MEDIA_ASSET_PATTERN = /\.(dxf|png|svg|webp|mp4)$/u;
 
 export function assetFormat(asset) {
   return asset.path.split('.').pop().toLowerCase();

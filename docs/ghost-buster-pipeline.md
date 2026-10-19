@@ -81,13 +81,27 @@ The silhouette (`svgSilhouette`, its own layer) is marching squares over
 the depth pass's coverage, simplified (closed loops split before RDP) and
 smoothed; `svgStyle: none` leaves the silhouette and edges alone. The depth
 pass draws the cloth only, so the floor neither hides lines nor joins the
-outline. Shading (`svgShading`: `crosshatch`, `halftone`, `stipple`; its own layer)
+outline. Shading (`svgShading`: `crosshatch`, `halftone`, `stipple`, `squiggle`, `scribble`, `tsp`; its own layer)
 reads darkness from the ghost's own render — one minus luma, masked to the
 cloth's coverage, bent by `svgShadeGamma` — so it follows the skin, lights
 and textures you see. Crosshatch lays up to four hatch directions at
 darkness 0.2/0.4/0.6/0.8; halftone draws pen-filled dots (concentric rings)
 on a grid turned by `svgShadeAngle`; stipple keeps hashed, jittered points
-by darkness, so a plot repeats exactly. Hidden lines go through a linear-depth pass (`createDepthCapture`); note
+by darkness, so a plot repeats exactly. The line-drawing styles read tone **equalized** over the ghost's own
+pixels (each darkness becomes its rank), so a pale skin's folds spread
+across the whole range rather than crowding under its black eye holes, and
+they lift the pen in the highlights. Squiggle draws one wave per row whose
+height and frequency follow tone; scribble drags a circling pen along each
+row, so shadows coil into loops; tsp is one unbroken line — a
+nearest-neighbour tour through tone-weighted stipple (at most 16k points),
+uncrossed by neighbour-list 2-opt.
+
+The outline layer (`svgOutline`, pen-4) is the skin's Outline post effect
+as lines: an exact distance transform of the coverage mask, with iso-lines
+at the band's outer edge (`outline`), every stride across it (`rings`), or
+crowding toward the silhouette (`glow` and the pattern modes), measured
+inward for `outlineInside`. Widths are drawing-buffer pixels, as Outline's
+own are; `svgOutlineWidth`/`svgOutlineStride` override them in output px. Hidden lines go through a linear-depth pass (`createDepthCapture`); note
 WebGPU readbacks pad every row to 256 bytes **except the last**.
 
 ## The Live tab

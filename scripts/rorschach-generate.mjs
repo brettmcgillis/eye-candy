@@ -21,6 +21,7 @@ import {
   readJsonFlags,
   readPackageVersion,
 } from './lib/cliArgs.mjs';
+import { plotOf, writePlot } from './lib/generatorCli.mjs';
 import createProgress, { runStage } from './lib/progress.mjs';
 import {
   REPO_ROOT,
@@ -69,7 +70,9 @@ async function main() {
     height: Math.round(options.height * options.pixelRatio),
   };
   const outRoot = path.resolve(REPO_ROOT, String(options.out));
-  const formats = ['png', 'svg', 'webp'].filter((format) => options[format]);
+  const formats = ['png', 'svg', 'dxf', 'webp'].filter(
+    (format) => options[format]
+  );
 
   await mkdir(outRoot, { recursive: true });
   process.stdout.write(
@@ -123,8 +126,8 @@ async function main() {
         await progress.stage(
           `rendering test ${seed}, ${view} view`,
           async () => {
-            if (options.svg) {
-              await writeFile(
+            if (options.svg || options.dxf) {
+              await writePlot(
                 path.join(dir, `${view}.svg`),
                 frameSvg(kernel, {
                   bloomEnabled: options.bloom,
@@ -132,7 +135,8 @@ async function main() {
                   options: renderOptions,
                   test,
                   view,
-                })
+                }),
+                plotOf(options)
               );
             }
 

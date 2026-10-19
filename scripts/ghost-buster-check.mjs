@@ -179,22 +179,47 @@ async function checkPlot({ ghost }) {
   for (let i = 0; i < 400 * 400; i += 1) {
     image.data.fill(Math.round(((i % 400) / 400) * 255), i * 4, i * 4 + 3);
   }
-  ['crosshatch', 'halftone', 'stipple'].forEach((shading) => {
-    const shaded = ghost.renderGhostSvg({
-      camera,
-      edges: false,
-      height: 400,
-      image,
-      lattice,
-      shade: { angle: 45, gamma: 1, shading, spacing: 6 },
-      style: 'none',
-      width: 400,
-    });
-    check(
-      /id="pen-2"[^>]*><path d="M/u.test(shaded),
-      `the ${shading} shading draws nothing over a gradient.`
-    );
+  ['crosshatch', 'halftone', 'stipple', 'squiggle', 'scribble', 'tsp'].forEach(
+    (shading) => {
+      const shaded = ghost.renderGhostSvg({
+        camera,
+        edges: false,
+        height: 400,
+        image,
+        lattice,
+        shade: { angle: 45, gamma: 1, shading, spacing: 6 },
+        style: 'none',
+        width: 400,
+      });
+      check(
+        /id="pen-2"[^>]*><path d="M/u.test(shaded),
+        `the ${shading} shading draws nothing over a gradient.`
+      );
+      if (shading === 'tsp') {
+        const tour =
+          /id="pen-2"[^>]*><path d="([^"]*)"/u.exec(shaded)?.[1] ?? '';
+        check(
+          (tour.match(/M/gu) ?? []).length === 1,
+          'tsp must be one unbroken line.'
+        );
+      }
+    }
+  );
+  const ringed = ghost.renderGhostSvg({
+    camera,
+    coverage: { covered, height: 100, width: 100 },
+    edges: false,
+    height: 400,
+    lattice,
+    outline: { inside: false, mode: 'rings', stride: 3, thickness: 9 },
+    pixelRatio: 0.25,
+    style: 'none',
+    width: 400,
   });
+  const rings = (/id="pen-4"[^>]*><path d="([^"]*)"/u.exec(ringed)?.[1] ?? '')
+    .split('M')
+    .filter(Boolean).length;
+  check(rings >= 3, "the outline layer no longer draws the skin's rings.");
   const silhouette = /id="pen-1"[^>]*><path d="([^"]*)"/u.exec(outline)?.[1];
   check(
     (silhouette?.split('L').length ?? 0) > 12,

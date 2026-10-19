@@ -19,16 +19,16 @@ One way to write a spec. Import the builders from
 `../optionSchema/index.mjs` (relative: the file must load in plain Node and
 in Vite's config loader, so it stays dependency-free).
 
-| Builder                                                                  | Makes                                                                                                                                                                                                                                                                                                                            |
-| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `num(section, group, label, value, min, max, step, extra)`               | a scene number control                                                                                                                                                                                                                                                                                                           |
-| `choice(section, group, label, choices, value, extra)`                   | a scene enum (`choiceLabels` names its choices)                                                                                                                                                                                                                                                                                  |
-| `flag(…)`, `color(…)`, `spec(type, section, group, label, value, extra)` | a scene boolean, colour, or anything else                                                                                                                                                                                                                                                                                        |
-| `rolled(facet, [min, max] \| null, item)`, `inFacet(facet, item)`        | lets the dice set it (in that window)                                                                                                                                                                                                                                                                                            |
-| `sceneOnly(item)`                                                        | a scene control that is never a render option                                                                                                                                                                                                                                                                                    |
-| `rigOf({ facet })`                                                       | a builder for light/post rig keys (`rig: true`, section `post`)                                                                                                                                                                                                                                                                  |
-| `output`, `still`, `video`, `render`, `roll`                             | scope/section wrappers for literal render options                                                                                                                                                                                                                                                                                |
-| `standard.<key>(…)`                                                      | the shared render options: `batch`, `out`, `width`, `height`, `pixelRatio`, `count`, `png`, `webp`, `svg`, `views`, `svgStroke`, `svgOcclusion`, `samples`, `shadows`, `projection`, `fov`, `margin`, `keep`, `base`, `palettes`, `mode`, `view`, `fps`, `hold`, `turns`, `orbit`, `overlay`, `ig`, `viewport`, `overlayOptions` |
+| Builder                                                                  | Makes                                                                                                                                                                                                                                                                                                                                                  |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `num(section, group, label, value, min, max, step, extra)`               | a scene number control                                                                                                                                                                                                                                                                                                                                 |
+| `choice(section, group, label, choices, value, extra)`                   | a scene enum (`choiceLabels` names its choices)                                                                                                                                                                                                                                                                                                        |
+| `flag(…)`, `color(…)`, `spec(type, section, group, label, value, extra)` | a scene boolean, colour, or anything else                                                                                                                                                                                                                                                                                                              |
+| `rolled(facet, [min, max] \| null, item)`, `inFacet(facet, item)`        | lets the dice set it (in that window)                                                                                                                                                                                                                                                                                                                  |
+| `sceneOnly(item)`                                                        | a scene control that is never a render option                                                                                                                                                                                                                                                                                                          |
+| `rigOf({ facet })`                                                       | a builder for light/post rig keys (`rig: true`, section `post`)                                                                                                                                                                                                                                                                                        |
+| `output`, `still`, `video`, `render`, `roll`                             | scope/section wrappers for literal render options                                                                                                                                                                                                                                                                                                      |
+| `standard.<key>(…)`                                                      | the shared render options: `batch`, `out`, `width`, `height`, `pixelRatio`, `count`, `png`, `webp`, `svg`, `dxf`, `plotWidthMm`, `views`, `svgStroke`, `svgOcclusion`, `samples`, `shadows`, `projection`, `fov`, `margin`, `keep`, `base`, `palettes`, `mode`, `view`, `fps`, `hold`, `turns`, `orbit`, `overlay`, `ig`, `viewport`, `overlayOptions` |
 
 `group` is the dotted folder path inside the section, or `null`. Every builder
 takes `extra` last and spreads it, so any field can be overridden. A kernel
@@ -150,6 +150,23 @@ what it draws.
   then `out.image(name, produce)` (every ticked raster format),
   `out.svg(name, text)`, `out.file(name, data)` and `out.eachView(fn)`.
   `gpu(ctx)` skips the renderer for SVG-only batches.
+- Plots: every `.svg` a still writes (`out.svg`, or `out.file` with an
+  `.svg` name) goes through `writePlot`, so a tool gets these with no code of
+  its own:
+  - `plotWidthMm` sets the SVG's physical `width`/`height` in mm, leaving the
+    `viewBox` alone. An SVG that already carries a physical size (Kumiko's
+    panel, Subdivision's `widthMm`) keeps it, so those tools skip the option.
+  - `dxf` writes `<name>.dxf` beside it through `scripts/lib/svgToDxf.mjs`:
+    DXF R12 in mm, Y up, one `POLYLINE` per subpath, curves, arcs and circles
+    flattened to 0.05 mm, clipped to the page. Each pen layer
+    (`inkscape:label`, else the `<g id>`, else the stroke colour) becomes a
+    DXF layer. Unstroked shapes, the background `<rect>`, fills whose stroke
+    only matches the fill, `<defs>` and filtered glow copies are skipped.
+    DXF is a format of its own: with only DXF ticked, the tool still draws
+    its SVG, but only the DXF is kept. It exists because Silhouette Studio
+    Basic imports DXF but not SVG.
+  - Every kernel with `svg` also has `dxf`, except Rug Pull, whose SVG is
+    raster cells.
 - `runVideo`: `plan(ctx)` returns `{ shots, presets() }` (plus optional
   `sidecar()`, `gpu`, `finish(write)`, `cleanup()`); a shot is
   `{ frames, enter?(capturer), frame(capturer, clock), exit?() }` and `frame`
@@ -176,7 +193,8 @@ loadKernelModules(ENTRIES)`, `withCapturer` over `withRenderer`, and shared
   so it shares the stage's three, and `renderer.setOutputRenderTarget` makes
   the capture target its canvas. See `docs/ghost-buster-pipeline.md`.
 
-Rorschach's CLIs predate this and stay bespoke.
+Rorschach's CLIs predate this and stay bespoke; its stills call
+`writePlot(path, svg, plotOf(options))` directly.
 
 ## 6. Spinning up a new generator
 

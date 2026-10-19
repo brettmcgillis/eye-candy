@@ -1,6 +1,7 @@
 import {
   buildClothTopology,
   computeClothAlpha,
+  fbm2D,
 } from '@elements/WebGPU/cloth/clothTopology';
 import { CUTOUTS } from '@elements/WebGPU/ghost/ghostRig';
 
@@ -76,6 +77,24 @@ export function latticeBounds({ alpha, positions, shapeDist }) {
   return { center, radius };
 }
 
+// createClothSimulation's noise texture, baked the same way: in smoothEdges
+// mode the shader cuts holes and tatters per pixel from it.
+const NOISE_SIZE = 256;
+function noiseTable(scale, seed) {
+  const table = new Float32Array(NOISE_SIZE * NOISE_SIZE);
+  for (let ty = 0; ty < NOISE_SIZE; ty += 1) {
+    const v = ty / (NOISE_SIZE - 1);
+    for (let tx = 0; tx < NOISE_SIZE; tx += 1) {
+      table[ty * NOISE_SIZE + tx] = fbm2D(
+        (tx / (NOISE_SIZE - 1)) * scale,
+        v * scale,
+        seed
+      );
+    }
+  }
+  return { size: NOISE_SIZE, table };
+}
+
 // The plot's view of a settled ghost: the sim's positions (read back from the
 // GPU, in the cloth mesh's space) carried into world space by the mesh's
 // matrix, with the alpha and shape the shader cuts the cloth by.
@@ -120,5 +139,14 @@ export default function ghostLattice({ local, matrixWorld, skin }) {
     segmentsX: segments,
     segmentsY: segments,
     shapeDist: topology.shapeDistArr,
+    tear:
+      skin.smoothEdges && (skin.holeAmount > 0 || skin.tatterEdge > 0)
+        ? {
+            holeAmount: skin.holeAmount,
+            noise: noiseTable(skin.alphaScale, skin.alphaSeed),
+            pinned: topology.edgePinned,
+            tatterEdge: skin.tatterEdge,
+          }
+        : null,
   };
 }

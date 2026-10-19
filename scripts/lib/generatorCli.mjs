@@ -10,6 +10,7 @@ import { loadThree, setClock } from './headlessWebgpu.mjs';
 import loadModules, { REPO_ROOT } from './loadModules.mjs';
 import overlayLayer from './overlayLayer.mjs';
 import createProgress, { runStage } from './progress.mjs';
+import { sizePlot, svgToDxf } from './svgToDxf.mjs';
 import { writeVideoSidecar } from './videoMetadata.mjs';
 
 // The plumbing every schema generator's CLIs share; see
@@ -170,6 +171,22 @@ export const azimuthOffset = (options, { frame, frames, total, written }) =>
     ? (360 * options.turns * frame) / frames
     : (options.orbit * written) / total;
 
+export const plotOf = (options) => ({
+  dxf: Boolean(options.dxf),
+  plotWidthMm: options.plotWidthMm,
+  svg: Boolean(options.svg),
+});
+
+export async function writePlot(filePath, svg, plot) {
+  const sized = sizePlot(svg, plot.plotWidthMm);
+  await Promise.all([
+    plot.svg ? writeFile(filePath, sized) : null,
+    plot.dxf
+      ? writeFile(filePath.replace(/\.svg$/u, '.dxf'), svgToDxf(sized))
+      : null,
+  ]);
+}
+
 // Dawn keeps the event loop alive after the renderer is disposed, so a run
 // exits explicitly; `--help` returns false and lets stdout drain instead.
 function runMain(main) {
@@ -193,10 +210,11 @@ async function begin(kind, { overlay, parseCli, prepare, script, usageFor }) {
     return null;
   }
   const prepared = prepare ? await prepare(parsed.options) : parsed.options;
-  const options = overlay
+  const ready = overlay
     ? { ...prepared, version: await readPackageVersion() }
     : prepared;
-  return { ...parsed, options };
+  const options = ready.dxf ? { ...ready, svg: true } : ready;
+  return { ...parsed, options, plot: plotOf(ready) };
 }
 
 const formatsOf = (options) =>
@@ -217,10 +235,14 @@ export function runStills(spec) {
   runMain(async () => {
     const parsed = await begin('still', spec);
     if (!parsed) return false;
-    const { options, typed } = parsed;
+    const { options, plot, typed } = parsed;
     const views = spec.resolveViews ? spec.resolveViews(options.views) : null;
     const formats = formatsOf(options);
-    const labels = [...formats, options.svg ? 'svg' : null].filter(Boolean);
+    const labels = [
+      ...formats,
+      plot.svg ? 'svg' : null,
+      plot.dxf ? 'dxf' : null,
+    ].filter(Boolean);
     const outRoot = path.resolve(REPO_ROOT, String(options.out));
     const nouns =
       typeof spec.nouns === 'function' ? spec.nouns(options) : spec.nouns;
@@ -260,7 +282,9 @@ export function runStills(spec) {
             `${JSON.stringify(sidecar, null, 2)}\n`
           );
           const file = (fileName, data) =>
-            writeFile(path.join(dir, fileName), data);
+            fileName.endsWith('.svg')
+              ? writePlot(path.join(dir, fileName), data, plot)
+              : writeFile(path.join(dir, fileName), data);
           saved = {
             dir,
             file,

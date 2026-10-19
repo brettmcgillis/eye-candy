@@ -605,6 +605,8 @@ const RENDER = {
   svg: standard.svg(
     'Write a plottable SVG per view: every mass and opening edge, hidden lines removed'
   ),
+  dxf: standard.dxf(),
+  plotWidthMm: standard.plotWidthMm(),
   views: standard.views(VIEWS, 'approach'),
   svgOcclusion: standard.svgOcclusion(
     'Drop line work hidden behind nearer masses (uses a depth pass)'

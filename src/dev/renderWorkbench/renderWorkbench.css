@@ -1059,6 +1059,15 @@ body:has(.rw-preview) {
   object-fit: contain;
 }
 
+.rw-media-file {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  color: var(--dev-text-muted);
+  font-family: var(--dev-mono);
+}
+
 .rw-empty {
   display: grid;
   min-height: 8rem;

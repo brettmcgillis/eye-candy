@@ -128,6 +128,19 @@ function PreviewDetails({
 }
 
 function MediaPreview({ asset, controls = false, eager = false }) {
+  if (assetFormat(asset) === 'dxf') {
+    return (
+      <span className="rw-media-file">
+        {controls ? (
+          <a download href={asset.url}>
+            Download DXF
+          </a>
+        ) : (
+          'DXF'
+        )}
+      </span>
+    );
+  }
   if (assetFormat(asset) === 'mp4') {
     const source = controls ? asset.url : `${asset.url}#t=0.001`;
     return (

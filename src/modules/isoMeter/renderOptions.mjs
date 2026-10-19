@@ -184,6 +184,8 @@ const RENDER = {
   png: standard.png(),
   webp: standard.webp(),
   svg: standard.svg('Write the flat render as SVG (fills, outlines, lines)'),
+  dxf: standard.dxf(),
+  plotWidthMm: standard.plotWidthMm(),
   transparentBackground: {
     default: false,
     help: 'Leave the background transparent (block pieces)',

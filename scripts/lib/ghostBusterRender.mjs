@@ -240,7 +240,7 @@ export async function createGhostCapturer(
         : null;
       const image = options.svgShading !== 'none' ? await frame(clock) : null;
       return ghost.renderGhostSvg({
-        ...ghost.plotArgs(options),
+        ...ghost.plotArgs(options, look.resolveSkin(current.skin)),
         camera: view,
         coverage: depth,
         image,

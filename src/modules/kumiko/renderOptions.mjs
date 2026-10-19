@@ -370,6 +370,7 @@ const RENDER = {
   png: standard.png(),
   webp: standard.webp(),
   svg: standard.svg('Write an SVG of the flat panel (see --svgStyle)'),
+  dxf: standard.dxf(),
   views: standard.views(VIEWS, 'flat', {
     help: 'Comma-separated views: flat, front, angle, raking (flat is the 2D art; the rest are 3D renders)',
   }),

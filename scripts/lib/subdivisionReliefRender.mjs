@@ -88,7 +88,7 @@ export function plotSvg({ relief, subdivision }, { config, piece }, options) {
   return subdivision.renderPlotSvg(
     piece,
     { ...relief.pieceSettings(config), ...relief.plotOptionsFrom(options) },
-    { widthMm: options.svgWidthMm }
+    { widthMm: options.plotWidthMm }
   );
 }
 

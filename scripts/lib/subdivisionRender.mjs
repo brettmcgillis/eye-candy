@@ -132,7 +132,7 @@ export function rawFrame(kernel, piece, config, options, grow) {
 export function plotSvg(kernel, piece, config, options) {
   const plot = { ...config, ...kernel.subdivision.plotOptionsFrom(options) };
   return kernel.subdivision.renderPlotSvg(piece, plot, {
-    widthMm: options.svgWidthMm,
+    widthMm: options.plotWidthMm,
   });
 }
 

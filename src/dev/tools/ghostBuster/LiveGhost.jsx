@@ -36,6 +36,7 @@ import {
   createDepthCapture,
   depthProbe,
   readGhostLattice,
+  resolveSkin,
 } from '@modules/ghostBusterRender';
 
 const DEG = 180 / Math.PI;
@@ -221,7 +222,7 @@ function Director({ bridgeRef, config, ghostRef, options, paused }) {
           )
         : null;
       svg = renderGhostSvg({
-        ...plotArgs(options),
+        ...plotArgs(options, resolveSkin(config.skin)),
         camera: view,
         coverage: depth,
         image: { data: image, height, width },

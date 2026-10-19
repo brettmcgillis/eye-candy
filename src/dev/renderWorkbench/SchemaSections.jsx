@@ -2,7 +2,7 @@ import React from 'react';
 
 import { SchemaField } from './SchemaFields';
 
-const FORMATS = ['png', 'webp', 'svg'];
+const FORMATS = ['png', 'webp', 'svg', 'dxf'];
 
 // Laid out by RollWorkbench itself.
 const PAGE_KEYS = [

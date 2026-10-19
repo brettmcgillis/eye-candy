@@ -200,6 +200,8 @@ const RENDER = {
   png: standard.png(),
   webp: standard.webp(),
   svg: standard.svg('Write a plottable SVG of stroke centrelines'),
+  dxf: standard.dxf(),
+  plotWidthMm: standard.plotWidthMm(),
   svgStroke: standard.svgStroke({
     default: 1,
     help: 'Multiplier on the render’s pen width; 0 draws hairlines for plotting',

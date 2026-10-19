@@ -46,6 +46,14 @@ const standard = {
       type: 'number',
       ...extra,
     }),
+  dxf: (extra = {}) =>
+    still({
+      default: false,
+      help: 'Write a DXF beside each SVG, in mm, one layer per pen (opens in Silhouette Studio Basic)',
+      label: 'DXF',
+      type: 'boolean',
+      ...extra,
+    }),
   fov: (value, extra = {}) =>
     render({
       default: value,
@@ -188,6 +196,19 @@ const standard = {
       label: 'Pixel ratio',
       max: 4,
       min: 1,
+      type: 'number',
+      ...extra,
+    }),
+  plotWidthMm: (value = 200, extra = {}) =>
+    still({
+      default: value,
+      help: 'Physical plot width in mm for the SVG and DXF; the height follows the canvas',
+      label: 'Plot width (mm)',
+      max: 2000,
+      min: 10,
+      placeholder: 'MM',
+      section: 'svg',
+      step: 1,
       type: 'number',
       ...extra,
     }),

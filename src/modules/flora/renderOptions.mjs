@@ -387,6 +387,8 @@ const RENDER = {
   svg: standard.svg(
     'Write a plottable SVG of fiber centrelines and ornament outlines'
   ),
+  dxf: standard.dxf(),
+  plotWidthMm: standard.plotWidthMm(),
   svgOcclusion: standard.svgOcclusion(
     'Drop line work hidden behind nearer geometry (uses a depth pass)'
   ),

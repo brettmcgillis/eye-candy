@@ -15,6 +15,14 @@ import createOptionSchema, {
 export const PALETTE_NONE = 'None';
 export const LANE_MODES = ['Cycle', 'Depth', 'Random', 'Spectrum'];
 export const MEATBALLS = { HIDE_LOOSE: 0, KEEP_ALL: 2, PRUNE_LOOSE: 1 };
+// Mirrors design.js's SYMMETRY_AXES; this file stays dependency-free.
+export const SYMMETRY = [
+  'none',
+  'vertical',
+  'horizontal',
+  'diagonal',
+  'antidiagonal',
+];
 
 const gen = (section, label, value, min, max, step, facet, roll) =>
   num(section, null, label, value, min, max, step, {
@@ -114,6 +122,18 @@ const GENERATOR = {
     help: '0 hides unconnected cells, 1 prunes them, 2 keeps them (the reference default)',
     label: 'Meatballs',
   }),
+  blobSymmetry: {
+    choices: SYMMETRY,
+    default: 'none',
+    facet: 'structure',
+    generator: true,
+    help: 'Mirror one half of the seeded field onto the other: vertical/horizontal down the grid centre, diagonal/antidiagonal corner to corner. Rolled on rarely, along the axis the rolled rotation calls for; pin none to keep it off',
+    label: 'Symmetry',
+    scene: true,
+    scope: 'shared',
+    section: 'field',
+    type: 'enum',
+  },
 };
 
 const LOOK = {
@@ -200,7 +220,6 @@ const RENDER = {
   png: standard.png(),
   webp: standard.webp(),
   svg: standard.svg('Write a plottable SVG of stroke centrelines'),
-  dxf: standard.dxf(),
   plotWidthMm: standard.plotWidthMm(),
   svgStroke: standard.svgStroke({
     default: 1,

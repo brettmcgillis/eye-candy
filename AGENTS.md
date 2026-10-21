@@ -113,6 +113,16 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   headless CLIs and GhostBusterCLI with its Live tab. Run
   `npm run ghost-buster:check` after changing any of them.
 
+## Required reading before touching BirdsArentRealCLI
+
+- **`docs/birds-arent-real-pipeline.md`** — the GhostBuster arrangement for
+  flocks of FakeBirds: `@elements/FakeBird` (the bird the scene and the
+  workbench share, drei-free so it mounts headlessly), `@modules/birdsArentReal`
+  (three-free option schema, roll, flock layout, framing and the mesh plot),
+  `@modules/birdsArentRealRender` (`BirdStudio`, the real R3F stage), the
+  headless CLIs and BirdsArentRealCLI with its Live tab. Run
+  `npm run birds-arent-real:check` after changing any of them.
+
 ## Required reading before touching Kumiko
 
 - **`docs/kumiko-pipeline.md`** — the Fungi arrangement for kumiko panels:
@@ -263,6 +273,14 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   `@modules/trucheterieDesigner`, both scenes' Design folders,
   TrucheterieDesigner and the CLIs' `--blobDesign`. Run
   `npm run trucheterie:check` after changing any of them.
+
+## Required reading before touching the Plotterizer or plot export
+
+- **`docs/plotterizer.md`** — the plot-prep tool every bench SVG goes
+  through for the cutter: the pure `kernel/*.mjs` (parse, optimise, crowding,
+  plot jobs, DXF for Silhouette Studio), the gallery hand-off, re-rendering a
+  generation at its plot size, and the job format. Benches write SVG only;
+  DXF is the Plotterizer's.
 
 ## Required reading before touching PrintShop
 

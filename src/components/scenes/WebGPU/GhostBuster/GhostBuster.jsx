@@ -11,8 +11,14 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 
 import GhostCharacter, {
+  decayFromControls,
   fabricFromControls,
+  ghostCrown,
 } from '@elements/WebGPU/ghost/GhostCharacter';
+import RainCloud, {
+  RAIN_CLOUD_KEYS,
+  RAIN_SHADOW_LAYER,
+} from '@elements/WebGPU/rainCloud/RainCloud';
 import { GridMaterial } from '@materials/WebGPU/gridMaterial';
 
 import GhostPlacard from './components/GhostPlacard';
@@ -34,6 +40,15 @@ export default function GhostBuster() {
   } = useAnimationInput();
   const { applyPresetByName, controls, presetOptions, selectedPreset } =
     useSceneControls(ghostRef, setAnimation, triggerJump);
+
+  const followGhost = useCallback((out) => {
+    ghostRef.current?.mesh?.layers.enable(RAIN_SHADOW_LAYER);
+    return ghostCrown(ghostRef.current, out);
+  }, []);
+  const storm =
+    controls.cloudVisible || controls.rainVisible || controls.lightningVisible
+      ? Object.fromEntries(RAIN_CLOUD_KEYS.map((key) => [key, controls[key]]))
+      : null;
 
   const selectedPresetRef = useRef(selectedPreset);
   selectedPresetRef.current = selectedPreset;
@@ -284,6 +299,7 @@ export default function GhostBuster() {
         clearcoat={controls.clearcoat}
         clearcoatRoughness={controls.clearcoatRoughness}
         fabric={fabricFromControls(controls)}
+        decay={decayFromControls(controls)}
         innerRoughness={controls.innerRoughness ?? null}
         innerMetalness={controls.innerMetalness ?? null}
         outerTextureUrl={controls.outerTextureUrl || null}
@@ -318,6 +334,14 @@ export default function GhostBuster() {
         groundLightAngle={controls.groundLightAngle}
         groundLightDistance={controls.groundLightDistance}
       />
+
+      {storm ? (
+        <RainCloud
+          {...storm}
+          floorVisible={controls.floorVisible}
+          follow={followGhost}
+        />
+      ) : null}
 
       <GhostPlacard
         variantName={selectedPreset}

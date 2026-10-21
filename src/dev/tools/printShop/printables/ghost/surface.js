@@ -1,3 +1,11 @@
+import {
+  DECAY_DEFAULTS,
+  NOISE_STEP,
+  decayAt,
+  dripAt,
+  dripTable,
+  eyeHoleDistance,
+} from '@elements/WebGPU/cloth/clothDecay';
 import { fbm2D } from '@elements/WebGPU/cloth/clothTopology';
 import { CUTOUTS } from '@elements/WebGPU/ghost/ghostRig';
 
@@ -113,8 +121,52 @@ function renderGrid(settled) {
   return { domain, opacity, positions };
 }
 
+const decayOf = (p) => ({ ...DECAY_DEFAULTS, ...p });
+const tables = new Map();
+const dripTableOf = (seed) => {
+  if (!tables.has(seed)) tables.set(seed, dripTable(seed));
+  return tables.get(seed);
+};
+
+const tatterDepthOf = (p, edgePinned, u, v) => {
+  const free = (pinned, d) => (pinned ? 1 : d);
+  const minDist = Math.min(
+    free(edgePinned.left, u),
+    free(edgePinned.right, 1 - u),
+    free(edgePinned.top, 1 - v),
+    free(edgePinned.bottom, v)
+  );
+  return clamp01(minDist / (p.tatterEdge * 0.5 + 0.0001));
+};
+
+// clothDecay's rot and blood, from the noise the baked texture holds.
+function stainAt(p, edgePinned, u, v) {
+  const d = decayOf(p);
+  if (!(d.holeRimWidth > 0 || d.bloodAmount > 0)) return { blood: 0, rot: 0 };
+  const n = (x, y) =>
+    fbm2D(x * p.alphaScale, (1 - y) * p.alphaScale, p.alphaSeed);
+  const e = NOISE_STEP;
+  const slope =
+    Math.hypot(n(u + e, v) - n(u - e, v), n(u, v + e) - n(u, v - e)) / (2 * e);
+  return decayAt(
+    n(u, v),
+    slope,
+    n(1 - u, v),
+    tatterDepthOf(p, edgePinned, u, v),
+    d
+  );
+}
+
+const dripOf = (p, u, v) => {
+  const d = decayOf(p);
+  return d.dripAmount > 0
+    ? dripAt(u, v, 0, d, dripTableOf(p.alphaSeed))
+    : { alpha: 1, goo: 0 };
+};
+
 // The ClothMesh opacityNode's per-pixel half: smoothEdges noise holes and
-// tatter, then the eye cutouts. `u`, `v` are the mesh uv (v flipped).
+// tatter, hem drips, then the eye cutouts. `u`, `v` are the mesh uv (v
+// flipped).
 function pixelOpacity(p, edgePinned, u, v) {
   let a = 1;
   if (p.smoothEdges) {
@@ -135,10 +187,10 @@ function pixelOpacity(p, edgePinned, u, v) {
     const raw = smoothstep(tatterThresh - W, tatterThresh + W, n);
     a *= hole * (raw + (1 - raw) * tDepth);
   }
+  a *= dripOf(p, u, v).alpha;
   CUTOUTS.forEach((cutout) => {
     const fade = cutout.fade ?? cutout.radius * 0.4;
-    const dist = Math.hypot(u - cutout.u, v - cutout.v);
-    a *= clamp01((dist - (cutout.radius - fade)) / fade);
+    a *= clamp01((eyeHoleDistance(u, v, cutout, decayOf(p)) + fade) / fade);
   });
   return a;
 }
@@ -149,8 +201,7 @@ function rimFactor(p, u, v) {
   CUTOUTS.forEach((cutout) => {
     const fade = cutout.fade ?? cutout.radius * 0.4;
     const edge =
-      Math.hypot(u - cutout.u, v - cutout.v) -
-      (cutout.radius - fade + p.cutoutRimOffset);
+      eyeHoleDistance(u, v, cutout, decayOf(p)) + fade - p.cutoutRimOffset;
     if (edge > 0 && edge < p.cutoutRimWidth) factor = 1;
   });
   return factor;
@@ -273,11 +324,18 @@ function emissive(p, side, uv) {
 
 // What a viewer of the scene sees on each side, minus the lighting: albedo
 // (textured, eyelined) plus the glow it emits, sRGB-encoded.
-export function createGhostColour(p, images, aspect) {
+export function createGhostColour(p, images, aspect, edgePinned) {
   const outerSample = sampler(images.outer, p.textureTile);
   const innerSample = sampler(images.inner, p.textureTile);
   const screen = screenProjector(aspect);
   const rimColor = hexToRgb(p.cutoutRimColor).map(toLinear);
+  const d = decayOf(p);
+  const [rotColor, bloodColor, gooColor] = [
+    d.holeRimColor,
+    d.bloodColor,
+    d.dripColor,
+  ].map((hex) => hexToRgb(hex).map(toLinear));
+  const lerp = (a, b, t) => a.map((c, k) => c + (b[k] - c) * t);
   return (uv, world) => {
     const rim = rimFactor(p, uv[0], uv[1]);
     const albedo = texturedColor(p, outerSample, p.color, uv, world, screen);
@@ -285,11 +343,29 @@ export function createGhostColour(p, images, aspect) {
     const inner = innerSample
       ? texturedColor(p, innerSample, p.color, uv, world, screen)
       : hexToRgb(p.innerColor || p.color).map(toLinear);
+    // ClothMesh lays rot, then blood, then goo over both sides.
+    const { blood, rot } = edgePinned
+      ? stainAt(p, edgePinned, uv[0], uv[1])
+      : { blood: 0, rot: 0 };
+    const { goo } = dripOf(p, uv[0], uv[1]);
+    const decay = (c) =>
+      lerp(
+        lerp(lerp(c, rotColor, rot * 0.85), bloodColor, blood),
+        gooColor,
+        goo * d.dripTint
+      );
+    const glow = rotColor.map(
+      (c, k) => c * d.holeRimGlow * rot + gooColor[k] * d.dripGlow * goo
+    );
     const outerGlow = emissive(p, 'outer', uv);
     const innerGlow = emissive(p, 'inner', uv);
     return {
-      back: outer.map((c, k) => toSrgb(clamp01(c + outerGlow[k]))),
-      front: inner.map((c, k) => toSrgb(clamp01(c + innerGlow[k]))),
+      back: decay(outer).map((c, k) =>
+        toSrgb(clamp01(c + outerGlow[k] + glow[k]))
+      ),
+      front: decay(inner).map((c, k) =>
+        toSrgb(clamp01(c + innerGlow[k] + glow[k]))
+      ),
     };
   };
 }
@@ -313,7 +389,7 @@ export default function buildGhostSurface(
   const field = new Float64Array(count);
   const front = new Float64Array(count * 3);
   const back = new Float64Array(count * 3);
-  const colourOf = createGhostColour(p, images, aspect);
+  const colourOf = createGhostColour(p, images, aspect, edgePinned);
 
   const at = (array, size, gx, gy, c) => {
     const x = Math.min(segmentsX - 1, Math.max(0, gx));

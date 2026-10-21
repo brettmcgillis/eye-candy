@@ -589,7 +589,6 @@ const RENDER = {
   svg: standard.svg(
     'Write a plottable SVG per view: edges chained into paths, one pen per class and depth band'
   ),
-  dxf: standard.dxf(),
   plotWidthMm: standard.plotWidthMm(),
   views: standard.views(VIEWS, 'hero'),
   stillTime: still({

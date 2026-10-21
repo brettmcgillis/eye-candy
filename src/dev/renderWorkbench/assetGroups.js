@@ -1,5 +1,5 @@
-const FORMAT_ORDER = ['png', 'webp', 'svg', 'dxf', 'mp4'];
-const MEDIA_ASSET_PATTERN = /\.(dxf|png|svg|webp|mp4)$/u;
+const FORMAT_ORDER = ['png', 'webp', 'svg', 'mp4'];
+const MEDIA_ASSET_PATTERN = /\.(png|svg|webp|mp4)$/u;
 
 export function assetFormat(asset) {
   return asset.path.split('.').pop().toLowerCase();
@@ -58,6 +58,22 @@ export function groupMediaAssets(assets, metadataAssets) {
         FORMAT_ORDER.indexOf(assetFormat(right))
     ),
   }));
+}
+
+// A cached WebP of media under output/ or public/images/ (repo-relative):
+// a dense plot SVG is megabytes of path, too heavy to show as an <img>.
+export const thumbnailUrl = (path, size = 320) =>
+  `/dev-api/thumbs?path=${encodeURIComponent(path)}&size=${size}`;
+
+// A plot's link into the Plotterizer: the SVG, plus the sidecar and tool it
+// needs to re-render the generation at another plot size.
+export function plotterHref(group, tool) {
+  const svg = group.assets.find((asset) => assetFormat(asset) === 'svg');
+  if (!svg) return null;
+  const params = new URLSearchParams({ name: group.name, svg: svg.url });
+  if (group.metadataAsset) params.set('props', group.metadataAsset.url);
+  if (tool) params.set('tool', tool);
+  return `/dev/plotterizer?${params}`;
 }
 
 export function isMediaAsset(asset) {

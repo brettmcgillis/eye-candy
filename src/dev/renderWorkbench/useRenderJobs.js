@@ -192,5 +192,6 @@ export default function useRenderJobs(tool) {
     removeSavedAssets,
     savedCollections,
     submit,
+    tool,
   };
 }

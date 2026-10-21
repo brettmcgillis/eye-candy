@@ -152,7 +152,6 @@ const RENDER = {
   svg: standard.svg(
     'Write a plottable SVG: fibre centrelines, plate edges and bead circles, one pen per gradient stop'
   ),
-  dxf: standard.dxf(),
   plotWidthMm: standard.plotWidthMm(),
   svgOcclusion: standard.svgOcclusion(
     'Drop line work hidden behind nearer geometry (uses a depth pass)'

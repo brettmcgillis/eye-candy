@@ -3,6 +3,8 @@ import React from 'react';
 import { Environment } from '@react-three/drei';
 
 import CigaretteButts from '@elements/CigaretteButts/CigaretteButts';
+import CursorTracker from '@elements/FakeBird/CursorTracker';
+import FakeBird from '@elements/FakeBird/FakeBird';
 import { Litter, Litter2 } from '@elements/Litter/Litter';
 import ManholeCover from '@elements/ManholeCover/ManholeCover';
 import { NewsPaper2 } from '@elements/NewsPapers/NewsPapers';
@@ -12,8 +14,6 @@ import { CameraRig } from '@modules/cameraRig';
 
 import BirdPovRig from './components/BirdPovRig';
 import BusStop from './components/BusStop';
-import CursorTracker from './components/CursorTracker';
-import FakeBird from './components/FakeBird';
 import Nest from './components/Nest';
 import SurveillancePost from './components/SurveillancePost';
 import WetGround from './components/WetGround';

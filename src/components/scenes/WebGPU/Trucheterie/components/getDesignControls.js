@@ -1,6 +1,5 @@
 import { button } from 'leva';
 
-import { DESIGN_MAX_GRID, DESIGN_MIN_GRID } from '@modules/trucheterieBlob';
 import { MAX_BRUSH } from '@modules/trucheterieDesigner';
 
 import { BLOB_PATH, DESIGN_PATH } from './controlPaths';
@@ -22,14 +21,6 @@ export default function getDesignControls(snapshot, designRef) {
   return {
     fromSeed: action('Start From Seeded Field', run('fromSeed')),
     newDesign: action('New Blank Design', run('newBlank')),
-    designGridSize: {
-      label: 'Grid Size',
-      max: DESIGN_MAX_GRID,
-      min: DESIGN_MIN_GRID,
-      step: 1,
-      value: saved.designGridSize ?? 18,
-    },
-    resizeDesign: action('Resize Grid', run('resize'), hasDesign),
     designTool: {
       label: 'Tool',
       options: {
@@ -39,6 +30,7 @@ export default function getDesignControls(snapshot, designRef) {
         Connect: 'connect',
         Diagonal: 'diagonal',
         Order: 'order',
+        Move: 'move',
       },
       render: hasDesign,
       value: saved.designTool ?? 'off',

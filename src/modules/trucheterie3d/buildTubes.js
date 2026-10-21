@@ -167,7 +167,11 @@ function snapEnds(samples, pieces, { flat, kind, maxSlope, ramp }) {
 
 function cellLookup(field, gridSize) {
   const owner = new Int32Array(gridSize * gridSize).fill(-1);
-  field.cells.forEach(({ cell }, index) => {
+  // A cell sitting in a bigger cell's empty corner owns that corner.
+  const bySize = field.cells
+    .map(({ cell }, index) => [cell, index])
+    .sort(([a], [b]) => b.size - a.size);
+  bySize.forEach(([cell, index]) => {
     for (let c = cell.column; c < cell.column + cell.size; c += 1) {
       for (let r = cell.row; r < cell.row + cell.size; r += 1) {
         if (c >= 0 && r >= 0 && c < gridSize && r < gridSize) {

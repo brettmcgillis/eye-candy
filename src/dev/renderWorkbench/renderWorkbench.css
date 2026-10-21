@@ -308,6 +308,11 @@
   gap: 0.6rem;
 }
 
+.rw-library__more {
+  justify-self: center;
+  margin-top: 0.85rem;
+}
+
 .rw-library {
   display: grid;
   gap: 1rem;
@@ -1057,15 +1062,6 @@ body:has(.rw-preview) {
   width: 100%;
   height: 100%;
   object-fit: contain;
-}
-
-.rw-media-file {
-  display: grid;
-  width: 100%;
-  height: 100%;
-  place-items: center;
-  color: var(--dev-text-muted);
-  font-family: var(--dev-mono);
 }
 
 .rw-empty {

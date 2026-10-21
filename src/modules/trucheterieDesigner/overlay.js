@@ -2,15 +2,21 @@ import * as THREE from 'three/webgpu';
 
 import { isSideOpen } from '@modules/trucheterieBlob';
 
-// Micro-cell units run y down from the grid's top-left; the field frame is centred, y up.
-export function toFieldFrame(gridSize, cellSize) {
-  const half = (gridSize * cellSize) / 2;
-  return (x, y) => [x * cellSize - half, half - y * cellSize];
+// Micro-cell units run y down; the field frame is centred on the design's frame square, y up.
+export function toFieldFrame({ column, row, size }, cellSize) {
+  const half = (size * cellSize) / 2;
+  return (x, y) => [
+    (x - column) * cellSize - half,
+    half - (y - row) * cellSize,
+  ];
 }
 
-export function fromFieldFrame(gridSize, cellSize) {
-  const half = (gridSize * cellSize) / 2;
-  return (x, y) => [(x + half) / cellSize, (half - y) / cellSize];
+export function fromFieldFrame({ column, row, size }, cellSize) {
+  const half = (size * cellSize) / 2;
+  return (x, y) => [
+    (x + half) / cellSize + column,
+    (half - y) / cellSize + row,
+  ];
 }
 
 function pushRect(out, frame, x0, y0, x1, y1) {
@@ -49,11 +55,13 @@ function geometryOf(positions) {
   return geometry;
 }
 
-export function gridLinesGeometry(gridSize, frame) {
+export function gridLinesGeometry({ column, row, size }, frame) {
   const positions = [];
-  for (let i = 0; i <= gridSize; i += 1) {
-    positions.push(...frame(i, 0), 0, ...frame(i, gridSize), 0);
-    positions.push(...frame(0, i), 0, ...frame(gridSize, i), 0);
+  for (let i = 0; i <= size; i += 1) {
+    positions.push(...frame(column + i, row), 0);
+    positions.push(...frame(column + i, row + size), 0);
+    positions.push(...frame(column, row + i), 0);
+    positions.push(...frame(column + size, row + i), 0);
   }
   return geometryOf(positions);
 }
@@ -90,10 +98,11 @@ export function openSidesGeometry(design, frame, width, inset) {
 
 export function previewGeometry(design, preview, frame, width) {
   const positions = [];
-  if (preview?.rect) {
-    const [column, row, size] = preview.rect;
+  [preview?.rect, ...(preview?.rects ?? [])].forEach((rect) => {
+    if (!rect) return;
+    const [column, row, size] = rect;
     pushRect(positions, frame, column, row, column + size, row + size);
-  }
+  });
   preview?.marks?.forEach(([x, y]) =>
     pushRect(positions, frame, x - width, y - width, x + width, y + width)
   );

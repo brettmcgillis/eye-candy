@@ -1,14 +1,11 @@
 /* eslint-disable import/no-extraneous-dependencies, no-await-in-loop */
-import path from 'node:path';
-import sharp from 'sharp';
-
 import {
   RENDER_OPTIONS,
   SCENE_KEYS,
   defaultsFor,
   normalizeOptions,
 } from '../../src/modules/ghostBuster/renderOptions.mjs';
-import { REPO_ROOT, createParseCli, withRenderer } from './generatorCli.mjs';
+import { createParseCli, withRenderer } from './generatorCli.mjs';
 import {
   createHeadlessRenderer,
   loadThree,
@@ -16,6 +13,11 @@ import {
   stubCanvas,
 } from './headlessWebgpu.mjs';
 import loadModules from './loadModules.mjs';
+import {
+  installGltfLoader,
+  installTextureLoader,
+  until,
+} from './r3fHeadless.mjs';
 
 // Barrels only — see docs/ghost-buster-pipeline.md.
 const ENTRIES = {
@@ -25,47 +27,14 @@ const ENTRIES = {
 
 const FPS = 60;
 
-// three's TextureLoader decodes through an <img>; headless, a texture the
-// stage asks for is read from public/ and handed over as data, flipped the
-// way an image texture's upload would flip it.
-function installTextureLoader(THREE) {
-  /* eslint-disable func-names, no-param-reassign */
-  THREE.TextureLoader.prototype.load = function (url, onLoad, _, onError) {
-    const texture = new THREE.DataTexture(new Uint8Array(4), 1, 1);
-    const file = path.join(
-      REPO_ROOT,
-      'public',
-      decodeURIComponent(new URL(url, 'http://local/').pathname)
-    );
-    sharp(file)
-      .ensureAlpha()
-      .flip()
-      .raw()
-      .toBuffer({ resolveWithObject: true })
-      .then(({ data, info }) => {
-        texture.image = {
-          data: new Uint8Array(data),
-          height: info.height,
-          width: info.width,
-        };
-        texture.flipY = false;
-        texture.generateMipmaps = true;
-        texture.minFilter = THREE.LinearMipmapLinearFilter;
-        texture.magFilter = THREE.LinearFilter;
-        texture.needsUpdate = true;
-        onLoad?.(texture);
-      })
-      .catch((error) => (onError ? onError(error) : Promise.reject(error)));
-    return texture;
-  };
-  /* eslint-enable func-names, no-param-reassign */
-}
-
 // R3F runs through Vite rather than as Node's CommonJS copy, so its
-// `instanceof THREE.Color` checks see the same three the stage does.
+// `instanceof THREE.Color` checks see the same three the stage does; the
+// GLTF and texture loaders read public/ directly.
 export async function loadKernel() {
   const { THREE, TSL } = await loadThree();
   installTextureLoader(THREE);
+  const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
+  installGltfLoader(GLTFLoader);
   const loaded = await loadModules(Object.values(ENTRIES), {
     noExternal: ['@react-three/fiber'],
   });
@@ -121,16 +90,6 @@ export function ghostAt(kernel, { batch, index, roll }) {
   return { config, name };
 }
 
-const until = async (test, label, tries = 600) => {
-  for (let i = 0; i < tries; i += 1) {
-    if (test()) return;
-    await new Promise((resolve) => {
-      setTimeout(resolve, 10);
-    });
-  }
-  throw new Error(`timed out waiting for ${label}`);
-};
-
 // One renderer and one R3F root per output size: the real GhostStudio stage
 // (GhostCharacter, its cloth sim and GhostBuster's studio) mounted with no
 // frame loop, stepped at 60 fps until the cloth settles, then captured.
@@ -159,7 +118,9 @@ export async function createGhostCapturer(
     width,
   });
   const captureDepth = look.createDepthCapture(renderer);
+  const captureNormals = look.createNormalCapture(renderer);
   const ghostRef = { current: null };
+  const stormRef = { current: null };
   let clock = 0;
   let current = null;
 
@@ -191,14 +152,15 @@ export async function createGhostCapturer(
     async load(config) {
       current = config;
       ghostRef.current = null;
-      await stage.mount({ config, ghostRef });
+      stormRef.current = null;
+      await stage.mount({ config, ghostRef, stormRef });
       await until(
         () => ghostRef.current?.sim && ghostRef.current?.mesh,
         'the ghost to mount'
       );
       await stage.flush();
       clock = 0;
-      const frames = Math.max(1, Math.round(config.settle * FPS));
+      const frames = Math.max(1, Math.round(ghost.stillTime(config) * FPS));
       // The cloth steps in useFrame whether or not anything is drawn, so the
       // settle skips drawing full-size frames nobody reads.
       const { scene } = stage;
@@ -213,7 +175,15 @@ export async function createGhostCapturer(
         ghostRef.current,
         config.skin
       );
-      return { bounds: ghost.latticeBounds(lattice), start: clock };
+      return {
+        bounds: ghost.withStorm(
+          ghost.animated(config)
+            ? ghost.MOTION_BOUNDS
+            : ghost.latticeBounds(lattice),
+          stormRef.current?.extent()
+        ),
+        start: clock,
+      };
     },
 
     // A still at the current clock, or the clip's next frame at `seconds`.
@@ -229,26 +199,55 @@ export async function createGhostCapturer(
         ghostRef.current,
         current.skin
       );
+      const pass = (capture) => (only) =>
+        capture(
+          stage.scene,
+          stage.camera,
+          width * pixelRatio,
+          height * pixelRatio,
+          only
+        );
+      const depthOf = pass(captureDepth);
       const depth = ghost.needsDepth(options)
-        ? await captureDepth(
-            stage.scene,
-            stage.camera,
-            width * pixelRatio,
-            height * pixelRatio,
-            ghostRef.current.mesh
-          )
+        ? await depthOf(ghostRef.current.mesh)
         : null;
-      const image = options.svgShading !== 'none' ? await frame(clock) : null;
+      const storm = options.svgStorm ? stormRef.current : null;
+      // The rain shadow is only drawn on a visible frame, which a settle is not.
+      const image =
+        ghost.needsImage(options) || storm ? await frame(clock) : null;
+      const stormPlot = storm
+        ? await look.readStormPlot(renderer, storm, {
+            depthOf,
+            normalsOf: pass(captureNormals),
+          })
+        : null;
       return ghost.renderGhostSvg({
         ...ghost.plotArgs(options, look.resolveSkin(current.skin)),
         camera: view,
         coverage: depth,
-        image,
+        image: ghost.needsImage(options) ? image : null,
         lattice,
+        storm: stormPlot,
+        time: clock,
         visible: options.svgOcclusion
-          ? look.depthProbe(depth, pixelRatio)
+          ? look.depthProbe(
+              ghost.unionOf(depth, stormPlot?.cloud?.coverage),
+              pixelRatio
+            )
           : null,
       });
+    },
+
+    // The settled cloth and the storm at the current clock, for the check.
+    async readback() {
+      return {
+        lattice: await look.readGhostLattice(
+          renderer,
+          ghostRef.current,
+          current.skin
+        ),
+        storm: (await stormRef.current?.snapshot(renderer)) ?? null,
+      };
     },
 
     get clock() {

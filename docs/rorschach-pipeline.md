@@ -342,6 +342,16 @@ job from the dev page pinned the entire test and nothing could roll. The server
 now forwards a rollable option only when the client actually sent it, and the
 page sends only the fields whose pins are ticked.
 
+## Plot SVG
+
+The `.svg` a still writes is `renderTestSvg({ layered: true })`: the
+strands grouped into one pen layer per palette colour (`pen-N ink #hex`),
+which the Plotterizer maps to pens (Fit to N pens for a 2–4 pen plot).
+Depth order is kept only within a colour — a plot draws every pen in full,
+so the painter's order that hides strands on screen means nothing on
+paper — and the bloom copies are left out. The raster paths still draw the
+unlayered, depth-sorted SVG.
+
 ## The ink layer
 
 `src/modules/rorschach/watercolor/` is Curtis et al., "Computer-Generated

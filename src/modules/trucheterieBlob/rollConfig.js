@@ -1,3 +1,4 @@
+import { alignSymmetry, symmetryAxis } from './design';
 import {
   LANE_MODES,
   MEATBALLS,
@@ -22,6 +23,7 @@ export function rollableKeys() {
 
 // Square on, or the field turned onto its diagonal.
 const ROTATION_CHOICES = [0, 45];
+export const SYMMETRY_CHANCE = 0.12;
 
 const MEATBALL_CHOICES = [
   MEATBALLS.HIDE_LOOSE,
@@ -59,6 +61,9 @@ export default function rollBlobConfig(
         config.planeRotation = rng.chance(0.5)
           ? ROTATION_CHOICES[1]
           : ROTATION_CHOICES[0];
+        config.blobSymmetry = rng.chance(SYMMETRY_CHANCE)
+          ? symmetryAxis(config.planeRotation, rng.chance(0.5))
+          : 'none';
       }
 
       if (facet === 'palette') {
@@ -74,6 +79,13 @@ export default function rollBlobConfig(
   Object.entries(pinned).forEach(([key, value]) => {
     if (value != null && key !== 'blobSeed') config[key] = value;
   });
+  // A pinned rotation (a saved design's, say) still gets a matching axis.
+  if (pinned.blobSymmetry == null) {
+    config.blobSymmetry = alignSymmetry(
+      config.blobSymmetry,
+      config.planeRotation
+    );
+  }
 
   return config;
 }

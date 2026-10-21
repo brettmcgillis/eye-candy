@@ -5,7 +5,6 @@ export default {
   aliases: ['GhostBusterCLI', 'ghostbuster'],
   label: 'GhostBusterCLI',
   group: 'render-workbenches',
-  description:
-    'Render and plot the ghost in any GhostBuster skin: rolled stills and video from the CLI, or pause and capture a live one.',
+  description: 'Generate images and videos using the GhostBusterCLI.',
   Component: lazy(() => import('./GhostBusterWorkbenchPage')),
 };

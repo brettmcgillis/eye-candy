@@ -47,6 +47,9 @@
       stable so presets don't care whether the transport underneath is
       `localStorage` or IPC.
 
+- [ ] fix the aeration on Waterworks. the bubbles dont seem to mesh well with the water particles
+- [ ] Add some better 'skins' for Waterworks. Do one that looks like water instead of particles. Do one where the particles are Ascii, H,2,& 0
+
 ## // Presets
 
 - [x] **Clouds** — each window gets one `cartoon_clouds.glb`

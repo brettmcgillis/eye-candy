@@ -61,24 +61,37 @@ function fileFor(root, name) {
 }
 
 // Shape only: overlap and neighbour-rule validation is the kernel's, run by the CLIs and trucheterie:check.
-function checkShape({ cells, gridSize }) {
-  const isInt = (value) => Number.isInteger(value) && value >= 0;
-  if (!isInt(gridSize) || gridSize > 50 || !Array.isArray(cells)) {
-    throw new DesignRequestError(400, 'A design needs gridSize and cells.');
+function checkShape({ cells, rotation }) {
+  if (!Array.isArray(cells)) {
+    throw new DesignRequestError(400, 'A design needs cells.');
+  }
+  if (rotation !== undefined && !Number.isFinite(rotation)) {
+    throw new DesignRequestError(400, 'Rotation is a number of degrees.');
   }
   if (
     !cells.every(
-      (cell) => Array.isArray(cell) && cell.length === 4 && cell.every(isInt)
+      (cell) =>
+        Array.isArray(cell) && cell.length === 4 && cell.every(Number.isInteger)
     )
   ) {
     throw new DesignRequestError(400, 'Cells are [column, row, size, mask].');
   }
 }
 
-const formatDesign = ({ cells, gridSize, name }) =>
-  `{\n  "name": ${JSON.stringify(name)},\n  "gridSize": ${gridSize},\n  "cells": [\n${cells
+const formatDesign = ({ cells, name, rotation = 0 }) =>
+  `{\n  "name": ${JSON.stringify(name)},\n  "rotation": ${rotation},\n  "cells": [\n${cells
     .map((cell) => `    ${JSON.stringify(cell)}`)
     .join(',\n')}\n  ]\n}\n`;
+
+function extentOf(cells) {
+  if (cells.length === 0) return null;
+  const spans = [0, 1].map((axis) => {
+    const lo = Math.min(...cells.map((cell) => cell[axis]));
+    const hi = Math.max(...cells.map((cell) => cell[axis] + cell[2]));
+    return hi - lo;
+  });
+  return `${spans[0]}×${spans[1]}`;
+}
 
 async function listDesigns(root) {
   const dir = path.join(root, DESIGNS_DIR);
@@ -95,7 +108,7 @@ async function listDesigns(root) {
       ]);
       return {
         cells: json.cells?.length ?? 0,
-        gridSize: json.gridSize,
+        extent: extentOf(json.cells ?? []),
         name,
         updated: info.mtime.toISOString(),
       };

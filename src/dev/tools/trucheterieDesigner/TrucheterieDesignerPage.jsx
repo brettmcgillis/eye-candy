@@ -6,6 +6,7 @@ import {
   FiEye,
   FiLayers,
   FiLink,
+  FiMove,
   FiRotateCcw,
   FiRotateCw,
   FiSave,
@@ -23,9 +24,9 @@ import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import WebGPUCanvas from '@app/scaffold/canvas/WebGPUCanvas';
 import BlobFieldMesh from '@components/scenes/WebGPU/Trucheterie/components/BlobFieldMesh';
 import {
-  DESIGN_MAX_GRID,
-  DESIGN_MIN_GRID,
   decodeDesign,
+  designBounds,
+  designFrame,
   designFromJson,
   designFromSeed,
   designToJson,
@@ -33,7 +34,6 @@ import {
   encodeDesign,
   isSideOpen,
   randomSeed,
-  resizeDesign,
   sceneDefaults,
 } from '@modules/trucheterieBlob';
 import {
@@ -46,8 +46,11 @@ import DevPageHeaderBar from '../../shell/DevPageHeaderBar';
 import './TrucheterieDesignerPage.css';
 import PreviewColors from './components/PreviewColors';
 
-const CANVAS_SIZE = 8;
+// World units per micro-cell: the frame grows with the design, so the canvas is sized from it and cells never rescale.
+const CELL_UNIT = 0.4;
 const CAMERA_DISTANCE = 12;
+const SEED_GRID_MIN = 4;
+const SEED_GRID_MAX = 50;
 const NAME = /^[a-z0-9][a-z0-9-]{0,63}$/u;
 
 const TOOL_OPTIONS = [
@@ -56,6 +59,7 @@ const TOOL_OPTIONS = [
   { icon: <FiLink />, label: 'Connect', value: 'connect' },
   { icon: <FiShuffle />, label: 'Diagonal', value: 'diagonal' },
   { icon: <FiLayers />, label: 'Order', value: 'order' },
+  { icon: <FiMove />, label: 'Move', value: 'move' },
   { icon: <FiEye />, label: 'View', value: 'off' },
 ];
 
@@ -73,33 +77,56 @@ function designStats(design) {
       [0, 1, 2, 3].filter((side) => isSideOpen(design, index, side)).length,
     0
   );
-  return { cells: design.cells.length, open };
+  const bounds = designBounds(design);
+  const extent = bounds ? `${bounds.width}×${bounds.height}` : 'empty';
+  return { cells: design.cells.length, extent, open };
+}
+
+// Saved as the scenes' planeRotation (degrees, −180..180), which the CLIs pin unless a rotation is typed.
+const toDegrees = (steps) => (steps > 4 ? steps - 8 : steps) * 45;
+const toSteps = (degrees) => ((Math.round((degrees ?? 0) / 45) % 8) + 8) % 8;
+
+function frameCenter(design) {
+  const { column, row, size } = designFrame(design);
+  return [column + size / 2, row + size / 2];
 }
 
 export default function TrucheterieDesignerPage() {
   const saved = useSavedDesigns();
-  const [code, setCode] = useState(() => encodeDesign(emptyDesign(20)));
+  const [code, setCode] = useState(() => encodeDesign(emptyDesign()));
   const [name, setName] = useState('');
   const [savedCode, setSavedCode] = useState(null);
-  const [newGrid, setNewGrid] = useState(20);
+  const [seedGrid, setSeedGrid] = useState(20);
   const [seed, setSeed] = useState('');
   const [tool, setTool] = useState('paint');
   const [brush, setBrush] = useState(2);
   const [autoConnect, setAutoConnect] = useState(true);
   const [rotationSteps, setRotationSteps] = useState(0);
+  const [savedRotation, setSavedRotation] = useState(0);
   const [pathsPerUnit, setPathsPerUnit] = useState(4);
   const [preview, setPreview] = useState(() => sceneDefaults());
   const [message, setMessage] = useState(null);
 
+  const [anchor, setAnchor] = useState([0, 0]);
+
   const history = useDesignHistory(code, setCode, { keyboard: true });
   const design = useMemo(() => decodeDesign(code), [code]);
   const stats = useMemo(() => designStats(design), [design]);
-  const dirty = code !== savedCode;
+  const dirty = code !== savedCode || rotationSteps !== savedRotation;
+  const frame = designFrame(design);
+  const canvasSize = frame.size * CELL_UNIT;
+  const [centerX, centerY] = frameCenter(design);
+  const offset = [
+    (centerX - anchor[0]) * CELL_UNIT,
+    (anchor[1] - centerY) * CELL_UNIT,
+    0,
+  ];
 
   const replace = useCallback(
-    (next) => {
+    (next, { recenter = false } = {}) => {
       history.checkpoint();
       setCode(encodeDesign(next));
+      if (recenter) setAnchor(frameCenter(next));
     },
     [history]
   );
@@ -107,23 +134,28 @@ export default function TrucheterieDesignerPage() {
   const config = useMemo(
     () => ({
       ...preview,
-      blobCanvasSize: CANVAS_SIZE,
+      blobCanvasSize: canvasSize,
       blobDesign: code,
       blobPathsPerUnit: pathsPerUnit,
       blobSeed: name || 'designer',
     }),
-    [code, name, pathsPerUnit, preview]
+    [canvasSize, code, name, pathsPerUnit, preview]
   );
 
   const onChange = useCallback((next) => setCode(encodeDesign(next)), []);
 
   async function open(designName) {
     try {
-      const loaded = designFromJson(await saved.load(designName));
+      const json = await saved.load(designName);
+      const loaded = designFromJson(json);
       if (!loaded) throw new Error(`"${designName}" is not a valid design.`);
+      const steps = toSteps(json.rotation);
+      setRotationSteps(steps);
+      setSavedRotation(steps);
       history.checkpoint();
       const next = encodeDesign(loaded);
       setCode(next);
+      setAnchor(frameCenter(loaded));
       setSavedCode(next);
       setName(designName);
       setMessage(null);
@@ -141,8 +173,12 @@ export default function TrucheterieDesignerPage() {
       return;
     }
     try {
-      await saved.save(name, designToJson(design, { name }));
+      await saved.save(
+        name,
+        designToJson(design, { name, rotation: toDegrees(rotationSteps) })
+      );
       setSavedCode(code);
+      setSavedRotation(rotationSteps);
       setMessage({ ok: true, text: `Saved ${name}.` });
     } catch (failure) {
       setMessage({ ok: false, text: failure.message });
@@ -218,29 +254,31 @@ export default function TrucheterieDesignerPage() {
             </button>
             <button
               className="dev-button"
-              onClick={() => replace(emptyDesign(design.gridSize))}
+              onClick={() => replace(emptyDesign())}
               type="button"
             >
               Clear
             </button>
           </div>
           <p className="rw-hint">
-            Grid size sets a new blank design, resizes the current one (centred;
-            cells that no longer fit are dropped) and sizes a seeded start.
-            Paint drags cells onto free grid. Connect toggles the side nearest
-            the pointer; a side opens only where it meets cells all along, and
-            opening or closing it carries across every neighbour on that edge.
-            Diagonal flips which corners a four-way cell’s arcs turn about;
-            Order swaps which of a cell’s two families sits on top (over, in
-            3D). The marks show the pivots a click will give. ⌘Z / ⇧⌘Z undo and
-            redo.
+            The grid has no edge: it always reaches a full brush past the design
+            and grows as you paint. Paint drags cells onto free grid, including
+            the empty corner of a bigger cell where its arcs never reach; red
+            means the cell would touch arcs. Edits that would grow a cell’s arcs
+            into a cell sitting inside it are refused. Connect toggles the side
+            nearest the pointer; a side opens only where it meets cells all
+            along, and opening or closing it carries across every neighbour on
+            that edge. Diagonal flips which corners a four-way cell’s arcs turn
+            about; Order swaps which of a cell’s two families sits on top (over,
+            in 3D). The marks show the pivots a click will give. Move drags a
+            cell and everything connected to it; red means it cannot land there
+            without touching arcs or changing a side. ⌘Z / ⇧⌘Z undo and redo.
           </p>
 
           <section className="rw-control-section">
             <h2>Design</h2>
             <p className="rw-status">
-              {stats.cells} cells · {stats.open} open sides · grid{' '}
-              {design.gridSize}
+              {stats.cells} cells · {stats.open} open sides · {stats.extent}
               {dirty ? ' · unsaved' : ''}
             </p>
             <div className="tdz-row">
@@ -256,21 +294,10 @@ export default function TrucheterieDesignerPage() {
               </button>
             </div>
             <div className="tdz-row">
-              <label className="rw-field" htmlFor="tdz-new-grid">
-                Grid size
-                <input
-                  id="tdz-new-grid"
-                  max={DESIGN_MAX_GRID}
-                  min={DESIGN_MIN_GRID}
-                  onChange={(event) => setNewGrid(Number(event.target.value))}
-                  type="number"
-                  value={newGrid}
-                />
-              </label>
               <button
                 className="dev-button"
                 onClick={() => {
-                  replace(emptyDesign(newGrid));
+                  replace(emptyDesign(), { recenter: true });
                   setName('');
                   setSavedCode(null);
                 }}
@@ -278,15 +305,19 @@ export default function TrucheterieDesignerPage() {
               >
                 New blank
               </button>
-              <button
-                className="dev-button"
-                onClick={() => replace(resizeDesign(design, newGrid))}
-                type="button"
-              >
-                Resize
-              </button>
             </div>
             <div className="tdz-row">
+              <label className="rw-field" htmlFor="tdz-seed-grid">
+                Seed grid
+                <input
+                  id="tdz-seed-grid"
+                  max={SEED_GRID_MAX}
+                  min={SEED_GRID_MIN}
+                  onChange={(event) => setSeedGrid(Number(event.target.value))}
+                  type="number"
+                  value={seedGrid}
+                />
+              </label>
               <label className="rw-field" htmlFor="tdz-seed">
                 Seed
                 <input
@@ -303,9 +334,10 @@ export default function TrucheterieDesignerPage() {
                   replace(
                     designFromSeed({
                       ...sceneDefaults(),
-                      blobGridSize: newGrid,
+                      blobGridSize: seedGrid,
                       blobSeed: seed || randomSeed(),
-                    })
+                    }),
+                    { recenter: true }
                   );
                   setName('');
                   setSavedCode(null);
@@ -336,7 +368,8 @@ export default function TrucheterieDesignerPage() {
                   >
                     <strong>{item.name}</strong>
                     <span>
-                      {item.cells} cells · grid {item.gridSize}
+                      {item.cells} cells
+                      {item.extent ? ` · ${item.extent}` : ''}
                     </span>
                   </button>
                   <button
@@ -357,11 +390,18 @@ export default function TrucheterieDesignerPage() {
             {query ? (
               <>
                 <div className="tdz-row">
-                  <Link className="dev-button" to={`/dev/trucheterie${query}`}>
+                  <Link
+                    className="dev-button"
+                    rel="noreferrer"
+                    target="_blank"
+                    to={`/dev/trucheterie${query}`}
+                  >
                     TrucheterieCLI
                   </Link>
                   <Link
                     className="dev-button"
+                    rel="noreferrer"
+                    target="_blank"
                     to={`/dev/trucheterie3d${query}`}
                   >
                     Trucheterie3DCLI
@@ -374,7 +414,8 @@ export default function TrucheterieDesignerPage() {
             ) : (
               <p className="rw-hint">
                 Save the design to render it with the CLIs: the field stays
-                exactly as drawn, and each seed rolls its palette and look.
+                exactly as drawn at its saved grid rotation, and each seed rolls
+                its palette and look.
               </p>
             )}
           </section>
@@ -436,17 +477,19 @@ export default function TrucheterieDesignerPage() {
               position={[0, 0, CAMERA_DISTANCE]}
             />
             <OrbitControls enableRotate={false} makeDefault />
-            <group rotation-z={(rotationSteps * Math.PI) / 4}>
-              <BlobFieldMesh config={config} />
-              <BlobDesignEditor
-                autoConnect={autoConnect}
-                brush={brush}
-                canvasSize={CANVAS_SIZE}
-                design={design}
-                onChange={onChange}
-                onStrokeStart={history.checkpoint}
-                tool={tool}
-              />
+            <group position={offset}>
+              <group rotation-z={(rotationSteps * Math.PI) / 4}>
+                <BlobFieldMesh config={config} />
+                <BlobDesignEditor
+                  autoConnect={autoConnect}
+                  brush={brush}
+                  canvasSize={canvasSize}
+                  design={design}
+                  onChange={onChange}
+                  onStrokeStart={history.checkpoint}
+                  tool={tool}
+                />
+              </group>
             </group>
           </WebGPUCanvas>
         </div>

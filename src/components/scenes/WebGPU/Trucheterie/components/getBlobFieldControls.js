@@ -101,6 +101,18 @@ export default function getBlobFieldControls(snapshot, setControlsRef) {
       },
       value: saved.blobMeatballs ?? 2,
     },
+    blobSymmetry: {
+      render: isSeeded,
+      label: 'Symmetry',
+      options: {
+        None: 'none',
+        Vertical: 'vertical',
+        Horizontal: 'horizontal',
+        Diagonal: 'diagonal',
+        'Anti-diagonal': 'antidiagonal',
+      },
+      value: saved.blobSymmetry ?? 'none',
+    },
     blobPalette: {
       label: 'Lane Palette',
       options: PALETTE_NAMES,

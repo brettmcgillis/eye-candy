@@ -16,26 +16,41 @@ function designFile(value) {
   return path.join(DESIGNS_DIR, `${value}.json`);
 }
 
-// `blob` is the loaded @modules/trucheterieBlob barrel.
-export function resolveDesign(blob, value) {
-  if (!value) return '';
-  if (blob.isDesignCode(value)) return value;
+// `blob` is the loaded @modules/trucheterieBlob barrel. `rotation` is the
+// saved file's grid rotation (degrees), or null for a code.
+function loadDesign(blob, value) {
+  if (blob.isDesignCode(value)) return { code: value, rotation: null };
   const file = designFile(value);
   if (!existsSync(file)) {
     throw new Error(
       `design "${value}" is not a design code, a .json file or a saved design in ${path.relative(REPO_ROOT, DESIGNS_DIR)}.`
     );
   }
-  const design = blob.designFromJson(JSON.parse(readFileSync(file, 'utf8')));
+  const json = JSON.parse(readFileSync(file, 'utf8'));
+  const design = blob.designFromJson(json);
   if (!design) {
     throw new Error(
-      `${path.relative(REPO_ROOT, file)} is not a valid design (overlapping or out-of-grid cells).`
+      `${path.relative(REPO_ROOT, file)} is not a valid design (out-of-range cells, or cells overlapping where arcs reach).`
     );
   }
-  return blob.encodeDesign(design);
+  const rotation = Number(json.rotation);
+  return {
+    code: blob.encodeDesign(design),
+    rotation: Number.isFinite(rotation) ? rotation : null,
+  };
 }
 
+export function resolveDesign(blob, value) {
+  return value ? loadDesign(blob, value).code : '';
+}
+
+// A saved design's rotation is pinned unless the caller typed planeRotation.
 export function withResolvedDesign(blob, pinned) {
   if (!pinned.blobDesign) return pinned;
-  return { ...pinned, blobDesign: resolveDesign(blob, pinned.blobDesign) };
+  const { code, rotation } = loadDesign(blob, pinned.blobDesign);
+  const turned =
+    rotation !== null && pinned.planeRotation === undefined
+      ? { planeRotation: rotation }
+      : {};
+  return { ...pinned, blobDesign: code, ...turned };
 }

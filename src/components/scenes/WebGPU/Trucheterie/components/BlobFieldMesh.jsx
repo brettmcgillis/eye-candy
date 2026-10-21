@@ -45,6 +45,7 @@ function BlobFieldMesh({ config }) {
     blobPaletteExact,
     blobPaletteShuffle,
     blobSizeFunction,
+    blobSymmetry,
     strokeColor,
   } = config;
 
@@ -65,6 +66,7 @@ function BlobFieldMesh({ config }) {
         blobOneFill,
         blobSeed,
         blobSizeFunction,
+        blobSymmetry,
       }),
     [
       blobCanvasSize,
@@ -77,6 +79,7 @@ function BlobFieldMesh({ config }) {
       blobOneFill,
       blobSeed,
       blobSizeFunction,
+      blobSymmetry,
     ]
   );
 

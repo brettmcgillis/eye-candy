@@ -12,7 +12,8 @@
 //                 whether the scene lets an instance WANDER vs. stand and idle.
 //   modelScale  - base scale to read at roughly bird size in the scene
 //   speed       - roam speed (units/sec) when wandering; ignored if !locomotion
-//   cam          { scale } - default camera-head size (scene units) for this model.
+//   cam          { scale, offset, rot, ledOffset } - default camera-head size
+//                 (scene units), slide, aim and REC LED spot for this model.
 //                 The scene's Camera Head controls (Size/Aim/Lift) override live.
 //
 // pigeon.glb is a "chicken" rig with a single ~7.5s look-around idle (no roaming),
@@ -35,6 +36,9 @@ export const BIRDS = {
       // base[0] -> base[1] (neck -> head); up is the in-plane perpendicular. If a
       // future species omits orientJoints, it falls back to the static yaw/pitch.
       scale: 0.48,
+      offset: { x: 0, y: 0.01, z: 0 },
+      rot: { x: 0, y: 0, z: 0 },
+      ledOffset: { x: 0, y: 0, z: -0.12 },
       anchor: 'baseMid', // sit at the midpoint of the two base joints
       orientJoints: {
         base: ['Chicken_Neck_01_02SHJnt_49', 'Chicken_Head_JawSHJnt_47'],

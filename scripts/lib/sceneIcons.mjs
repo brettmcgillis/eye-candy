@@ -17,6 +17,7 @@ import { REPO_ROOT } from './loadModules.mjs';
 // folder, and the module whose renderOptions.mjs declares the overlay options.
 export const OVERLAY_TOOLS = {
   apollian: { module: 'apollian', scene: 'Apollian' },
+  'birds-arent-real': { module: 'birdsArentReal', scene: 'BirdsArentReal' },
   'block-party': { module: 'blockParty', scene: 'BlockParty' },
   brutalist: { module: 'brutalist', scene: 'Brutalist' },
   'exhibit-a': { module: 'exhibitA', scene: 'ExhibitA' },

@@ -79,7 +79,6 @@ const HANDLED = new Set([
   'margin',
   'mode',
   'paletteDrift',
-  'dxf',
   'png',
   'svg',
   'transparentBackground',
@@ -284,13 +283,13 @@ export default function TrucheterieWorkbenchPage() {
               {kind === 'still' ? (
                 <fieldset className="rw-fieldset rw-formats">
                   <legend>Image files</legend>
-                  {['png', 'webp', 'svg', 'dxf'].map((format) => (
+                  {['png', 'webp', 'svg'].map((format) => (
                     <label htmlFor={`tw-${format}`} key={format}>
                       <input
                         checked={Boolean(options[format])}
                         disabled={
                           options[format] &&
-                          !['png', 'webp', 'svg', 'dxf'].some(
+                          !['png', 'webp', 'svg'].some(
                             (other) => other !== format && options[other]
                           )
                         }

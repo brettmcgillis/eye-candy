@@ -46,14 +46,6 @@ const standard = {
       type: 'number',
       ...extra,
     }),
-  dxf: (extra = {}) =>
-    still({
-      default: false,
-      help: 'Write a DXF beside each SVG, in mm, one layer per pen (opens in Silhouette Studio Basic)',
-      label: 'DXF',
-      type: 'boolean',
-      ...extra,
-    }),
   fov: (value, extra = {}) =>
     render({
       default: value,
@@ -202,7 +194,7 @@ const standard = {
   plotWidthMm: (value = 200, extra = {}) =>
     still({
       default: value,
-      help: 'Physical plot width in mm for the SVG and DXF; the height follows the canvas',
+      help: 'Physical plot width in mm for the SVG; the height follows the canvas',
       label: 'Plot width (mm)',
       max: 2000,
       min: 10,
@@ -268,6 +260,19 @@ const standard = {
       label: 'SVG hidden lines',
       section: 'svg',
       type: 'boolean',
+      ...extra,
+    }),
+  svgPenMm: (extra = {}) =>
+    still({
+      default: 0.3,
+      help: 'Physical pen width in mm: halftone and stipple dots are filled with rings this far apart, and dots narrower than it are dropped',
+      label: 'SVG pen width (mm)',
+      max: 3,
+      min: 0.05,
+      placeholder: 'MM',
+      section: 'svg',
+      step: 0.05,
+      type: 'number',
       ...extra,
     }),
   svgStroke: (extra = {}) =>

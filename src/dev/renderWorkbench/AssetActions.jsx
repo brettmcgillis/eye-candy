@@ -1,5 +1,12 @@
 import React from 'react';
-import { FiCheck, FiDownload, FiSave, FiTrash2, FiX } from 'react-icons/fi';
+import {
+  FiCheck,
+  FiDownload,
+  FiPenTool,
+  FiSave,
+  FiTrash2,
+  FiX,
+} from 'react-icons/fi';
 
 export default function AssetActions({
   asset,
@@ -14,6 +21,7 @@ export default function AssetActions({
   onKeep,
   onRequestDelete,
   pendingDelete = false,
+  plotterHref = null,
 }) {
   const keepTitle = keepLabel ? `Keep ${keepLabel}` : 'Keep';
 
@@ -27,6 +35,17 @@ export default function AssetActions({
       >
         <FiDownload />
       </a>
+      {plotterHref ? (
+        <a
+          aria-label={`Open ${asset.name} in Plotterizer`}
+          href={plotterHref}
+          rel="noreferrer"
+          target="_blank"
+          title="Open in Plotterizer"
+        >
+          <FiPenTool />
+        </a>
+      ) : null}
       {canKeep ? (
         <button
           aria-label={`${kept ? 'Kept' : 'Keep'} ${keepLabel ?? asset.name}`}

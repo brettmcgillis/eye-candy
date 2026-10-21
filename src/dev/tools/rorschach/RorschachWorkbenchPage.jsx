@@ -690,12 +690,7 @@ export default function RorschachWorkbenchPage() {
                   <label htmlFor="rw-png">
                     <input
                       checked={Boolean(options.png)}
-                      disabled={
-                        options.png &&
-                        !options.svg &&
-                        !options.dxf &&
-                        !options.webp
-                      }
+                      disabled={options.png && !options.svg && !options.webp}
                       id="rw-png"
                       onChange={(event) =>
                         setOption('png', event.target.checked)
@@ -707,12 +702,7 @@ export default function RorschachWorkbenchPage() {
                   <label htmlFor="rw-svg">
                     <input
                       checked={Boolean(options.svg)}
-                      disabled={
-                        options.svg &&
-                        !options.png &&
-                        !options.dxf &&
-                        !options.webp
-                      }
+                      disabled={options.svg && !options.png && !options.webp}
                       id="rw-svg"
                       onChange={(event) =>
                         setOption('svg', event.target.checked)
@@ -721,32 +711,10 @@ export default function RorschachWorkbenchPage() {
                     />
                     SVG
                   </label>
-                  <label htmlFor="rw-dxf">
-                    <input
-                      checked={Boolean(options.dxf)}
-                      disabled={
-                        options.dxf &&
-                        !options.png &&
-                        !options.svg &&
-                        !options.webp
-                      }
-                      id="rw-dxf"
-                      onChange={(event) =>
-                        setOption('dxf', event.target.checked)
-                      }
-                      type="checkbox"
-                    />
-                    DXF
-                  </label>
                   <label htmlFor="rw-webp">
                     <input
                       checked={Boolean(options.webp)}
-                      disabled={
-                        options.webp &&
-                        !options.png &&
-                        !options.svg &&
-                        !options.dxf
-                      }
+                      disabled={options.webp && !options.png && !options.svg}
                       id="rw-webp"
                       onChange={(event) =>
                         setOption('webp', event.target.checked)
@@ -755,7 +723,7 @@ export default function RorschachWorkbenchPage() {
                     />
                     WebP
                   </label>
-                  {options.svg || options.dxf ? (
+                  {options.svg ? (
                     <NumberField
                       id="rw-plot-width"
                       option="plotWidthMm"

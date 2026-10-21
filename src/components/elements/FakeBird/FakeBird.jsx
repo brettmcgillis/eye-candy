@@ -3,19 +3,19 @@
 /* eslint-disable no-underscore-dangle */
 import React, { memo, useEffect, useMemo, useRef } from 'react';
 
-import { useAnimations, useGLTF } from '@react-three/drei';
 import { createPortal, useFrame, useGraph } from '@react-three/fiber';
 
 import * as THREE from 'three';
-import { SkeletonUtils } from 'three-stdlib';
+import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 
+import useDracoGltf from '@hooks/useDracoGltf';
 import { modelFile } from '@utils/appUtils';
 
-import { BIRDS } from '../utils/birds';
 import CameraHead from './CameraHead';
+import { BIRDS } from './birds';
 
 // Preload every registered species so swapping in Leva is instant.
-Object.values(BIRDS).forEach((b) => useGLTF.preload(modelFile(b.file)));
+Object.values(BIRDS).forEach((b) => useDracoGltf.preload(modelFile(b.file)));
 
 const _q = new THREE.Quaternion();
 const _e = new THREE.Euler();
@@ -44,8 +44,8 @@ const _WORLD_UP = new THREE.Vector3(0, 1, 0);
  * group that contains the clone's bones, and the skinned mesh must reference the
  * clone's skeleton. So we follow the repo's proven recipe (PosedRaccoon / Pigeon):
  * SkeletonUtils.clone -> useGraph(clone) -> render the root bone + skinned meshes
- * explicitly -> useAnimations(animations, group). `<primitive object={clone} />` is
- * the shortcut that breaks instances.
+ * explicitly -> a mixer whose actions are rooted at `group`. `<primitive
+ * object={clone} />` is the shortcut that breaks instances.
  *
  * Head aim: the camera head is parented to the head bone (so it inherits the bird's
  * scale + natural head motion), but its ORIENTATION is recomputed each frame from a
@@ -69,9 +69,9 @@ function FakeBird({
   sweepSpeed,
   ledBlink = true,
   camScale, // head size override (else meta.cam.scale)
-  camRot = { x: 0, y: 0, z: 0 }, // fine-tune aim (pitch/yaw/roll) on the head frame
-  camOffset = { x: 0, y: 0, z: 0 }, // slide along head right/up/forward
-  ledOffset = { x: 0, y: 0, z: 0 }, // REC LED position (normalized head units)
+  camRot: camRotProp, // fine-tune aim (pitch/yaw/roll) on the head frame
+  camOffset: camOffsetProp, // slide along head right/up/forward
+  ledOffset: ledOffsetProp, // REC LED position (normalized head units)
   hidden = false, // hide the body (Bird POV: don't sit inside our own lens)
   aimAtCursor = false, // Cursor-Follow: aim the lens at cursorTargetRef instead of sweeping
   cursorTargetRef = null, // ref<THREE.Vector3> world point every head stares at
@@ -79,6 +79,9 @@ function FakeBird({
   ...props
 }) {
   const meta = BIRDS[species] || BIRDS.pigeon;
+  const camRot = camRotProp ?? meta.cam.rot;
+  const camOffset = camOffsetProp ?? meta.cam.offset;
+  const ledOffset = ledOffsetProp ?? meta.cam.ledOffset;
   const group = useRef();
   const roamer = useRef();
   // Resolved per-clone: { mount, a, b, c } — the head-bone mount + triangle joints.
@@ -92,10 +95,19 @@ function FakeBird({
     ready: false, // seeded on the first aim frame
   });
 
-  const { scene, animations } = useGLTF(modelFile(meta.file));
+  const { scene, animations } = useDracoGltf(modelFile(meta.file));
   const clone = useMemo(() => SkeletonUtils.clone(scene), [scene]);
   useGraph(clone);
-  const { actions, mixer } = useAnimations(animations, group);
+  const mixer = useMemo(() => new THREE.AnimationMixer(undefined), []);
+  useEffect(
+    () => () => {
+      mixer.stopAllAction();
+      if (group.current) mixer.uncacheRoot(group.current);
+    },
+    [mixer]
+  );
+  // Ahead of the head aim below, which reads the pose this writes.
+  useFrame((_, dt) => mixer.update(dt));
 
   // Pull the root bone + skinned meshes out of the clone so we can render them the
   // way the mixer expects (and turn on shadows).
@@ -128,7 +140,10 @@ function FakeBird({
   // Pick + play the clip.
   useEffect(() => {
     const clipName = canWander ? meta.clips.walk : meta.clips.idle;
-    const action = clipName ? actions[clipName] : null;
+    const clip = clipName
+      ? animations.find((entry) => entry.name === clipName)
+      : null;
+    const action = clip ? mixer.clipAction(clip, group.current) : null;
     if (!action) return undefined;
     mixer.stopAllAction();
     action.reset().play();
@@ -138,7 +153,7 @@ function FakeBird({
       mixer.update(0);
     }
     return () => action.stop();
-  }, [actions, mixer, canWander, meta, animate, phase]);
+  }, [animations, mixer, canWander, meta, animate, phase]);
 
   // Attach the camera head to the head bone and resolve the aim joints. NOTE:
   // rendering <primitive object={rootBone}/> reparents the bone hierarchy OUT of

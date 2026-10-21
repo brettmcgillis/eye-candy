@@ -1,4 +1,9 @@
-import { createRng } from '@modules/trucheterieBlob';
+import {
+  SYMMETRY_CHANCE,
+  alignSymmetry,
+  createRng,
+  symmetryAxis,
+} from '@modules/trucheterieBlob';
 
 import {
   HEIGHT_MODES,
@@ -31,13 +36,18 @@ function weighted(rng, entries) {
 
 const FACET_ROLLS = {
   structure(config, rng) {
+    const meatballs = pick(rng, [
+      MEATBALLS.HIDE_LOOSE,
+      MEATBALLS.PRUNE_LOOSE,
+      MEATBALLS.KEEP_ALL,
+    ]);
+    const rotation = rng.chance(0.5) ? 45 : 0;
     Object.assign(config, {
-      blobMeatballs: pick(rng, [
-        MEATBALLS.HIDE_LOOSE,
-        MEATBALLS.PRUNE_LOOSE,
-        MEATBALLS.KEEP_ALL,
-      ]),
-      planeRotation: rng.chance(0.5) ? 45 : 0,
+      blobMeatballs: meatballs,
+      blobSymmetry: rng.chance(SYMMETRY_CHANCE)
+        ? symmetryAxis(rotation, rng.chance(0.5))
+        : 'none',
+      planeRotation: rotation,
     });
   },
   palette(config, rng, { paletteNames }) {
@@ -94,5 +104,11 @@ export default function rollTubeConfig(
   Object.entries(pinned).forEach(([key, value]) => {
     if (value != null && key !== 'blobSeed') config[key] = value;
   });
+  if (pinned.blobSymmetry == null) {
+    config.blobSymmetry = alignSymmetry(
+      config.blobSymmetry,
+      config.planeRotation
+    );
+  }
   return config;
 }

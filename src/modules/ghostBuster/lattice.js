@@ -1,3 +1,4 @@
+import { DECAY_DEFAULTS, dripTable } from '@elements/WebGPU/cloth/clothDecay';
 import {
   buildClothTopology,
   computeClothAlpha,
@@ -132,9 +133,27 @@ export default function ghostLattice({ local, matrixWorld, skin }) {
     positions[i * 3 + 2] = (m[2] * x + m[6] * y + m[10] * z + m[14]) / w;
   }
 
+  const decay = {
+    ...Object.fromEntries(
+      Object.keys(DECAY_DEFAULTS).map((key) => [
+        key,
+        skin[key] ?? DECAY_DEFAULTS[key],
+      ])
+    ),
+    holeAmount: skin.holeAmount,
+    tatterEdge: skin.tatterEdge,
+  };
+  const stained = decay.holeRimWidth > 0 || decay.bloodAmount > 0;
+
   return {
     alpha: render,
     cutouts: CUTOUTS,
+    decay: {
+      noise: stained ? noiseTable(skin.alphaScale, skin.alphaSeed) : null,
+      params: decay,
+      pinned: topology.edgePinned,
+      table: decay.dripAmount > 0 ? dripTable(skin.alphaSeed) : null,
+    },
     positions: fillOutside(positions, topology),
     segmentsX: segments,
     segmentsY: segments,

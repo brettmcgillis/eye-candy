@@ -67,6 +67,10 @@ const FACET_ROLLS = {
     });
   },
 
+  pose(config, rng) {
+    Object.assign(config, { strike: rng.chance(0.5) });
+  },
+
   skin(config, rng, { skins }) {
     if (skins?.length) Object.assign(config, { skin: pick(rng, skins) });
   },

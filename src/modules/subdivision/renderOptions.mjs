@@ -366,7 +366,6 @@ const RENDER = {
   svg: standard.svg(
     'Write a plottable SVG: one layer per pen, outlines + hatching'
   ),
-  dxf: standard.dxf(),
   plotWidthMm: standard.plotWidthMm(200),
   transparentBackground: {
     default: false,

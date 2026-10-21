@@ -26,6 +26,7 @@ export const VIEWS = [
   'high',
 ];
 export const VIDEO_MODES = ['float', 'turntable'];
+export const ANIMATIONS = ['none', 'wave', 'clap'];
 export const SVG_STYLES = ['rings', 'spokes', 'grid', 'mesh', 'none'];
 export const SVG_SHADINGS = [
   'none',
@@ -37,6 +38,8 @@ export const SVG_SHADINGS = [
   'tsp',
 ];
 export const SVG_OUTLINES = ['skin', 'none', 'outline', 'rings', 'glow'];
+export const SVG_FILLS = ['none', 'spiral', 'rows'];
+export const SVG_FILL_INSIDE = ['cloth', 'hole', 'none'];
 export const DEFAULT_SKIN = 'Hero';
 
 // Degrees round the ghost from its face; `hero` is the generation's own
@@ -128,6 +131,32 @@ const POSE = {
       help: 'Seconds the cloth simulates before the still is taken',
     })
   ),
+  stormSeed: rolled(
+    'pose',
+    [1, 9999],
+    num('pose', null, 'Storm seed', 1, 1, 9999, 1, {
+      help: "Seeds a storm skin's raindrops and lightning bolts",
+    })
+  ),
+  strike: inFacet(
+    'pose',
+    flag('pose', null, 'Strike', false, {
+      help: "A storm skin's lightning bolt mid-strike at the still's moment",
+    })
+  ),
+  animation: inFacet(
+    'pose',
+    choice('pose', null, 'Animation', ANIMATIONS, 'none', {
+      help: 'A GhostBuster action the ghost starts once it has settled; the still is taken `Animation at` seconds in, framed on a fixed sphere so a run of them flips as one shot',
+    })
+  ),
+  animationAt: inFacet(
+    'pose',
+    num('pose', null, 'Animation at', 0, 0, 30, 0.01, {
+      help: 'Seconds into the animation the still is taken',
+      when: { animation: ['wave', 'clap'] },
+    })
+  ),
 };
 
 const CAMERA = {
@@ -180,7 +209,6 @@ const RENDER = {
   svg: standard.svg(
     'Write a plottable SVG per view: cloth lines and edges, hidden lines removed'
   ),
-  dxf: standard.dxf(),
   plotWidthMm: standard.plotWidthMm(),
   views: standard.views(VIEWS, 'hero'),
   capture: output({
@@ -253,6 +281,10 @@ const RENDER = {
       ],
     },
   }),
+  svgPenMm: standard.svgPenMm({
+    help: 'Nib width in mm: halftone and stipple dots are drawn this wide, and a fill thins its turns where the drape packs them closer than two nibs',
+    scene: false,
+  }),
   svgShadeAngle: num('svg', null, 'SVG shade angle', 45, -90, 90, 1, {
     help: 'Degrees the hatching and the halftone grid run at',
     scene: false,
@@ -274,6 +306,33 @@ const RENDER = {
       ],
     },
   }),
+  svgRims: flag('svg', null, 'SVG eye rims', true, {
+    help: "Draw the skin's eyeliner (its cutout rim) as filled strokes round the eye holes, on their own layer",
+    scene: false,
+    scope: 'still',
+  }),
+  svgWeave: flag('svg', null, 'SVG weave', true, {
+    help: "Draw a woven skin's threads (Linen) as the shader's over-under plain weave, on their own layer",
+    scene: false,
+    scope: 'still',
+  }),
+  svgWeaveThreads: num('svg', null, 'SVG weave threads', 40, 0, 400, 1, {
+    help: "Threads across the cloth; 0 takes the skin's own count (Linen weaves 150, about two pixels apart)",
+    scene: false,
+    scope: 'still',
+    when: { svgWeave: [true] },
+  }),
+  svgTexture: flag('svg', null, 'SVG texture contours', false, {
+    help: "Contour the render's brightness inside the ghost — eye rims, textures and painted detail from any skin — on their own layer",
+    scene: false,
+    scope: 'still',
+  }),
+  svgTextureLevels: num('svg', null, 'SVG texture levels', 6, 1, 30, 1, {
+    help: 'How many equal-area brightness contours the texture layer draws',
+    scene: false,
+    scope: 'still',
+    when: { svgTexture: [true] },
+  }),
   svgFolds: flag('svg', null, 'SVG folds', true, {
     help: 'Trace where the cloth turns edge-on to the camera: the fold lines where it overlaps itself, on their own layer',
     scene: false,
@@ -284,6 +343,58 @@ const RENDER = {
     scene: false,
     scope: 'still',
   }),
+  svgDecay: flag('svg', null, 'SVG decay', true, {
+    help: "A skin's rot and blood round its holes and tears, and the top of its hem goo, each outlined on its own layer (the drips themselves are edges)",
+    scene: false,
+    scope: 'still',
+  }),
+  svgStorm: flag('svg', null, 'SVG storm', true, {
+    help: "A storm skin's cloud (outline and puff contours), rain streaks, splashes and lightning, each on its own layer",
+    scene: false,
+    scope: 'still',
+  }),
+  svgFill: choice('svg', null, 'SVG fill', SVG_FILLS, 'none', {
+    help: 'Fill the cloth with one long line that follows it, wiggling by tone, split into a layer per region (cloth, inside, goo, rot, blood) coloured from the skin — spiral: round the crown; rows: back and forth across it; none: off',
+    scene: false,
+    scope: 'still',
+  }),
+  svgFillSpacing: num('svg', null, 'SVG fill spacing', 1, 0.3, 5, 0.05, {
+    help: 'Millimetres between turns of the fill line on the plot (through plotWidthMm)',
+    scene: false,
+    scope: 'still',
+    when: { svgFill: ['spiral', 'rows'] },
+  }),
+  svgFillWiggle: num('svg', null, 'SVG fill wiggle', 0.9, 0, 1, 0.05, {
+    help: 'How far the line swings in the darkest tone, as a share of half the spacing (0: straight)',
+    scene: false,
+    scope: 'still',
+    when: { svgFill: ['spiral', 'rows'] },
+  }),
+  svgFillShades: num('svg', null, 'SVG fill shades', 1, 1, 2, 1, {
+    help: "Two adds a cloth-shadow layer: a second line between the first one's turns, drawn only in the shadows, for a darker pen of the same colour",
+    scene: false,
+    scope: 'still',
+    when: { svgFill: ['spiral', 'rows'] },
+  }),
+  svgFillShadow: num('svg', null, 'SVG fill shadow', 0.55, 0.1, 0.95, 0.05, {
+    help: 'With two shades, the tone where the shadow line starts',
+    scene: false,
+    scope: 'still',
+    when: { svgFillShades: [2] },
+  }),
+  svgFillInside: choice(
+    'svg',
+    null,
+    'SVG fill inside',
+    SVG_FILL_INSIDE,
+    'cloth',
+    {
+      help: "What the inside layer fills in the eye holes — cloth: the inside of the sheet seen through them; hole: the hole's own shape; none: nothing",
+      scene: false,
+      scope: 'still',
+      when: { svgFill: ['spiral', 'rows'] },
+    }
+  ),
   fov: standard.fov(30),
   margin: standard.margin(
     0.08,

@@ -2,13 +2,13 @@ import { useEffect, useMemo, useRef } from 'react';
 
 import { folder, useControls } from 'leva';
 
+import { BIRD_OPTIONS } from '@elements/FakeBird/birds';
 import usePresetsFolder from '@hooks/usePresetsFolder';
 import { useSceneCameraControls } from '@modules/cameraRig';
 
 import PRESETS, {
   DEFAULT_PRESET as DEFAULT_PRESET_KEY,
 } from '../presets/presets';
-import { BIRD_OPTIONS } from '../utils/birds';
 import CAMERA from '../utils/camera';
 import BIRD_SLOTS, { posKey, rotKey, showKey } from '../utils/placements';
 

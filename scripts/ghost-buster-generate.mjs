@@ -1,12 +1,9 @@
 #!/usr/bin/env node
-import { readFile, rm } from 'node:fs/promises';
-import path from 'node:path';
-
 import {
   resolveViews,
   usageFor,
 } from '../src/modules/ghostBuster/renderOptions.mjs';
-import { REPO_ROOT, runStills, sidecarFor } from './lib/generatorCli.mjs';
+import { runStills, sidecarFor } from './lib/generatorCli.mjs';
 import {
   ghostAt,
   loadKernel,
@@ -14,35 +11,8 @@ import {
   rollArgs,
   withCapturer,
 } from './lib/ghostBusterRender.mjs';
+import { finishCapture, readCapture } from './lib/liveCapture.mjs';
 import { sceneIconFile } from './lib/sceneIcons.mjs';
-
-// A Live-tab capture arrives rendered: the page drew the PNG and the plot
-// from the running ghost, and this only finishes it the way any still is
-// finished — formats, overlay and sidecar — then drops the upload.
-async function finishCapture({ capture, options, save }) {
-  const out = await save(
-    capture.name,
-    sidecarFor({ config: capture.config, name: capture.name, options })
-  );
-  await out.view('live', async () => {
-    await out.image('live', () => readFile(path.join(capture.dir, 'live.png')));
-    if (options.svg && capture.svg) {
-      await out.svg(
-        'live',
-        await readFile(path.join(capture.dir, 'live.svg'), 'utf8')
-      );
-    }
-  });
-  await rm(capture.dir, { force: true, recursive: true });
-}
-
-async function readCapture(folder) {
-  const dir = path.resolve(REPO_ROOT, folder);
-  const manifest = JSON.parse(
-    await readFile(path.join(dir, 'capture.json'), 'utf8')
-  );
-  return { ...manifest, dir };
-}
 
 runStills({
   gpu: ({ capture }) => !capture,

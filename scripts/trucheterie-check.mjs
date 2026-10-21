@@ -7,7 +7,8 @@
 // Blob Field folder and the Colors folder only — Composition, Grid, Motif,
 // Multiscale, Stroke and Retile belong to the square/triangular grid modes,
 // which this pipeline does not cover yet.
-import { readFile, readdir } from 'node:fs/promises';
+import { mkdtemp, readFile, readdir, rm, writeFile } from 'node:fs/promises';
+import os from 'node:os';
 import path from 'node:path';
 import process from 'node:process';
 
@@ -17,6 +18,7 @@ import {
   SCENE_KEYS,
 } from '../src/modules/trucheterieBlob/renderOptions.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import { withResolvedDesign } from './lib/trucheterieDesigns.mjs';
 
 const KERNEL_DIR = path.join(REPO_ROOT, 'src', 'modules', 'trucheterieBlob');
 const SCENE = '/src/components/scenes/WebGPU/Trucheterie/components';
@@ -130,6 +132,21 @@ async function checkHeadlessCalls(barrels) {
 
 const DESIGN_SEEDS = ['alpha', 'blob-42', 'kink-9001'];
 const designKey = (blob, design) => JSON.stringify(blob.designToJson(design));
+// The design's frame crops to its extent, so only the cells' layout relative to the first must match.
+const layoutKey = (field) => {
+  const [first] = field.cells;
+  return field.cells
+    .map(({ cell }) => [
+      cell.column - first.cell.column,
+      cell.row - first.cell.row,
+    ])
+    .join();
+};
+
+function legacyCode(gridSize, cells) {
+  const bytes = [gridSize, ...cells.flat()];
+  return `tb1.${Buffer.from(bytes).toString('base64url')}`;
+}
 
 // A seeded field read back as a design must rebuild the identical field.
 function checkDesigns(blob) {
@@ -163,43 +180,124 @@ function checkDesigns(blob) {
           blobCanvasSize: 8,
           blobDesign: blob.encodeDesign(design),
         });
-        ['conn0', 'conn1', 'connectorMask', 'positions', 'sizes'].forEach(
-          (name) =>
-            check(
-              rebuilt[name].join() === field[name].join(),
-              `design ${label}: fieldFromDesign rebuilds different ${name}.`
-            )
+        ['conn0', 'conn1', 'connectorMask', 'sizes'].forEach((name) =>
+          check(
+            rebuilt[name].join() === field[name].join(),
+            `design ${label}: fieldFromDesign rebuilds different ${name}.`
+          )
+        );
+        check(
+          layoutKey(rebuilt) === layoutKey(field),
+          `design ${label}: fieldFromDesign moves cells relative to each other.`
         );
       })
     )
   );
 
-  const seeded = blob.designFromSeed({
-    ...blob.sceneDefaults(),
-    blobGridSize: 20,
-    blobSeed: 'resize',
-  });
-  const grown = blob.resizeDesign(seeded, 30);
-  const before = blob.fieldFromDesign(seeded, 8);
-  const after = blob.fieldFromDesign(grown, 8);
+  let far = blob.placeCell(blob.emptyDesign(), -40, 300, 3);
+  far = blob.placeCell(far, -37, 300, 3);
+  const farDecoded = blob.decodeDesign(blob.encodeDesign(far));
   check(
-    grown.cells.length === seeded.cells.length &&
-      ['conn0', 'conn1', 'connectorMask'].every(
-        (name) => after[name].join() === before[name].join()
-      ),
-    'design: growing the grid changes cells, connectors or their arcs.'
+    far.cells.length === 2 &&
+      blob.isSideOpen(far, 0, 1) &&
+      farDecoded &&
+      designKey(blob, farDecoded) === designKey(blob, far),
+    'design: cells at negative or large coordinates do not place, connect or round-trip.'
   );
-  const shrunk = blob.resizeDesign(seeded, 10);
+  const farField = blob.fieldFromDesign(far, 8);
+  const farFrame = blob.designFrame(far);
   check(
-    shrunk.gridSize === 10 &&
-      shrunk.cells.every(
-        ({ column, row, size }) => column + size <= 10 && row + size <= 10
-      ) &&
-      JSON.stringify(blob.normalizeDesign(shrunk)) === JSON.stringify(shrunk),
-    'design: shrinking the grid keeps cells outside it or breaks the neighbour rule.'
+    farField.gridSize === farFrame.size &&
+      farField.cells.every(
+        ({ cell }) =>
+          cell.column >= 0 &&
+          cell.row >= 0 &&
+          cell.column + cell.size <= farField.gridSize &&
+          cell.row + cell.size <= farField.gridSize
+      ),
+    'design: fieldFromDesign does not frame the cells inside its grid.'
   );
 
-  let block = blob.emptyDesign(6);
+  const legacyCells = [
+    [5, 3, 2, 6],
+    [7, 3, 1, 8],
+  ];
+  const legacy = blob.decodeDesign(legacyCode(18, legacyCells));
+  check(
+    legacy &&
+      JSON.stringify(blob.designToJson(legacy).cells) ===
+        JSON.stringify(
+          blob.designToJson(blob.designFromJson({ cells: legacyCells })).cells
+        ),
+    'design: a legacy tb1 code no longer decodes to its cells.'
+  );
+
+  // A 12 turning right-to-bottom leaves its top-left corner free of arcs.
+  let host = blob.emptyDesign();
+  host = blob.placeCell(host, 12, 0, 12);
+  host = blob.placeCell(host, 0, 12, 12);
+  host = blob.placeCell(host, 0, 0, 12);
+  const hostIndex = host.cells.length - 1;
+  check(
+    blob.isSideOpen(host, hostIndex, 1) && blob.isSideOpen(host, hostIndex, 2),
+    'design: the host 12 does not connect right and bottom.'
+  );
+  const squatted = blob.placeCell(host, 0, 0, 3);
+  check(
+    squatted !== host &&
+      blob.inkClashes(squatted) === 0 &&
+      blob.cellIndexAt(squatted, 1, 1) === squatted.cells.length - 1 &&
+      blob.cellIndexAt(squatted, 8, 8) === hostIndex,
+    'design: a 3 does not fit in the free corner of a corner-turning 12.'
+  );
+  check(
+    blob.placeCell(host, 0, 0, 5) === host &&
+      blob.placeCell(host, 6, 6, 1) === host,
+    "design: a cell is placed where a bigger cell's arcs reach."
+  );
+  check(
+    [0, 1, 2, 3].every(
+      (side) => !blob.isSideOpen(squatted, hostIndex + 1, side)
+    ),
+    'design: a cell in a free corner connects into the cell around it.'
+  );
+  const stub = blob.setSide(squatted, hostIndex, 1, false);
+  check(
+    stub !== squatted &&
+      blob.setSide(stub, hostIndex, 2, false) === stub &&
+      blob.eraseCell(stub, 1) === stub,
+    'design: an edit that grows arcs into a cell sitting inside them is not refused.'
+  );
+  const squattedField = blob.fieldFromDesign(squatted, 8);
+  check(
+    squattedField.count === squatted.cells.length,
+    'design: fieldFromDesign drops a cell sitting in a free corner.'
+  );
+  let around = blob.emptyDesign();
+  around = blob.placeCell(around, 12, 0, 12);
+  around = blob.placeCell(around, 0, 12, 12);
+  around = blob.placeCell(around, 0, 0, 3);
+  const wrapped = blob.placeCell(around, 0, 0, 12);
+  check(
+    wrapped !== around && blob.inkClashes(wrapped) === 0,
+    'design: a 12 cannot be placed around a 3 that its arcs would miss.'
+  );
+  check(
+    blob.placeCell(around, 0, 0, 12, { connect: false }) === around,
+    'design: an unconnected 12 (rings) is placed over a 3.'
+  );
+  check(
+    blob.decodeDesign(blob.encodeDesign(squatted)) !== null &&
+      blob.designFromJson({
+        cells: [
+          [0, 0, 12, 0],
+          [0, 0, 3, 0],
+        ],
+      }) === null,
+    'design: the codec rejects overlaps the arcs reach, or refuses a valid one.'
+  );
+
+  let block = blob.emptyDesign();
   for (let c = 0; c < 3; c += 1) {
     for (let r = 0; r < 3; r += 1) block = blob.placeCell(block, c, r, 1);
   }
@@ -240,7 +338,7 @@ function checkDesigns(blob) {
     'design: flipDiagonal/swapOrder change a cell they do not apply to.'
   );
 
-  let built = blob.emptyDesign(10);
+  let built = blob.emptyDesign();
   built = blob.placeCell(built, 0, 0, 4);
   built = blob.placeCell(built, 4, 0, 2);
   built = blob.placeCell(built, 4, 2, 2);
@@ -259,6 +357,198 @@ function checkDesigns(blob) {
   );
 }
 
+// Move drags a whole connected group, intact, and refuses a landing that touches arcs or changes a side.
+function checkMove(blob) {
+  let design = blob.emptyDesign();
+  design = blob.placeCell(design, 0, 0, 2);
+  design = blob.placeCell(design, 2, 0, 2);
+  design = blob.placeCell(design, 10, 0, 2);
+  const group = blob.connectedGroup(design, 0);
+  check(
+    group.join() === '0,1' && blob.connectedGroup(design, 2).join() === '2',
+    'design: connectedGroup does not follow open sides (or crosses closed ones).'
+  );
+  const moved = blob.moveCells(design, group, 3, 5);
+  const drawn = (d) =>
+    blob
+      .fieldFromDesign(d, 8)
+      .cells.map(({ connections, cell }) =>
+        JSON.stringify([cell.size, cell.connectors, connections])
+      )
+      .sort()
+      .join();
+  check(
+    moved !== design &&
+      moved.cells[0].column === 3 &&
+      moved.cells[1].row === 5 &&
+      moved.cells[2].column === 10 &&
+      drawn(moved) === drawn(design),
+    'design: moveCells does not move the group intact.'
+  );
+  const beside = blob.moveCells(design, group, 6, 0);
+  check(
+    blob.moveCells(design, group, 9, 0) === design &&
+      beside !== design &&
+      !blob.isSideOpen(beside, 1, 1) &&
+      !blob.isSideOpen(beside, 2, 3),
+    'design: moveCells lands a group on another cell, or connects it to a cell it lands beside.'
+  );
+}
+
+const SIDE_MAPS = {
+  antidiagonal: [1, 0, 3, 2],
+  diagonal: [3, 2, 1, 0],
+  horizontal: [2, 1, 0, 3],
+  vertical: [0, 3, 2, 1],
+};
+
+function mirrorPlace(axis, { column, row, size }, n) {
+  if (axis === 'vertical') return [n - column - size, row];
+  if (axis === 'horizontal') return [column, n - row - size];
+  if (axis === 'diagonal') return [row, column];
+  return [n - row - size, n - column - size];
+}
+
+function mirrorConnection(axis, [type, edge]) {
+  const map = SIDE_MAPS[axis];
+  if (type === 0) return [0, 0];
+  if (type === 1) return [1, map[edge]];
+  const a = map[edge];
+  const b = map[(edge + 3) % 4];
+  return [2, (b + 1) % 4 === a ? a : b];
+}
+
+// Every drawn cell has a twin across the axis drawing the mirrored families, in the same order (as a set, on the axis).
+function checkSymmetry(blob) {
+  const base = {
+    ...blob.sceneDefaults(),
+    blobCanvasSize: 8,
+    blobConnectivity: 0.85,
+    blobDistribution: 0.15,
+  };
+  blob.SYMMETRY_AXES.filter((axis) => axis !== 'none').forEach((axis) =>
+    ['mirror-a', 'mirror-b', 'mirror-c'].forEach((seed) =>
+      [20, 25].forEach((gridSize) =>
+        [0, 2].forEach((meatballs) => {
+          const label = `symmetry ${axis}/${seed}/${gridSize}/${meatballs}`;
+          const field = blob.fieldFromConfig({
+            ...base,
+            blobGridSize: gridSize,
+            blobMeatballs: meatballs,
+            blobSeed: seed,
+            blobSymmetry: axis,
+          });
+          const n = field.gridSize;
+          const byPlace = new Map(
+            field.cells.map((entry) => [
+              `${entry.cell.column},${entry.cell.row},${entry.cell.size}`,
+              entry,
+            ])
+          );
+          const broken = field.cells.filter(({ cell, connections }) => {
+            const [column, row] = mirrorPlace(axis, cell, n);
+            const twin = byPlace.get(`${column},${row},${cell.size}`);
+            if (!twin) return true;
+            const mirrored = connections.map((c) => mirrorConnection(axis, c));
+            const self = twin.cell === cell;
+            const key = (list) =>
+              (self ? [...list].sort() : list).map(String).join('|');
+            return key(mirrored) !== key(twin.connections);
+          });
+          const design = blob.designFromField(field);
+          check(
+            field.count > 4 &&
+              n === gridSize &&
+              broken.length === 0 &&
+              designKey(blob, blob.normalizeDesign(design)) ===
+                designKey(blob, design),
+            `${label}: ${broken.length} cells lack a mirrored twin, or the field breaks the neighbour rule (${field.count} cells).`
+          );
+        })
+      )
+    )
+  );
+
+  const rolls = Array.from({ length: 400 }, (_, i) =>
+    blob.rollBlobConfig(`sym-${i}`)
+  );
+  const on = rolls.filter(({ blobSymmetry }) => blobSymmetry !== 'none');
+  check(
+    on.length > 400 * blob.SYMMETRY_CHANCE * 0.5 &&
+      on.length < 400 * blob.SYMMETRY_CHANCE * 1.6 &&
+      on.every(
+        ({ blobSymmetry, planeRotation }) =>
+          (planeRotation === 45) ===
+          (blobSymmetry === 'diagonal' || blobSymmetry === 'antidiagonal')
+      ),
+    `symmetry: ${on.length}/400 rolls are symmetric, or an axis ignores the rotation.`
+  );
+  const turned = blob.rollBlobConfig(
+    rolls.indexOf(on.find((c) => c.planeRotation === 0)) >= 0
+      ? `sym-${rolls.indexOf(on.find((c) => c.planeRotation === 0))}`
+      : 'sym-0',
+    { pinned: { planeRotation: 45 } }
+  );
+  const off = blob.rollBlobConfig(`sym-${rolls.indexOf(on[0])}`, {
+    pinned: { blobSymmetry: 'none' },
+  });
+  check(
+    ['diagonal', 'antidiagonal'].includes(turned.blobSymmetry) &&
+      off.blobSymmetry === 'none',
+    'symmetry: a pinned rotation does not realign the axis, or pinning none does not turn it off.'
+  );
+  check(
+    blob.SYMMETRY.join() === blob.SYMMETRY_AXES.join(),
+    'symmetry: renderOptions SYMMETRY and design SYMMETRY_AXES disagree.'
+  );
+}
+
+async function checkDesignRotation(blob) {
+  const dir = await mkdtemp(path.join(os.tmpdir(), 'trucheterie-check-'));
+  try {
+    const file = path.join(dir, 'turned.json');
+    await writeFile(
+      file,
+      JSON.stringify({ cells: [[0, 0, 2, 0]], name: 'turned', rotation: 135 })
+    );
+    const resolved = withResolvedDesign(blob, { blobDesign: file });
+    const typed = withResolvedDesign(blob, {
+      blobDesign: file,
+      planeRotation: 10,
+    });
+    const coded = withResolvedDesign(blob, {
+      blobDesign: resolved.blobDesign,
+    });
+    check(
+      resolved.planeRotation === 135 &&
+        blob.isDesignCode(resolved.blobDesign) &&
+        typed.planeRotation === 10 &&
+        coded.planeRotation === undefined,
+      "design: a saved design's rotation is not pinned as planeRotation (or overrides a typed one)."
+    );
+  } finally {
+    await rm(dir, { force: true, recursive: true });
+  }
+}
+
+// The scene's field memo forwards named keys, so a new generator key it misses never reaches the field.
+async function checkSceneForwardsGenerator(blob) {
+  const file = path.join(
+    REPO_ROOT,
+    'src/components/scenes/WebGPU/Trucheterie/components/BlobFieldMesh.jsx'
+  );
+  const source = await readFile(file, 'utf8');
+  const missing = blob.GENERATOR_KEYS.filter(
+    (key) =>
+      key !== 'blobPathsPerUnit' &&
+      !new RegExp(`fieldFromConfig\\([^)]*\\b${key}\\b`, 'su').test(source)
+  );
+  check(
+    missing.length === 0,
+    `BlobFieldMesh does not pass ${missing.join(', ')} to fieldFromConfig.`
+  );
+}
+
 async function checkSavedDesigns(blob) {
   const dir = path.join(KERNEL_DIR, 'designs');
   const files = (await readdir(dir).catch(() => [])).filter((name) =>
@@ -269,7 +559,7 @@ async function checkSavedDesigns(blob) {
       const json = JSON.parse(await readFile(path.join(dir, name), 'utf8'));
       check(
         blob.designFromJson(json) !== null,
-        `designs/${name} is not a valid design (overlapping or out-of-grid cells).`
+        `designs/${name} is not a valid design (out-of-range cells, or cells overlapping where arcs reach).`
       );
     })
   );
@@ -290,6 +580,10 @@ async function main() {
     )
   );
   checkDesigns(loaded[BARRELS.blob]);
+  checkMove(loaded[BARRELS.blob]);
+  checkSymmetry(loaded[BARRELS.blob]);
+  await checkSceneForwardsGenerator(loaded[BARRELS.blob]);
+  await checkDesignRotation(loaded[BARRELS.blob]);
   await checkSavedDesigns(loaded[BARRELS.blob]);
   check(
     loaded['/src/utils/gradientPalette.js'].PALETTE_NONE === PALETTE_NONE,

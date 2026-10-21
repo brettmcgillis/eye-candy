@@ -533,7 +533,6 @@ const RENDER = {
   svg: standard.svg(
     'Write a plottable SVG of the slice: outlines, contours by pen or hatching'
   ),
-  dxf: standard.dxf(),
   plotWidthMm: standard.plotWidthMm(),
   views: standard.views(VIEWS, 'hero,slice'),
   svgStyle: plot(

@@ -172,12 +172,41 @@ function axisScale(scale, flatten, flattenAxis) {
     : [scale, scale, scale * squash];
 }
 
+// Ramer–Douglas–Peucker over one chunk: its ends stay put, so chunk seams
+// still meet exactly.
+function straighten(points, tolerance) {
+  if (points.length < 3) return points;
+  const [ax, ay] = points[0];
+  const [bx, by] = points[points.length - 1];
+  const dx = bx - ax;
+  const dy = by - ay;
+  const lengthSq = dx * dx + dy * dy;
+  let worst = tolerance;
+  let index = -1;
+  for (let i = 1; i < points.length - 1; i += 1) {
+    const [px, py] = points[i];
+    const t = lengthSq
+      ? Math.min(1, Math.max(0, ((px - ax) * dx + (py - ay) * dy) / lengthSq))
+      : 0;
+    const d = Math.hypot(px - ax - t * dx, py - ay - t * dy);
+    if (d > worst) {
+      worst = d;
+      index = i;
+    }
+  }
+  if (index < 0) return [points[0], points[points.length - 1]];
+  return [
+    ...straighten(points.slice(0, index + 1), tolerance).slice(0, -1),
+    ...straighten(points.slice(index), tolerance),
+  ];
+}
+
 // Walks a strand, dropping points closer than `simplifyPx` to the last one
 // kept and breaking wherever a point falls behind the camera. Emits the result
 // as depth-sorted chunks of at most `chunkPoints` kept points, each carrying
-// its own mean depth — consecutive chunks share a point so the seam is
-// invisible. Chunking is what makes the painter's ordering below fine-grained
-// enough to survive an orbit.
+// its own mean depth and straightened to within `simplifyPx` — consecutive
+// chunks share a point so the seam is invisible. Chunking is what makes the
+// painter's ordering below fine-grained enough to survive an orbit.
 function projectStrand(
   strand,
   grownSteps,
@@ -203,7 +232,13 @@ function projectStrand(
   // first, so a split never leaves a visible gap in the stroke.
   const flush = (carry) => {
     if (points && points.length > 1) {
-      chunks.push({ depth: depthSum / points.length, points });
+      chunks.push({
+        depth: depthSum / points.length,
+        points: straighten(points, simplifyPx).map(
+          ([x, y]) =>
+            `${x.toFixed(COORD_DECIMALS)},${y.toFixed(COORD_DECIMALS)}`
+        ),
+      });
     }
     if (carry && lastPoint !== null) {
       points = [lastPoint];
@@ -234,7 +269,7 @@ function projectStrand(
         depthSum = 0;
       }
       if (far || isLast) {
-        lastPoint = `${x.toFixed(COORD_DECIMALS)},${y.toFixed(COORD_DECIMALS)}`;
+        lastPoint = [x, y];
         [, , lastDepth] = out;
         points.push(lastPoint);
         depthSum += out[2];
@@ -277,6 +312,7 @@ export default function renderTestSvg({
   fov = DEFAULT_FOV,
   height = 1080,
   layer = 'all',
+  layered = false,
   scale = 1,
   simplifyPx = DEFAULT_SIMPLIFY_PX,
   strokeWidth = 1,
@@ -345,12 +381,23 @@ export default function renderTestSvg({
   // approximation of the scene's real depth buffer, just a much finer one.
   pieces.sort((a, b) => b.depth - a.depth);
 
-  const useBloom = bloomEnabled && hasEmissive && !brightPass;
-  const body = pieces
-    .map(
-      (piece) => `<polyline stroke="${piece.stroke}" points="${piece.points}"/>`
-    )
-    .join('');
+  const useBloom = bloomEnabled && hasEmissive && !brightPass && !layered;
+  const polyline = (piece) =>
+    `<polyline stroke="${piece.stroke}" points="${piece.points}"/>`;
+  // A plot draws every pen in full, so depth order only matters on screen:
+  // a `layered` SVG groups the strands into one pen layer per colour.
+  const inks = layered ? [...new Set(pieces.map((piece) => piece.stroke))] : [];
+  const body = layered
+    ? inks
+        .map(
+          (ink, i) =>
+            `<g inkscape:groupmode="layer" inkscape:label="pen-${i} ink ${ink}" id="pen-${i}" stroke="${ink}">${pieces
+              .filter((piece) => piece.stroke === ink)
+              .map(polyline)
+              .join('')}</g>`
+        )
+        .join('')
+    : pieces.map(polyline).join('');
 
   // The standalone .svg can't express the raster bloom the PNG gets, so the
   // emissive chunks are drawn a second time through a blur filter on top of
@@ -359,10 +406,7 @@ export default function renderTestSvg({
   const glow = useBloom
     ? `<g filter="url(#bloom)">${pieces
         .filter((piece) => piece.emissive)
-        .map(
-          (piece) =>
-            `<polyline stroke="${piece.stroke}" points="${piece.points}"/>`
-        )
+        .map(polyline)
         .join('')}</g>`
     : '';
 
@@ -371,7 +415,11 @@ export default function renderTestSvg({
     : '';
 
   return (
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" ` +
+    `<svg xmlns="http://www.w3.org/2000/svg"${
+      layered
+        ? ' xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"'
+        : ''
+    } width="${width}" height="${height}" ` +
     `viewBox="0 0 ${width} ${height}">${
       defs
     }<rect width="${width}" height="${height}" fill="${

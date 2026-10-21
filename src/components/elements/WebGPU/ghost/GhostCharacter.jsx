@@ -15,9 +15,11 @@ import * as THREE from 'three';
 import Outline from '@postprocessing/WebGPU/outline/Outline';
 
 import ClothMesh from '../cloth/ClothMesh';
+import { DECAY_DEFAULTS } from '../cloth/clothDecay';
 import {
   CUTOUTS,
   SPHERE_BASE_Y,
+  SPHERE_RADIUS,
   createGhostRigState,
   earAnchorPositions,
   ghostAnchors,
@@ -41,6 +43,28 @@ export function fabricFromControls(controls) {
     wearAmount: controls.fabricWear,
     weaveShade: controls.fabricShade,
   };
+}
+
+// A skin's flat rot, blood, drip and brow keys as ClothMesh's `decay`.
+export const decayFromControls = (controls) =>
+  Object.fromEntries(
+    Object.keys(DECAY_DEFAULTS).map((key) => [
+      key,
+      controls[key] ?? DECAY_DEFAULTS[key],
+    ])
+  );
+
+// The top of the head in world space: the rig tilts and squashes the cloth
+// about it, so it is read from the cloth mesh rather than the props.
+export function ghostCrown(ghost, out) {
+  const mesh = ghost?.mesh;
+  if (!mesh) return false;
+  mesh.updateWorldMatrix(true, false);
+  out
+    .set(0, SPHERE_BASE_Y, 0)
+    .applyMatrix4(mesh.matrixWorld)
+    .setY(out.y + SPHERE_RADIUS + 0.01);
+  return true;
 }
 
 const GhostCharacter = forwardRef(function GhostCharacter(
@@ -113,6 +137,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     clearcoat = 0,
     clearcoatRoughness = 0,
     fabric = null,
+    decay = null,
     innerRoughness = null,
     innerMetalness = null,
     textureUrl = null,
@@ -433,6 +458,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
           outlineFade={outlineFade}
           cutouts={CUTOUTS}
           fabric={fabric}
+          decay={decay}
           cutoutRimColor={cutoutRimColor}
           cutoutRimWidth={cutoutRimWidth}
           cutoutRimOffset={cutoutRimOffset}

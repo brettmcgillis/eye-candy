@@ -6,7 +6,7 @@ import path from 'node:path';
 const MAX_LOG_LINES = 160;
 const MANIFEST_FILE = 'manifest.json';
 const MANIFEST_VERSION = 1;
-const MEDIA = /\.(dxf|mp4|png|svg|webp)$/u;
+const MEDIA = /\.(mp4|png|svg|webp)$/u;
 const TERMINAL_STATUSES = new Set(['cancelled', 'completed', 'failed']);
 const ACTIVE_STATUSES = new Set(['cancelling', 'queued', 'running']);
 
@@ -358,9 +358,7 @@ export default function createRenderJobService({
         });
         if (itemFolders && directory !== outputDir) {
           await fs.rm(directory, { force: true, recursive: true });
-        } else if (
-          !entries.some((entry) => /\.(dxf|png|svg|webp)$/u.test(entry))
-        ) {
+        } else if (!entries.some((entry) => /\.(png|svg|webp)$/u.test(entry))) {
           await fs.rm(path.join(directory, 'props.json'), { force: true });
         }
       })

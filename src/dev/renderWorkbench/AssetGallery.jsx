@@ -24,9 +24,19 @@ import {
 } from 'react-icons/fi';
 
 import AssetActions from './AssetActions';
-import { assetFormat, groupMediaAssets, isMediaAsset } from './assetGroups';
+import {
+  assetFormat,
+  groupMediaAssets,
+  isMediaAsset,
+  plotterHref,
+  thumbnailUrl,
+} from './assetGroups';
 
 const MIN_ZOOM = 1;
+// Mounting every collection at once froze the dev page at ~500 of them,
+// images or not; the newest are shown and the rest come in pages.
+const COLLECTION_PAGE = 24;
+const ITEM_PAGE = 120;
 const MAX_ZOOM = 10;
 
 function formatBytes(bytes) {
@@ -127,20 +137,12 @@ function PreviewDetails({
   );
 }
 
-function MediaPreview({ asset, controls = false, eager = false }) {
-  if (assetFormat(asset) === 'dxf') {
-    return (
-      <span className="rw-media-file">
-        {controls ? (
-          <a download href={asset.url}>
-            Download DXF
-          </a>
-        ) : (
-          'DXF'
-        )}
-      </span>
-    );
-  }
+function MediaPreview({
+  asset,
+  controls = false,
+  eager = false,
+  thumb = null,
+}) {
   if (assetFormat(asset) === 'mp4') {
     const source = controls ? asset.url : `${asset.url}#t=0.001`;
     return (
@@ -162,7 +164,7 @@ function MediaPreview({ asset, controls = false, eager = false }) {
       alt="Generated output"
       draggable={false}
       loading={eager ? 'eager' : 'lazy'}
-      src={asset.url}
+      src={thumb ?? asset.url}
     />
   );
 }
@@ -184,6 +186,7 @@ function PreviewDialog({
   onPrevious,
   onRequestDelete,
   pendingDeleteKey,
+  plotter,
   renderDetails,
 }) {
   const [assetIndex, setAssetIndex] = useState(0);
@@ -371,6 +374,7 @@ function PreviewDialog({
               onKeep={() => onKeep(asset)}
               onRequestDelete={() => onRequestDelete(asset)}
               pendingDelete={pendingDeleteKey === currentAssetKey}
+              plotterHref={plotter}
             />
             <button aria-label="Close preview" onClick={onClose} type="button">
               <FiX />
@@ -463,6 +467,7 @@ function AssetCard({
   onRequestDelete,
   onToggle,
   pendingDelete,
+  plotter,
   saved,
   selected,
 }) {
@@ -483,7 +488,14 @@ function AssetCard({
         type="button"
       >
         <span className="rw-asset__preview">
-          <MediaPreview asset={asset} />
+          <MediaPreview
+            asset={asset}
+            thumb={
+              assetFormat(asset) === 'svg'
+                ? thumbnailUrl(`${job.outputDirectory}/${asset.path}`)
+                : null
+            }
+          />
         </span>
         <span className="rw-asset__expand">
           <FiMaximize2 />
@@ -528,6 +540,7 @@ function AssetCard({
           onKeep={onKeep}
           onRequestDelete={onRequestDelete}
           pendingDelete={pendingDelete}
+          plotterHref={plotter}
         />
       </figcaption>
     </figure>
@@ -548,6 +561,7 @@ export default function AssetGallery({
   pendingDeleteId,
   renderDetails,
   selectionActions,
+  tool = null,
   variant = 'transient',
 }) {
   const saved = variant === 'saved';
@@ -570,6 +584,7 @@ export default function AssetGallery({
     videos: true,
   });
   const [viewMode, setViewMode] = useState('batches');
+  const [pages, setPages] = useState(1);
   const collections = useMemo(
     () =>
       jobs.map((job) => {
@@ -794,6 +809,7 @@ export default function AssetGallery({
         onRequestDelete={() => setPendingItemDelete(key)}
         onToggle={() => toggleItem(key)}
         pendingDelete={pendingItemDelete === key}
+        plotter={plotterHref(group, tool)}
         saved={saved}
         selected={selectedItems.has(key)}
       />
@@ -864,15 +880,17 @@ export default function AssetGallery({
           </header>
           {filteredFlatEntries.length > 0 ? (
             <div className="rw-gallery rw-gallery--flat">
-              {filteredFlatEntries.map(({ group, job }, index) =>
-                renderCard({
-                  flat: true,
-                  group,
-                  groups: filteredFlatGroups,
-                  index,
-                  job,
-                })
-              )}
+              {filteredFlatEntries
+                .slice(0, pages * ITEM_PAGE)
+                .map(({ group, job }, index) =>
+                  renderCard({
+                    flat: true,
+                    group,
+                    groups: filteredFlatGroups,
+                    index,
+                    job,
+                  })
+                )}
             </div>
           ) : (
             <div className="rw-collection__empty">
@@ -1023,134 +1041,153 @@ export default function AssetGallery({
       ) : null}
       {flatContent}
       {viewMode === 'batches'
-        ? visibleCollections.map(({ groups, job }) => {
-            const active = ['queued', 'running', 'cancelling'].includes(
-              job.status
-            );
-            let collectionDeleteAction = null;
-            if (!saved && pendingDeleteId === job.id) {
-              collectionDeleteAction = (
-                <div className="rw-delete-confirmation">
-                  <span>Delete folder?</span>
-                  <button
-                    className="dev-button"
-                    disabled={deletingId === job.id}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onConfirmDelete(job);
-                    }}
-                    type="button"
-                  >
-                    Delete
-                  </button>
-                  <button
-                    aria-label="Cancel deletion"
-                    className="dev-button"
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      onCancelDelete();
-                    }}
-                    type="button"
-                  >
-                    Cancel
-                  </button>
-                </div>
+        ? visibleCollections
+            .slice(0, pages * COLLECTION_PAGE)
+            .map(({ groups, job }) => {
+              const active = ['queued', 'running', 'cancelling'].includes(
+                job.status
               );
-            } else if (!saved) {
-              collectionDeleteAction = (
-                <button
-                  aria-label={`Delete ${job.outputDirectory}`}
-                  className="dev-button rw-delete"
-                  disabled={active || deletingId === job.id}
-                  onClick={(event) => {
-                    event.stopPropagation();
-                    onRequestDelete(job.id);
-                  }}
-                  title="Delete collection from disk"
-                  type="button"
+              let collectionDeleteAction = null;
+              if (!saved && pendingDeleteId === job.id) {
+                collectionDeleteAction = (
+                  <div className="rw-delete-confirmation">
+                    <span>Delete folder?</span>
+                    <button
+                      className="dev-button"
+                      disabled={deletingId === job.id}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onConfirmDelete(job);
+                      }}
+                      type="button"
+                    >
+                      Delete
+                    </button>
+                    <button
+                      aria-label="Cancel deletion"
+                      className="dev-button"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        onCancelDelete();
+                      }}
+                      type="button"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                );
+              } else if (!saved) {
+                collectionDeleteAction = (
+                  <button
+                    aria-label={`Delete ${job.outputDirectory}`}
+                    className="dev-button rw-delete"
+                    disabled={active || deletingId === job.id}
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      onRequestDelete(job.id);
+                    }}
+                    title="Delete collection from disk"
+                    type="button"
+                  >
+                    <FiTrash2 />
+                  </button>
+                );
+              }
+              return (
+                <details
+                  className="rw-collection"
+                  key={job.id}
+                  onToggle={(event) =>
+                    setCollectionCollapsed(job.id, !event.currentTarget.open)
+                  }
+                  open={!collapsedCollectionIds.has(job.id)}
                 >
-                  <FiTrash2 />
-                </button>
+                  <summary className="rw-collection__header">
+                    <div>
+                      <strong>
+                        <FiChevronRight className="rw-collection__chevron" />
+                        <FiFolder />
+                        {collectionLabel(job, groups, collectionTitle)}
+                      </strong>
+                      <span title={job.outputDirectory}>
+                        {job.outputDirectory}
+                      </span>
+                    </div>
+                    <div
+                      className="rw-collection__stats"
+                      onClick={(event) => event.stopPropagation()}
+                      onKeyDown={(event) => event.stopPropagation()}
+                      role="presentation"
+                    >
+                      {saved ? null : (
+                        <div className="rw-collection__selection">
+                          <label htmlFor={`rw-items-${job.id}`}>
+                            <input
+                              checked={
+                                groups.length > 0 &&
+                                groups.every((group) =>
+                                  selectedItems.has(itemKey(job.id, group.key))
+                                )
+                              }
+                              disabled={active || groups.length === 0}
+                              id={`rw-items-${job.id}`}
+                              onChange={() =>
+                                toggleCollectionItems(job, groups)
+                              }
+                              type="checkbox"
+                            />
+                            Items
+                          </label>
+                          <label htmlFor={`rw-folder-${job.id}`}>
+                            <input
+                              checked={selectedCollections.has(job.id)}
+                              disabled={active}
+                              id={`rw-folder-${job.id}`}
+                              onChange={() => toggleCollection(job.id)}
+                              type="checkbox"
+                            />
+                            Folder
+                          </label>
+                        </div>
+                      )}
+                      <span>
+                        {job.assets.length} files ·{' '}
+                        {formatBytes(job.storageBytes)}
+                        {active ? ` · ${job.status}` : ''}
+                      </span>
+                      {collectionDeleteAction}
+                    </div>
+                  </summary>
+                  {groups.length > 0 ? (
+                    <div className="rw-gallery">
+                      {groups.map((group, index) =>
+                        renderCard({ group, groups, index, job })
+                      )}
+                    </div>
+                  ) : (
+                    <div className="rw-collection__empty">
+                      No previewable media
+                    </div>
+                  )}
+                </details>
               );
-            }
-            return (
-              <details
-                className="rw-collection"
-                key={job.id}
-                onToggle={(event) =>
-                  setCollectionCollapsed(job.id, !event.currentTarget.open)
-                }
-                open={!collapsedCollectionIds.has(job.id)}
-              >
-                <summary className="rw-collection__header">
-                  <div>
-                    <strong>
-                      <FiChevronRight className="rw-collection__chevron" />
-                      <FiFolder />
-                      {collectionLabel(job, groups, collectionTitle)}
-                    </strong>
-                    <span title={job.outputDirectory}>
-                      {job.outputDirectory}
-                    </span>
-                  </div>
-                  <div
-                    className="rw-collection__stats"
-                    onClick={(event) => event.stopPropagation()}
-                    onKeyDown={(event) => event.stopPropagation()}
-                    role="presentation"
-                  >
-                    {saved ? null : (
-                      <div className="rw-collection__selection">
-                        <label htmlFor={`rw-items-${job.id}`}>
-                          <input
-                            checked={
-                              groups.length > 0 &&
-                              groups.every((group) =>
-                                selectedItems.has(itemKey(job.id, group.key))
-                              )
-                            }
-                            disabled={active || groups.length === 0}
-                            id={`rw-items-${job.id}`}
-                            onChange={() => toggleCollectionItems(job, groups)}
-                            type="checkbox"
-                          />
-                          Items
-                        </label>
-                        <label htmlFor={`rw-folder-${job.id}`}>
-                          <input
-                            checked={selectedCollections.has(job.id)}
-                            disabled={active}
-                            id={`rw-folder-${job.id}`}
-                            onChange={() => toggleCollection(job.id)}
-                            type="checkbox"
-                          />
-                          Folder
-                        </label>
-                      </div>
-                    )}
-                    <span>
-                      {job.assets.length} files ·{' '}
-                      {formatBytes(job.storageBytes)}
-                      {active ? ` · ${job.status}` : ''}
-                    </span>
-                    {collectionDeleteAction}
-                  </div>
-                </summary>
-                {groups.length > 0 ? (
-                  <div className="rw-gallery">
-                    {groups.map((group, index) =>
-                      renderCard({ group, groups, index, job })
-                    )}
-                  </div>
-                ) : (
-                  <div className="rw-collection__empty">
-                    No previewable media
-                  </div>
-                )}
-              </details>
-            );
-          })
+            })
         : null}
+      {(viewMode === 'batches' ? visibleCollections : filteredFlatEntries)
+        .length >
+      pages * (viewMode === 'batches' ? COLLECTION_PAGE : ITEM_PAGE) ? (
+        <button
+          className="dev-button rw-library__more"
+          onClick={() => setPages((count) => count + 1)}
+          type="button"
+        >
+          Show more (
+          {(viewMode === 'batches' ? visibleCollections : filteredFlatEntries)
+            .length -
+            pages * (viewMode === 'batches' ? COLLECTION_PAGE : ITEM_PAGE)}{' '}
+          left)
+        </button>
+      ) : null}
       {preview ? (
         <PreviewDialog
           canDelete={
@@ -1185,6 +1222,7 @@ export default function AssetGallery({
             )
           }
           pendingDeleteKey={pendingItemDelete}
+          plotter={plotterHref(preview.groups[preview.index], tool)}
           renderDetails={renderDetails}
         />
       ) : null}

@@ -15,6 +15,7 @@ import {
   cross,
   float,
   frontFacing,
+  max,
   mix,
   uniform as nodeUniform,
   positionWorld,
@@ -28,6 +29,7 @@ import * as THREE from 'three/webgpu';
 
 import { fabricWeave } from '@modules/tsl';
 
+import { DECAY_DEFAULTS } from './clothDecay';
 import createClothSimulation from './createClothSimulation';
 
 // Module-level shared objects — avoid per-frame allocation.
@@ -120,6 +122,9 @@ const ClothMesh = forwardRef(function ClothMesh(
     cutoutRimColor = '#000000',
     cutoutRimWidth = 0,
     cutoutRimOffset = 0,
+    // Rot and blood round holes and tears, hem drips, an angry brow on the
+    // cutouts (clothDecay.js): the flat skin keys, DECAY_DEFAULTS when unset.
+    decay = null,
     // Legacy single texture URL. Use outerTextureUrl / innerTextureUrl for
     // discrete per-side textures.
     textureUrl = null,
@@ -195,6 +200,12 @@ const ClothMesh = forwardRef(function ClothMesh(
       innerEmissiveIntensityU: nodeUniform(0),
       emissiveFalloffU: nodeUniform(0),
       emissiveCenterU: nodeUniform(new THREE.Vector2(0.5, 0.5)),
+      holeRimColorU: nodeUniform(new THREE.Color()),
+      holeRimGlowU: nodeUniform(0),
+      bloodColorU: nodeUniform(new THREE.Color()),
+      dripColorU: nodeUniform(new THREE.Color()),
+      dripGlowU: nodeUniform(0),
+      dripTintU: nodeUniform(0),
       outerRoughnessU: nodeUniform(0.8),
       innerRoughnessU: nodeUniform(0.8),
       outerMetalnessU: nodeUniform(0),
@@ -456,7 +467,19 @@ const ClothMesh = forwardRef(function ClothMesh(
     const rimmedOuter = mix(outerNode, sim.cutoutRimColorU, sim.cutoutRimNode);
 
     if (innerColor) texUniforms.innerColorU.value.set(innerColor);
-    const faceColor = mix(rimmedOuter, innerNode, frontFacing);
+    const faceColor = mix(
+      mix(
+        mix(
+          mix(rimmedOuter, innerNode, frontFacing),
+          texUniforms.holeRimColorU,
+          sim.decayNode.x.mul(0.85)
+        ),
+        texUniforms.bloodColorU,
+        sim.decayNode.y
+      ),
+      texUniforms.dripColorU,
+      sim.dripNode.y.mul(texUniforms.dripTintU)
+    );
     // The weave's own ambient occlusion: valleys between threads, the shadow
     // under a stitch, and weathering all darken the albedo.
     sim.material.colorNode = weaveNodes
@@ -483,6 +506,11 @@ const ClothMesh = forwardRef(function ClothMesh(
   // Emissive glow — radial falloff from emissiveCenter in UV space.
   // Inner/outer are selected by frontFacing, same rule as innerColor.
   useEffect(() => {
+    const decayGlow = texUniforms.holeRimColorU
+      .mul(texUniforms.holeRimGlowU.mul(sim.decayNode.x))
+      .add(
+        texUniforms.dripColorU.mul(texUniforms.dripGlowU.mul(sim.dripNode.y))
+      );
     if (outerEmissiveColor || innerEmissiveColor) {
       texUniforms.outerEmissiveColorU.value.set(outerEmissiveColor || '#000');
       texUniforms.outerEmissiveIntensityU.value = outerEmissiveColor
@@ -521,9 +549,9 @@ const ClothMesh = forwardRef(function ClothMesh(
         outerEmissive,
         innerEmissive,
         frontFacing
-      );
+      ).add(decayGlow);
     } else {
-      sim.material.emissiveNode = null;
+      sim.material.emissiveNode = decayGlow;
     }
     sim.material.needsUpdate = true;
     // emissiveCenter is an array — track elements individually to avoid
@@ -551,9 +579,15 @@ const ClothMesh = forwardRef(function ClothMesh(
     );
     // Thread crowns catch a cleaner highlight than the valleys between them,
     // and a weathered panel is duller still.
-    sim.material.roughnessNode = weaveNodes
+    const dryRoughness = weaveNodes
       ? faceRoughness.add(weaveNodes.roughnessDelta).clamp(0, 1)
       : faceRoughness;
+    // Blood and goo are wet.
+    sim.material.roughnessNode = mix(
+      dryRoughness,
+      float(0.2),
+      max(sim.decayNode.y, sim.dripNode.y.mul(texUniforms.dripTintU))
+    );
     sim.material.metalnessNode = mix(
       texUniforms.outerMetalnessU,
       texUniforms.innerMetalnessU,
@@ -587,10 +621,24 @@ const ClothMesh = forwardRef(function ClothMesh(
     sim.applyCutouts(cutouts);
   }, [sim, cutouts]);
 
+  const decayKey = JSON.stringify(decay);
+  useEffect(() => {
+    const d = { ...DECAY_DEFAULTS, ...decay };
+    sim.applyDecay(d, alphaSeed);
+    texUniforms.holeRimColorU.value.set(d.holeRimColor);
+    texUniforms.holeRimGlowU.value = d.holeRimGlow;
+    texUniforms.bloodColorU.value.set(d.bloodColor);
+    texUniforms.dripColorU.value.set(d.dripColor);
+    texUniforms.dripGlowU.value = d.dripGlow;
+    texUniforms.dripTintU.value = d.dripTint;
+  }, [sim, texUniforms, decayKey, alphaSeed]);
+
   const timePerStep = 1 / stepsPerSecond;
 
-  useFrame(({ gl, pointer, camera }, delta) => {
+  useFrame(({ camera, clock, gl, pointer }, delta) => {
     const s = simState.current;
+    // Own clock rather than TSL `time`, so a plot knows the drips' phase.
+    sim.dripTimeU.value = clock.elapsedTime;
 
     if (fabricUniforms) {
       const f = { ...FABRIC_DEFAULTS, ...fabric };

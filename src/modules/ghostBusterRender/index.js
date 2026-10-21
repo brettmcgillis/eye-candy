@@ -3,13 +3,16 @@
 export {
   aimCamera,
   createDepthCapture,
+  createNormalCapture,
   depthProbe,
   readGhostLattice,
+  readStormPlot,
 } from './capture';
 export { default as createStageRoot } from './createStageRoot';
 export {
   default as GhostStudio,
   backdropColor,
   ghostProps,
+  hasStorm,
 } from './GhostStudio';
 export { SKIN_NAMES, resolveSkin } from './skins';

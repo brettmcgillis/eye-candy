@@ -83,12 +83,11 @@ export default function getGhostControls(p) {
             max: 20,
             step: 0.1,
           },
-          // The shared cloth sim never settles above 40 (measured headlessly).
           ghostClothSegments: {
             label: 'Cloth Segments',
             value: p.ghostClothSegments,
             min: 12,
-            max: 40,
+            max: 48,
             step: 1,
           },
         },

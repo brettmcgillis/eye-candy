@@ -77,12 +77,21 @@ const FIELD = {
   blobOneFill: from('blobOneFill', 'field', 'Cells'),
   blobHoles: from('blobHoles', 'field', 'Cells'),
   blobMeatballs: from('blobMeatballs', 'field', 'Cells'),
+  blobSymmetry: from('blobSymmetry', 'field', 'Cells'),
   planeRotation: from('planeRotation', 'field', null, {
     help: 'Turns the field about the vertical',
   }),
 };
 
-const DESIGN_TOOLS = ['off', 'paint', 'erase', 'connect', 'diagonal', 'order'];
+const DESIGN_TOOLS = [
+  'off',
+  'paint',
+  'erase',
+  'connect',
+  'diagonal',
+  'order',
+  'move',
+];
 const whenPainting = { designTool: ['paint'] };
 
 const DESIGN = {
@@ -104,11 +113,6 @@ const DESIGN = {
   ),
   designAutoConnect: sceneOnly(
     flag('field', 'Design', 'Auto Connect', true, { when: whenPainting })
-  ),
-  designGridSize: sceneOnly(
-    num('field', 'Design', 'Grid Size', 18, 4, 50, 1, {
-      help: 'Size of a new blank design, and what Resize Grid resizes the current one to (centred; cells that no longer fit are dropped)',
-    })
   ),
 };
 
@@ -545,6 +549,7 @@ export const TUBE_KEYS = [
   'blobOneFill',
   'blobHoles',
   'blobMeatballs',
+  'blobSymmetry',
   'strands',
   'lanesAs',
   'membraneRows',

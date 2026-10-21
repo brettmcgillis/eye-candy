@@ -10,6 +10,17 @@
   gap: 8px;
 }
 
+.gb-live__panel {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(12rem, 20rem) minmax(0, 1fr);
+}
+
+.gb-live__wind {
+  grid-template-columns: repeat(3, minmax(6rem, 1fr));
+}
+
 .gb-live__toggle {
   align-items: center;
   display: inline-flex;

@@ -411,7 +411,6 @@ const RENDER = {
   svg: standard.svg(
     'Write a plottable SVG per view: every leaf box edge, hidden lines removed, one pen per colour'
   ),
-  dxf: standard.dxf(),
   plotWidthMm: standard.plotWidthMm(),
   views: standard.views(VIEWS, 'hero'),
   svgOcclusion: standard.svgOcclusion(

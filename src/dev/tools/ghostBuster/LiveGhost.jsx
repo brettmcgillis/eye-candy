@@ -14,9 +14,17 @@ import {
   FiVideo,
 } from 'react-icons/fi';
 
+import pngBase64, {
+  captureSize,
+  freezeClock,
+  nextFrame,
+  resumeClock,
+  stepFrozen,
+  useLiveClock,
+} from '@dev/renderWorkbench/liveCapture';
 import { postJson } from '@dev/renderWorkbench/useRenderJobs';
 import { OrbitControls } from '@react-three/drei';
-import { advance, useThree } from '@react-three/fiber';
+import { useThree } from '@react-three/fiber';
 
 import * as THREE from 'three/webgpu';
 
@@ -29,15 +37,20 @@ import {
   needsDepth,
   plotArgs,
   renderGhostSvg,
+  unionOf,
+  withStorm,
 } from '@modules/ghostBuster';
 import {
   GhostStudio,
   aimCamera,
   createDepthCapture,
+  createNormalCapture,
   depthProbe,
   readGhostLattice,
+  readStormPlot,
   resolveSkin,
 } from '@modules/ghostBusterRender';
+import { tightRows } from '@modules/renderStage';
 
 const DEG = 180 / Math.PI;
 const GUST_KEYS = {
@@ -51,66 +64,51 @@ const GUST_KEYS = {
   w: [0, 1],
 };
 
+const ACTIONS = [
+  { id: 'wave', key: '1', label: 'Wave' },
+  { id: 'clap', key: '2', label: 'Clap' },
+];
+
+const WIND_SLIDERS = [
+  {
+    key: 'windAngle',
+    label: 'Wind from',
+    max: 359,
+    min: 0,
+    step: 1,
+    unit: '°',
+  },
+  { key: 'windStrength', label: 'Wind', max: 3, min: 0, step: 0.01, unit: '' },
+  { key: 'windGust', label: 'Gust', max: 1, min: 0, step: 0.01, unit: '' },
+];
+
 const typing = (event) =>
   ['INPUT', 'SELECT', 'TEXTAREA'].includes(event.target?.tagName);
 
-// WebGPU pads each readback row to 256 bytes except the last.
-function tightRows(pixels, width, height) {
-  const stride =
-    pixels.length === width * 4 * height
-      ? width * 4
-      : Math.ceil((width * 4) / 256) * 256;
-  const tight = new Uint8ClampedArray(width * height * 4);
-  for (let y = 0; y < height; y += 1) {
-    tight.set(
-      pixels.subarray(y * stride, y * stride + width * 4),
-      y * width * 4
-    );
-  }
-  return tight;
-}
-
-async function pngBase64(tight, width, height) {
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  canvas
-    .getContext('2d')
-    .putImageData(new ImageData(tight, width, height), 0, 0);
-  const blob = await new Promise((resolve) => {
-    canvas.toBlob(resolve, 'image/png');
-  });
-  const bytes = new Uint8Array(await blob.arrayBuffer());
-  let binary = '';
-  for (let i = 0; i < bytes.length; i += 0x8000) {
-    binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));
-  }
-  return btoa(binary);
-}
-
 // Lives inside the canvas: owns the camera framing and the capture, which
 // both need the R3F state.
-function Director({ bridgeRef, config, ghostRef, options, paused }) {
+function Director({ bridgeRef, config, ghostRef, options, paused, stormRef }) {
   const get = useThree((state) => state.get);
   const captureDepth = useMemo(() => createDepthCapture(get().gl), [get]);
+  const captureNormals = useMemo(() => createNormalCapture(get().gl), [get]);
   const boundsRef = useRef(GHOST_BOUNDS);
   const frozenRef = useRef(0);
+  const liveRef = useLiveClock();
 
   const render = useCallback(() => {
     const state = get();
-    advance(frozenRef.current, true, state);
+    stepFrozen(state, frozenRef.current);
   }, [get]);
 
   useEffect(() => {
     const state = get();
     if (paused) {
-      frozenRef.current = state.clock.elapsedTime;
-      state.setFrameloop('never');
+      frozenRef.current = freezeClock(state, liveRef);
       render();
     } else {
-      state.setFrameloop('always');
+      resumeClock(state);
     }
-  }, [get, paused, render]);
+  }, [get, liveRef, paused, render]);
 
   useEffect(() => {
     if (paused) render();
@@ -126,6 +124,9 @@ function Director({ bridgeRef, config, ghostRef, options, paused }) {
         view: 'hero',
       });
       aimCamera(camera, view, size.width / size.height);
+      // aimCamera leaves up view-perpendicular; orbiting about it rolls the floor.
+      camera.up.set(0, 1, 0);
+      camera.lookAt(...view.target);
       controls?.target.set(...view.target);
       controls?.update();
       if (paused) render();
@@ -137,9 +138,11 @@ function Director({ bridgeRef, config, ghostRef, options, paused }) {
     const ghost = ghostRef.current;
     if (!ghost?.sim) return boundsRef.current;
     const lattice = await readGhostLattice(get().gl, ghost, config.skin);
-    boundsRef.current = latticeBounds(lattice) ?? GHOST_BOUNDS;
+    boundsRef.current =
+      withStorm(latticeBounds(lattice), stormRef.current?.extent()) ??
+      GHOST_BOUNDS;
     return boundsRef.current;
-  }, [config.skin, get, ghostRef]);
+  }, [config.skin, get, ghostRef, stormRef]);
 
   // The camera as the generation's own camera keys, measured against the
   // framing the CLI would fit, so a CLI re-render starts from this view.
@@ -177,10 +180,8 @@ function Director({ bridgeRef, config, ghostRef, options, paused }) {
     const width = Math.round(options.width * options.pixelRatio);
     const height = Math.round(options.height * options.pixelRatio);
     const wasRunning = state.frameloop !== 'never';
-    if (wasRunning) {
-      frozenRef.current = state.clock.elapsedTime;
-      state.setFrameloop('never');
-    }
+    if (wasRunning) frozenRef.current = freezeClock(state, liveRef);
+    const restoreSize = captureSize(state, width, height);
     camera.aspect = options.width / options.height;
     camera.updateProjectionMatrix();
 
@@ -188,8 +189,9 @@ function Director({ bridgeRef, config, ghostRef, options, paused }) {
       colorSpace: THREE.NoColorSpace,
       samples: 4,
     });
+    await nextFrame();
     gl.setOutputRenderTarget(target);
-    advance(frozenRef.current, true, state);
+    stepFrozen(state, frozenRef.current);
     gl.setOutputRenderTarget(null);
     const pixels = await gl.readRenderTargetPixelsAsync(
       target,
@@ -212,33 +214,54 @@ function Director({ bridgeRef, config, ghostRef, options, paused }) {
         target: (controls?.target ?? new THREE.Vector3()).toArray(),
         up: camera.up.toArray(),
       };
+      if (needsDepth(options)) await nextFrame();
+      const pass = (captureOf) => (only) =>
+        captureOf(scene, camera, width, height, only);
+      const depthOf = pass(captureDepth);
       const depth = needsDepth(options)
-        ? await captureDepth(
-            scene,
-            camera,
-            width,
-            height,
-            ghostRef.current.mesh
-          )
+        ? await depthOf(ghostRef.current.mesh)
         : null;
+      const storm =
+        options.svgStorm && stormRef.current
+          ? await readStormPlot(gl, stormRef.current, {
+              depthOf,
+              normalsOf: pass(captureNormals),
+            })
+          : null;
       svg = renderGhostSvg({
         ...plotArgs(options, resolveSkin(config.skin)),
         camera: view,
         coverage: depth,
         image: { data: image, height, width },
         lattice,
+        storm,
+        time: frozenRef.current,
         visible: options.svgOcclusion
-          ? depthProbe(depth, options.pixelRatio)
+          ? depthProbe(
+              unionOf(depth, storm?.cloud?.coverage),
+              options.pixelRatio
+            )
           : null,
       });
     }
 
+    restoreSize();
     camera.aspect = size.width / size.height;
     camera.updateProjectionMatrix();
-    if (wasRunning) state.setFrameloop('always');
+    if (wasRunning) resumeClock(state);
     else render();
     return { png: await pngBase64(image, width, height), svg };
-  }, [captureDepth, config.skin, get, ghostRef, options, render]);
+  }, [
+    captureDepth,
+    captureNormals,
+    config.skin,
+    get,
+    ghostRef,
+    liveRef,
+    options,
+    render,
+    stormRef,
+  ]);
 
   useEffect(() => {
     Object.assign(bridgeRef.current, {
@@ -268,10 +291,13 @@ export default function LiveGhost({ jobsApi, options, setOptions }) {
     [options]
   );
   const ghostRef = useRef(null);
+  const stormRef = useRef(null);
   const gustRef = useRef({ strength: 0, x: 0, z: 0 });
+  const jumpRef = useRef(false);
   const bridgeRef = useRef({});
   const [paused, setPaused] = useState(false);
   const [poke, setPoke] = useState(true);
+  const [action, setAction] = useState(null);
   const [stageKey, setStageKey] = useState(0);
   const [status, setStatus] = useState(null);
   const [busy, setBusy] = useState(false);
@@ -301,8 +327,30 @@ export default function LiveGhost({ jobsApi, options, setOptions }) {
 
   const restart = useCallback(() => {
     setStageKey((key) => key + 1);
+    setAction(null);
     setStatus(null);
   }, []);
+
+  const toggleAction = useCallback((id) => {
+    const ghost = ghostRef.current;
+    if (!ghost) return;
+    if (id === null || ghost.activeAnimation === id) {
+      ghost.stopAnimation();
+      setAction(null);
+    } else {
+      ghost.playAnimation(id);
+      setAction(id);
+    }
+  }, []);
+
+  const jump = useCallback(() => {
+    jumpRef.current = true;
+  }, []);
+
+  const setWind = useCallback(
+    (key, value) => setOptions((current) => ({ ...current, [key]: value })),
+    [setOptions]
+  );
 
   const useCamera = useCallback(() => {
     const keys = bridgeRef.current.cameraKeys?.();
@@ -344,6 +392,12 @@ export default function LiveGhost({ jobsApi, options, setOptions }) {
         restart();
       } else if (key === 'f') {
         bridgeRef.current.frame?.();
+      } else if (key === 'j') {
+        jump();
+      } else if (key === '0') {
+        toggleAction(null);
+      } else if (ACTIONS.some((entry) => entry.key === key)) {
+        toggleAction(ACTIONS.find((entry) => entry.key === key).id);
       } else if (GUST_KEYS[key]) {
         event.preventDefault();
         held.add(key);
@@ -360,7 +414,35 @@ export default function LiveGhost({ jobsApi, options, setOptions }) {
       window.removeEventListener('keydown', down);
       window.removeEventListener('keyup', up);
     };
-  }, [capture, restart]);
+  }, [capture, jump, restart, toggleAction]);
+
+  // Memoised so capture status updates never re-render the canvas: R3F
+  // re-syncs its frameloop to the prop on every canvas render.
+  const stage = useMemo(
+    () => (
+      <WebGPUCanvas frameloop={paused ? 'never' : 'always'}>
+        <GhostStudio
+          config={config}
+          cursorCollider={poke && !paused}
+          ghostRef={ghostRef}
+          gustRef={gustRef}
+          jumpRef={jumpRef}
+          key={stageKey}
+          paused={paused}
+          stormRef={stormRef}
+        />
+        <Director
+          bridgeRef={bridgeRef}
+          config={config}
+          ghostRef={ghostRef}
+          options={options}
+          paused={paused}
+          stormRef={stormRef}
+        />
+      </WebGPUCanvas>
+    ),
+    [config, options, paused, poke, stageKey]
+  );
 
   return (
     <div className="gb-live">
@@ -403,10 +485,62 @@ export default function LiveGhost({ jobsApi, options, setOptions }) {
           Poke with cursor
         </label>
       </div>
+      <div className="gb-live__panel">
+        <div className="rw-segmented gb-live__actions">
+          {ACTIONS.map(({ id, key, label }) => (
+            <button
+              aria-pressed={action === id}
+              className="rw-segmented__button"
+              disabled={paused}
+              key={id}
+              onClick={() => toggleAction(id)}
+              title={`${label} (${key})`}
+              type="button"
+            >
+              {label}
+            </button>
+          ))}
+          <button
+            className="rw-segmented__button"
+            disabled={paused}
+            onClick={jump}
+            title="Jump (J)"
+            type="button"
+          >
+            Jump
+          </button>
+          <button
+            className="rw-segmented__button"
+            disabled={paused || action === null}
+            onClick={() => toggleAction(null)}
+            title="Idle (0)"
+            type="button"
+          >
+            Idle
+          </button>
+        </div>
+        <div className="rw-field-grid gb-live__wind">
+          {WIND_SLIDERS.map(({ key, label, max, min, step, unit }) => (
+            <label className="rw-field" htmlFor={`gb-live-${key}`} key={key}>
+              {label} · {options[key]}
+              {unit}
+              <input
+                id={`gb-live-${key}`}
+                max={max}
+                min={min}
+                onChange={(event) => setWind(key, Number(event.target.value))}
+                step={step}
+                type="range"
+                value={options[key]}
+              />
+            </label>
+          ))}
+        </div>
+      </div>
       <p className="rw-hint">
-        Space pause · C capture · R restart · F frame · WASD gust · drag to
-        orbit. Captures use the form&apos;s size, formats, SVG and overlay
-        settings.
+        Space pause · C capture · R restart · F frame · WASD gust · 1 wave · 2
+        clap · J jump · 0 idle · drag to orbit. Captures use the form&apos;s
+        size, formats, SVG and overlay settings.
       </p>
       <div
         className="gb-live__stage"
@@ -415,23 +549,7 @@ export default function LiveGhost({ jobsApi, options, setOptions }) {
           width: `min(100%, calc(72vh * ${options.width} / ${options.height}))`,
         }}
       >
-        <WebGPUCanvas>
-          <GhostStudio
-            config={config}
-            cursorCollider={poke && !paused}
-            ghostRef={ghostRef}
-            gustRef={gustRef}
-            key={stageKey}
-            paused={paused}
-          />
-          <Director
-            bridgeRef={bridgeRef}
-            config={config}
-            ghostRef={ghostRef}
-            options={options}
-            paused={paused}
-          />
-        </WebGPUCanvas>
+        {stage}
       </div>
       {status ? <p className="rw-status">{status}</p> : null}
     </div>

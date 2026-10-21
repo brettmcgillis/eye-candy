@@ -774,6 +774,250 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
       { collapsed: true }
     ),
 
+    Decay: folder(
+      {
+        'Rot & Blood': folder(
+          {
+            holeRimWidth: {
+              label: 'Rot Width',
+              value: ini.holeRimWidth,
+              min: 0,
+              max: 0.05,
+              step: 0.001,
+            },
+            holeRimColor: { label: 'Rot Color', value: ini.holeRimColor },
+            holeRimGlow: {
+              label: 'Rot Glow',
+              value: ini.holeRimGlow,
+              min: 0,
+              max: 3,
+              step: 0.05,
+            },
+            bloodAmount: {
+              label: 'Blood',
+              value: ini.bloodAmount,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            bloodColor: { label: 'Blood Color', value: ini.bloodColor },
+          },
+          { collapsed: true }
+        ),
+        Drips: folder(
+          {
+            dripAmount: {
+              label: 'Depth',
+              value: ini.dripAmount,
+              min: 0,
+              max: 0.2,
+              step: 0.005,
+            },
+            dripCount: {
+              label: 'Count',
+              value: ini.dripCount,
+              min: 1,
+              max: 64,
+              step: 1,
+            },
+            dripTint: {
+              label: 'Tint',
+              value: ini.dripTint,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            dripColor: { label: 'Color', value: ini.dripColor },
+            dripGlow: {
+              label: 'Glow',
+              value: ini.dripGlow,
+              min: 0,
+              max: 5,
+              step: 0.05,
+            },
+            dripSpeed: {
+              label: 'Speed',
+              value: ini.dripSpeed,
+              min: 0,
+              max: 5,
+              step: 0.05,
+            },
+          },
+          { collapsed: true }
+        ),
+        Brow: folder(
+          {
+            cutoutBrow: {
+              label: 'Depth',
+              value: ini.cutoutBrow,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            cutoutBrowSlant: {
+              label: 'Slant',
+              value: ini.cutoutBrowSlant,
+              min: 0,
+              max: 3,
+              step: 0.05,
+            },
+          },
+          { collapsed: true }
+        ),
+      },
+      { collapsed: true }
+    ),
+
+    Storm: folder(
+      {
+        Cloud: folder(
+          {
+            cloudVisible: { label: 'Visible', value: ini.cloudVisible },
+            cloudSize: {
+              label: 'Size',
+              value: ini.cloudSize,
+              min: 0.2,
+              max: 2,
+              step: 0.01,
+            },
+            cloudHeight: {
+              label: 'Height',
+              value: ini.cloudHeight,
+              min: 0.1,
+              max: 1.5,
+              step: 0.01,
+            },
+            cloudColor: { label: 'Color', value: ini.cloudColor },
+            cloudRoughness: {
+              label: 'Roughness',
+              value: ini.cloudRoughness,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            cloudFlash: {
+              label: 'Flash Glow',
+              value: ini.cloudFlash,
+              min: 0,
+              max: 5,
+              step: 0.05,
+            },
+          },
+          { collapsed: true }
+        ),
+        Rain: folder(
+          {
+            rainVisible: { label: 'Visible', value: ini.rainVisible },
+            rainCount: {
+              label: 'Drops',
+              value: ini.rainCount,
+              min: 10,
+              max: 2000,
+              step: 10,
+            },
+            rainSpeed: {
+              label: 'Speed',
+              value: ini.rainSpeed,
+              min: 0.2,
+              max: 8,
+              step: 0.1,
+            },
+            rainLength: {
+              label: 'Streak',
+              value: ini.rainLength,
+              min: 0.01,
+              max: 0.3,
+              step: 0.005,
+            },
+            rainWidth: {
+              label: 'Width',
+              value: ini.rainWidth,
+              min: 0.0005,
+              max: 0.01,
+              step: 0.0005,
+            },
+            rainSpread: {
+              label: 'Spread',
+              value: ini.rainSpread,
+              min: 0.1,
+              max: 1,
+              step: 0.01,
+            },
+            rainColor: { label: 'Color', value: ini.rainColor },
+            rainOpacity: {
+              label: 'Opacity',
+              value: ini.rainOpacity,
+              min: 0,
+              max: 1,
+              step: 0.01,
+            },
+            rainSplash: {
+              label: 'Splash',
+              value: ini.rainSplash,
+              min: 0,
+              max: 0.1,
+              step: 0.001,
+            },
+          },
+          { collapsed: true }
+        ),
+        Lightning: folder(
+          {
+            lightningVisible: { label: 'Visible', value: ini.lightningVisible },
+            lightningMinGap: {
+              label: 'Min Gap',
+              value: ini.lightningMinGap,
+              min: 0.2,
+              max: 20,
+              step: 0.1,
+            },
+            lightningMaxGap: {
+              label: 'Max Gap',
+              value: ini.lightningMaxGap,
+              min: 0.2,
+              max: 30,
+              step: 0.1,
+            },
+            lightningDuration: {
+              label: 'Duration',
+              value: ini.lightningDuration,
+              min: 0.1,
+              max: 2,
+              step: 0.05,
+            },
+            lightningColor: { label: 'Core Color', value: ini.lightningColor },
+            lightningGlowColor: {
+              label: 'Glow Color',
+              value: ini.lightningGlowColor,
+            },
+            lightningWidth: {
+              label: 'Width',
+              value: ini.lightningWidth,
+              min: 0.001,
+              max: 0.02,
+              step: 0.0005,
+            },
+            lightningJitter: {
+              label: 'Jitter',
+              value: ini.lightningJitter,
+              min: 0,
+              max: 1.5,
+              step: 0.01,
+            },
+            lightningBranches: {
+              label: 'Branches',
+              value: ini.lightningBranches,
+              min: 0,
+              max: 8,
+              step: 1,
+            },
+          },
+          { collapsed: true }
+        ),
+      },
+      { collapsed: true }
+    ),
+
     Animation: folder(
       {
         bobAmplitude: {

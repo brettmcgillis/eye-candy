@@ -70,9 +70,6 @@ export default function sceneFolders(saved, { onDesign, onReplay, onRoll }) {
         newBlankDesign: button(() => onDesign?.('newBlank')),
       },
     },
-    designGridSize: {
-      after: { resizeGrid: button(() => onDesign?.('resize')) },
-    },
     designAutoConnect: {
       after: {
         undoDesign: button(() => onDesign?.('undo')),

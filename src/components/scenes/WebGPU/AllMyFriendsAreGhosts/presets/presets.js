@@ -92,7 +92,7 @@ export const PRESETS = {
     ghostOuterGlow: 0,
     ghostInnerGlow: 0,
     ghostGroundLightIntensity: 0,
-    ghostClothSegments: 40,
+    ghostClothSegments: 48,
     ghostBobAmplitude: 0.03,
     ghostBobSpeed: 0.5,
     ghostTilt: 0.3,

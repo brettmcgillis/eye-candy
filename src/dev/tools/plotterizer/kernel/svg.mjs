@@ -1,18 +1,6 @@
-const PX_MM = 25.4 / 96;
-const TOLERANCE_MM = 0.05;
+export const PX_MM = 25.4 / 96;
+export const TOLERANCE_MM = 0.05;
 const IDENTITY = [1, 0, 0, 1, 0, 0];
-
-const ACI = [
-  [1, [255, 0, 0]],
-  [2, [255, 255, 0]],
-  [3, [0, 255, 0]],
-  [4, [0, 255, 255]],
-  [5, [0, 0, 255]],
-  [6, [255, 0, 255]],
-  [7, [0, 0, 0]],
-  [8, [128, 128, 128]],
-  [9, [192, 192, 192]],
-];
 
 const multiply = ([a, b, c, d, e, f], [g, h, i, j, k, l]) => [
   a * g + c * h,
@@ -226,7 +214,7 @@ export function pathSubpaths(d, unitMm = 1) {
     if (lower === 'm') {
       state.point = abs(args[0], args[1]);
       state.start = state.point;
-      state.current = { closed: false, points: [state.point] };
+      state.current = { arcs: true, closed: false, points: [state.point] };
       state.subpaths.push(state.current);
     } else if (lower === 'z') {
       if (state.current) state.current.closed = true;
@@ -234,8 +222,11 @@ export function pathSubpaths(d, unitMm = 1) {
       state.current = null;
     } else {
       if (!state.current) {
-        state.current = { closed: false, points: [state.point] };
+        state.current = { arcs: true, closed: false, points: [state.point] };
         state.subpaths.push(state.current);
+      }
+      if (lower !== 'a' || args[0] === 0 || args[1] === 0) {
+        state.current.arcs = false;
       }
       const drawn = drawTo(state, lower, args, abs, unitMm);
       state.current.points.push(...drawn.added);
@@ -283,6 +274,7 @@ function shapeSubpaths(tag, attrs, unitMm) {
   if (tag === 'circle') {
     return [
       {
+        arcs: true,
         closed: true,
         points: ellipse(n('cx'), n('cy'), n('r'), n('r'), unitMm),
       },
@@ -291,6 +283,7 @@ function shapeSubpaths(tag, attrs, unitMm) {
   if (tag === 'ellipse') {
     return [
       {
+        arcs: true,
         closed: true,
         points: ellipse(n('cx'), n('cy'), n('rx'), n('ry'), unitMm),
       },
@@ -340,33 +333,6 @@ const painted = (value) =>
 
 const plotted = ({ fill, stroke }) =>
   painted(stroke) && !(painted(fill) && fill === stroke);
-
-function layerName(raw) {
-  const name = String(raw)
-    .trim()
-    .replace(/[^A-Za-z0-9_-]+/gu, '_');
-  return name.replace(/^_+|_+$/gu, '') || '0';
-}
-
-function hexRgb(value) {
-  const match = /^#([0-9a-f]{3}|[0-9a-f]{6})$/iu.exec(
-    String(value ?? '').trim()
-  );
-  if (!match) return null;
-  const hex =
-    match[1].length === 3 ? [...match[1]].map((c) => c + c).join('') : match[1];
-  return [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16));
-}
-
-function aciFor(stroke) {
-  const rgb = hexRgb(stroke);
-  if (!rgb) return 7;
-  const distance = ([, [r, g, b]]) =>
-    (rgb[0] - r) ** 2 + (rgb[1] - g) ** 2 + (rgb[2] - b) ** 2;
-  return ACI.reduce((best, entry) =>
-    distance(entry) < distance(best) ? entry : best
-  )[0];
-}
 
 const inside = ([x, y], [w, h]) => x >= 0 && x <= w && y >= 0 && y <= h;
 
@@ -418,34 +384,51 @@ function clipToPage({ closed, points }, page) {
   return pieces;
 }
 
-export function plotGeometry(svg) {
-  const rootMatch = /<svg\b([^>]*)>/u.exec(svg);
-  if (!rootMatch) throw new Error('svgToDxf: no <svg> root element');
-  const root = parseAttributes(rootMatch[1]);
-  const width = parseLength(root.width);
-  const height = parseLength(root.height);
-  const box = root.viewBox
-    ? numbers(root.viewBox)
+function rootOf(svg) {
+  const match = /<svg\b([^>]*)>/u.exec(svg);
+  if (!match) throw new Error('Not an SVG: no <svg> root element.');
+  const attrs = parseAttributes(match[1]);
+  const width = parseLength(attrs.width);
+  const height = parseLength(attrs.height);
+  const box = attrs.viewBox
+    ? numbers(attrs.viewBox)
     : [0, 0, width?.value ?? 0, height?.value ?? 0];
-  const [minX, minY, boxW, boxH] = box;
-  if (!(boxW > 0 && boxH > 0)) throw new Error('svgToDxf: the SVG has no size');
-  const widthMm = width?.mm ?? boxW * PX_MM;
-  const unitMm = widthMm / boxW;
-  const heightMm = height?.mm ?? boxH * unitMm;
-  const toPage = [
+  if (!(box[2] > 0 && box[3] > 0)) throw new Error('The SVG has no size.');
+  const widthMm = width?.mm ?? box[2] * PX_MM;
+  const unitMm = widthMm / box[2];
+  return {
+    attrs,
+    box,
+    heightMm: height?.mm ?? box[3] * unitMm,
+    match,
     unitMm,
-    0,
-    0,
-    -unitMm,
-    -minX * unitMm,
-    (minY + boxH) * unitMm,
-  ];
-  const page = [boxW * unitMm, boxH * unitMm];
+    widthMm,
+  };
+}
 
+const backgroundOf = (attrs) =>
+  /background(?:-color)?\s*:\s*([^;]+)/u.exec(attrs.style ?? '')?.[1]?.trim() ??
+  null;
+
+// Every stroked shape as polylines in millimetres on the SVG's own page
+// (y down), grouped by pen layer: the nearest <g> with an inkscape:label or
+// id, else the stroke colour. Clipped to the page.
+export function parseSvg(svg) {
+  const {
+    attrs: rootAttrs,
+    box,
+    heightMm,
+    match,
+    unitMm,
+    widthMm,
+  } = rootOf(svg);
+  const [minX, minY] = box;
+  const toPage = [unitMm, 0, 0, unitMm, -minX * unitMm, -minY * unitMm];
+  const page = [widthMm, heightMm];
   const layers = new Map();
   const stack = [{ attrs: {}, layer: null, matrix: toPage, skip: false }];
   const body = svg
-    .slice(rootMatch.index + rootMatch[0].length)
+    .slice(match.index + match[0].length)
     .replace(/<!--[\s\S]*?-->/gu, '');
   const tags = body.matchAll(
     /<(\/?)([\w:-]+)((?:\s+[\w:-]+\s*=\s*(?:"[^"]*"|'[^']*'))*)\s*(\/?)>/gu
@@ -484,111 +467,44 @@ export function plotGeometry(svg) {
     const node = { attrs, layer, matrix, skip };
 
     if (SHAPES.has(tag) && !skip && plotted(attrs)) {
-      const name = layerName(layer ?? attrs.stroke ?? '0');
-      if (!layers.has(name)) {
-        layers.set(name, { color: aciFor(attrs.stroke), name, polylines: [] });
+      const id = String(layer ?? attrs.stroke ?? 'layer');
+      if (!layers.has(id)) {
+        layers.set(id, { id, runs: [], stroke: attrs.stroke });
       }
-      const target = layers.get(name);
+      const target = layers.get(id);
       const scale = Math.sqrt(
         Math.abs(matrix[0] * matrix[3] - matrix[1] * matrix[2])
       );
-      shapeSubpaths(tag, own, scale).forEach(({ closed, points }) => {
+      shapeSubpaths(tag, own, scale).forEach(({ arcs, closed, points }) => {
         const placed = points.map((p) => apply(matrix, p));
         const last = placed.at(-1);
         const loops =
           placed.length > 2 &&
           Math.hypot(placed[0][0] - last[0], placed[0][1] - last[1]) < 1e-6;
         if (loops) placed.pop();
-        clipToPage({ closed: closed || loops, points: placed }, page)
+        const isClosed = closed || loops;
+        const whole = placed.every((p) => inside(p, page));
+        clipToPage({ closed: isClosed, points: placed }, page)
           .filter((piece) => piece.points.length >= 2)
-          .forEach((piece) => target.polylines.push(piece));
+          .forEach((piece) =>
+            target.runs.push(
+              arcs && isClosed && whole ? { ...piece, arcs: true } : piece
+            )
+          );
       });
     }
     if (!selfClosing) stack.push(node);
   });
-  return { heightMm, layers: [...layers.values()], widthMm };
+  return {
+    background: backgroundOf(rootAttrs),
+    heightMm,
+    layers: [...layers.values()],
+    widthMm,
+  };
 }
 
-const fmt = (value) => {
-  const rounded = Math.round(value * 10000) / 10000;
-  return Object.is(rounded, -0) ? '0' : String(rounded);
-};
-
-export function svgToDxf(svg) {
-  const { heightMm, layers, widthMm } = plotGeometry(svg);
-  const out = [];
-  const pair = (code, value) => out.push(String(code), String(value));
-  pair(0, 'SECTION');
-  pair(2, 'HEADER');
-  pair(9, '$ACADVER');
-  pair(1, 'AC1009');
-  pair(9, '$INSUNITS');
-  pair(70, 4);
-  pair(9, '$MEASUREMENT');
-  pair(70, 1);
-  pair(9, '$EXTMIN');
-  pair(10, 0);
-  pair(20, 0);
-  pair(30, 0);
-  pair(9, '$EXTMAX');
-  pair(10, fmt(widthMm));
-  pair(20, fmt(heightMm));
-  pair(30, 0);
-  pair(0, 'ENDSEC');
-  pair(0, 'SECTION');
-  pair(2, 'TABLES');
-  pair(0, 'TABLE');
-  pair(2, 'LTYPE');
-  pair(70, 1);
-  pair(0, 'LTYPE');
-  pair(2, 'CONTINUOUS');
-  pair(70, 0);
-  pair(3, 'Solid line');
-  pair(72, 65);
-  pair(73, 0);
-  pair(40, 0);
-  pair(0, 'ENDTAB');
-  pair(0, 'TABLE');
-  pair(2, 'LAYER');
-  pair(70, layers.length + 1);
-  [{ color: 7, name: '0' }, ...layers.filter((l) => l.name !== '0')].forEach(
-    (layer) => {
-      pair(0, 'LAYER');
-      pair(2, layer.name);
-      pair(70, 0);
-      pair(62, layer.color);
-      pair(6, 'CONTINUOUS');
-    }
-  );
-  pair(0, 'ENDTAB');
-  pair(0, 'ENDSEC');
-  pair(0, 'SECTION');
-  pair(2, 'ENTITIES');
-  layers.forEach((layer) => {
-    layer.polylines.forEach(({ closed, points }) => {
-      pair(0, 'POLYLINE');
-      pair(8, layer.name);
-      pair(66, 1);
-      pair(10, 0);
-      pair(20, 0);
-      pair(30, 0);
-      pair(70, closed ? 1 : 0);
-      points.forEach(([x, y]) => {
-        pair(0, 'VERTEX');
-        pair(8, layer.name);
-        pair(10, fmt(x));
-        pair(20, fmt(y));
-        pair(30, 0);
-      });
-      pair(0, 'SEQEND');
-      pair(8, layer.name);
-    });
-  });
-  pair(0, 'ENDSEC');
-  pair(0, 'EOF');
-  return `${out.join('\n')}\n`;
-}
-
+// Gives an SVG without a physical size one `widthMm` wide, keeping its
+// viewBox; an SVG that already has one keeps it.
 export function sizePlot(svg, widthMm) {
   if (!widthMm) return svg;
   return svg.replace(/<svg\b([^>]*)>/u, (tag, attrText) => {
@@ -600,10 +516,11 @@ export function sizePlot(svg, widthMm) {
       ? numbers(attrs.viewBox)
       : [0, 0, width?.value ?? 0, height?.value ?? 0];
     if (!(box[2] > 0 && box[3] > 0)) return tag;
-    const heightMm = fmt((widthMm * box[3]) / box[2]);
+    const round = (value) => Math.round(value * 1000) / 1000;
+    const heightMm = round((widthMm * box[3]) / box[2]);
     const kept = attrText
       .replace(/\s(?:width|height|viewBox)\s*=\s*(?:"[^"]*"|'[^']*')/gu, '')
       .trimEnd();
-    return `<svg${kept} width="${fmt(widthMm)}mm" height="${heightMm}mm" viewBox="${box.join(' ')}">`;
+    return `<svg${kept} width="${round(widthMm)}mm" height="${heightMm}mm" viewBox="${box.join(' ')}">`;
   });
 }

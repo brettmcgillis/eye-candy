@@ -115,7 +115,7 @@ function orderSections(ids) {
   return [...content, ...shared];
 }
 
-const FORMATS = { png: 'PNG', webp: 'WebP', svg: 'SVG', dxf: 'DXF' };
+const FORMATS = { png: 'PNG', webp: 'WebP', svg: 'SVG' };
 const MAX_SIDE = 8192;
 
 const listOf = (names) =>

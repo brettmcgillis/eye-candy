@@ -70,9 +70,7 @@ async function main() {
     height: Math.round(options.height * options.pixelRatio),
   };
   const outRoot = path.resolve(REPO_ROOT, String(options.out));
-  const formats = ['png', 'svg', 'dxf', 'webp'].filter(
-    (format) => options[format]
-  );
+  const formats = ['png', 'svg', 'webp'].filter((format) => options[format]);
 
   await mkdir(outRoot, { recursive: true });
   process.stdout.write(
@@ -126,12 +124,13 @@ async function main() {
         await progress.stage(
           `rendering test ${seed}, ${view} view`,
           async () => {
-            if (options.svg || options.dxf) {
+            if (options.svg) {
               await writePlot(
                 path.join(dir, `${view}.svg`),
                 frameSvg(kernel, {
                   bloomEnabled: options.bloom,
                   config,
+                  layered: true,
                   options: renderOptions,
                   test,
                   view,

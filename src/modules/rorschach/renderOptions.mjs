@@ -122,7 +122,7 @@ export const RENDER_OPTIONS = {
     max: 20,
     step: 0.1,
     placeholder: 'PX',
-    help: 'Screen-space decimation floor',
+    help: 'Screen-space simplification: points closer than this are dropped and each stroke is straightened to within it',
   },
   stroke: {
     scope: 'shared',
@@ -1030,7 +1030,6 @@ export const RENDER_OPTIONS = {
   },
   png: standard.png({ default: true, help: 'PNG output; --no-png skips it' }),
   svg: standard.svg('Also write editable SVG output'),
-  dxf: standard.dxf(),
   plotWidthMm: standard.plotWidthMm(),
   webp: standard.webp({ help: 'Also write lossless WebP output' }),
 
@@ -1245,14 +1244,8 @@ const schema = createOptionSchema({
   options: RENDER_OPTIONS,
   surfaceDefaults: SURFACE_DEFAULTS,
   validate(kind, options, fail) {
-    if (
-      kind === 'still' &&
-      !options.png &&
-      !options.svg &&
-      !options.dxf &&
-      !options.webp
-    ) {
-      throw fail('Select at least one output format: PNG, SVG, DXF or WebP.');
+    if (kind === 'still' && !options.png && !options.svg && !options.webp) {
+      throw fail('Select at least one output format: PNG, SVG or WebP.');
     }
     const longest = Math.max(options.width, options.height);
     if (longest * options.pixelRatio > 8192) {
@@ -1302,7 +1295,6 @@ export const HEADLESS_ONLY_OPTIONS = new Set([
   'count',
   'crossfade',
   'distance',
-  'dxf',
   'fov',
   'fps',
   'growthPresentation',

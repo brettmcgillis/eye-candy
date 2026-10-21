@@ -7,6 +7,8 @@ export {
   applyTool,
   isStrokeTool,
   brushOrigin,
+  groupAt,
+  moveGroup,
   pickSide,
   previewFor,
 } from './tools';

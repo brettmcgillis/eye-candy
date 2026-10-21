@@ -3,17 +3,25 @@ import {
   If,
   Loop,
   Return,
+  abs,
+  atan,
   attribute,
   cross,
+  exp,
   faceDirection,
   float,
   instanceIndex,
   instancedArray,
+  int,
+  ivec2,
+  length,
+  max,
   min,
   mix,
   select,
   smoothstep,
   texture,
+  textureLoad,
   time,
   transformNormalToView,
   triNoise3D,
@@ -26,11 +34,22 @@ import {
 import * as THREE from 'three/webgpu';
 
 import {
+  BLOOD_REACH,
+  DECAY_DEFAULTS,
+  DRIP_MAX,
+  DRIP_SNAP,
+  NOISE_STEP,
+  dripTable,
+  holeEdge as holeEdgeOf,
+} from './clothDecay';
+import {
   NUM_ANCHORS,
   buildClothTopology,
   computeClothAlpha,
   fbm2D,
 } from './clothTopology';
+
+const CONTACT_SLOP = 1.0001;
 
 /**
  * Creates a GPU-accelerated cloth simulation using verlet integration
@@ -194,6 +213,40 @@ export default function createClothSimulation({
     edgePinned.bottom ? 1 : 0
   );
 
+  // Rot, blood, hem drips and the eye brow: clothDecay.js mirrors every
+  // formula below for the plot.
+  const decayU = Object.fromEntries(
+    [
+      'bloodAmount',
+      'cutoutBrow',
+      'cutoutBrowSlant',
+      'dripAmount',
+      'dripCount',
+      'dripSpeed',
+      'holeRimWidth',
+    ].map((key) => [key, uniform(DECAY_DEFAULTS[key])])
+  );
+  const dripTimeU = uniform(0);
+  const dripTexture = new THREE.DataTexture(
+    new Float32Array(DRIP_MAX * 8),
+    DRIP_MAX,
+    2,
+    THREE.RGBAFormat,
+    THREE.FloatType
+  );
+  let dripSeed = null;
+  const applyDecay = (params, seed) => {
+    Object.entries(decayU).forEach(([key, u]) => {
+      // eslint-disable-next-line no-param-reassign
+      u.value = params[key] ?? DECAY_DEFAULTS[key];
+    });
+    if (seed !== dripSeed) {
+      dripTexture.image.data.set(dripTable(seed));
+      dripTexture.needsUpdate = true;
+      dripSeed = seed;
+    }
+  };
+
   // ── Compute shader 1 — spring forces ──
   const computeSprings = Fn(() => {
     // Guard against out-of-bounds workgroup threads
@@ -332,9 +385,31 @@ export default function createClothSimulation({
           .and(colliderEnabledU[c].greaterThan(0.5))
           .and(alphaVal.greaterThan(0.01)),
         () => {
-          const normal = toVertex.div(dist);
-          const surface = colliderPosU[c].add(normal.mul(effectiveRadius));
-          newPos.assign(surface);
+          const toRest = position.sub(colliderPosU[c]).toVar();
+          const restDist = toRest.length().max(0.000001).toVar();
+          const resting = restDist
+            .lessThanEqual(effectiveRadius.mul(CONTACT_SLOP))
+            .and(dist.lessThan(effectiveRadius.mul(dampeningU)));
+          const normal = select(
+            resting,
+            toRest.div(restDist),
+            toVertex.div(dist)
+          ).toVar();
+          const tn = toVertex.dot(normal).toVar();
+          const push = tn
+            .mul(tn)
+            .sub(dist.mul(dist))
+            .add(effectiveRadius.mul(effectiveRadius))
+            .max(0)
+            .sqrt()
+            .sub(tn);
+          newPos.assign(
+            select(
+              resting,
+              newPos.add(normal.mul(push)),
+              colliderPosU[c].add(normal.mul(effectiveRadius))
+            )
+          );
           // Zero out inward velocity component
           const vDotN = force.dot(normal);
           If(vDotN.lessThan(0), () => {
@@ -507,6 +582,153 @@ export default function createClothSimulation({
   };
   applyCutouts(alpha.cutouts);
 
+  // Geometry UV.y is inverted vs. grid v, so y flips when sampling the
+  // (unflipped) noise texture.
+  const noiseAt = (texUV, mirrored = false) =>
+    texture(
+      noiseTexture,
+      vec2(mirrored ? float(1).sub(texUV.x) : texUV.x, float(1).sub(texUV.y))
+    ).r;
+
+  // 0 at a free edge, 1 beyond the tatter zone; tatterEdge=0 → always 1.
+  const tatterDepthAt = (texUV) => {
+    const tatterDepth = tatterEdgeU.mul(0.5);
+    const dLeft = mix(float(1), texUV.x, float(1).sub(edgePinnedU.x));
+    const dRight = mix(
+      float(1),
+      float(1).sub(texUV.x),
+      float(1).sub(edgePinnedU.y)
+    );
+    const dTop = mix(
+      float(1),
+      float(1).sub(texUV.y),
+      float(1).sub(edgePinnedU.z)
+    );
+    const dBottom = mix(float(1), texUV.y, float(1).sub(edgePinnedU.w));
+    const minDist = min(min(dLeft, dRight), min(dTop, dBottom));
+    return minDist.div(tatterDepth.add(0.0001)).clamp(0, 1);
+  };
+
+  const eyeHoleDistance = (texUV, ci) => {
+    const circle = texUV.sub(cutoutU[ci]).length().sub(cutoutRadiusU[ci]);
+    const inward = select(cutoutU[ci].x.lessThan(0.5), float(1), float(-1));
+    const brow = texUV.y
+      .sub(cutoutU[ci].y)
+      .sub(cutoutRadiusU[ci].mul(float(1).sub(decayU.cutoutBrow)))
+      .add(decayU.cutoutBrowSlant.mul(inward).mul(texUV.x.sub(cutoutU[ci].x)))
+      .div(decayU.cutoutBrowSlant.mul(decayU.cutoutBrowSlant).add(1).sqrt());
+    return select(
+      decayU.cutoutBrow.add(decayU.cutoutBrowSlant).greaterThan(0),
+      max(circle, brow),
+      circle
+    );
+  };
+
+  // (rot, blood): bands round the hole and tatter cuts.
+  const decayNode = Fn(() => {
+    const texUV = uv();
+    const n = noiseAt(texUV);
+    const across = vec2(NOISE_STEP, 0);
+    const along = vec2(0, NOISE_STEP);
+    const slope = length(
+      vec2(
+        noiseAt(texUV.add(across)).sub(noiseAt(texUV.sub(across))),
+        noiseAt(texUV.add(along)).sub(noiseAt(texUV.sub(along)))
+      )
+    )
+      .div(2 * NOISE_STEP)
+      .max(1e-4);
+    const n2 = noiseAt(texUV, true);
+    const tDepth = tatterDepthAt(texUV);
+    const hole = select(holeAmountU.greaterThan(0), float(1), float(0));
+    const tatter = float(1).sub(tDepth);
+    const toHole = float(holeEdgeOf(0))
+      .sub(holeAmountU.mul(0.4))
+      .sub(n)
+      .div(slope);
+    const toTear = n.sub(float(0.7).sub(tDepth.mul(0.65))).div(slope);
+    const near = (reach) =>
+      max(
+        float(1)
+          .sub(smoothstep(0, reach, toHole))
+          .mul(hole),
+        float(1)
+          .sub(smoothstep(0, reach, toTear))
+          .mul(tatter)
+      );
+    const rot = select(
+      decayU.holeRimWidth.greaterThan(0),
+      near(decayU.holeRimWidth),
+      float(0)
+    );
+    const stain = float(0.8).sub(decayU.bloodAmount.mul(0.3));
+    const blood = select(
+      decayU.bloodAmount.greaterThan(0),
+      near(float(BLOOD_REACH)).mul(smoothstep(stain, stain.add(0.04), n2)),
+      float(0)
+    );
+    return vec2(rot, blood);
+  })();
+
+  const TAU = Math.PI * 2;
+  const DRIP_AA = 0.0015;
+  // (alpha, goo): the hem cut into hanging drips, and the goo band.
+  const dripNode = Fn(() => {
+    const texUV = uv();
+    const band = decayU.dripAmount;
+    const d = texUV.sub(0.5);
+    const radius = length(d);
+    const depth = band.sub(float(0.5).sub(radius)).toVar();
+    const on = band.greaterThan(0);
+    const goo = select(on, smoothstep(-0.015, -0.003, depth), float(0));
+    const kept = float(1).toVar();
+    If(on.and(depth.greaterThan(0)), () => {
+      kept.assign(0);
+      const count = max(decayU.dripCount.round(), 1);
+      const turn = atan(d.y, d.x).div(TAU).add(1).fract();
+      const base = turn.mul(count).floor();
+      [-1, 0, 1].forEach((k) => {
+        const i = base.add(k).add(count).mod(count);
+        const drip = textureLoad(dripTexture, ivec2(int(i), int(0)));
+        const offset = turn.sub(i.add(0.5).add(drip.x).div(count)).toVar();
+        offset.subAssign(offset.add(0.5).floor());
+        const across = abs(offset).mul(TAU).mul(radius);
+        const rate = textureLoad(dripTexture, ivec2(int(i), int(1))).x;
+        const cycle = dripTimeU
+          .mul(decayU.dripSpeed)
+          .mul(rate)
+          .add(drip.w)
+          .fract();
+        const growth = select(
+          cycle.lessThan(DRIP_SNAP),
+          smoothstep(0, DRIP_SNAP, cycle),
+          float(1).sub(smoothstep(DRIP_SNAP, 1, cycle))
+        )
+          .mul(0.7)
+          .add(0.3);
+        const reach = band.mul(drip.y).mul(growth);
+        const tip = reach.sub(drip.z);
+        const half = drip.z.mul(
+          exp(depth.negate().div(band.mul(0.15)))
+            .mul(1.2)
+            .add(1)
+        );
+        const column = select(
+          depth.lessThanEqual(tip),
+          smoothstep(-DRIP_AA, DRIP_AA, half.sub(across)),
+          float(0)
+        );
+        const bulb = smoothstep(
+          -DRIP_AA,
+          DRIP_AA,
+          drip.z.mul(1.25).sub(length(vec2(across, depth.sub(tip))))
+        );
+        kept.assign(max(kept, max(column, bulb)));
+      });
+    });
+    return vec2(kept, goo);
+  })();
+
   // ── Cutout rim (eyeliner) uniforms ──
   const cutoutRimColorU = uniform(new THREE.Color(0, 0, 0));
   const cutoutRimWidthU = uniform(0);
@@ -522,12 +744,10 @@ export default function createClothSimulation({
       const texUV = uv();
       for (let ci = 0; ci < MAX_CUTOUTS; ci += 1) {
         If(cutoutEnabledU[ci].greaterThan(0.5), () => {
-          const diff = texUV.sub(cutoutU[ci]);
-          const dist = diff.length();
           // Anchor at inner edge of cutout fade (visible hole boundary)
-          const innerEdge = cutoutRadiusU[ci].sub(cutoutFadeU[ci]);
-          const rimCenter = innerEdge.add(cutoutRimOffsetU);
-          const edgeDist = dist.sub(rimCenter);
+          const edgeDist = eyeHoleDistance(texUV, ci)
+            .add(cutoutFadeU[ci])
+            .sub(cutoutRimOffsetU);
           // Sharp step: 0 inside rim, 1 at rim start
           const aboveEdge = edgeDist.mul(10000).clamp(0, 1);
           // Sharp step: 1 inside rim band, 0 beyond
@@ -556,10 +776,8 @@ export default function createClothSimulation({
 
     // Per-pixel hole/tatter — sampled from the same noise field the CPU pass
     // uses for verlet kill, so the smooth shader boundary follows the same
-    // contour as the physical rip. Geometry UV.y is inverted vs. grid v, so
-    // flip y when sampling the (unflipped) noise texture.
-    const noiseUV = vec2(texUV.x, float(1).sub(texUV.y));
-    const n = texture(noiseTexture, noiseUV).r;
+    // contour as the physical rip.
+    const n = noiseAt(texUV);
     const W = float(0.08);
 
     // Holes — alpha drops smoothly across threshold. holeAmount=0 → threshold
@@ -571,21 +789,7 @@ export default function createClothSimulation({
 
     // Tatter — threshold tightens near free edges. tatterEdge=0 → tDepth
     // clamps to 1 and the mix below collapses tatterAlpha to 1 (no effect).
-    const tatterDepth = tatterEdgeU.mul(0.5);
-    const dLeft = mix(float(1), texUV.x, float(1).sub(edgePinnedU.x));
-    const dRight = mix(
-      float(1),
-      float(1).sub(texUV.x),
-      float(1).sub(edgePinnedU.y)
-    );
-    const dTop = mix(
-      float(1),
-      float(1).sub(texUV.y),
-      float(1).sub(edgePinnedU.z)
-    );
-    const dBottom = mix(float(1), texUV.y, float(1).sub(edgePinnedU.w));
-    const minDist = min(min(dLeft, dRight), min(dTop, dBottom));
-    const tDepth = minDist.div(tatterDepth.add(0.0001)).clamp(0, 1);
+    const tDepth = tatterDepthAt(texUV);
     const tatterThresh = float(0.7).sub(tDepth.mul(0.65));
     const tatterAlphaRaw = smoothstep(
       tatterThresh.sub(W),
@@ -598,15 +802,15 @@ export default function createClothSimulation({
     const perPixelAlpha = holeAlpha.mul(tatterAlpha);
     // Gate by smoothEdgesU (0/1): off → keep per-vertex behavior unchanged.
     vtxAlpha.mulAssign(mix(float(1), perPixelAlpha, smoothEdgesU));
+    vtxAlpha.mulAssign(dripNode.x);
 
-    // Per-pixel circular cutouts (eye holes etc.)
+    // Per-pixel cutouts (eye holes etc.), ramping over their fade width
     for (let ci = 0; ci < MAX_CUTOUTS; ci += 1) {
       If(cutoutEnabledU[ci].greaterThan(0.5), () => {
-        const diff = texUV.sub(cutoutU[ci]);
-        const dist = diff.length();
-        const inner = cutoutRadiusU[ci].sub(cutoutFadeU[ci]);
-        // smoothstep from 0 (inside inner) to 1 (at radius edge)
-        const t = dist.sub(inner).div(cutoutFadeU[ci]).clamp(0, 1);
+        const t = eyeHoleDistance(texUV, ci)
+          .add(cutoutFadeU[ci])
+          .div(cutoutFadeU[ci])
+          .clamp(0, 1);
         vtxAlpha.mulAssign(t);
       });
     }
@@ -671,6 +875,10 @@ export default function createClothSimulation({
     cutoutRimWidthU,
     cutoutRimOffsetU,
     cutoutRimNode,
+    applyDecay,
+    decayNode,
+    dripNode,
+    dripTimeU,
     shapeDistArr,
   };
 }

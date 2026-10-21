@@ -1,4 +1,5 @@
 import apollianPlugin from './apollian/plugin';
+import birdsArentRealPlugin from './birdsArentReal/plugin';
 import blockPartyPlugin from './blockParty/plugin';
 import brutalistPlugin from './brutalist/plugin';
 import cataloggrPlugin from './cataloggr/plugin';
@@ -19,12 +20,14 @@ import isoMeterPlugin from './isoMeter/plugin';
 import kumikoPlugin from './kumiko/plugin';
 import nestingBoxesPlugin from './nestingBoxes/plugin';
 import networkTestPlugin from './networkTest/plugin';
+import plotterizerPlugin from './plotterizer/plugin';
 import printShopPlugin from './printShop/plugin';
 import pushComesToShovePlugin from './pushComesToShove/plugin';
 import rorschachPlugin from './rorschach/plugin';
 import rugPullPlugin from './rugPull/plugin';
 import subdivisionPlugin from './subdivision/plugin';
 import subdivisionReliefPlugin from './subdivisionRelief/plugin';
+import thumbnailsPlugin from './thumbnails/plugin';
 import trucheterie3dPlugin from './trucheterie3d/plugin';
 import trucheteriePlugin from './trucheterie/plugin';
 import trucheterieDesignerPlugin from './trucheterieDesigner/plugin';
@@ -32,6 +35,7 @@ import trucheterieDesignerPlugin from './trucheterieDesigner/plugin';
 export default function devServerPlugins() {
   return [
     apollianPlugin(),
+    birdsArentRealPlugin(),
     blockPartyPlugin(),
     brutalistPlugin(),
     cataloggrPlugin(),
@@ -52,6 +56,7 @@ export default function devServerPlugins() {
     kumikoPlugin(),
     nestingBoxesPlugin(),
     networkTestPlugin(),
+    plotterizerPlugin(),
     printShopPlugin(),
     pushComesToShovePlugin(),
     rorschachPlugin(),
@@ -61,5 +66,6 @@ export default function devServerPlugins() {
     trucheteriePlugin(),
     trucheterie3dPlugin(),
     trucheterieDesignerPlugin(),
+    thumbnailsPlugin(),
   ];
 }

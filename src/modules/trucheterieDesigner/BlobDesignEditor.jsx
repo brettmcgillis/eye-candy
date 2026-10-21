@@ -4,6 +4,8 @@ import { useThree } from '@react-three/fiber';
 
 import * as THREE from 'three/webgpu';
 
+import { designFrame } from '@modules/trucheterieBlob';
+
 import {
   fromFieldFrame,
   gridLineMaterial,
@@ -14,7 +16,14 @@ import {
   previewGeometry,
   toFieldFrame,
 } from './overlay';
-import { applyTool, isStrokeTool, previewFor } from './tools';
+import {
+  MAX_BRUSH,
+  applyTool,
+  groupAt,
+  isStrokeTool,
+  moveGroup,
+  previewFor,
+} from './tools';
 
 const OUTLINE_WIDTH = 0.06;
 const OPEN_WIDTH = 0.2;
@@ -56,21 +65,32 @@ function BlobDesignEditor({
   const strokeRef = useRef(null);
   const [preview, setPreview] = useState(null);
 
-  const { gridSize } = design;
-  const cellSize = canvasSize / gridSize;
+  const { column, row, size: frameSize } = designFrame(design);
+  const cellSize = canvasSize / frameSize;
   const frame = useMemo(
-    () => toFieldFrame(gridSize, cellSize),
-    [cellSize, gridSize]
+    () => toFieldFrame({ column, row, size: frameSize }, cellSize),
+    [cellSize, column, frameSize, row]
   );
   const unframe = useMemo(
-    () => fromFieldFrame(gridSize, cellSize),
-    [cellSize, gridSize]
+    () => fromFieldFrame({ column, row, size: frameSize }, cellSize),
+    [cellSize, column, frameSize, row]
+  );
+  // The editable area always reaches a full brush past the design, and grows with it.
+  const area = useMemo(
+    () => ({
+      column: column - MAX_BRUSH,
+      row: row - MAX_BRUSH,
+      size: frameSize + MAX_BRUSH * 2,
+    }),
+    [column, frameSize, row]
   );
 
   if (!strokeRef.current) designRef.current = design;
 
   const optionsRef = useRef(null);
   optionsRef.current = { autoConnect, brush, onChange, onStrokeStart, tool };
+  const areaRef = useRef(null);
+  areaRef.current = { area, unframe };
 
   useEffect(() => {
     if (tool === 'off') return undefined;
@@ -90,15 +110,24 @@ function BlobDesignEditor({
       const [intersection] = raycaster.intersectObject(hit, false);
       if (!intersection) return null;
       const local = hit.worldToLocal(intersection.point.clone());
-      return unframe(local.x, local.y);
+      return areaRef.current.unframe(local.x, local.y);
     };
 
-    const onGrid = ([x, y]) => x >= 0 && y >= 0 && x < gridSize && y < gridSize;
+    const onGrid = ([x, y]) => {
+      const { area: bounds } = areaRef.current;
+      return (
+        x >= bounds.column &&
+        y >= bounds.row &&
+        x < bounds.column + bounds.size &&
+        y < bounds.row + bounds.size
+      );
+    };
 
     const updatePreview = (point) => {
       const next =
         point && onGrid(point)
           ? previewFor(designRef.current, optionsRef.current.tool, ...point, {
+              autoConnect: optionsRef.current.autoConnect,
               brush: optionsRef.current.brush,
             })
           : null;
@@ -138,6 +167,20 @@ function BlobDesignEditor({
       strokeRef.current.last = point;
     };
 
+    const dragTo = (point) => {
+      const { move } = strokeRef.current;
+      const dx = Math.round(point[0] - move.origin[0]);
+      const dy = Math.round(point[1] - move.origin[1]);
+      if (dx === move.offset[0] && dy === move.offset[1]) return;
+      move.offset = [dx, dy];
+      const result = moveGroup(move.base, move.group, dx, dy);
+      if (result.preview.ok && result.design !== designRef.current) {
+        designRef.current = result.design;
+        optionsRef.current.onChange?.(result.design);
+      }
+      setPreview(result.preview);
+    };
+
     const setControlsEnabled = (enabled) => {
       const { controls } = get();
       if (controls) controls.enabled = enabled;
@@ -161,15 +204,25 @@ function BlobDesignEditor({
       if (event.button !== 0) return;
       const point = pointAt(event);
       if (!point || !onGrid(point)) return;
+      const moving = optionsRef.current.tool === 'move';
+      const group = moving ? groupAt(designRef.current, ...point) : null;
+      if (moving && group.length === 0) return;
       event.stopPropagation();
       setControlsEnabled(false);
-      strokeRef.current = { last: point, pointerId: event.pointerId };
+      strokeRef.current = {
+        last: point,
+        move: moving
+          ? { base: designRef.current, group, offset: [0, 0], origin: point }
+          : null,
+        pointerId: event.pointerId,
+      };
       try {
         element.setPointerCapture(event.pointerId);
       } catch {
         // The pointer can already be gone (a fast tap); the stroke still ends on pointerup.
       }
       optionsRef.current.onStrokeStart?.(designRef.current);
+      if (moving) return;
       apply(point, true);
       updatePreview(point);
     };
@@ -178,6 +231,10 @@ function BlobDesignEditor({
       const point = pointAt(event);
       const stroke = strokeRef.current;
       if (stroke && event.pointerId === stroke.pointerId && point) {
+        if (stroke.move) {
+          dragTo(point);
+          return;
+        }
         if (isStrokeTool(optionsRef.current.tool)) strokeTo(point);
       }
       updatePreview(point);
@@ -199,16 +256,16 @@ function BlobDesignEditor({
       endStroke();
       setPreview(null);
     };
-  }, [get, gl, gridSize, tool, unframe]);
+  }, [get, gl, tool]);
 
+  const hitSize = area.size * cellSize * HIT_MARGIN;
   const hitGeometry = useDisposable(
-    () =>
-      new THREE.PlaneGeometry(canvasSize * HIT_MARGIN, canvasSize * HIT_MARGIN),
-    [canvasSize]
+    () => new THREE.PlaneGeometry(hitSize, hitSize),
+    [hitSize]
   );
   const gridGeometry = useDisposable(
-    () => gridLinesGeometry(gridSize, frame),
-    [frame, gridSize]
+    () => gridLinesGeometry(area, frame),
+    [area, frame]
   );
   const outlineGeometry = useDisposable(
     () => outlinesGeometry(design, frame, OUTLINE_WIDTH),
@@ -252,7 +309,12 @@ function BlobDesignEditor({
 
   return (
     <group visible={visible}>
-      <mesh ref={hitRef} geometry={hitGeometry} visible={false} />
+      <mesh
+        key={hitGeometry.uuid}
+        ref={hitRef}
+        geometry={hitGeometry}
+        visible={false}
+      />
       <lineSegments
         key={gridGeometry.uuid}
         geometry={gridGeometry}

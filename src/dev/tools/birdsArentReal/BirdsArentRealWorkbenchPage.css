@@ -1,0 +1,36 @@
+.bar-live {
+  display: grid;
+  gap: 10px;
+}
+
+.bar-live__toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.bar-live__panel {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(12rem, 18rem) minmax(0, 1fr);
+}
+
+.bar-live__sliders {
+  grid-template-columns: repeat(3, minmax(6rem, 1fr));
+}
+
+.bar-live__toggle {
+  align-items: center;
+  display: inline-flex;
+  font-size: 13px;
+  gap: 6px;
+}
+
+.bar-live__stage {
+  background: #000;
+  border-radius: 8px;
+  margin: 0 auto;
+  overflow: hidden;
+}

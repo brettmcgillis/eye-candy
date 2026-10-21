@@ -3,15 +3,15 @@
 /* eslint-disable no-nested-ternary */
 import React, { memo, useEffect, useMemo, useRef } from 'react';
 
-import { useGLTF } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
 import * as THREE from 'three';
 
+import useDracoGltf from '@hooks/useDracoGltf';
 import { modelFile } from '@utils/appUtils';
 
 const MODEL = modelFile('security_camera.glb');
-useGLTF.preload(MODEL);
+useDracoGltf.preload(MODEL);
 
 /**
  * The fake bird's "head": a surveillance camera. The asset (security_camera.glb) is
@@ -35,7 +35,7 @@ function CameraHead({
   lensRef = null, // external ref to the swept group (the live lens frame) — used to
   // drive the Bird POV camera from where the lens actually points.
 }) {
-  const { scene } = useGLTF(MODEL);
+  const { scene } = useDracoGltf(MODEL);
   const sweepRef = useRef();
   const ledRef = useRef();
 
@@ -121,6 +121,7 @@ function CameraHead({
       {/* Blinking "we're watching you" LED, parked by the lens glass. */}
       <mesh
         ref={ledRef}
+        userData={{ plot: false }}
         position={[
           ledBase.x + ledOffset.x,
           ledBase.y + ledOffset.y,

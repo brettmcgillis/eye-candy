@@ -34,7 +34,7 @@ Codex).
 
 - Each independent tool lives under `src/dev/tools/<tool>/` (current tools:
   `blockParty`, `brutalist`, `cataloggr`, `colors`, `darkroom`, `exhibitA`, `flora`, `fractalAutomata`, `fungi`, `gltfjsx`, `glyphs`, `hyperCubes`, `iconography`, `inventory`,
-  `isoLines`, `isoLinesRelief`, `kumiko`, `loaderPatterns`, `nestingBoxes`, `networkTest`, `printShop`, `projectionMapping`, `pushComesToShove`, `rorschach`,
+  `isoLines`, `isoLinesRelief`, `kumiko`, `loaderPatterns`, `nestingBoxes`, `networkTest`, `plotterizer`, `printShop`, `projectionMapping`, `pushComesToShove`, `rorschach`,
   `subdivision`, `trucheterie3d`, `trucheterieDesigner`).
 - Every registered tool owns a colocated `todo.md` using the same canonical
   TODO shape as scenes (`docs/scene-conventions.md` §15): scaffold it with
@@ -50,7 +50,7 @@ Codex).
   `DevPageHeaderBar.jsx`, `DevPageTitle.jsx`, `DevTooltip.jsx`), or a clearly
   named shared folder under `src/dev` when it's non-shell dev-only behavior.
 - **Generative workbenches share `src/dev/renderWorkbench/`** (RorschachCLI,
-  ExhibitACLI, FloraCLI, FractalAutomataCLI, FungiCLI, GhostBusterCLI, KumikoCLI, BlockPartyCLI, BrutalistCLI, NestingBoxesCLI, HyperCubesCLI, NetworkTestCLI, IsoLinesCLI, IsoLinesReliefCLI, PushComesToShoveCLI, RugPullCLI, SubdivisionCLI, SubdivisionReliefCLI, TrucheterieCLI, Trucheterie3DCLI, and Fauna next).
+  BirdsArentRealCLI, ExhibitACLI, FloraCLI, FractalAutomataCLI, FungiCLI, GhostBusterCLI, KumikoCLI, BlockPartyCLI, BrutalistCLI, NestingBoxesCLI, HyperCubesCLI, NetworkTestCLI, IsoLinesCLI, IsoLinesReliefCLI, PushComesToShoveCLI, RugPullCLI, SubdivisionCLI, SubdivisionReliefCLI, TrucheterieCLI, Trucheterie3DCLI, and Fauna next).
   A facet-rolling generator's page is a `RollWorkbench` configuration — its
   kernel barrel, nouns, palette choices and preview stats — and nothing else;
   see `docs/render-workbench.md`. The parts it is built from (`useRenderJobs`,
@@ -70,6 +70,18 @@ Codex).
   `options`, `sections`, `presets`, `create(stage)`), discovered by glob —
   add a technique there rather than editing the page. Its lint block is
   case-sensitive so techniques may import a PascalCase scene's presets.
+- **Plotterizer** (`src/dev/tools/plotterizer/`) preps any bench SVG for
+  the cutter: layers to pens, paper and plot size, nib-aware optimising,
+  saved plot jobs and per-pen DXF; benches write SVG only and hand off
+  through their galleries' **Open in Plotterizer**. Its `kernel/*.mjs` is
+  pure JS that Node loads without Vite (the dev-server plugin and
+  `generatorCli.mjs` import it); see `docs/plotterizer.md`.
+- **Thumbnails**: `/dev-api/thumbs?path=<repo-relative>&size=<px>`
+  (`src/dev/server/thumbnails/`) serves a cached WebP of any media under
+  `output/` or `public/images/` — from a PNG/WebP beside an SVG when there
+  is one, else the SVG rasterized once — so heavy plot SVGs never load as
+  `<img>`. The render workbench gallery's SVG cards and the Plotterizer's
+  picker use it (`thumbnailUrl` in `src/dev/renderWorkbench/assetGroups.js`).
 - **PrintShop** (`src/dev/tools/printShop/`) exports scene pieces for 3D
   printing. A printable is one folder, `printables/<id>/printable.js`,
   discovered by glob — add one there rather than editing the page, the

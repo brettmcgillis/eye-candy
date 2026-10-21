@@ -25,7 +25,7 @@ function createDarkness({ gamma, image, mask, pixelRatio }) {
 // instead of crowding the light end under a pair of black eye holes. The
 // line-drawing styles (squiggle, scribble, tsp) read this; the others keep
 // absolute darkness.
-function createTone({ gamma, image, mask, pixelRatio }) {
+export function createTone({ gamma, image, mask, pixelRatio }) {
   const raw = createDarkness({ gamma: 1, image, mask, pixelRatio });
   const BINS = 1024;
   const histogram = new Float64Array(BINS);
@@ -115,19 +115,26 @@ function crosshatch(darkness, options) {
   ).join('');
 }
 
-// A dot a pen can fill: concentric circles from its radius inward.
+// A filled dot in one stroke: a spiral of half-turns `pen` apart, alternately
+// about the centre and half a pen east of it, out to `radius`, then once
+// round the rim.
 function dot(x, y, radius, pen) {
-  const rings = [];
-  for (let r = radius; r > pen * 0.5; r -= pen) {
-    rings.push(
-      `M${round(x - r)} ${round(y)}a${round(r)} ${round(r)} 0 1 0 ${round(2 * r)} 0a${round(r)} ${round(r)} 0 1 0 ${round(-2 * r)} 0`
-    );
+  const turns = Math.max(0, Math.floor((radius - pen * 0.5) / pen));
+  const arc = (r, ex) =>
+    `A${round(r)} ${round(r)} 0 0 0 ${round(ex)} ${round(y)}`;
+  let r = radius - turns * pen;
+  let path = `M${round(x + r)} ${round(y)}`;
+  for (let i = 0; i < turns; i += 1) {
+    path += arc(r, x - r);
+    path += arc(r + pen * 0.5, x + r + pen);
+    r += pen;
   }
-  return rings.join('');
+  return `${path}${arc(r, x - r)}${arc(r, x + r)}`;
 }
 
 // Dots on a grid turned by `angle`, each sized so its area follows the mean
-// darkness of its cell.
+// darkness of its cell, visited boustrophedon so the pen sweeps back along
+// each row.
 function halftone(darkness, { angle, height, pen, spacing, width }) {
   const turn = angle * DEG;
   const cos = Math.cos(turn);
@@ -138,7 +145,8 @@ function halftone(darkness, { angle, height, pen, spacing, width }) {
   const taps = [-0.25, 0.25];
   const dots = [];
   for (let j = -reach; j <= reach; j += 1) {
-    for (let i = -reach; i <= reach; i += 1) {
+    for (let k = -reach; k <= reach; k += 1) {
+      const i = (j + reach) % 2 ? -k : k;
       const at = (u, v) => [
         cx + ((i + u) * cos - (j + v) * sin) * spacing,
         cy + ((i + u) * sin + (j + v) * cos) * spacing,
@@ -170,8 +178,10 @@ function stipple(darkness, { height, pen, spacing, width }) {
   const cell = spacing / 2;
   const radius = Math.max(pen * 0.5, spacing * 0.12);
   const dots = [];
+  const columns = Math.ceil(width / cell);
   for (let gy = 0; gy * cell < height; gy += 1) {
-    for (let gx = 0; gx * cell < width; gx += 1) {
+    for (let k = 0; k < columns; k += 1) {
+      const gx = gy % 2 ? columns - 1 - k : k;
       const x = (gx + hash(gx, gy, 11)) * cell;
       const y = (gy + hash(gx, gy, 23)) * cell;
       if (hash(gx, gy, 37) < darkness(x, y)) dots.push(dot(x, y, radius, pen));
@@ -429,6 +439,10 @@ function tsp(darkness, { height, spacing, tone, width }) {
 }
 
 const SHADERS = { crosshatch, halftone, scribble, squiggle, stipple, tsp };
+
+// `svgPenMm` in output px; an unsized plot is 96 px to the inch.
+export const penPx = ({ plotWidthMm, svgPenMm, width }) =>
+  svgPenMm ? svgPenMm * (plotWidthMm ? width / plotWidthMm : 96 / 25.4) : null;
 
 // The shading layer's path data, from the ghost's render (`image`, RGBA at
 // output × pixelRatio) and the depth pass's coverage (`mask`).

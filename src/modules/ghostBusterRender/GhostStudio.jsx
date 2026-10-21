@@ -1,31 +1,26 @@
-import React, { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useMemo, useRef } from 'react';
 
-import { useFrame, useThree } from '@react-three/fiber';
+import { useFrame } from '@react-three/fiber';
 
 import * as THREE from 'three/webgpu';
 
 import GhostCharacter, {
+  decayFromControls,
   fabricFromControls,
+  ghostCrown,
 } from '@elements/WebGPU/ghost/GhostCharacter';
 import { SPHERE_BASE_Y } from '@elements/WebGPU/ghost/ghostRig';
+import RainCloud, {
+  RAIN_CLOUD_KEYS,
+  RAIN_SHADOW_LAYER,
+} from '@elements/WebGPU/rainCloud/RainCloud';
 import { GridMaterial } from '@materials/WebGPU/gridMaterial';
+import { animated, stillTime } from '@modules/ghostBuster';
+import { Backdrop, StudioEnvironment } from '@modules/renderStage';
 
 import { resolveSkin } from './skins';
 
 const DEG = Math.PI / 180;
-
-// GhostBuster's studio, as data: the skins were tuned under these drei
-// Lightformer panels (rects facing the origin, colour scaled by intensity).
-const LIGHTFORMERS = [
-  { intensity: 6, position: [0, 5, 0], scale: [2, 2, 1] },
-  { intensity: 5, position: [-2.5, 1, 5], scale: [0.4, 5, 1] },
-  { intensity: 5, position: [2.5, 1, 5], scale: [0.4, 5, 1] },
-  { intensity: 3, position: [-5, 1, 0], scale: [0.3, 5, 5] },
-  { intensity: 3, position: [5, 1, 0], scale: [0.3, 5, 5] },
-  { intensity: 3, position: [-2.5, 1, -5], scale: [0.4, 5, 1] },
-  { intensity: 3, position: [2.5, 1, -5], scale: [0.4, 5, 1] },
-  { intensity: 0.8, position: [0, -3, 0], scale: [3, 3, 1] },
-];
 
 function gustNoise(t) {
   return (
@@ -35,69 +30,15 @@ function gustNoise(t) {
   );
 }
 
+export const hasStorm = (skin) =>
+  Boolean(skin.cloudVisible || skin.rainVisible || skin.lightningVisible);
+
+export const stormProps = (skin) =>
+  Object.fromEntries(RAIN_CLOUD_KEYS.map((key) => [key, skin[key]]));
+
 export function backdropColor(config, skin) {
   if (config.backdrop === 'transparent') return null;
   return config.backdrop === 'skin' ? skin.bgColor : config.backgroundColor;
-}
-
-function Backdrop({ color }) {
-  const { gl, scene } = useThree();
-  useLayoutEffect(() => {
-    scene.background = color ? new THREE.Color(color) : null;
-    gl.setClearColor(color ?? '#000000', color ? 1 : 0);
-  }, [color, gl, scene]);
-  return null;
-}
-
-// drei's <Environment frames={1}> with GhostBuster's Lightformers, built
-// directly: drei's bundle pulls CommonJS dependencies the headless renderer
-// cannot load, and this is the whole of what the studio used from it.
-function StudioEnvironment({ intensity, rotationY }) {
-  const { gl, scene } = useThree();
-  const studio = useMemo(() => {
-    const panels = new THREE.Scene();
-    const plane = new THREE.PlaneGeometry(1, 1);
-    LIGHTFORMERS.forEach((panel) => {
-      const material = new THREE.MeshBasicMaterial({
-        side: THREE.DoubleSide,
-        toneMapped: false,
-      });
-      material.color.setScalar(panel.intensity);
-      const mesh = new THREE.Mesh(plane, material);
-      mesh.position.set(...panel.position);
-      mesh.scale.set(...panel.scale);
-      mesh.lookAt(0, 0, 0);
-      panels.add(mesh);
-    });
-    const target = new THREE.CubeRenderTarget(256);
-    target.texture.type = THREE.HalfFloatType;
-    const camera = new THREE.CubeCamera(0.1, 1000, target);
-    return { camera, panels, plane, target };
-  }, []);
-
-  useEffect(
-    () => () => {
-      studio.panels.children.forEach((mesh) => mesh.material.dispose());
-      studio.plane.dispose();
-      studio.target.dispose();
-    },
-    [studio]
-  );
-
-  useLayoutEffect(() => {
-    const { autoClear } = gl;
-    gl.autoClear = true;
-    studio.camera.update(gl, studio.panels);
-    gl.autoClear = autoClear;
-    scene.environment = studio.target.texture;
-    scene.environmentIntensity = intensity;
-    scene.environmentRotation.set(0, rotationY, 0);
-    return () => {
-      scene.environment = null;
-    };
-  }, [gl, intensity, rotationY, scene, studio]);
-
-  return null;
 }
 
 function OrbitLight({ skin }) {
@@ -153,6 +94,7 @@ export function ghostProps(skin) {
     envMapIntensity: skin.envMapIntensity,
     eyeColor: skin.eyeColor,
     eyeIntensity: skin.eyeIntensity,
+    decay: decayFromControls(skin),
     fabric: fabricFromControls(skin),
     gravity: skin.gravity,
     groundLightAngle: skin.groundLightAngle,
@@ -222,16 +164,31 @@ export function ghostProps(skin) {
 // GhostBusterCLI renders headlessly and its Live tab renders in the page.
 // `config` is a generation (skin, pose, location); `ghostRef` reaches the
 // GhostCharacter handle (its sim and mesh) for capture; `gustRef` ({ x, z,
-// strength }, GhostBuster's WASD wind) overrides the config's wind while held.
+// strength }, GhostBuster's WASD wind) overrides the config's wind while held;
+// setting `jumpRef.current = true` jumps the ghost on the next frame;
+// `stormRef` reaches a storm skin's RainCloud.
 export default function GhostStudio({
   config,
   cursorCollider = false,
   ghostRef,
   gustRef = null,
+  jumpRef = null,
   paused = false,
+  stormRef = null,
 }) {
   const skin = useMemo(() => resolveSkin(config.skin), [config.skin]);
   const props = useMemo(() => ghostProps(skin), [skin]);
+  const storm = useMemo(
+    () => (hasStorm(skin) ? stormProps(skin) : null),
+    [skin]
+  );
+  const followGhost = useCallback(
+    (out) => {
+      ghostRef.current?.mesh?.layers.enable(RAIN_SHADOW_LAYER);
+      return ghostCrown(ghostRef.current, out);
+    },
+    [ghostRef]
+  );
   const inputRef = useRef({
     animation: null,
     expressionKey: 0,
@@ -249,6 +206,13 @@ export default function GhostStudio({
     const heading = (config.windAngle + 180) * DEG;
     const gust = 1 + config.windGust * gustNoise(state.clock.elapsedTime);
     const input = inputRef.current;
+    input.jumpTriggered = jumpRef?.current === true;
+    input.animation =
+      animated(config) && state.clock.elapsedTime >= config.settle
+        ? config.animation
+        : null;
+    // eslint-disable-next-line no-param-reassign
+    if (jumpRef) jumpRef.current = false;
     const held = gustRef?.current;
     if (held?.strength > 0) {
       input.windDirX = held.x;
@@ -289,6 +253,17 @@ export default function GhostStudio({
           />
         </group>
       </group>
+
+      {storm ? (
+        <RainCloud
+          {...storm}
+          floorVisible={config.floor}
+          follow={followGhost}
+          forcedStrike={config.strike ? stillTime(config) : null}
+          ref={stormRef}
+          seed={config.stormSeed}
+        />
+      ) : null}
 
       {config.floor ? (
         <mesh

@@ -9,6 +9,9 @@
     "apollian:video": "node scripts/apollian-video.mjs",
     "audio:normalize": "node scripts/normalize-audio.mjs",
     "audio:sprites": "node scripts/extract-sprites.mjs",
+    "birds-arent-real:check": "node scripts/birds-arent-real-check.mjs",
+    "birds-arent-real:generate": "node scripts/birds-arent-real-generate.mjs",
+    "birds-arent-real:video": "node scripts/birds-arent-real-video.mjs",
     "block-party:check": "node scripts/block-party-check.mjs",
     "block-party:generate": "node scripts/block-party-generate.mjs",
     "block-party:video": "node scripts/block-party-video.mjs",
@@ -201,6 +204,7 @@
     "remark-parse": "^11.0.0",
     "sharp": "^0.34.5",
     "unified": "^11.0.5",
+    "usb": "^3.2.1",
     "vite": "^7.3.1",
     "webgpu": "^0.4.0"
   },

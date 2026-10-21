@@ -3,6 +3,8 @@
 // and come out as the cloth the GPU would have drawn. Storage is Float32 like
 // the GPU buffers; the step order and every clamp follow the TSL exactly.
 
+const CONTACT_SLOP = 1.0001;
+
 const fract = (x) => x - Math.floor(x);
 const tri = (x) => Math.abs(fract(x) - 0.5);
 
@@ -147,12 +149,32 @@ export default function createClothCpu(topology, { alpha } = {}) {
             );
             const radius = collider.radius + collisionMargin;
             if (radius - dist <= 0) return;
-            const ux = tx / dist;
-            const uy = ty / dist;
-            const uz = tz / dist;
-            nx = collider.x + ux * radius;
-            ny = collider.y + uy * radius;
-            nz = collider.z + uz * radius;
+            const px = pos[o] - collider.x;
+            const py = pos[o + 1] - collider.y;
+            const pz = pos[o + 2] - collider.z;
+            const restDist = Math.max(
+              Math.sqrt(px * px + py * py + pz * pz),
+              0.000001
+            );
+            const resting =
+              restDist <= radius * CONTACT_SLOP && dist < radius * dampening;
+            const ux = resting ? px / restDist : tx / dist;
+            const uy = resting ? py / restDist : ty / dist;
+            const uz = resting ? pz / restDist : tz / dist;
+            if (resting) {
+              const tn = tx * ux + ty * uy + tz * uz;
+              const push =
+                Math.sqrt(
+                  Math.max(tn * tn - dist * dist + radius * radius, 0)
+                ) - tn;
+              nx += ux * push;
+              ny += uy * push;
+              nz += uz * push;
+            } else {
+              nx = collider.x + ux * radius;
+              ny = collider.y + uy * radius;
+              nz = collider.z + uz * radius;
+            }
             // The TSL reads its pre-collision `force` copy here but subtracts
             // from the stored velocity, so stacked colliders accumulate.
             const vDotN = fx * ux + fy * uy + fz * uz;

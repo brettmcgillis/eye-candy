@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
+import { BIRDS } from '@elements/FakeBird/birds';
 import * as birdPresets from '@scenes/WebGPU/BirdsArentReal/presets/presets';
-import { BIRDS } from '@scenes/WebGPU/BirdsArentReal/utils/birds';
 
 import headJson from './models/camera-head.json';
 import pigeonJson from './models/pigeon.json';

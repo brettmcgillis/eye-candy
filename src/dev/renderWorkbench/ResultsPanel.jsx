@@ -29,6 +29,7 @@ export default function ResultsPanel({
     removeMany,
     removeSavedAssets,
     savedCollections,
+    tool,
   } = jobsApi;
   const [tab, setTab] = useState(defaultTab);
   const [deletingId, setDeletingId] = useState(null);
@@ -119,6 +120,7 @@ export default function ResultsPanel({
             onRemoveAssets={removeSavedAssets}
             renderDetails={renderDetails}
             selectionActions={selectionActions}
+            tool={tool}
             variant="saved"
           />
         </div>
@@ -138,6 +140,7 @@ export default function ResultsPanel({
             pendingDeleteId={pendingDeleteId}
             renderDetails={renderDetails}
             selectionActions={selectionActions}
+            tool={tool}
           />
         </div>
       ) : null}

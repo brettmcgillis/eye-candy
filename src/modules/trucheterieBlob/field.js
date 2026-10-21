@@ -19,7 +19,7 @@ import withSeededRandom from './seedrandom';
 
 // The reference's `meatballs` control: hide unconnected cells, prune them
 // outright, or keep them (its default — the isolated ring stacks).
-const MEATBALLS = { HIDE_LOOSE: 0, KEEP_ALL: 2, PRUNE_LOOSE: 1 };
+export const MEATBALLS = { HIDE_LOOSE: 0, KEEP_ALL: 2, PRUNE_LOOSE: 1 };
 
 const NO_CONNECTION = -1;
 const ATTEMPTS = 100;

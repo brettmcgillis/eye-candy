@@ -4,10 +4,12 @@ import {
   canSwapOrder,
   cellConnections,
   cellIndexAt,
+  connectedGroup,
   eraseCell,
   familySector,
   flipDiagonal,
   isSideOpen,
+  moveCells,
   placeCell,
   setSide,
   sideCascade,
@@ -21,6 +23,7 @@ export const DESIGN_TOOLS = [
   'connect',
   'diagonal',
   'order',
+  'move',
 ];
 
 const CELL_TOOLS = {
@@ -45,9 +48,8 @@ function pivotsAfter(design, index, tool) {
 export const MAX_BRUSH = 12;
 export const isStrokeTool = (tool) => tool === 'paint' || tool === 'erase';
 
-export function brushOrigin(design, x, y, size) {
-  const clamp = (value) => Math.min(Math.max(value, 0), design.gridSize - size);
-  return [clamp(Math.round(x - size / 2)), clamp(Math.round(y - size / 2))];
+export function brushOrigin(x, y, size) {
+  return [Math.round(x - size / 2), Math.round(y - size / 2)];
 }
 
 // The side of the cell under (x, y) nearest the pointer, in micro-cell units.
@@ -60,12 +62,41 @@ export function pickSide(design, x, y) {
   return { index, side };
 }
 
-export function previewFor(design, tool, x, y, { brush }) {
+const groupRects = (design, group, dx = 0, dy = 0) =>
+  group.map((index) => {
+    const { column, row, size } = design.cells[index];
+    return [column + dx, row + dy, size];
+  });
+
+export function groupAt(design, x, y) {
+  return connectedGroup(design, cellUnder(design, x, y));
+}
+
+// Where a drag of `group` by (dx, dy) lands: the moved design, or the base one with a blocked ghost.
+export function moveGroup(base, group, dx, dy) {
+  const design = moveCells(base, group, dx, dy);
+  const ok = design !== base || (dx === 0 && dy === 0);
+  return {
+    design,
+    preview: {
+      kind: 'move',
+      ok,
+      rects: ok ? groupRects(design, group) : groupRects(base, group, dx, dy),
+    },
+  };
+}
+
+export function previewFor(design, tool, x, y, { autoConnect, brush }) {
+  if (tool === 'move') {
+    const group = groupAt(design, x, y);
+    if (group.length === 0) return null;
+    return { kind: 'move', ok: true, rects: groupRects(design, group) };
+  }
   if (tool === 'paint') {
-    const [column, row] = brushOrigin(design, x, y, brush);
+    const [column, row] = brushOrigin(x, y, brush);
     return {
       kind: 'brush',
-      ok: canPlace(design, column, row, brush),
+      ok: canPlace(design, column, row, brush, { connect: autoConnect }),
       rect: [column, row, brush],
     };
   }
@@ -73,7 +104,11 @@ export function previewFor(design, tool, x, y, { brush }) {
     const index = cellIndexAt(design, Math.floor(x), Math.floor(y));
     if (index < 0) return null;
     const { column, row, size } = design.cells[index];
-    return { kind: 'erase', ok: true, rect: [column, row, size] };
+    return {
+      kind: 'erase',
+      ok: eraseCell(design, index) !== design,
+      rect: [column, row, size],
+    };
   }
   if (CELL_TOOLS[tool]) {
     const index = cellUnder(design, x, y);
@@ -96,7 +131,7 @@ export function previewFor(design, tool, x, y, { brush }) {
       : sideCascade(design, picked.index, picked.side);
     return {
       kind: 'sides',
-      ok: open || cascade !== null,
+      ok: setSide(design, picked.index, picked.side, !open) !== design,
       opening: !open,
       sides: cascade ?? [[picked.index, picked.side]],
     };
@@ -106,7 +141,7 @@ export function previewFor(design, tool, x, y, { brush }) {
 
 export function applyTool(design, tool, x, y, { autoConnect, brush, first }) {
   if (tool === 'paint') {
-    const [column, row] = brushOrigin(design, x, y, brush);
+    const [column, row] = brushOrigin(x, y, brush);
     return placeCell(design, column, row, brush, { connect: autoConnect });
   }
   if (tool === 'erase') {

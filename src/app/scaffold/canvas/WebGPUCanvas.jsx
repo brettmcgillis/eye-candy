@@ -6,7 +6,7 @@ import * as THREE from 'three/webgpu';
 
 import { useCanvasDpr } from '@hooks/useRenderScale';
 
-export default function WebGPUCanvas({ children }) {
+export default function WebGPUCanvas({ children, frameloop = 'always' }) {
   const dpr = useCanvasDpr();
 
   // R3F's configure effect has no dependency array, so it re-runs on every
@@ -39,6 +39,7 @@ export default function WebGPUCanvas({ children }) {
   return (
     <Canvas
       dpr={dpr}
+      frameloop={frameloop}
       shadows="soft"
       style={{ touchAction: 'none' }}
       gl={createRenderer}

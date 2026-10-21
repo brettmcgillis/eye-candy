@@ -26,7 +26,8 @@ export default function useSceneDesign({ controls, setControls }) {
   };
 
   const actions = {
-    clear: () => design && replace(emptyDesign()),
+    clear: () =>
+      design && replace(emptyDesign({ irregular: design.irregular })),
     fromSeed: () => {
       const seeded = designFromSeed(controls);
       replace(seeded, {

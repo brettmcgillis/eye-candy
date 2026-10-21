@@ -78,6 +78,7 @@ const FIELD = {
   blobHoles: from('blobHoles', 'field', 'Cells'),
   blobMeatballs: from('blobMeatballs', 'field', 'Cells'),
   blobSymmetry: from('blobSymmetry', 'field', 'Cells'),
+  blobIrregular: from('blobIrregular', 'field', 'Cells'),
   planeRotation: from('planeRotation', 'field', null, {
     help: 'Turns the field about the vertical',
   }),
@@ -91,6 +92,7 @@ const DESIGN_TOOLS = [
   'diagonal',
   'order',
   'move',
+  'duplicate',
 ];
 const whenPainting = { designTool: ['paint'] };
 
@@ -100,12 +102,14 @@ const DESIGN = {
       choiceLabels: {
         connect: 'Connect',
         diagonal: 'Diagonal',
+        duplicate: 'Duplicate',
         erase: 'Erase',
+        move: 'Move',
         order: 'Order',
         off: 'View',
         paint: 'Paint',
       },
-      help: 'Edit the hand-made field (Design) on the ground plane: paint cells, erase them, open and close their sides, flip a four-way cell\u2019s diagonal, or swap which of a cell\u2019s two families goes over',
+      help: 'Edit the hand-made field (Design) on the ground plane: paint cells, erase them, open and close their sides, flip a four-way cell\u2019s diagonal, swap which of a cell\u2019s two families goes over, or drag a connected group to move or copy it',
     })
   ),
   designBrush: sceneOnly(
@@ -550,6 +554,7 @@ export const TUBE_KEYS = [
   'blobHoles',
   'blobMeatballs',
   'blobSymmetry',
+  'blobIrregular',
   'strands',
   'lanesAs',
   'membraneRows',

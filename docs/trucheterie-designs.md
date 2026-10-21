@@ -93,6 +93,34 @@ Run `npm run trucheterie:check` after changing anything below, and
   file's `gridSize` is ignored. `designFromJson`/`decodeDesign` refuse
   out-of-range cells and clashes rather than drop them.
 
+## Irregular connections
+
+- With the design's `irregular` flag on (designer checkbox; `blobIrregular`
+  for seeded fields), a small cell's side may open against part of a bigger
+  cell's closed side: `normalizeCells` keeps a side open when its one
+  aligned neighbour is bigger and its facing side is closed. Connect falls
+  back to this when the full cascade can't open; turning the flag off
+  (`setIrregular`) closes those sides. Codes carry it as `tb3.` (the `tb2`
+  layout), JSON as `"irregular": true`.
+- The bigger cell draws its own families exactly as with that side closed,
+  plus one family per irregular neighbour (`irregularFamilies`): a
+  **pocket** (a stub of a virtual cell the neighbour's size, on the shared
+  stretch) or, when the stretch reaches a corner whose other side is open, a
+  **bend** (a corner turn of that virtual cell, carrying the lines through
+  to that side). Every line still closes.
+- `fieldFromDesign` emits these as extra field entries (`virtual: true`,
+  `host`) after every real cell, so the GPU draws them on top with no shader
+  change. Each entry carries `occluders`, the sectors painted over it (a
+  host: all its extras; an extra: the ones after it), and every CPU
+  consumer clips against them besides the usual first-family occluder: lane
+  channels, SVG strokes, 3D strands and membrane. `designFromField` skips
+  virtual entries. Pocket and bend ink counts toward the empty-corner clash
+  rule.
+- Seeded: `openIrregular` opens each eligible closed side with a
+  position-seeded 0.6 chance, before symmetry (so the mirror copies them).
+  Rolls turn `blobIrregular` on with `IRREGULAR_ROLL_CHANCE` (0.35), after
+  the symmetry draws.
+
 ## Symmetry (seeded fields)
 
 - `blobSymmetry` (`none`, `vertical`, `horizontal`, `diagonal`,
@@ -126,7 +154,7 @@ Run `npm run trucheterie:check` after changing anything below, and
   Leva hides them), and so is `blobGridSize` (Start From Seeded Field still
   uses it, with the other Blob Field knobs).
 - `designTool` (`off` = View, `paint`, `erase`, `connect`, `diagonal`,
-  `order`, `move`), `designBrush` (cell size) and `designAutoConnect` are scene
+  `order`, `move`, `duplicate`), `designBrush` (cell size) and `designAutoConnect` are scene
   controls that are never
   render options. They are in every preset (2D: written out, 3D: through
   `sceneDefaults()`), so switching away from a design preset clears it.
@@ -155,6 +183,8 @@ Run `npm run trucheterie:check` after changing anything below, and
   last good offset and a red ghost shows the target. Landing beside a cell
   leaves the sides between them closed. Moved cells are pinned first, since
   unpinned choices hash their position.
+- Duplicate: the same drag, but `duplicateCells` appends a pinned copy of the
+  group at the offset and leaves the original; the same landing rules apply.
 - Overlay geometry is rebuilt per edit, and each mesh is **keyed by its
   geometry's uuid**: under WebGPU, swapping `geometry` on a live mesh keeps
   the old vertex buffers ("Vertex buffer slot 0 … was not set"). An empty

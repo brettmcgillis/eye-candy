@@ -8,6 +8,7 @@ export {
   isStrokeTool,
   brushOrigin,
   groupAt,
+  isDragTool,
   moveGroup,
   pickSide,
   previewFor,

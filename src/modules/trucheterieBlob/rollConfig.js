@@ -24,6 +24,7 @@ export function rollableKeys() {
 // Square on, or the field turned onto its diagonal.
 const ROTATION_CHOICES = [0, 45];
 export const SYMMETRY_CHANCE = 0.12;
+export const IRREGULAR_ROLL_CHANCE = 0.35;
 
 const MEATBALL_CHOICES = [
   MEATBALLS.HIDE_LOOSE,
@@ -64,6 +65,7 @@ export default function rollBlobConfig(
         config.blobSymmetry = rng.chance(SYMMETRY_CHANCE)
           ? symmetryAxis(config.planeRotation, rng.chance(0.5))
           : 'none';
+        config.blobIrregular = rng.chance(IRREGULAR_ROLL_CHANCE);
       }
 
       if (facet === 'palette') {

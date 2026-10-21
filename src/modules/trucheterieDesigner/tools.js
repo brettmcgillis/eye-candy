@@ -5,6 +5,7 @@ import {
   cellConnections,
   cellIndexAt,
   connectedGroup,
+  duplicateCells,
   eraseCell,
   familySector,
   flipDiagonal,
@@ -24,7 +25,10 @@ export const DESIGN_TOOLS = [
   'diagonal',
   'order',
   'move',
+  'duplicate',
 ];
+
+export const isDragTool = (tool) => tool === 'move' || tool === 'duplicate';
 
 const CELL_TOOLS = {
   diagonal: { allowed: canFlipDiagonal, apply: flipDiagonal, marks: 2 },
@@ -72,22 +76,22 @@ export function groupAt(design, x, y) {
   return connectedGroup(design, cellUnder(design, x, y));
 }
 
-// Where a drag of `group` by (dx, dy) lands: the moved design, or the base one with a blocked ghost.
-export function moveGroup(base, group, dx, dy) {
-  const design = moveCells(base, group, dx, dy);
+// Where a drag of `group` by (dx, dy) lands: the moved (or copied) design, or the base one with a blocked ghost.
+export function moveGroup(base, group, dx, dy, { copy = false } = {}) {
+  const design = (copy ? duplicateCells : moveCells)(base, group, dx, dy);
   const ok = design !== base || (dx === 0 && dy === 0);
   return {
     design,
     preview: {
       kind: 'move',
       ok,
-      rects: ok ? groupRects(design, group) : groupRects(base, group, dx, dy),
+      rects: groupRects(base, group, dx, dy),
     },
   };
 }
 
 export function previewFor(design, tool, x, y, { autoConnect, brush }) {
-  if (tool === 'move') {
+  if (isDragTool(tool)) {
     const group = groupAt(design, x, y);
     if (group.length === 0) return null;
     return { kind: 'move', ok: true, rects: groupRects(design, group) };

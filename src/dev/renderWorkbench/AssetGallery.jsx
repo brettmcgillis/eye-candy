@@ -159,9 +159,12 @@ function MediaPreview({
       />
     );
   }
+  // Line-only plots have no background of their own; show them on paper, not the dark stage.
+  const vector = assetFormat(asset) === 'svg';
   return (
     <img
       alt="Generated output"
+      className={vector ? 'rw-media--vector' : undefined}
       draggable={false}
       loading={eager ? 'eager' : 'lazy'}
       src={thumb ?? asset.url}

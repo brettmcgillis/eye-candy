@@ -20,6 +20,7 @@ import {
   MAX_BRUSH,
   applyTool,
   groupAt,
+  isDragTool,
   isStrokeTool,
   moveGroup,
   previewFor,
@@ -173,7 +174,9 @@ function BlobDesignEditor({
       const dy = Math.round(point[1] - move.origin[1]);
       if (dx === move.offset[0] && dy === move.offset[1]) return;
       move.offset = [dx, dy];
-      const result = moveGroup(move.base, move.group, dx, dy);
+      const result = moveGroup(move.base, move.group, dx, dy, {
+        copy: move.copy,
+      });
       if (result.preview.ok && result.design !== designRef.current) {
         designRef.current = result.design;
         optionsRef.current.onChange?.(result.design);
@@ -204,7 +207,7 @@ function BlobDesignEditor({
       if (event.button !== 0) return;
       const point = pointAt(event);
       if (!point || !onGrid(point)) return;
-      const moving = optionsRef.current.tool === 'move';
+      const moving = isDragTool(optionsRef.current.tool);
       const group = moving ? groupAt(designRef.current, ...point) : null;
       if (moving && group.length === 0) return;
       event.stopPropagation();
@@ -212,7 +215,13 @@ function BlobDesignEditor({
       strokeRef.current = {
         last: point,
         move: moving
-          ? { base: designRef.current, group, offset: [0, 0], origin: point }
+          ? {
+              base: designRef.current,
+              copy: optionsRef.current.tool === 'duplicate',
+              group,
+              offset: [0, 0],
+              origin: point,
+            }
           : null,
         pointerId: event.pointerId,
       };

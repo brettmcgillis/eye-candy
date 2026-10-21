@@ -8,7 +8,6 @@ export {
   flockBounds,
 } from './flock';
 export { default as frameFlock, anglesFor } from './framing';
-export { chainKeyed, meshEdges, sectionCuts, weldMesh } from './mesh';
 export {
   default as renderFlockSvg,
   needsDepth,

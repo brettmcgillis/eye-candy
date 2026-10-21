@@ -33,6 +33,7 @@ const SCENE = path.join(
   'src/components/scenes/WebGPU/BirdsArentReal/BirdsArentReal.jsx'
 );
 const SPECIES = '/src/components/elements/FakeBird/birds.js';
+const PLOT_KIT = '/src/modules/plotKit/index.js';
 const ALLOWED_KERNEL_IMPORTS = new Set(['@modules/flora', '@modules/plotKit']);
 
 const failures = [];
@@ -149,7 +150,7 @@ function checkRolls(kernel) {
 
 // A unit cube seen from a corner: its silhouette edges are contours, the
 // edges between its three visible faces creases, and slices cross it.
-function checkPlot({ birds }) {
+async function checkPlot({ birds }) {
   const P = [
     [-1, -1, -1],
     [1, -1, -1],
@@ -209,7 +210,8 @@ function checkPlot({ birds }) {
     !/id="pen-\d"/u.test(plot({ visible: () => false })),
     'hidden-line removal no longer hides anything.'
   );
-  const welded = birds.weldMesh({
+  const { weldMesh } = (await loadModules([PLOT_KIT]))[PLOT_KIT];
+  const welded = weldMesh({
     index: null,
     position: new Float32Array([
       0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0,
@@ -342,7 +344,7 @@ async function main() {
   const kernel = await loadKernel();
   await checkSpecies(kernel);
   checkRolls(kernel);
-  checkPlot(kernel);
+  await checkPlot(kernel);
   await checkRender(kernel);
 
   if (failures.length > 0) {

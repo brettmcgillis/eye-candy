@@ -1,4 +1,4 @@
-import { canvasToWebp } from './thumbnailApi';
+import { canvasToWebp, decodeImageBlob } from './thumbnailApi';
 
 const ENDPOINT = '/dev-api/cataloggr/screenshots';
 const MAX_WIDTH = 1280;
@@ -17,7 +17,7 @@ function drawContain(source, sourceWidth, sourceHeight) {
 
 async function toScreenshotBlob(source) {
   if (source instanceof Blob) {
-    const bitmap = await createImageBitmap(source);
+    const bitmap = await decodeImageBlob(source);
     try {
       return await canvasToWebp(
         drawContain(bitmap, bitmap.width, bitmap.height)

@@ -166,10 +166,6 @@
       "text": "use webcam face tracking and create a scene that appears different when youre not looking at it"
     },
     {
-      "id": "idea-1790349043155-zn4t69",
-      "text": "could we do a generative scene that emulates the poured paint styles of artists like Ondrash&Kasparek? paint poured on water and blown around dutch pour style, transferred to canvas, then strategically airbrushed to give the illusion of shadow from the paint and space between paint & canvas"
-    },
-    {
       "id": "idea-1790555433867-os9gkp",
       "text": "generative geodes using the sand grain particles."
     },
@@ -220,6 +216,14 @@
     {
       "id": "idea-1791652702261-3frswl",
       "text": "new dev tool: AntiSocialMedia. streamline the actual posting of my videos & shit to IG/FB/plus more. Goal should include making a post across FB and IG as I currently do, and include one more platform as well, X, Meta/Threads"
+    },
+    {
+      "id": "idea-1792622543363-0pll4w",
+      "text": "Generative version of Papercuts based on the rules present in the current designs"
+    },
+    {
+      "id": "idea-1792622605065-zxaita",
+      "text": "Generative scene of the argyle pattern from LoaderPatterns. Ranging from a completely tiled plane, to having perlin noise applied to determine where squares are visible, where they are fading, and where theyre completely faded out."
     }
   ],
   "statuses": {

@@ -122,13 +122,14 @@ function intervalPoint(vertical, line, start, pathDiv) {
 }
 
 // Where each lane meets the cell's active edges, as absolute interval starts.
-// `occluder` is the first-drawn family's sector when this is the second
-// family: anywhere inside it the second family is painted over, so its lanes
+// `occluders` are the sectors painted over this family: the first-drawn
+// family's when this is the second, plus any pocket or bend on top of the
+// cell. Anywhere inside one the family is painted over, so its lanes
 // never surface there and must not be joined to the neighbour's. Skipping
 // this check fuses nearly every lane in the pattern into one channel — a
 // 3-connector cell's second family is hidden along the whole shared side, so
 // registering it there bridges two otherwise separate channel systems.
-function laneIntervals(cell, type, edge, pathDiv, occluder) {
+function laneIntervals(cell, type, edge, pathDiv, occluders) {
   const { column, row, size } = cell;
   const span = size * pathDiv;
   const count = laneCount(type, size, pathDiv);
@@ -137,11 +138,13 @@ function laneIntervals(cell, type, edge, pathDiv, occluder) {
   if (type === 0) return out;
 
   const visible = (vertical, line, start) => {
-    if (!occluder) return true;
     const along = (start + 0.5) / pathDiv;
     const x = vertical ? line : along;
     const y = vertical ? along : line;
-    return Math.hypot(x - occluder.x, y - occluder.y) > occluder.rMax + 1e-6;
+    return occluders.every(
+      (occluder) =>
+        Math.hypot(x - occluder.x, y - occluder.y) > occluder.rMax + 1e-6
+    );
   };
 
   const push = (vertical, line, start, lane) => {
@@ -282,7 +285,7 @@ export default function buildLaneChannels(
   const lengthOf = new Float32Array(total);
   const links = new Int32Array(total * 2).fill(-1);
 
-  drawn.forEach(({ cell, connections }, cellIndex) => {
+  drawn.forEach(({ cell, connections, occluders = [] }, cellIndex) => {
     const occluder =
       connections.length > 1 && !(weave && isWeaveCell(connections))
         ? familySector(cell, connections[0][0], connections[0][1])
@@ -302,7 +305,7 @@ export default function buildLaneChannels(
         type,
         edge,
         pathDiv,
-        slot === 1 ? occluder : null
+        slot === 1 && occluder ? [occluder, ...occluders] : occluders
       );
       const { x, y } = familySector(cell, type, edge);
       joins.forEach(({ key, lane, point }) => {

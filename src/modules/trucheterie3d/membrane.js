@@ -20,23 +20,25 @@ const narrower = (a, b) => {
 // pieces here are wider than the tube solve's mid-radius ones.
 function lanePieces(field, pathDiv) {
   const pieces = [];
-  field.cells.forEach(({ cell, connections }, cellIndex) => {
+  field.cells.forEach(({ cell, connections, occluders = [] }, cellIndex) => {
     const [firstType, firstEdge] = connections[0];
     connections.forEach(([type, edge], slot) => {
-      const occluder =
-        slot === 1 ? familySector(cell, firstType, firstEdge) : null;
+      const covers = [
+        ...(slot === 1 ? [familySector(cell, firstType, firstEdge)] : []),
+        ...occluders,
+      ];
       const sector = familySector(cell, type, edge);
       const center = [sector.x, sector.y];
       const start = edge * (Math.PI / 2);
       const span = SPAN[type];
       laneRadii(type, cell.size, pathDiv).forEach(([r0, r1], index) => {
         if (r0 < 1e-9 && r1 - r0 < 0.75 / pathDiv && type !== 2) return;
-        const hidden = occluder
-          ? narrower(
-              hiddenArcs(center, r0, occluder),
-              hiddenArcs(center, r1, occluder)
-            )
-          : [];
+        const hidden = covers.flatMap((occluder) =>
+          narrower(
+            hiddenArcs(center, r0, occluder),
+            hiddenArcs(center, r1, occluder)
+          )
+        );
         visibleIntervals(start, start + span, hidden).forEach(([a0, a1]) => {
           pieces.push({
             a0,
@@ -46,8 +48,8 @@ function lanePieces(field, pathDiv) {
             edge,
             index,
             kind: 'lane',
-            loop: type === 0 && !occluder,
-            occluder,
+            loop: type === 0 && covers.length === 0,
+            occluders: covers,
             r0,
             r1,
             radius: (r0 + r1) / 2,
@@ -64,13 +66,10 @@ function lanePieces(field, pathDiv) {
   return pieces;
 }
 
-// What of [r0, r1] along the ray at `angle` lies outside the occluder: the
-// rim, where it crosses, becomes that side's seam.
-function radialSpan(piece, angle) {
-  const { occluder, r0, r1 } = piece;
-  if (!occluder) return [r0, r1];
-  const ox = occluder.x - piece.center[0];
-  const oy = occluder.y - piece.center[1];
+function clipRay(center, angle, occluder, r0, r1) {
+  if (r1 <= r0) return [r0, r1];
+  const ox = occluder.x - center[0];
+  const oy = occluder.y - center[1];
   const b = Math.cos(angle) * ox + Math.sin(angle) * oy;
   const disc = b * b - (ox * ox + oy * oy - occluder.rMax ** 2);
   if (disc <= 0) return [r0, r1];
@@ -79,6 +78,15 @@ function radialSpan(piece, angle) {
   if (t2 <= r0 || t1 >= r1) return [r0, r1];
   if (t1 - r0 >= r1 - t2) return [r0, Math.max(r0, t1)];
   return [Math.min(r1, t2), r1];
+}
+
+// What of [r0, r1] along the ray at `angle` lies outside every occluder: the
+// rim, where it crosses, becomes that side's seam.
+function radialSpan(piece, angle) {
+  return piece.occluders.reduce(
+    ([r0, r1], occluder) => clipRay(piece.center, angle, occluder, r0, r1),
+    [piece.r0, piece.r1]
+  );
 }
 
 // The side each piece is walked from, read off its samples' angles.

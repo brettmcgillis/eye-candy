@@ -12,6 +12,7 @@ import ScreenshotsPanel from './ScreenshotsPanel';
 import TodoPanel from './TodoPanel';
 import { getSceneTargets, getStatusKey } from './catalogData';
 import {
+  IMAGE_ACCEPT,
   fetchByline,
   getAppUrl,
   getImageFile,
@@ -247,7 +248,7 @@ function SceneDetail({
               <FiUpload aria-hidden="true" /> File
             </button>
             <input
-              accept="image/*"
+              accept={IMAGE_ACCEPT}
               hidden
               onChange={(event) => {
                 const file = event.target.files?.[0];

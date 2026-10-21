@@ -66,7 +66,10 @@ const pointAt = (center, radius, angle) => [
   center[1] + radius * Math.sin(angle),
 ];
 
-function familyArcs({ cell, cellIndex, edge, occluder, pathDiv, slot, type }) {
+const hiddenByAll = (center, radius, occluders) =>
+  occluders.flatMap((occluder) => hiddenArcs(center, radius, occluder));
+
+function familyArcs({ cell, cellIndex, edge, occluders, pathDiv, slot, type }) {
   const sector = familySector(cell, type, edge);
   const center = [sector.x, sector.y];
   const start = edge * (Math.PI / 2);
@@ -76,11 +79,11 @@ function familyArcs({ cell, cellIndex, edge, occluder, pathDiv, slot, type }) {
   const dots = [];
 
   const add = (kind, index, radius, extra = {}) => {
-    const full = type === 0 && !occluder;
+    const full = type === 0 && occluders.length === 0;
     visibleIntervals(
       start,
       start + span,
-      hiddenArcs(center, radius, occluder)
+      hiddenByAll(center, radius, occluders)
     ).forEach(([a0, a1]) => {
       pieces.push({
         ...base,
@@ -99,9 +102,10 @@ function familyArcs({ cell, cellIndex, edge, occluder, pathDiv, slot, type }) {
   laneRadii(type, cell.size, pathDiv).forEach(([r0, r1], j) => {
     if (r0 < 1e-9 && r1 - r0 < 0.75 / pathDiv && type !== 2) {
       const at = center;
-      const hidden =
-        occluder &&
-        Math.hypot(at[0] - occluder.x, at[1] - occluder.y) <= occluder.rMax;
+      const hidden = occluders.some(
+        (occluder) =>
+          Math.hypot(at[0] - occluder.x, at[1] - occluder.y) <= occluder.rMax
+      );
       if (!hidden) dots.push({ ...base, at, index: j, onEdge: type === 1 });
       return;
     }
@@ -119,17 +123,17 @@ function familyArcs({ cell, cellIndex, edge, occluder, pathDiv, slot, type }) {
 export default function buildStrands(field, { junction, pathDiv }) {
   const pieces = [];
   const dots = [];
-  field.cells.forEach(({ cell, connections }, cellIndex) => {
+  field.cells.forEach(({ cell, connections, occluders = [] }, cellIndex) => {
     const weaves = junction === 'weave' && isWeaveCell(connections);
     const first = connections[0];
     connections.forEach(([type, edge], slot) => {
-      const occluder =
-        slot === 1 && !weaves ? familySector(cell, first[0], first[1]) : null;
+      const own =
+        slot === 1 && !weaves ? [familySector(cell, first[0], first[1])] : [];
       const out = familyArcs({
         cell,
         cellIndex,
         edge,
-        occluder,
+        occluders: [...own, ...occluders],
         pathDiv,
         slot,
         type,

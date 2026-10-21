@@ -49,9 +49,26 @@ export function canvasToWebp(canvas) {
   });
 }
 
+const HEIC_NAME = /\.hei[cf]$/iu;
+
+export const IMAGE_ACCEPT = 'image/*,.heic,.heif';
+
+export async function decodeImageBlob(blob) {
+  try {
+    return await createImageBitmap(blob);
+  } catch (error) {
+    const { heicTo } = await import('heic-to');
+    try {
+      return await heicTo({ blob, type: 'bitmap' });
+    } catch {
+      throw error;
+    }
+  }
+}
+
 export async function toThumbnailBlob(source) {
   if (source instanceof Blob) {
-    const bitmap = await createImageBitmap(source);
+    const bitmap = await decodeImageBlob(source);
     try {
       return await canvasToWebp(drawCover(bitmap, bitmap.width, bitmap.height));
     } finally {
@@ -83,8 +100,8 @@ export async function uploadThumbnail(sourcePath, source) {
 
 export function getImageFile(dataTransfer) {
   return (
-    [...(dataTransfer?.files ?? [])].find((file) =>
-      file.type.startsWith('image/')
+    [...(dataTransfer?.files ?? [])].find(
+      (file) => file.type.startsWith('image/') || HEIC_NAME.test(file.name)
     ) ?? null
   );
 }

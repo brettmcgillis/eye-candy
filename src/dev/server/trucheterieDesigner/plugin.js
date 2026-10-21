@@ -78,8 +78,8 @@ function checkShape({ cells, rotation }) {
   }
 }
 
-const formatDesign = ({ cells, name, rotation = 0 }) =>
-  `{\n  "name": ${JSON.stringify(name)},\n  "rotation": ${rotation},\n  "cells": [\n${cells
+const formatDesign = ({ cells, irregular, name, rotation = 0 }) =>
+  `{\n  "name": ${JSON.stringify(name)},\n  "rotation": ${rotation},${irregular ? '\n  "irregular": true,' : ''}\n  "cells": [\n${cells
     .map((cell) => `    ${JSON.stringify(cell)}`)
     .join(',\n')}\n  ]\n}\n`;
 

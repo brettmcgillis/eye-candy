@@ -113,6 +113,11 @@ export default function getBlobFieldControls(snapshot, setControlsRef) {
       },
       value: saved.blobSymmetry ?? 'none',
     },
+    blobIrregular: {
+      render: isSeeded,
+      label: 'Irregular Connections',
+      value: saved.blobIrregular ?? false,
+    },
     blobPalette: {
       label: 'Lane Palette',
       options: PALETTE_NAMES,

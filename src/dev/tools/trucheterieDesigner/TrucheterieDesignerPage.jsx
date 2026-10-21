@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
+  FiCopy,
   FiCornerUpLeft,
   FiCornerUpRight,
   FiEdit3,
@@ -35,6 +36,7 @@ import {
   isSideOpen,
   randomSeed,
   sceneDefaults,
+  setIrregular,
 } from '@modules/trucheterieBlob';
 import {
   BlobDesignEditor,
@@ -60,6 +62,7 @@ const TOOL_OPTIONS = [
   { icon: <FiShuffle />, label: 'Diagonal', value: 'diagonal' },
   { icon: <FiLayers />, label: 'Order', value: 'order' },
   { icon: <FiMove />, label: 'Move', value: 'move' },
+  { icon: <FiCopy />, label: 'Duplicate', value: 'duplicate' },
   { icon: <FiEye />, label: 'View', value: 'off' },
 ];
 
@@ -234,6 +237,20 @@ export default function TrucheterieDesignerPage() {
               />
               Auto connect
             </label>
+            <label
+              className="rw-field rw-field--checkbox"
+              htmlFor="tdz-irregular"
+            >
+              <input
+                id="tdz-irregular"
+                checked={Boolean(design.irregular)}
+                onChange={(event) =>
+                  replace(setIrregular(design, event.target.checked))
+                }
+                type="checkbox"
+              />
+              Irregular connections
+            </label>
           </div>
           <div className="tdz-row">
             <button
@@ -254,7 +271,9 @@ export default function TrucheterieDesignerPage() {
             </button>
             <button
               className="dev-button"
-              onClick={() => replace(emptyDesign())}
+              onClick={() =>
+                replace(emptyDesign({ irregular: design.irregular }))
+              }
               type="button"
             >
               Clear
@@ -271,8 +290,12 @@ export default function TrucheterieDesignerPage() {
             that edge. Diagonal flips which corners a four-way cell’s arcs turn
             about; Order swaps which of a cell’s two families sits on top (over,
             in 3D). The marks show the pivots a click will give. Move drags a
-            cell and everything connected to it; red means it cannot land there
-            without touching arcs or changing a side. ⌘Z / ⇧⌘Z undo and redo.
+            cell and everything connected to it, and Duplicate drags a copy of
+            it; red means it cannot land there without touching arcs or changing
+            a side. Irregular connections let a small cell connect to part of a
+            bigger cell’s closed side: its lines finish in a pocket inside the
+            bigger cell, or bend through to an open side at a corner. Turning it
+            off closes those sides. ⌘Z / ⇧⌘Z undo and redo.
           </p>
 
           <section className="rw-control-section">
@@ -297,7 +320,9 @@ export default function TrucheterieDesignerPage() {
               <button
                 className="dev-button"
                 onClick={() => {
-                  replace(emptyDesign(), { recenter: true });
+                  replace(emptyDesign({ irregular: design.irregular }), {
+                    recenter: true,
+                  });
                   setName('');
                   setSavedCode(null);
                 }}

@@ -15,7 +15,12 @@ import {
   getScreenshotUrl,
   saveScreenshots,
 } from './screenshotApi';
-import { getImageFile, getThumbnailUrl, uploadThumbnail } from './thumbnailApi';
+import {
+  IMAGE_ACCEPT,
+  getImageFile,
+  getThumbnailUrl,
+  uploadThumbnail,
+} from './thumbnailApi';
 
 function ScreenshotsPanel({
   canCapture,
@@ -150,7 +155,7 @@ function ScreenshotsPanel({
           <FiUpload aria-hidden="true" /> File
         </button>
         <input
-          accept="image/*"
+          accept={IMAGE_ACCEPT}
           hidden
           onChange={(event) => {
             const file = event.target.files?.[0];

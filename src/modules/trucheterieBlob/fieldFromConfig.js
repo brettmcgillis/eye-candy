@@ -2,6 +2,7 @@ import {
   decodeDesign,
   designFromField,
   fieldFromDesign,
+  openIrregular,
   symmetricDesign,
 } from './design';
 import buildBlobField, { MEATBALLS } from './field';
@@ -21,16 +22,16 @@ export default function fieldFromConfig(config) {
     sizeFunction: config.blobSizeFunction,
   });
   const axis = config.blobSymmetry ?? 'none';
-  if (axis === 'none' || field.count === 0) return field;
-  const mirrored = symmetricDesign(
-    designFromField(field),
-    field.gridSize,
-    axis,
-    {
+  const irregular = Boolean(config.blobIrregular);
+  if ((axis === 'none' && !irregular) || field.count === 0) return field;
+  let seeded = designFromField(field);
+  if (irregular) seeded = openIrregular(seeded, config.blobSeed);
+  if (axis !== 'none') {
+    seeded = symmetricDesign(seeded, field.gridSize, axis, {
       hideLoose: config.blobMeatballs === MEATBALLS.HIDE_LOOSE,
-    }
-  );
-  return fieldFromDesign(mirrored, config.blobCanvasSize, {
+    });
+  }
+  return fieldFromDesign(seeded, config.blobCanvasSize, {
     column: 0,
     row: 0,
     size: field.gridSize,

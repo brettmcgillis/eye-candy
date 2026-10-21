@@ -623,6 +623,10 @@
   background: #141719;
 }
 
+.rw-media--vector {
+  background: #fff;
+}
+
 .rw-asset__preview img,
 .rw-asset__preview video {
   width: 100%;

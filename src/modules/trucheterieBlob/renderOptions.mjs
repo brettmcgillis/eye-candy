@@ -134,6 +134,11 @@ const GENERATOR = {
     section: 'field',
     type: 'enum',
   },
+  blobIrregular: flag('field', null, 'Irregular Connections', false, {
+    facet: 'structure',
+    generator: true,
+    help: 'Let a small cell connect to part of a bigger cell\u2019s closed side: its lines finish in a pocket inside the bigger cell, or bend through to an open side at a corner. Rolled on sometimes; pin false to keep it off',
+  }),
 };
 
 const LOOK = {

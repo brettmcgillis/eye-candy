@@ -18,15 +18,17 @@ const EMPTY_FRAME = 20;
 // Clearance past a family's outermost arc that a cell sitting inside it must keep: covers the pen and the 3D tubes.
 const INK_MARGIN = 0.5;
 const CODE_PREFIX = 'tb2.';
+const IRREGULAR_PREFIX = 'tb3.';
 const LEGACY_PREFIX = 'tb1.';
+const IRREGULAR_CHANCE = 0.6;
 
 const opposite = (side) => (side + 2) % 4;
 const hasSide = (mask, side) => (mask & (1 << side)) !== 0;
 const withSide = (mask, side, on) =>
   on ? mask | (1 << side) : mask & ~(1 << side);
 
-export function emptyDesign() {
-  return { cells: [] };
+export function emptyDesign({ irregular = false } = {}) {
+  return irregular ? { cells: [], irregular: true } : { cells: [] };
 }
 
 export function designBounds({ cells }) {
@@ -137,12 +139,26 @@ function normalizeCells(design, cells) {
   );
   const blocked = (index, side) =>
     along[index][side].some((other) => !hasSide(masks[other], opposite(side)));
+  // An irregular side meets one bigger cell whose facing side is closed: that cell draws a pocket or bend for it.
+  const irregular = (index, side) => {
+    const others = along[index][side];
+    if (!next.irregular || others.length !== 1) return false;
+    const [host] = others;
+    return (
+      next.cells[host].size > next.cells[index].size &&
+      !hasSide(masks[host], opposite(side))
+    );
+  };
   let changed = true;
   while (changed) {
     changed = false;
     for (let index = 0; index < masks.length; index += 1) {
       for (let side = 0; side < 4; side += 1) {
-        if (hasSide(masks[index], side) && blocked(index, side)) {
+        if (
+          hasSide(masks[index], side) &&
+          blocked(index, side) &&
+          !irregular(index, side)
+        ) {
           masks[index] = withSide(masks[index], side, false);
           changed = true;
         }
@@ -157,6 +173,13 @@ function normalizeCells(design, cells) {
 
 export function normalizeDesign(design) {
   return normalizeCells(design, design.cells);
+}
+
+// Turning irregular connections off closes every side that relied on them.
+export function setIrregular(design, on) {
+  const rest = { ...design };
+  delete rest.irregular;
+  return normalizeDesign(on ? { ...rest, irregular: true } : rest);
 }
 
 const connectorsOf = (mask) => [0, 1, 2, 3].map((side) => hasSide(mask, side));
@@ -186,9 +209,78 @@ function overlapOf(a, b) {
   return c0 < c1 && r0 < r1 ? [c0, r0, c1, r1] : null;
 }
 
-function inksAny(cell, [c0, r0, c1, r1]) {
-  return connectionsFor(cell).some(([type, edge]) => {
-    const { rMax, x, y } = familySector(cell, type, edge);
+// Where each irregular side lands on its bigger cell: a pocket on the side, or a bend when it reaches a corner whose other side is open.
+const CORNERS = {
+  0: [
+    [0, 3],
+    [1, 1],
+  ],
+  1: [
+    [1, 0],
+    [2, 2],
+  ],
+  2: [
+    [3, 3],
+    [2, 1],
+  ],
+  3: [
+    [0, 0],
+    [3, 2],
+  ],
+};
+
+function irregularFamily(host, side, start, length) {
+  const { column, row, size } = host;
+  const far = size - length;
+  const place = [
+    [start, row],
+    [column + far, start],
+    [start, row + far],
+    [column, start],
+  ][side];
+  const cell = { column: place[0], row: place[1], size: length };
+  const origin = side === 0 || side === 2 ? column : row;
+  const [atStart, atEnd] = CORNERS[side];
+  const corner =
+    (start === origin && atStart) ||
+    (start + length === origin + size && atEnd) ||
+    null;
+  if (corner && hasSide(host.mask, corner[1])) {
+    return { cell, connection: [2, corner[0]] };
+  }
+  return { cell, connection: [1, side] };
+}
+
+// Each bigger cell's extra families, in the order drawn (later on top), keyed by its index.
+export function irregularFamilies(design) {
+  const byHost = new Map();
+  if (!design.irregular) return byHost;
+  const owner = occupancy(design);
+  design.cells.forEach((cell, index) => {
+    [0, 1, 2, 3].forEach((side) => {
+      if (!hasSide(cell.mask, side)) return;
+      const others = neighboursAlong(design, owner, index, side);
+      if (!others || others.length !== 1) return;
+      const hostIndex = others[0];
+      const host = design.cells[hostIndex];
+      const hostSide = opposite(side);
+      if (host.size <= cell.size || hasSide(host.mask, hostSide)) return;
+      const start = side === 0 || side === 2 ? cell.column : cell.row;
+      const family = irregularFamily(host, hostSide, start, cell.size);
+      if (!byHost.has(hostIndex)) byHost.set(hostIndex, []);
+      byHost.get(hostIndex).push({ ...family, guest: index });
+    });
+  });
+  return byHost;
+}
+
+function inksAny(cell, [c0, r0, c1, r1], extras = []) {
+  const families = [
+    ...connectionsFor(cell).map((connection) => [cell, connection]),
+    ...extras.map((extra) => [extra.cell, extra.connection]),
+  ];
+  return families.some(([owner, [type, edge]]) => {
+    const { rMax, x, y } = familySector(owner, type, edge);
     const reach = rMax + INK_MARGIN;
     for (let c = c0; c < c1; c += 1) {
       for (let r = r0; r < r1; r += 1) {
@@ -202,7 +294,9 @@ function inksAny(cell, [c0, r0, c1, r1]) {
 }
 
 // Cells may overlap only where the bigger one's arcs never reach (both, for equal sizes).
-export function inkClashes({ cells }) {
+export function inkClashes(design) {
+  const { cells } = design;
+  const extras = irregularFamilies(design);
   let clashes = 0;
   for (let i = 0; i < cells.length; i += 1) {
     for (let j = i + 1; j < cells.length; j += 1) {
@@ -210,8 +304,14 @@ export function inkClashes({ cells }) {
       if (overlap) {
         const a = cells[i];
         const b = cells[j];
-        const hosts = a.size === b.size ? [a, b] : [a.size > b.size ? a : b];
-        if (hosts.some((host) => inksAny(host, overlap))) clashes += 1;
+        const hosts = a.size === b.size ? [i, j] : [a.size > b.size ? i : j];
+        if (
+          hosts.some((host) =>
+            inksAny(cells[host], overlap, extras.get(host) ?? [])
+          )
+        ) {
+          clashes += 1;
+        }
       }
     }
   }
@@ -248,7 +348,12 @@ function changeSide(design, index, side, open) {
     return normalizeCells(design, cells);
   }
   const cascade = sideCascade(design, index, side);
-  if (!cascade) return design;
+  if (!cascade) {
+    if (!design.irregular) return design;
+    cells[index].mask = withSide(cells[index].mask, side, true);
+    const next = normalizeCells(design, cells);
+    return hasSide(next.cells[index].mask, side) ? next : design;
+  }
   cascade.forEach(([cell, s]) => {
     cells[cell].mask = withSide(cells[cell].mask, s, true);
   });
@@ -390,6 +495,27 @@ export function connectedGroup(design, index) {
   return [...seen].sort((a, b) => a - b);
 }
 
+function landIntact(design, cells) {
+  if (!cells.every(({ column, row, size }) => inRange(column, row, size))) {
+    return design;
+  }
+  const next = normalizeDesign({ ...design, cells });
+  if (next.cells.some((cell, index) => cell.mask !== cells[index].mask)) {
+    return design;
+  }
+  return inkClashes(next) === 0 ? next : design;
+}
+
+// Copies are pinned, since unpinned choices hash their position; the copies are appended, so existing indices hold.
+export function duplicateCells(design, indices, dx, dy) {
+  if (dx === 0 && dy === 0) return design;
+  const copies = indices.map((index) => {
+    const cell = pinCell(design.cells[index]);
+    return { ...cell, column: cell.column + dx, row: cell.row + dy };
+  });
+  return landIntact(design, [...design.cells, ...copies]);
+}
+
 // Moved cells are pinned, since unpinned choices hash their position; a move that would change any side is refused.
 export function moveCells(design, indices, dx, dy) {
   if (dx === 0 && dy === 0) return design;
@@ -399,14 +525,7 @@ export function moveCells(design, indices, dx, dy) {
       ? { ...pinCell(cell), column: cell.column + dx, row: cell.row + dy }
       : cell
   );
-  if (!cells.every(({ column, row, size }) => inRange(column, row, size))) {
-    return design;
-  }
-  const next = normalizeDesign({ ...design, cells });
-  if (next.cells.some((cell, index) => cell.mask !== cells[index].mask)) {
-    return design;
-  }
-  return inkClashes(next) === 0 ? next : design;
+  return landIntact(design, cells);
 }
 
 export const SYMMETRY_AXES = [
@@ -523,7 +642,7 @@ export function symmetricDesign(design, gridSize, axis, { hideLoose } = {}) {
       ...axisCells,
       ...half.map((cell) => mirrorCell(cell, axis, gridSize)),
     ];
-    result = normalizeDesign({ cells });
+    result = normalizeDesign({ cells, irregular: design.irregular });
     if (result.cells.every((cell, i) => cell.mask === cells[i].mask)) break;
     half = result.cells.slice(0, half.length);
     axisCells = result.cells
@@ -531,7 +650,32 @@ export function symmetricDesign(design, gridSize, axis, { hideLoose } = {}) {
       .map((cell) => balanceOnAxis(cell, axis));
   }
   if (!hideLoose) return result;
-  return { cells: result.cells.filter((cell) => (cell.mask & 15) !== 0) };
+  return normalizeDesign({
+    ...result,
+    cells: result.cells.filter((cell) => (cell.mask & 15) !== 0),
+  });
+}
+
+// A seeded field's irregular connections: each small cell's closed side against one bigger, closed side opens on a position-seeded chance.
+export function openIrregular(design, seed) {
+  const next = { ...design, irregular: true };
+  const owner = occupancy(next);
+  const cells = next.cells.map((cell, index) => {
+    let { mask } = cell;
+    [0, 1, 2, 3].forEach((side) => {
+      if (hasSide(mask, side)) return;
+      const others = neighboursAlong(next, owner, index, side);
+      if (!others || others.length !== 1) return;
+      const host = next.cells[others[0]];
+      if (host.size <= cell.size || hasSide(host.mask, opposite(side))) return;
+      const roll = mulberry32(
+        hashSeed(`${seed}:${cell.column},${cell.row},${side}`)
+      )();
+      if (roll < IRREGULAR_CHANCE) mask = withSide(mask, side, true);
+    });
+    return { ...cell, mask };
+  });
+  return normalizeCells(next, cells);
 }
 
 export function fieldFromDesign(
@@ -539,24 +683,62 @@ export function fieldFromDesign(
   canvasSize,
   frame = designFrame(design)
 ) {
-  const drawn = [...design.cells]
-    .sort((a, b) => (a.row !== b.row ? a.row - b.row : a.column - b.column))
-    .map((cell) => ({
-      cell: {
-        column: cell.column - frame.column,
-        connectors: connectorsOf(cell.mask),
-        row: cell.row - frame.row,
-        size: cell.size,
-      },
+  const local = ({ column, row, size }) => ({
+    column: column - frame.column,
+    row: row - frame.row,
+    size,
+  });
+  const order = design.cells
+    .map((cell, index) => index)
+    .sort((a, b) => {
+      const ca = design.cells[a];
+      const cb = design.cells[b];
+      return ca.row !== cb.row ? ca.row - cb.row : ca.column - cb.column;
+    });
+  const drawn = order.map((index) => {
+    const cell = design.cells[index];
+    return {
+      cell: { ...local(cell), connectors: connectorsOf(cell.mask) },
       connections: connectionsFor(cell),
-    }));
+      occluders: [],
+    };
+  });
+  // Pockets and bends are drawn after every cell, so they sit on top; each covers its host and the extras before it.
+  const extras = irregularFamilies(design);
+  order.forEach((index, at) => {
+    const host = drawn[at];
+    (extras.get(index) ?? []).forEach(({ cell, connection }) => {
+      const virtual = local(cell);
+      const sector = familySector(virtual, connection[0], connection[1]);
+      host.occluders.push(sector);
+      drawn
+        .filter((entry) => entry.host === at)
+        .forEach((entry) => entry.occluders.push(sector));
+      drawn.push({
+        cell: {
+          ...virtual,
+          connectors: [0, 1, 2, 3].map(
+            (side) =>
+              side === connection[1] ||
+              (connection[0] === 2 && side === (connection[1] + 3) % 4)
+          ),
+        },
+        connections: [connection],
+        host: at,
+        occluders: [],
+        virtual: true,
+      });
+    });
+  });
   return assembleField(drawn, frame.size, canvasSize);
 }
 
 // Pins every cell's choices, so the design draws exactly as the field did.
 export function designFromField(field) {
+  const real = field.cells.filter((entry) => !entry.virtual);
   return {
-    cells: field.cells.map(({ cell, connections }) => ({
+    irregular: real.length < field.cells.length,
+    cells: real.map(({ cell, connections }) => ({
       column: cell.column,
       mask:
         cell.connectors.reduce((acc, on, side) => withSide(acc, side, on), 0) |
@@ -570,6 +752,7 @@ export function designFromField(field) {
 export function designToJson(design, extra = {}) {
   return {
     ...extra,
+    ...(design.irregular ? { irregular: true } : {}),
     cells: design.cells.map(({ column, mask, row, size }) => [
       column,
       row,
@@ -589,7 +772,10 @@ export function designFromJson(json) {
     if (!inRange(column, row, size) || !Number.isInteger(mask)) return null;
     cells.push({ column, mask: mask & MASK_BITS, row, size });
   }
-  const design = normalizeDesign({ cells });
+  const design = normalizeDesign({
+    cells,
+    ...(json.irregular ? { irregular: true } : {}),
+  });
   return inkClashes(design) === 0 ? design : null;
 }
 
@@ -609,7 +795,7 @@ function fromBase64Url(text) {
   return Uint8Array.from(binary, (char) => char.charCodeAt(0));
 }
 
-// tb2: per cell int16 column, int16 row, uint8 size, uint8 mask (little-endian).
+// tb2: per cell int16 column, int16 row, uint8 size, uint8 mask (little-endian); tb3 is the same with irregular connections on.
 export function encodeDesign(design) {
   const bytes = new Uint8Array(design.cells.length * 6);
   const view = new DataView(bytes.buffer);
@@ -619,12 +805,14 @@ export function encodeDesign(design) {
     view.setUint8(i * 6 + 4, size);
     view.setUint8(i * 6 + 5, mask);
   });
-  return `${CODE_PREFIX}${toBase64Url(bytes)}`;
+  const prefix = design.irregular ? IRREGULAR_PREFIX : CODE_PREFIX;
+  return `${prefix}${toBase64Url(bytes)}`;
 }
 
 function cellsFromCode(code) {
   const legacy = code.startsWith(LEGACY_PREFIX);
-  if (!legacy && !code.startsWith(CODE_PREFIX)) return null;
+  const known = [CODE_PREFIX, IRREGULAR_PREFIX, LEGACY_PREFIX];
+  if (!known.some((prefix) => code.startsWith(prefix))) return null;
   const bytes = fromBase64Url(code.slice(CODE_PREFIX.length));
   if (legacy) {
     if (bytes.length < 1 || (bytes.length - 1) % 4 !== 0) return null;
@@ -652,7 +840,11 @@ export function decodeDesign(code) {
   } catch {
     return null;
   }
-  return cells ? designFromJson({ cells }) : null;
+  if (!cells) return null;
+  return designFromJson({
+    cells,
+    irregular: code.startsWith(IRREGULAR_PREFIX),
+  });
 }
 
 export const isDesignCode = (code) => decodeDesign(code) !== null;

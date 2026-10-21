@@ -1,4 +1,5 @@
 import {
+  IRREGULAR_ROLL_CHANCE,
   SYMMETRY_CHANCE,
   alignSymmetry,
   createRng,
@@ -48,6 +49,9 @@ const FACET_ROLLS = {
         ? symmetryAxis(rotation, rng.chance(0.5))
         : 'none',
       planeRotation: rotation,
+    });
+    Object.assign(config, {
+      blobIrregular: rng.chance(IRREGULAR_ROLL_CHANCE),
     });
   },
   palette(config, rng, { paletteNames }) {

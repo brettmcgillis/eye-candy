@@ -31,6 +31,7 @@ export default function getDesignControls(snapshot, designRef) {
         Diagonal: 'diagonal',
         Order: 'order',
         Move: 'move',
+        Duplicate: 'duplicate',
       },
       render: hasDesign,
       value: saved.designTool ?? 'off',

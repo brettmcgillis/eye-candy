@@ -503,6 +503,161 @@ function checkSymmetry(blob) {
   );
 }
 
+function checkDuplicate(blob) {
+  let design = blob.emptyDesign();
+  design = blob.placeCell(design, 0, 0, 2);
+  design = blob.placeCell(design, 2, 0, 2);
+  const group = blob.connectedGroup(design, 0);
+  const copied = blob.duplicateCells(design, group, 0, 4);
+  const drawn = (d, indices) =>
+    indices
+      .map((i) =>
+        JSON.stringify([
+          [0, 1, 2, 3].map((side) => blob.isSideOpen(d, i, side)),
+          blob.cellConnections(d, i),
+        ])
+      )
+      .join();
+  check(
+    copied.cells.length === 4 &&
+      copied.cells[2].row === 4 &&
+      copied.cells[0].row === 0 &&
+      drawn(copied, [2, 3]) === drawn(design, [0, 1]) &&
+      blob.connectedGroup(copied, 2).join() === '2,3',
+    'design: duplicateCells does not copy the group intact beside the original.'
+  );
+  check(
+    blob.duplicateCells(design, group, 1, 0) === design &&
+      blob.duplicateCells(design, group, 0, 0) === design,
+    'design: duplicateCells lands a copy on the original.'
+  );
+}
+
+// A 1 against part of a 3's closed side: a pocket mid-side, a bend at a corner whose other side is open.
+function checkIrregular(blob) {
+  const build = (irregular) => {
+    let d = blob.emptyDesign({ irregular });
+    d = blob.placeCell(d, 0, 0, 3);
+    d = blob.placeCell(d, 0, 3, 3);
+    d = blob.placeCell(d, -1, 0, 1);
+    d = blob.placeCell(d, -1, 2, 1);
+    return d;
+  };
+  const plain = build(false);
+  const design = build(true);
+  check(
+    !blob.isSideOpen(plain, 2, 1) &&
+      blob.isSideOpen(design, 2, 1) &&
+      blob.isSideOpen(design, 3, 1) &&
+      !blob.isSideOpen(design, 0, 3),
+    'irregular: a small cell does not connect to part of a closed side only when the toggle is on.'
+  );
+  const families = blob.irregularFamilies(design).get(0) ?? [];
+  check(
+    families.length === 2 &&
+      families[0].connection.join() === '1,3' &&
+      families[1].connection.join() === '2,3',
+    `irregular: expected a pocket then a bottom-left bend on the 3, got ${JSON.stringify(families.map((f) => f.connection))}.`
+  );
+  const field = blob.fieldFromDesign(design, 8);
+  const virtual = field.cells.filter((entry) => entry.virtual);
+  const firstVirtual = field.cells.findIndex((entry) => entry.virtual);
+  check(
+    virtual.length === 2 &&
+      field.count === design.cells.length + 2 &&
+      field.cells.slice(firstVirtual).every((entry) => entry.virtual) &&
+      field.cells.some(
+        (entry) => !entry.virtual && entry.occluders.length === 2
+      ),
+    'irregular: pockets and bends are not appended after every cell, covering their host.'
+  );
+  const lanes = blob.buildLaneChannels(field.cells, 4);
+  const channelOf = (index) => lanes.channelOf[index * lanes.slotStride];
+  const guest = field.cells.findIndex(
+    ({ cell, virtual: v }) => !v && cell.size === 1 && cell.connectors[1]
+  );
+  check(
+    guest >= 0 &&
+      [firstVirtual, firstVirtual + 1].some(
+        (index) => channelOf(index) === channelOf(guest)
+      ),
+    "irregular: a pocket or bend does not continue the small cell's lanes."
+  );
+  const svg = blob.renderBlobSvg(field, {
+    height: 200,
+    pathDiv: 4,
+    width: 200,
+  });
+  check(svg.includes('<path'), 'irregular: renderBlobSvg draws nothing.');
+  const decoded = blob.decodeDesign(blob.encodeDesign(design));
+  check(
+    blob.encodeDesign(design).startsWith('tb3.') &&
+      decoded?.irregular === true &&
+      designKey(blob, decoded) === designKey(blob, design) &&
+      blob.designFromJson(blob.designToJson(design))?.irregular === true,
+    'irregular: the codec or JSON drops the irregular flag.'
+  );
+  const off = blob.setIrregular(design, false);
+  check(
+    !off.irregular &&
+      !blob.isSideOpen(off, 2, 1) &&
+      blob.irregularFamilies(off).size === 0,
+    'irregular: turning it off leaves irregular sides open.'
+  );
+  let opened = blob.emptyDesign({ irregular: true });
+  opened = blob.placeCell(opened, 0, 0, 3, { connect: false });
+  opened = blob.placeCell(opened, -1, 1, 1, { connect: false });
+  check(
+    blob.isSideOpen(blob.setSide(opened, 1, 1, true), 1, 1) &&
+      !blob.isSideOpen(
+        blob.setSide(blob.setIrregular(opened, false), 1, 1, true),
+        1,
+        1
+      ),
+    'irregular: Connect does not open a side onto part of a closed side (or does with the toggle off).'
+  );
+
+  let seen = 0;
+  ['irr-a', 'irr-b', 'irr-c'].forEach((seed) => {
+    const config = {
+      ...blob.sceneDefaults(),
+      blobCanvasSize: 8,
+      blobIrregular: true,
+      blobSeed: seed,
+    };
+    const seeded = blob.fieldFromConfig(config);
+    seen += seeded.cells.filter((entry) => entry.virtual).length;
+    const again = blob.fieldFromDesign(blob.designFromField(seeded), 8, {
+      column: 0,
+      row: 0,
+      size: seeded.gridSize,
+    });
+    check(
+      ['conn0', 'conn1', 'connectorMask', 'sizes'].every(
+        (name) => again[name].join() === seeded[name].join()
+      ),
+      `irregular ${seed}: a seeded irregular field does not round-trip through a design.`
+    );
+    const mirrored = blob.fieldFromConfig({
+      ...config,
+      blobSymmetry: 'vertical',
+    });
+    check(
+      mirrored.cells.filter((entry) => entry.virtual).length % 2 === 0,
+      `irregular ${seed}: a symmetric irregular field has an unpaired pocket or bend.`
+    );
+  });
+  check(seen > 0, 'irregular: seeded fields never produce a pocket or bend.');
+  const rolled = Array.from({ length: 400 }, (_, i) =>
+    blob.rollBlobConfig(`irr-roll-${i}`)
+  ).filter((c) => c.blobIrregular).length;
+  check(
+    rolled > 400 * blob.IRREGULAR_ROLL_CHANCE * 0.6 &&
+      rolled < 400 * blob.IRREGULAR_ROLL_CHANCE * 1.4,
+    `irregular: ${rolled}/400 rolls turn it on.`
+  );
+}
+
 async function checkDesignRotation(blob) {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'trucheterie-check-'));
   try {
@@ -581,6 +736,8 @@ async function main() {
   );
   checkDesigns(loaded[BARRELS.blob]);
   checkMove(loaded[BARRELS.blob]);
+  checkDuplicate(loaded[BARRELS.blob]);
+  checkIrregular(loaded[BARRELS.blob]);
   checkSymmetry(loaded[BARRELS.blob]);
   await checkSceneForwardsGenerator(loaded[BARRELS.blob]);
   await checkDesignRotation(loaded[BARRELS.blob]);

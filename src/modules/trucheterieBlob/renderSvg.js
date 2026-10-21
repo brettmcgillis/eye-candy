@@ -41,14 +41,19 @@ function wedge(type, edge) {
   return { span: Math.PI, start: inward - Math.PI / 2 };
 }
 
-function familyGeometry(field, index, cell, [type, edge]) {
-  const { rMax, x, y } = familySector(cell, type, edge);
+// Grid units to the field's canvas, about the cell's own placed centre.
+function canvasPoint(field, index, cell) {
   const gridX = cell.column + cell.size / 2;
   const gridY = cell.row + cell.size / 2;
-  const center = [
+  return (x, y) => [
     field.centers[index * 2] + (x - gridX) * field.cellSize,
     field.centers[index * 2 + 1] + (y - gridY) * field.cellSize,
   ];
+}
+
+function familyGeometry(field, index, cell, [type, edge]) {
+  const { rMax, x, y } = familySector(cell, type, edge);
+  const center = canvasPoint(field, index, cell)(x, y);
   return {
     center,
     rMax: rMax * field.cellSize,
@@ -181,10 +186,15 @@ export default function renderBlobSvg(
 
   const fills = [];
   const strokes = [];
-  field.cells.forEach(({ cell, connections }, index) => {
+  field.cells.forEach(({ cell, connections, occluders = [] }, index) => {
     const families = connections.map((connection) =>
       familyGeometry(field, index, cell, connection)
     );
+    const toCanvas = canvasPoint(field, index, cell);
+    const covers = occluders.map(({ rMax, x, y }) => ({
+      center: toCanvas(x, y),
+      rMax: rMax * field.cellSize,
+    }));
     const occluder = families.length > 1 ? families[0] : null;
 
     [...families.keys()].reverse().forEach((slot) => {
@@ -210,16 +220,21 @@ export default function renderBlobSvg(
       if (showStrokes) {
         strokeRadii(family.type, cell.size, pathDiv).forEach((r) => {
           const radius = r * field.cellSize;
-          visibleSpans(
-            family.center,
-            radius,
-            family.wedge,
-            slot === 1 ? occluder : null
-          ).forEach(([start, span]) => {
-            strokes.push(
-              `<path d="${arcPath(family.center, radius, start, span)}"/>`
-            );
-          });
+          const hiders =
+            slot === 1 && occluder ? [occluder, ...covers] : covers;
+          hiders
+            .reduce(
+              (spans, hider) =>
+                spans.flatMap(([start, span]) =>
+                  visibleSpans(family.center, radius, { span, start }, hider)
+                ),
+              [[family.wedge.start, family.wedge.span]]
+            )
+            .forEach(([start, span]) => {
+              strokes.push(
+                `<path d="${arcPath(family.center, radius, start, span)}"/>`
+              );
+            });
         });
       }
     });

@@ -1,83 +1,24 @@
 import {
+  chainKeyed,
   colorRuns,
   createProjector,
   createTone,
   imagePalette,
+  meshEdges,
   nearSilhouette,
   outlineOf,
   outlineRuns,
   pathOf,
   penPx,
   plotLayer,
+  sectionCuts,
   shadePath,
   silhouetteRuns,
-  simplifyLoop,
   textureRuns,
+  traceRuns,
+  weldMesh,
   wiggleRuns,
 } from '@modules/plotKit';
-
-import { chainKeyed, meshEdges, sectionCuts, weldMesh } from './mesh';
-
-const SAMPLE_PX = 1.5;
-
-const strokeLength = (run) =>
-  run.reduce(
-    (sum, p, i) =>
-      i ? sum + Math.hypot(p.x - run[i - 1].x, p.y - run[i - 1].y) : 0,
-    0
-  );
-
-// Polylines of world points → screen runs, sampled about every 1.5 px and
-// cut wherever a sample leaves the frame, is hidden (`visible`) or, for
-// edge-like strokes, sits on the silhouette the outline layer draws.
-function traceRuns(lines, { height, hidden, minLength, project, width }) {
-  const runs = [];
-  lines.forEach((line) => {
-    let run = [];
-    const flush = () => {
-      if (run.length > 1) {
-        const simple = simplifyLoop(
-          run.map((p) => [p.x, p.y]),
-          0.2
-        ).map(([x, y]) => ({ x, y }));
-        if (strokeLength(simple) >= minLength) runs.push(simple);
-      }
-      run = [];
-    };
-    const visit = (point) => {
-      const p = project(...point);
-      const shown =
-        p.depth > 0 &&
-        p.x >= -1 &&
-        p.y >= -1 &&
-        p.x <= width + 1 &&
-        p.y <= height + 1 &&
-        !hidden(p);
-      if (shown) run.push(p);
-      else flush();
-    };
-    for (let i = 0; i < line.length - 1; i += 1) {
-      const a = line[i];
-      const b = line[i + 1];
-      const pa = project(...a);
-      const pb = project(...b);
-      const steps = Math.max(
-        1,
-        Math.ceil(Math.hypot(pb.x - pa.x, pb.y - pa.y) / SAMPLE_PX)
-      );
-      for (let s = i === 0 ? 0 : 1; s <= steps; s += 1) {
-        const t = s / steps;
-        visit([
-          a[0] + (b[0] - a[0]) * t,
-          a[1] + (b[1] - a[1]) * t,
-          a[2] + (b[2] - a[2]) * t,
-        ]);
-      }
-    }
-    flush();
-  });
-  return runs;
-}
 
 const AXES = { grid: [1, 2], none: [], sections: [2], slices: [1] };
 

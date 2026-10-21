@@ -175,6 +175,35 @@ function checkModes({ tubes: kernel }) {
   );
 }
 
+// Pockets and bends are extra field entries drawn over their host; the tubes and membrane must clip the host under them and stay intersection-free.
+function checkIrregular({ tubes: kernel }) {
+  let extras = 0;
+  SEEDS.forEach((seed) =>
+    [
+      { junction: 'cap', strands: 'both' },
+      { junction: 'weave', strands: 'lanes' },
+      { lanesAs: 'membrane', strands: 'both' },
+    ].forEach((mode) => {
+      const label = `${seed} irregular ${JSON.stringify(mode)}`;
+      const config = {
+        ...kernel.sceneDefaults(),
+        blobIrregular: true,
+        blobSeed: seed,
+        ...mode,
+      };
+      const field = kernel.buildField(config);
+      extras += field.cells.filter((entry) => entry.virtual).length;
+      const form = kernel.buildForm(field, config);
+      invariants(label, form.tubes, kernel.verifyTubes);
+      check(
+        !kernel.membraneActive(config) || form.membrane?.stats.vertices > 0,
+        `${label}: the membrane is empty.`
+      );
+    })
+  );
+  check(extras > 0, 'irregular: no seed produced a pocket or bend.');
+}
+
 function checkRolls({ tubes: kernel }, paletteNames) {
   for (let i = 0; i < 8; i += 1) {
     const config = kernel.rollTubeConfig(`check-${i}`, { paletteNames });
@@ -676,6 +705,7 @@ async function main() {
   checkRigDefaults(barrels);
   checkPresets(loaded[PRESETS], palettes);
   checkModes(barrels);
+  checkIrregular(barrels);
   checkRolls(
     barrels,
     palettes.filter((name) => name !== 'None')

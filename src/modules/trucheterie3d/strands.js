@@ -1,4 +1,9 @@
-import { familySector, isWeaveCell, laneRadii } from '@modules/trucheterieBlob';
+import {
+  familySector,
+  isWeaveCell,
+  laneRadii,
+  straightFrame,
+} from '@modules/trucheterieBlob';
 
 // Every lane and stroke of the blob field as a circular arc in grid units
 // (one micro-cell = 1, y down): the 2D drawing's own geometry, so tubes laid
@@ -49,8 +54,21 @@ function visibleIntervals(lo, hi, hidden) {
   return parts.filter(([a, b]) => b - a > 1e-9);
 }
 
+// A straight family's wedge is a sliver about its far centre (laneChannels.js).
+function familyWedge(cell, type, edge) {
+  if (type === 3) {
+    const { span, start } = straightFrame(cell, edge);
+    return { span, start };
+  }
+  return { span: SPAN[type], start: edge * (Math.PI / 2) };
+}
+
 function strokeRadii(type, size, pathDiv) {
   const bands = Math.round(size * pathDiv);
+  if (type === 3) {
+    const { reach } = straightFrame({ size }, 0);
+    return Array.from({ length: bands + 1 }, (_, i) => reach + i / pathDiv);
+  }
   if (type === 2) {
     return Array.from({ length: bands }, (_, i) => (i + 1) / pathDiv);
   }
@@ -72,8 +90,7 @@ const hiddenByAll = (center, radius, occluders) =>
 function familyArcs({ cell, cellIndex, edge, occluders, pathDiv, slot, type }) {
   const sector = familySector(cell, type, edge);
   const center = [sector.x, sector.y];
-  const start = edge * (Math.PI / 2);
-  const span = SPAN[type];
+  const { span, start } = familyWedge(cell, type, edge);
   const base = { cell: cellIndex, center, edge, slot, span, start, type };
   const pieces = [];
   const dots = [];
@@ -145,4 +162,4 @@ export default function buildStrands(field, { junction, pathDiv }) {
   return { dots, pieces };
 }
 
-export { hiddenArcs, pointAt, SPAN, visibleIntervals };
+export { familyWedge, hiddenArcs, pointAt, SPAN, visibleIntervals };

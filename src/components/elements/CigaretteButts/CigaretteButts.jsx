@@ -1,11 +1,10 @@
 import React from 'react';
 
-import { useGLTF } from '@react-three/drei';
-
+import useDracoGltf from '@hooks/useDracoGltf';
 import { modelFile } from '@utils/appUtils';
 
 export default function CigaretteButts(props) {
-  const { nodes, materials } = useGLTF(modelFile('/cigaretteButts.glb'));
+  const { nodes, materials } = useDracoGltf(modelFile('/cigaretteButts.glb'));
   return (
     <group {...props} dispose={null}>
       <mesh
@@ -18,4 +17,4 @@ export default function CigaretteButts(props) {
   );
 }
 
-useGLTF.preload(modelFile('/cigaretteButts.glb'));
+useDracoGltf.preload(modelFile('/cigaretteButts.glb'));

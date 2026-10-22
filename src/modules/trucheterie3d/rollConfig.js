@@ -3,6 +3,7 @@ import {
   SYMMETRY_CHANCE,
   alignSymmetry,
   createRng,
+  rollStraights,
   symmetryAxis,
 } from '@modules/trucheterieBlob';
 
@@ -53,6 +54,7 @@ const FACET_ROLLS = {
     Object.assign(config, {
       blobIrregular: rng.chance(IRREGULAR_ROLL_CHANCE),
     });
+    Object.assign(config, { blobStraights: rollStraights(rng) });
   },
   palette(config, rng, { paletteNames }) {
     Object.assign(config, {

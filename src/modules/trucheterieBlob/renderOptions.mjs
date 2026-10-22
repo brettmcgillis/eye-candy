@@ -139,6 +139,11 @@ const GENERATOR = {
     generator: true,
     help: 'Let a small cell connect to part of a bigger cell\u2019s closed side: its lines finish in a pocket inside the bigger cell, or bend through to an open side at a corner. Rolled on sometimes; pin false to keep it off',
   }),
+  blobStraights: num('field', null, 'Straights', 0, 0, 1, 0.05, {
+    facet: 'structure',
+    generator: true,
+    help: 'Chance each cell open on two opposite sides (plus at most one more) draws straight lanes instead of curves; a third open side makes a T-junction. Rolled on sometimes; pin 0 to keep it off',
+  }),
 };
 
 const LOOK = {

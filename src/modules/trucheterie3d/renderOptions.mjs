@@ -79,6 +79,7 @@ const FIELD = {
   blobMeatballs: from('blobMeatballs', 'field', 'Cells'),
   blobSymmetry: from('blobSymmetry', 'field', 'Cells'),
   blobIrregular: from('blobIrregular', 'field', 'Cells'),
+  blobStraights: from('blobStraights', 'field', 'Cells'),
   planeRotation: from('planeRotation', 'field', null, {
     help: 'Turns the field about the vertical',
   }),
@@ -91,6 +92,7 @@ const DESIGN_TOOLS = [
   'connect',
   'diagonal',
   'order',
+  'straight',
   'move',
   'duplicate',
 ];
@@ -108,8 +110,9 @@ const DESIGN = {
         order: 'Order',
         off: 'View',
         paint: 'Paint',
+        straight: 'Straight',
       },
-      help: 'Edit the hand-made field (Design) on the ground plane: paint cells, erase them, open and close their sides, flip a four-way cell\u2019s diagonal, swap which of a cell\u2019s two families goes over, or drag a connected group to move or copy it',
+      help: 'Edit the hand-made field (Design) on the ground plane: paint cells, erase them, open and close their sides, flip a four-way cell\u2019s diagonal, swap which of a cell\u2019s two families goes over, turn a cell\u2019s lanes straight, or drag a connected group to move or copy it',
     })
   ),
   designBrush: sceneOnly(
@@ -555,6 +558,7 @@ export const TUBE_KEYS = [
   'blobMeatballs',
   'blobSymmetry',
   'blobIrregular',
+  'blobStraights',
   'strands',
   'lanesAs',
   'membraneRows',

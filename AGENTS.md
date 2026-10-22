@@ -123,6 +123,17 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   headless CLIs and BirdsArentRealCLI with its Live tab. Run
   `npm run birds-arent-real:check` after changing any of them.
 
+## Required reading before touching DumpsterFire / DumpsterFireCLI
+
+- **`docs/dumpster-fire-pipeline.md`** — the BirdsArentReal arrangement for
+  the Dumpster Fire scene: `@modules/dumpsterFire` (three-free option schema,
+  roll, trash / wall / smoke layouts, framing, the MaterialX flame-noise
+  mirror and the plot; the scene's Generation folders are generated from
+  it), `@modules/dumpsterFireRender` (`DumpsterStage`, the real R3F stage,
+  plus the sidewalk, cinderblocks, fire lights and smoke authoring the scene
+  shares), the headless CLIs and DumpsterFireCLI with its Live tab. Run
+  `npm run dumpster-fire:check` after changing any of them.
+
 ## Required reading before touching Kumiko
 
 - **`docs/kumiko-pipeline.md`** — the Fungi arrangement for kumiko panels:

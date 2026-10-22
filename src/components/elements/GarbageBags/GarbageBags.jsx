@@ -1,13 +1,9 @@
-import React, { useEffect, useMemo } from 'react';
+import React from 'react';
 
-import { createInstances, useGLTF } from '@react-three/drei';
-
-import * as THREE from 'three';
-
+import useDracoGltf from '@hooks/useDracoGltf';
 import { modelFile } from '@utils/appUtils';
-import bakeInstancedGeometry from '@utils/instancedGeometry';
 
-const GARBAGE_BAG_MATERIAL_PROPS = {
+export const GARBAGE_BAG_MATERIAL_PROPS = {
   color: '#050505',
   roughness: 0.258,
   metalness: 0,
@@ -15,101 +11,13 @@ const GARBAGE_BAG_MATERIAL_PROPS = {
   ior: 1.45,
 };
 
-const GARBAGE_BAG_MODEL_PATH = '/garbage_bag.glb';
-const GARBAGE_BAG_1_MODEL_PATH = '/garbage_bag_1.glb';
-const GARBAGE_BAG_TRANSFORM_CHAIN = [{ scale: 0.01 }];
-const GARBAGE_BAG_1_TRANSFORM_CHAIN = [{ scale: 0.01 }];
+export const GARBAGE_BAG_MODEL_PATH = '/garbage_bag.glb';
 
-const [GarbageBagInstancesRoot, GarbageBagInstanceRoot] = createInstances();
-const [GarbageBag1InstancesRoot, GarbageBag1InstanceRoot] = createInstances();
+export const GARBAGE_BAG_1_MODEL_PATH = '/garbage_bag_1.glb';
 
-export function GarbageBagInstances({ children, material, ...props }) {
-  const { nodes } = useGLTF(modelFile(GARBAGE_BAG_MODEL_PATH));
-  const baseGeometry = nodes.Obj_Bags_5_asset__0.geometry;
-  const geometry = useMemo(
-    () => bakeInstancedGeometry(baseGeometry, GARBAGE_BAG_TRANSFORM_CHAIN),
-    [baseGeometry]
-  );
-  const instanceMaterial = useMemo(
-    () =>
-      material ?? new THREE.MeshPhysicalMaterial(GARBAGE_BAG_MATERIAL_PROPS),
-    [material]
-  );
+export const GARBAGE_BAG_TRANSFORM_CHAIN = [{ scale: 0.01 }];
 
-  useEffect(() => {
-    return () => {
-      geometry.dispose?.();
-    };
-  }, [geometry]);
-
-  useEffect(() => {
-    if (material) {
-      return undefined;
-    }
-
-    return () => {
-      instanceMaterial.dispose?.();
-    };
-  }, [instanceMaterial, material]);
-
-  return (
-    <GarbageBagInstancesRoot
-      geometry={geometry}
-      material={instanceMaterial}
-      {...props}
-    >
-      {children}
-    </GarbageBagInstancesRoot>
-  );
-}
-
-export function GarbageBagInstance(props) {
-  return <GarbageBagInstanceRoot {...props} />;
-}
-
-export function GarbageBag1Instances({ children, material, ...props }) {
-  const { nodes } = useGLTF(modelFile(GARBAGE_BAG_1_MODEL_PATH));
-  const baseGeometry = nodes.Obj_Bags_4_asset__0.geometry;
-  const geometry = useMemo(
-    () => bakeInstancedGeometry(baseGeometry, GARBAGE_BAG_1_TRANSFORM_CHAIN),
-    [baseGeometry]
-  );
-  const instanceMaterial = useMemo(
-    () =>
-      material ?? new THREE.MeshPhysicalMaterial(GARBAGE_BAG_MATERIAL_PROPS),
-    [material]
-  );
-
-  useEffect(() => {
-    return () => {
-      geometry.dispose?.();
-    };
-  }, [geometry]);
-
-  useEffect(() => {
-    if (material) {
-      return undefined;
-    }
-
-    return () => {
-      instanceMaterial.dispose?.();
-    };
-  }, [instanceMaterial, material]);
-
-  return (
-    <GarbageBag1InstancesRoot
-      geometry={geometry}
-      material={instanceMaterial}
-      {...props}
-    >
-      {children}
-    </GarbageBag1InstancesRoot>
-  );
-}
-
-export function GarbageBag1Instance(props) {
-  return <GarbageBag1InstanceRoot {...props} />;
-}
+export const GARBAGE_BAG_1_TRANSFORM_CHAIN = [{ scale: 0.01 }];
 
 function GarbageBagMaterial() {
   return (
@@ -124,7 +32,7 @@ function GarbageBagMaterial() {
 }
 
 export function GarbageBag(props) {
-  const { nodes } = useGLTF(modelFile(GARBAGE_BAG_MODEL_PATH));
+  const { nodes } = useDracoGltf(modelFile(GARBAGE_BAG_MODEL_PATH));
   return (
     <group {...props} dispose={null}>
       <mesh
@@ -140,7 +48,7 @@ export function GarbageBag(props) {
 }
 
 export function GarbageBag1(props) {
-  const { nodes } = useGLTF(modelFile(GARBAGE_BAG_1_MODEL_PATH));
+  const { nodes } = useDracoGltf(modelFile(GARBAGE_BAG_1_MODEL_PATH));
   return (
     <group {...props} dispose={null}>
       <mesh
@@ -156,7 +64,7 @@ export function GarbageBag1(props) {
 }
 
 export function GarbageBags1(props) {
-  const { nodes } = useGLTF(modelFile('/garbage_bags_1.glb'));
+  const { nodes } = useDracoGltf(modelFile('/garbage_bags_1.glb'));
   return (
     <group {...props} dispose={null}>
       <mesh
@@ -173,7 +81,7 @@ export function GarbageBags1(props) {
 }
 
 export function GarbageBags2(props) {
-  const { nodes } = useGLTF(modelFile('/garbage_bags_2.glb'));
+  const { nodes } = useDracoGltf(modelFile('/garbage_bags_2.glb'));
   return (
     <group {...props} dispose={null}>
       <mesh
@@ -189,7 +97,7 @@ export function GarbageBags2(props) {
 }
 
 export function GarbageBagsPile(props) {
-  const { nodes } = useGLTF(modelFile('/garbage_bags_pile.glb'));
+  const { nodes } = useDracoGltf(modelFile('/garbage_bags_pile.glb'));
   return (
     <group {...props} dispose={null}>
       <group scale={0.01}>
@@ -212,8 +120,12 @@ export function GarbageBagsPile(props) {
   );
 }
 
-useGLTF.preload(modelFile(GARBAGE_BAG_MODEL_PATH));
-useGLTF.preload(modelFile(GARBAGE_BAG_1_MODEL_PATH));
-useGLTF.preload(modelFile('/garbage_bags_1.glb'));
-useGLTF.preload(modelFile('/garbage_bags_2.glb'));
-useGLTF.preload(modelFile('/garbage_bags_pile.glb'));
+useDracoGltf.preload(modelFile(GARBAGE_BAG_MODEL_PATH));
+
+useDracoGltf.preload(modelFile(GARBAGE_BAG_1_MODEL_PATH));
+
+useDracoGltf.preload(modelFile('/garbage_bags_1.glb'));
+
+useDracoGltf.preload(modelFile('/garbage_bags_2.glb'));
+
+useDracoGltf.preload(modelFile('/garbage_bags_pile.glb'));

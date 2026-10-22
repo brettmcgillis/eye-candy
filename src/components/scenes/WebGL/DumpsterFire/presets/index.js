@@ -1,46 +1,18 @@
 import { buildSceneCameraControlValues } from '@modules/cameraRig';
+import { BRICK_WALL_POSITION, sceneDefaults } from '@modules/dumpsterFire';
+import { DEFAULT_FIRE_LIGHT_RIG } from '@modules/dumpsterFireRender';
 
 import {
-  BACKGROUND,
   CAMERA,
   DEFAULT_FIRE_AUDIO,
   DEFAULT_SHOT_TUNING_MODE,
-  FOG_RANGE,
   SHOT_TUNING_PRESETS,
   SIDEWALK_GROUND,
 } from '../utils/sceneData';
 
+export { DEFAULT_FIRE_LIGHT_RIG };
+
 export const DEFAULT_PRESET = 'Default';
-
-export const DEFAULT_FIRE_LIGHT_RIG = Object.freeze({
-  enabled: true,
-  color: '#ff7a1f',
-  intensity: 12,
-  intensityJitter: 3.75,
-  secondaryJitter: 1.25,
-  distance: 1.5,
-  decay: 1.4,
-  flickerSpeed: 7,
-  swayX: 0.08,
-  swayY: 0.05,
-  swayZ: 0.08,
-  leftX: 0.15,
-  leftY: 0.75,
-  leftZ: 0,
-  rightX: 1.15,
-  rightY: 0.45,
-  rightZ: 0,
-});
-
-const DEFAULT_SCENE_ENVIRONMENT = Object.freeze({
-  sceneBackgroundColor: BACKGROUND,
-  sceneFogColor: BACKGROUND,
-  sceneFogNear: FOG_RANGE[0],
-  sceneFogFar: FOG_RANGE[1],
-  sceneAmbientIntensity: 0.85,
-  sceneDirectionalIntensity: 1.15,
-  sceneEnvMapIntensity: 1.0,
-});
 
 const DEFAULT_CAMERA_CONTROLS = Object.freeze(
   buildSceneCameraControlValues(CAMERA)
@@ -69,19 +41,6 @@ const DEFAULT_GROUND_CONTROLS = Object.freeze({
   sidewalkPosition: { ...SIDEWALK_GROUND.position },
 });
 
-const DEFAULT_DUMPSTER_CONTROLS = Object.freeze({
-  dumpsterLeftLidRotation: -1.0,
-  dumpsterRightLidRotation: -1.5,
-});
-
-const DEFAULT_BRICK_WALL_CONTROLS = Object.freeze({
-  brickWallEnabled: true,
-  brickWallLength: 25,
-  brickWallHeight: 4.5,
-  brickWallTintColor: '#a35245',
-  brickWallPosition: { x: -4.5, y: 1, z: 3 },
-});
-
 const defaultShotTuning =
   SHOT_TUNING_PRESETS[DEFAULT_SHOT_TUNING_MODE] ||
   SHOT_TUNING_PRESETS.Realistic;
@@ -108,12 +67,11 @@ const DEFAULT_THROW_FX_CONTROLS = Object.freeze({
 });
 
 const DEFAULT_CONTROL_VALUES = Object.freeze({
-  ...DEFAULT_SCENE_ENVIRONMENT,
+  ...sceneDefaults(),
+  brickWallPosition: { ...BRICK_WALL_POSITION },
   ...DEFAULT_CAMERA_CONTROLS,
   ...DEFAULT_PHYSICS_CONTROLS,
   ...DEFAULT_GROUND_CONTROLS,
-  ...DEFAULT_DUMPSTER_CONTROLS,
-  ...DEFAULT_BRICK_WALL_CONTROLS,
   ...DEFAULT_TRASH_BLASTER_CONTROLS,
   ...DEFAULT_THROW_FX_CONTROLS,
   ...DEFAULT_COMBUSTION_CONTROLS,

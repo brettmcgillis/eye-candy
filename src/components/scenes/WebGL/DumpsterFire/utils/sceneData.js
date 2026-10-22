@@ -1,20 +1,29 @@
 import {
-  SHOT_ASSET_OPTIONS,
-  createPropAsset,
-  createTrashAsset,
-} from '@modules/trashCatalog';
+  ASSET_SIZE,
+  DECOR_RUG,
+  DUMPSTER_POSITION,
+  GROUND_Y,
+  SCENE_ROOT_POSITION,
+  layoutTrash,
+} from '@modules/dumpsterFire';
+import { createPropAsset, createTrashAsset } from '@modules/trashCatalog';
+import { SHOT_ASSET_OPTIONS } from '@modules/trashShots';
 import { radians } from '@utils/math';
 
 import ArticulatedDumpster from '../components/ArticulatedDumpster';
 
-export const GROUND_Y = -1;
-export const SCENE_ROOT_POSITION = [-9, GROUND_Y, 1];
-export const FLOOR_COLLIDER_HALF_EXTENTS = [15, 0.25, 9];
-export const FLOOR_COLLIDER_POSITION = [
-  -2.25,
-  GROUND_Y - FLOOR_COLLIDER_HALF_EXTENTS[1],
-  1,
-];
+export {
+  BACKGROUND,
+  DECOR_RUG,
+  FLOOR_COLLIDER_HALF_EXTENTS,
+  FLOOR_COLLIDER_POSITION,
+  FOG_RANGE,
+  GROUND_Y,
+  LIGHTING,
+  SCENE_ROOT_POSITION,
+  SIDEWALK_GROUND,
+  SIDEWALK_TILE_SIZE,
+} from '@modules/dumpsterFire';
 
 const DUMPSTER_CAMERA_DESKTOP_TARGET = [-8, 1, 1];
 const DUMPSTER_CAMERA_MOBILE_TARGET = [-8, 1, 1];
@@ -150,35 +159,11 @@ export const CAMERA = {
   },
 };
 
-export const BACKGROUND = '#e8e8e8';
-export const FOG_RANGE = [18, 34];
-export const SIDEWALK_GROUND = Object.freeze({
-  enabled: true,
-  length: 30,
-  rows: 2,
-  rotationDeg: 0,
-  position: { x: -7, y: GROUND_Y, z: 0.5 },
-});
-// Nominal footprint of a single curb slab (measured from the GLBs), used to
-// size the sidewalk's physics collider to match the visual tiling.
-export const SIDEWALK_TILE_SIZE = Object.freeze({ width: 6.99, depth: 5.9 });
-export const DECOR_RUG = Object.freeze({
-  position: [0, -0.012, 0.55],
-  rotation: [0, Math.PI / 2, 0],
-  scale: 1.2,
-  colliderHalfExtents: [2.35, 0.02, 5.15],
-});
 export const DECOR_RUG_COLLIDER_POSITION = [
   SCENE_ROOT_POSITION[0] + DECOR_RUG.position[0],
   GROUND_Y + 0.02,
   SCENE_ROOT_POSITION[2] + DECOR_RUG.position[2],
 ];
-export const LIGHTING = {
-  ambientIntensity: 0.85,
-  directionalPosition: [8, 12, 10],
-  directionalIntensity: 1.15,
-};
-
 export const POINTER_TAP_THRESHOLD = 8;
 export const SHOT_SPAWN_OFFSET = 0.1;
 export const SHOT_SPEED = 20;
@@ -254,305 +239,46 @@ export const ASSET_GRID_POSITION = [4.75, GROUND_Y, 2.2];
 export const ASSET_GRID_LABEL_HEIGHT = 1.6;
 
 const EXPECTED_GRID_ASSET_SIZE_METERS = {
+  ...ASSET_SIZE,
   dumpster: 2.4,
-  'garbage-bags-pile': 1.25,
-  'cardboard-leaning-2': 1.1,
-  'cardboard-flat': 1.05,
-  'cardboard-flat-2': 1.05,
-  'garbage-bags-1': 0.95,
-  'garbage-bags-2': 0.95,
-  'garbage-bag': 0.85,
-  'garbage-bag-1': 0.85,
-  'cardboard-box': 0.75,
-  'cardboard-box-5': 0.74,
-  'cardboard-box-4': 0.72,
-  'cardboard-box-2': 0.68,
-  'cardboard-box-3': 0.66,
-  'cardboard-box-1': 0.64,
-  'newspaper-1': 0.58,
-  'newspaper-2': 0.58,
-  'newspaper-3': 0.58,
-  'newspaper-stack': 0.58,
-  'beer-case-1': 0.45,
-  'beer-case-2': 0.45,
-  bucket: 0.36,
-  litter: 0.34,
-  'whiskey-bottle': 0.12,
-  'litter-2': 0.28,
-  'beer-bottle-1': 0.24,
-  'beer-bottle-2': 0.24,
-  'vhs-tape': 0.19,
-  'starbucks-cup': 0.17,
   'happy-meal': 0.16,
   'mc-cup': 0.14,
-  catfood: 0.2,
-  'soda-can': 0.13,
-  'cigarette-butts': 0.12,
-  snickers: 0.11,
-  'cassette-tape-1': 0.1,
-  'cassette-tape-2': 0.1,
-  'cassette-tape-3': 0.1,
-  'floppy-disk': 0.09,
-  'apple-core': 0.08,
 };
+const GRID_SHOWCASE_Y_OFFSETS = { 'cigarette-butts': 0.02 };
 
-const BASE_FIXED_SCENE_ITEMS = [
-  createPropAsset('dumpster', {
-    position: [0, 0.04, 0],
-    rotation: [0, 0, 0],
-    PhysicsComponent: ArticulatedDumpster,
-    componentProps: {
-      rightLidRotation: -radians(521),
-      leftLidRotation: -radians(521),
-    },
-  }),
-  createPropAsset('persian-rug', {
-    position: DECOR_RUG.position,
-    rotation: DECOR_RUG.rotation,
-    scale: DECOR_RUG.scale,
-  }),
-  createPropAsset('garbage-bags-pile', {
-    position: [0, 1.04, 0.1],
-    rotation: [0, 0, 0],
-  }),
-  createPropAsset('garbage-bags-2', {
-    position: [-1, 2.04, 0.1],
-    rotation: [0, 0, 0],
-  }),
-  createPropAsset('litter', {
-    position: [1, 0.085, 1],
-    rotation: [0, 0, 0],
-  }),
-  createPropAsset('litter-2', {
-    position: [0, 0.085, 0],
-    rotation: [0, 0, 0],
-  }),
-  createPropAsset('litter', {
-    position: [-2, 0.085, 0.8],
-    rotation: [0, 0, 0],
-  }),
-  createPropAsset('cardboard-flat', {
-    position: [-2, 0.08, 1],
-    rotation: [0, 90, 0],
-  }),
-  createPropAsset('newspaper-1', {
-    position: [-1, 0.04, 1.4],
-    rotation: [0, 90, 0],
-  }),
-  createPropAsset('vhs-tape', {
-    position: [0.8, 0.07, 1.45],
-    rotation: [Math.PI / 2, Math.PI, -Math.PI / 9],
-  }),
-  createPropAsset('cassette-tape-1', {
-    position: [-0.2, 0.07, 1.6],
-    rotation: [Math.PI / 2, Math.PI, 0],
-  }),
-  createPropAsset('cassette-tape-2', {
-    position: [1.85, 0.07, 1.9],
-    rotation: [Math.PI / 2, -Math.PI, 0],
-  }),
-  createPropAsset('cassette-tape-3', {
-    position: [4.1, 0.07, 1.45],
-    rotation: [Math.PI / 2.2, Math.PI, 0],
-  }),
-  createPropAsset('floppy-disk', {
-    position: [-1.35, 0.07, 2.05],
-    rotation: [Math.PI / 2, -Math.PI, Math.PI / 7],
-  }),
-  createPropAsset('litter-2', {
-    position: [-3.5, 0.085, 1],
-    rotation: [0, -Math.PI / 3, 0],
-  }),
-  createPropAsset('garbage-bags-1', {
-    position: [-2.7, 0.04, 0],
-    rotation: [0, 90, 0],
-  }),
-  createPropAsset('cardboard-box', {
-    position: [-2.2, 0.42, 1.2],
-    rotation: [0, 90, 0],
-  }),
-  createPropAsset('cardboard-box-1', {
-    position: [-3.2, 0.19, 1.2],
-    rotation: [0, Math.PI / 3, 0],
-  }),
-  createPropAsset('cardboard-box-1', {
-    position: [-3.75, 0.19, 1.2],
-    rotation: [0, Math.PI / 1.7, 0],
-  }),
-  createPropAsset('cardboard-box-1', {
-    position: [-3.45, 0.49, 1.2],
-    rotation: [0, Math.PI / 2, 0],
-  }),
-  createPropAsset('newspaper-2', {
-    position: [-5, 0.04, 2],
-    rotation: [0, 90, 0],
-  }),
-  createPropAsset('cigarette-butts', {
-    position: [0, 0.04, 1.7],
-    rotation: [0, -Math.PI / 1.5, 0],
-    showcaseYOffset: 0.02,
-  }),
-  createPropAsset('cigarette-butts', {
-    position: [0.7, 0.04, 1.2],
-    rotation: [0, Math.PI / 2.5, 0],
-  }),
-  createPropAsset('newspaper-stack', {
-    position: [-1.5, 0.17, 1.25],
-    rotation: [0, -Math.PI / 1.5, 0],
-  }),
-  createPropAsset('cardboard-flat-2', {
-    position: [2.4, 0.1, 0.75],
-    rotation: [0, 0, 0],
-  }),
-  createPropAsset('cardboard-box-3', {
-    position: [2, 0.29, 1.55],
-    rotation: [0, -Math.PI / 2, 0],
-  }),
-  createPropAsset('cardboard-box-1', {
-    position: [1.4, 0.2, 1.3],
-    rotation: [0, Math.PI / 3, 0],
-  }),
-  createPropAsset('cardboard-leaning-2', {
-    position: [2.17, 0.29, 0],
-    rotation: [0, Math.PI / 2, 0],
-  }),
-  createPropAsset('litter', {
-    position: [3, 0.085, 0.8],
-    rotation: [0, -Math.PI / 4, 0],
-  }),
-  createPropAsset('cigarette-butts', {
-    position: [3, 0.04, 1.6],
-    rotation: [0, Math.PI, 0],
-  }),
-  createPropAsset('garbage-bags-2', {
-    position: [2.5, 0.04, 0],
-    rotation: [0, -Math.PI / 1.3, 0],
-    scale: 1,
-  }),
-  createPropAsset('cardboard-box-2', {
-    position: [3.1, 0.24, 0.35],
-    rotation: [0, Math.PI / 2, 0],
-  }),
-  createPropAsset('cardboard-box', {
-    position: [3.1, 0.44, -0.75],
-    rotation: [0, Math.PI / 7, 0],
-  }),
-  createPropAsset('newspaper-stack', {
-    position: [2.6, 0.17, 1.25],
-    rotation: [0, -Math.PI / 1.5, 0],
-  }),
-  createPropAsset('newspaper-3', {
-    position: [4.5, 0.04, 1.2],
-    rotation: [0, 90, 0],
-  }),
-];
+export { SHOT_ASSET_OPTIONS, getRandomShotAsset } from '@modules/trashShots';
 
-export { SHOT_ASSET_OPTIONS, getRandomShotAsset } from '@modules/trashCatalog';
+// The dumpster, the rug and the generation's litter (@modules/dumpsterFire's
+// layoutTrash) as rigid-body items.
+export function buildSceneItems(config) {
+  const { dynamic, fixed } = layoutTrash(config);
+  return {
+    dynamic: dynamic.map(({ id, key, position, rotation }) =>
+      createTrashAsset(key, { id, position, rotation })
+    ),
+    fixed: [
+      createPropAsset('dumpster', {
+        position: DUMPSTER_POSITION,
+        rotation: [0, 0, 0],
+        PhysicsComponent: ArticulatedDumpster,
+        componentProps: {
+          rightLidRotation: -radians(521),
+          leftLidRotation: -radians(521),
+        },
+      }),
+      createPropAsset('persian-rug', {
+        position: DECOR_RUG.position,
+        rotation: DECOR_RUG.rotation,
+        scale: DECOR_RUG.scale,
+      }),
+      ...fixed.map(({ key, position, rotation }) =>
+        createPropAsset(key, { position, rotation })
+      ),
+    ],
+  };
+}
 
-export const FIXED_SCENE_ITEMS = BASE_FIXED_SCENE_ITEMS;
-
-export const DYNAMIC_SCENE_ITEMS = [
-  createTrashAsset('garbage-bag', {
-    id: 'right-garbage-bag',
-    position: [-4.0, 0, 0.2],
-    rotation: [0, Math.PI / 1.5, 0],
-  }),
-  createTrashAsset('garbage-bag-1', {
-    id: 'left-garbage-bag',
-    position: [4, 0, 0.25],
-    rotation: [0, 0, 0],
-  }),
-  createTrashAsset('starbucks-cup', {
-    id: 'front-right-cup',
-    position: [-1.1, 0.02, 1.95],
-    rotation: [Math.PI / 2, Math.PI / 5, 0],
-  }),
-  createTrashAsset('starbucks-cup', {
-    id: 'left-side-cup',
-    position: [3.55, 0.02, 1.05],
-    rotation: [Math.PI / 2, -Math.PI / 3, 0],
-  }),
-  createTrashAsset('apple-core', {
-    id: 'front-apple-core',
-    position: [0.15, 0.03, 2.05],
-    rotation: [Math.PI / 5, -Math.PI / 6, Math.PI / 7],
-  }),
-  createTrashAsset('apple-core', {
-    id: 'left-apple-core',
-    position: [3.4, 0.03, 1.85],
-    rotation: [Math.PI / 6, Math.PI / 4, -Math.PI / 5],
-  }),
-  createTrashAsset('cardboard-box-4', {
-    id: 'front-left-box-4',
-    position: [-2.4, 0.02, 2.2],
-    rotation: [0, Math.PI / 7, 0],
-  }),
-  createTrashAsset('cardboard-box-5', {
-    id: 'front-right-box-5',
-    position: [1.85, 0.02, 2.1],
-    rotation: [0, -Math.PI / 6, 0],
-  }),
-  createTrashAsset('beer-case-1', {
-    id: 'right-side-beer-case-1',
-    position: [-5.1, 0.02, 0.95],
-    rotation: [0, Math.PI / 9, 0],
-  }),
-  createTrashAsset('beer-case-2', {
-    id: 'left-side-beer-case-2',
-    position: [4.8, 0.02, -0.2],
-    rotation: [0, -Math.PI / 4, 0],
-  }),
-  createTrashAsset('whiskey-bottle', {
-    id: 'front-whiskey-bottle',
-    position: [-0.2, 0.04, 2.5],
-    rotation: [0, Math.PI / 3, Math.PI / 2],
-  }),
-  createTrashAsset('beer-bottle-1', {
-    id: 'right-beer-bottle-1',
-    position: [-4.55, 0.03, 1.55],
-    rotation: [Math.PI / 10, 0, Math.PI / 2],
-  }),
-  createTrashAsset('beer-bottle-2', {
-    id: 'left-beer-bottle-2',
-    position: [4.15, 0.03, 1.55],
-    rotation: [Math.PI / 12, 0, -Math.PI / 2],
-  }),
-  createTrashAsset('soda-can', {
-    id: 'front-left-soda-can',
-    position: [-3.05, 0.03, 2.7],
-    rotation: [1, 1, 1],
-  }),
-  createTrashAsset('soda-can', {
-    id: 'front-right-soda-can',
-    position: [2.75, 0.03, 2.65],
-    rotation: [2, -2, 2],
-  }),
-  createTrashAsset('snickers', {
-    id: 'right-side-snickers',
-    position: [-5.35, 0.03, 1.85],
-    rotation: [0, Math.PI / 8, 0],
-  }),
-  createTrashAsset('snickers', {
-    id: 'left-side-snickers',
-    position: [4.85, 0.03, 2.15],
-    rotation: [0, -Math.PI / 7, 0],
-  }),
-  createTrashAsset('bucket', {
-    id: 'front-bucket',
-    position: [0.95, 0.4, 2.35],
-    rotation: [0, -Math.PI / 8, 0],
-  }),
-  createTrashAsset('catfood', {
-    id: 'front-left-catfood',
-    position: [-1.7, 0.04, 2.45],
-    rotation: [0, Math.PI / 5, 0],
-  }),
-  createTrashAsset('catfood', {
-    id: 'right-side-catfood',
-    position: [-4.75, 0.04, 1.2],
-    rotation: [0, -Math.PI / 6, 0],
-  }),
-];
+const AUTHORED_ITEMS = buildSceneItems({ trashLayout: 'authored' });
 
 export const INSTANCED_TRASH_POOL_META = SHOT_ASSET_OPTIONS.reduce(
   (meta, asset, assetIndex) => ({
@@ -590,12 +316,13 @@ function sortGridAssetsByExpectedSize(assets) {
 
 export const ASSET_GRID_OPTIONS = sortGridAssetsByExpectedSize(
   collectUniqueGridAssets(
-    FIXED_SCENE_ITEMS,
-    DYNAMIC_SCENE_ITEMS,
+    AUTHORED_ITEMS.fixed,
+    AUTHORED_ITEMS.dynamic,
     SHOT_ASSET_OPTIONS
   ).map((asset) => ({
     ...asset,
-    showcaseYOffset: asset.showcaseYOffset ?? 0,
+    showcaseYOffset:
+      asset.showcaseYOffset ?? GRID_SHOWCASE_Y_OFFSETS[asset.key] ?? 0,
     expectedSizeMeters: EXPECTED_GRID_ASSET_SIZE_METERS[asset.key],
   }))
 );

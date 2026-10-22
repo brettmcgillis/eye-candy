@@ -25,6 +25,8 @@ import {
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
+import radialGradientTexture from '@utils/radialGradientTexture';
+
 import {
   DEFAULT_FIRE_AND_SMOKE_CONFIG,
   DEFAULT_FIRE_AND_SMOKE_CONTROL_POINTS,
@@ -151,35 +153,17 @@ function sampleCurveFrame(curveData, controlPoints, t, out) {
 }
 
 function createParticleTexture() {
-  const size = 128;
-  const canvas = document.createElement('canvas');
-  canvas.width = size;
-  canvas.height = size;
-  const context = canvas.getContext('2d');
-
-  if (!context) {
-    return new THREE.Texture();
-  }
-
-  const gradient = context.createRadialGradient(
-    size * 0.5,
-    size * 0.5,
-    0,
-    size * 0.5,
-    size * 0.5,
-    size * 0.48
-  );
-  gradient.addColorStop(0, 'rgba(255,255,255,1)');
-  gradient.addColorStop(0.35, 'rgba(255,255,255,0.75)');
-  gradient.addColorStop(0.7, 'rgba(255,255,255,0.22)');
-  gradient.addColorStop(1, 'rgba(255,255,255,0)');
-
-  context.clearRect(0, 0, size, size);
-  context.fillStyle = gradient;
-  context.fillRect(0, 0, size, size);
-
-  const texture = new THREE.CanvasTexture(canvas);
-  texture.needsUpdate = true;
+  const texture = radialGradientTexture(128, [
+    {
+      r: 0.48,
+      stops: [
+        [0, 1],
+        [0.35, 0.75],
+        [0.7, 0.22],
+        [1, 0],
+      ],
+    },
+  ]);
   texture.colorSpace = THREE.SRGBColorSpace;
 
   return texture;

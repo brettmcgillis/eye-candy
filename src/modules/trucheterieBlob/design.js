@@ -10,7 +10,9 @@ import { hashSeed } from './rng';
 export const ALT_PAIRING = 16;
 export const SWAPPED_ORDER = 32;
 export const PINNED_CHOICES = 64;
-const MASK_BITS = 127;
+// 128 draws a cell with one pair of opposite sides open as straight lanes (plus a stub on a third open side).
+export const STRAIGHT = 128;
+const MASK_BITS = 255;
 const MAX_CELL = 255;
 const COORD_LIMIT = 32767;
 const FRAME_MARGIN = 1;
@@ -188,8 +190,35 @@ function canonicalConnections(connectors, mask) {
   return resolveConnections(connectors, () => (mask & ALT_PAIRING ? 1 : 0));
 }
 
+// The axis of a cell's straight lanes (0 top-bottom, 1 left-right), or null: one opposite pair open, and at most one more side.
+function straightAxis(mask) {
+  const connectors = connectorsOf(mask);
+  const open = connectors.filter(Boolean).length;
+  if (open < 2 || open > 3) return null;
+  if (connectors[0] && connectors[2]) return 0;
+  if (connectors[1] && connectors[3]) return 1;
+  return null;
+}
+
+// A T-junction's stub is drawn first, so the straight lanes stop against it.
+function straightConnections(mask) {
+  const axis = straightAxis(mask);
+  if (axis === null || !(mask & STRAIGHT)) return null;
+  const branch = [0, 1, 2, 3].find(
+    (side) => hasSide(mask, side) && side % 2 !== axis
+  );
+  return branch === undefined
+    ? [[3, axis]]
+    : [
+        [1, branch],
+        [3, axis],
+      ];
+}
+
 // Unpinned cells are seeded by position so editing one never reshuffles another.
 function connectionsFor({ column, mask, row, size }) {
+  const straight = straightConnections(mask);
+  if (straight) return straight;
   const connectors = connectorsOf(mask);
   if (mask & PINNED_CHOICES) {
     const connections = canonicalConnections(connectors, mask);
@@ -422,6 +451,9 @@ export function eraseCell(design, index) {
 }
 
 function choiceBits(connectors, connections) {
+  if (connections.some(([type]) => type === 3)) {
+    return PINNED_CHOICES | STRAIGHT;
+  }
   const alt =
     connections.some(([type, edge]) => type === 2 && edge === 1) &&
     connectors.every(Boolean);
@@ -467,6 +499,16 @@ function toggleChoice(design, index, bit) {
 export function flipDiagonal(design, index) {
   if (index < 0 || !canFlipDiagonal(design, index)) return design;
   return toggleChoice(design, index, ALT_PAIRING);
+}
+
+export const canStraighten = (design, index) =>
+  straightAxis(design.cells[index].mask) !== null;
+
+export function toggleStraight(design, index) {
+  if (index < 0 || !canStraighten(design, index)) return design;
+  const cells = [...design.cells];
+  cells[index] = { ...cells[index], mask: cells[index].mask ^ STRAIGHT };
+  return keepIfClear(design, { ...design, cells });
 }
 
 export function swapOrder(design, index) {
@@ -592,6 +634,7 @@ const mapSides = (mask, map) =>
 function mapConnection([type, edge], map) {
   if (type === 0) return [0, 0];
   if (type === 1) return [1, map[edge]];
+  if (type === 3) return [3, map[edge] % 2];
   const a = map[edge];
   const b = map[(edge + 3) % 4];
   return [2, (b + 1) % 4 === a ? a : b];
@@ -622,7 +665,10 @@ function balanceOnAxis(cell, axis) {
     });
   }
   const alt = axis === 'antidiagonal' ? ALT_PAIRING : 0;
-  return { ...cell, mask: sides | PINNED_CHOICES | alt };
+  return {
+    ...cell,
+    mask: sides | PINNED_CHOICES | alt | (cell.mask & STRAIGHT),
+  };
 }
 
 // One half of a seeded field mirrored onto the other; cells straddling the axis are dropped unless centred on it.
@@ -676,6 +722,21 @@ export function openIrregular(design, seed) {
     return { ...cell, mask };
   });
   return normalizeCells(next, cells);
+}
+
+// A seeded field's straight cells: each cell that can take them does on a position-seeded chance.
+export function openStraights(design, chance, seed) {
+  if (!(chance > 0)) return design;
+  return {
+    ...design,
+    cells: design.cells.map((cell) => {
+      if (straightAxis(cell.mask) === null) return cell;
+      const roll = mulberry32(
+        hashSeed(`${seed}:straight:${cell.column},${cell.row}`)
+      )();
+      return roll < chance ? { ...cell, mask: cell.mask | STRAIGHT } : cell;
+    }),
+  };
 }
 
 export function fieldFromDesign(

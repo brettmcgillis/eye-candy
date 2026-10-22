@@ -1,7 +1,11 @@
 import { familySector, laneRadii } from '@modules/trucheterieBlob';
 
 import buildChains from './chains';
-import buildStrands, { SPAN, hiddenArcs, visibleIntervals } from './strands';
+import buildStrands, {
+  familyWedge,
+  hiddenArcs,
+  visibleIntervals,
+} from './strands';
 
 const TAU = Math.PI * 2;
 const BEAD_COLUMNS = 24;
@@ -29,8 +33,7 @@ function lanePieces(field, pathDiv) {
       ];
       const sector = familySector(cell, type, edge);
       const center = [sector.x, sector.y];
-      const start = edge * (Math.PI / 2);
-      const span = SPAN[type];
+      const { span, start } = familyWedge(cell, type, edge);
       laneRadii(type, cell.size, pathDiv).forEach(([r0, r1], index) => {
         if (r0 < 1e-9 && r1 - r0 < 0.75 / pathDiv && type !== 2) return;
         const hidden = covers.flatMap((occluder) =>

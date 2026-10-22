@@ -36,6 +36,7 @@ export default function DumpsterFire() {
     sidewalkGroundConfig,
     brickWallConfig,
     dumpsterConfig,
+    generation,
     fireLightRig,
     fireAudioConfig,
     trashShotConfig,
@@ -67,6 +68,7 @@ export default function DumpsterFire() {
       <PhysicsScene
         brickWallConfig={brickWallConfig}
         dumpsterConfig={dumpsterConfig}
+        generation={generation}
         sidewalkGroundConfig={sidewalkGroundConfig}
         debug={physicsDebug}
         onTrashCollision={playCollision}

@@ -6,6 +6,7 @@ export {
   alignSymmetry,
   canFlipDiagonal,
   canPlace,
+  canStraighten,
   canSwapOrder,
   cellConnections,
   cellIndexAt,
@@ -28,6 +29,7 @@ export {
   isSideOpen,
   moveCells,
   openIrregular,
+  openStraights,
   normalizeDesign,
   occupancy,
   PINNED_CHOICES,
@@ -39,15 +41,19 @@ export {
   swapOrder,
   symmetricDesign,
   symmetryAxis,
+  STRAIGHT,
   SWAPPED_ORDER,
   toggleSide,
+  toggleStraight,
 } from './design';
 export {
   default as buildLaneChannels,
   familySector,
+  familySpan,
   isWeaveCell,
   laneCount,
   laneRadii,
+  straightFrame,
   wedgeParam,
 } from './laneChannels';
 export { canvasBounds, default as fieldBounds } from './bounds';
@@ -55,8 +61,10 @@ export { default as renderBlobSvg } from './renderSvg';
 export { createRng, hashSeed, randomSeed, seedFor } from './rng';
 export {
   IRREGULAR_ROLL_CHANCE,
+  STRAIGHTS_ROLL_CHANCE,
   SYMMETRY_CHANCE,
   default as rollBlobConfig,
+  rollStraights,
   rollableKeys,
 } from './rollConfig';
 export { default as mulberry32 } from './mulberry32';

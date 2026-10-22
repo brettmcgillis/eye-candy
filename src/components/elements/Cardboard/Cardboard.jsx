@@ -1,11 +1,10 @@
 import React from 'react';
 
-import { useGLTF } from '@react-three/drei';
-
+import useDracoGltf from '@hooks/useDracoGltf';
 import { modelFile } from '@utils/appUtils';
 
 export function CardboardBox(props) {
-  const { nodes, materials } = useGLTF(modelFile('/cardboard_box.glb'));
+  const { nodes, materials } = useDracoGltf(modelFile('/cardboard_box.glb'));
   return (
     <group {...props} dispose={null}>
       <mesh
@@ -19,7 +18,7 @@ export function CardboardBox(props) {
 }
 
 export function CardboardFlat(props) {
-  const { nodes, materials } = useGLTF(modelFile('/cardboard_flat.glb'));
+  const { nodes, materials } = useDracoGltf(modelFile('/cardboard_flat.glb'));
   return (
     <group {...props} dispose={null}>
       <mesh
@@ -33,7 +32,7 @@ export function CardboardFlat(props) {
 }
 
 export function CardboardFlat2(props) {
-  const { nodes, materials } = useGLTF(modelFile('/cardboard_flat2.glb'));
+  const { nodes, materials } = useDracoGltf(modelFile('/cardboard_flat2.glb'));
   return (
     <group {...props} dispose={null}>
       <mesh
@@ -47,7 +46,9 @@ export function CardboardFlat2(props) {
 }
 
 export function CardboardLeaning(props) {
-  const { nodes, materials } = useGLTF(modelFile('/cardboard_leaning.glb'));
+  const { nodes, materials } = useDracoGltf(
+    modelFile('/cardboard_leaning.glb')
+  );
   return (
     <group {...props} dispose={null}>
       <mesh
@@ -61,7 +62,9 @@ export function CardboardLeaning(props) {
 }
 
 export function CardboardLeaning2(props) {
-  const { nodes, materials } = useGLTF(modelFile('/cardboard_leaning2.glb'));
+  const { nodes, materials } = useDracoGltf(
+    modelFile('/cardboard_leaning2.glb')
+  );
   return (
     <group {...props} dispose={null}>
       <mesh
@@ -74,8 +77,8 @@ export function CardboardLeaning2(props) {
   );
 }
 
-useGLTF.preload(modelFile('/cardboard_box.glb'));
-useGLTF.preload(modelFile('/cardboard_flat.glb'));
-useGLTF.preload(modelFile('/cardboard_flat2.glb'));
-useGLTF.preload(modelFile('/cardboard_leaning.glb'));
-useGLTF.preload(modelFile('/cardboard_leaning2.glb'));
+useDracoGltf.preload(modelFile('/cardboard_box.glb'));
+useDracoGltf.preload(modelFile('/cardboard_flat.glb'));
+useDracoGltf.preload(modelFile('/cardboard_flat2.glb'));
+useDracoGltf.preload(modelFile('/cardboard_leaning.glb'));
+useDracoGltf.preload(modelFile('/cardboard_leaning2.glb'));

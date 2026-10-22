@@ -1,11 +1,10 @@
 import React from 'react';
 
-import { useGLTF } from '@react-three/drei';
-
+import useDracoGltf from '@hooks/useDracoGltf';
 import { modelFile } from '@utils/appUtils';
 
 export function Litter(props) {
-  const { nodes, materials } = useGLTF(modelFile('/litter.glb'));
+  const { nodes, materials } = useDracoGltf(modelFile('/litter.glb'));
   return (
     <group {...props} dispose={null}>
       <mesh
@@ -25,7 +24,7 @@ export function Litter(props) {
 }
 
 export function Litter2(props) {
-  const { nodes, materials } = useGLTF(modelFile('/litter2.glb'));
+  const { nodes, materials } = useDracoGltf(modelFile('/litter2.glb'));
   return (
     <group {...props} dispose={null}>
       <mesh
@@ -38,5 +37,5 @@ export function Litter2(props) {
   );
 }
 
-useGLTF.preload(modelFile('/litter.glb'));
-useGLTF.preload(modelFile('/litter2.glb'));
+useDracoGltf.preload(modelFile('/litter.glb'));
+useDracoGltf.preload(modelFile('/litter2.glb'));

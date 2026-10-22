@@ -1,6 +1,7 @@
 import {
   canFlipDiagonal,
   canPlace,
+  canStraighten,
   canSwapOrder,
   cellConnections,
   cellIndexAt,
@@ -15,6 +16,7 @@ import {
   setSide,
   sideCascade,
   swapOrder,
+  toggleStraight,
 } from '@modules/trucheterieBlob';
 
 export const DESIGN_TOOLS = [
@@ -24,6 +26,7 @@ export const DESIGN_TOOLS = [
   'connect',
   'diagonal',
   'order',
+  'straight',
   'move',
   'duplicate',
 ];
@@ -33,6 +36,7 @@ export const isDragTool = (tool) => tool === 'move' || tool === 'duplicate';
 const CELL_TOOLS = {
   diagonal: { allowed: canFlipDiagonal, apply: flipDiagonal, marks: 2 },
   order: { allowed: canSwapOrder, apply: swapOrder, marks: 1 },
+  straight: { allowed: canStraighten, apply: toggleStraight, marks: 0 },
 };
 
 const cellUnder = (design, x, y) =>

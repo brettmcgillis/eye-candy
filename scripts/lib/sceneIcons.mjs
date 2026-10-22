@@ -20,6 +20,7 @@ export const OVERLAY_TOOLS = {
   'birds-arent-real': { module: 'birdsArentReal', scene: 'BirdsArentReal' },
   'block-party': { module: 'blockParty', scene: 'BlockParty' },
   brutalist: { module: 'brutalist', scene: 'Brutalist' },
+  'dumpster-fire': { module: 'dumpsterFire', scene: 'DumpsterFire' },
   'exhibit-a': { module: 'exhibitA', scene: 'ExhibitA' },
   flora: { module: 'flora', scene: 'Flora' },
   'fractal-automata': { module: 'fractalAutomata', scene: 'FractalAutomata' },

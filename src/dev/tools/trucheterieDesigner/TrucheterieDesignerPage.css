@@ -1,17 +1,17 @@
 .tdz-tools .rw-segmented {
   grid-auto-flow: row;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
-.tdz-tools .rw-segmented__button:nth-child(4n) {
+.tdz-tools .rw-segmented__button:nth-child(3n) {
   border-right: 0;
 }
 
-.tdz-tools .rw-segmented__button:last-child:not(:nth-child(4n)) {
+.tdz-tools .rw-segmented__button:last-child:not(:nth-child(3n)) {
   border-right: 1px solid var(--dev-border-strong);
 }
 
-.tdz-tools .rw-segmented__button:nth-child(-n + 4) {
+.tdz-tools .rw-segmented__button:nth-last-child(n + 4) {
   border-bottom: 1px solid var(--dev-border-strong);
 }
 

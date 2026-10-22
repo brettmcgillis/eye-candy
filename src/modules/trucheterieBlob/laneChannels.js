@@ -41,9 +41,38 @@ function sideGeometry(cell, side) {
 const intervalKey = (vertical, line, start) =>
   `${vertical ? 'V' : 'H'}:${line}:${start}`;
 
+// A straight family (type 3; edge 0 runs top-bottom, 1 left-right) is
+// modelled on the CPU as arcs about a centre so far off that they are
+// straight to within ~1e-5 of a cell: lanes, SVG and the 3D strands keep
+// their arc maths, and 3D joins ends by lattice point anyway. Its lanes are
+// indexed from the left (or top) edge, like a corner's from its pivot.
+const STRAIGHT_REACH = 1e5;
+
+export function straightFrame({ column, row, size }, edge) {
+  const reach = STRAIGHT_REACH * Math.max(1, size);
+  const half = size / 2;
+  const alpha = Math.asin(half / (reach + half));
+  if (edge === 0) {
+    return {
+      reach,
+      span: alpha * 2,
+      start: -alpha,
+      x: column - reach,
+      y: row + half,
+    };
+  }
+  return {
+    reach,
+    span: alpha * 2,
+    start: Math.PI / 2 - alpha,
+    x: column + half,
+    y: row - reach,
+  };
+}
+
 export function laneCount(type, size, pathDiv) {
   const span = size * pathDiv;
-  if (type === 2) return span;
+  if (type === 2 || type === 3) return span;
   return Math.floor(span / 2) + (span % 2 === 1 ? 1 : 0);
 }
 
@@ -57,6 +86,10 @@ export function familySector(cell, type, edge) {
   if (type === 2) {
     const [dc, dr] = CORNER_OFFSET[edge];
     return { rMax: size, x: column + dc * size, y: row + dr * size };
+  }
+  if (type === 3) {
+    const { reach, x, y } = straightFrame(cell, edge);
+    return { rMax: reach + size, x, y };
   }
   const half = size / 2;
   const mid = [
@@ -72,10 +105,11 @@ export function familySector(cell, type, edge) {
 // two of the family's arcs, matching blobArcs.js's lane indexing.
 export function laneRadii(type, size, pathDiv) {
   const bands = Math.round(size * pathDiv);
-  if (type === 2) {
+  const base = type === 3 ? straightFrame({ size }, 0).reach : 0;
+  if (type === 2 || type === 3) {
     return Array.from({ length: bands }, (_, j) => [
-      j / pathDiv,
-      (j + 1) / pathDiv,
+      base + j / pathDiv,
+      base + (j + 1) / pathDiv,
     ]);
   }
   const odd = bands % 2 === 1 ? 0.5 : 0;
@@ -87,6 +121,9 @@ export function laneRadii(type, size, pathDiv) {
 }
 
 const WEDGE_ANGLE = [Math.PI * 2, Math.PI, Math.PI / 2];
+
+export const familySpan = (cell, type, edge) =>
+  type === 3 ? straightFrame(cell, edge).span : WEDGE_ANGLE[type];
 
 // Two corner families on opposite corners: each owns two sides outright, so
 // the second can pass under the first instead of stopping against it.
@@ -103,6 +140,11 @@ export function isWeaveCell(connections) {
 // parameter blobArcs.js's `along` gives a pixel: measured in the family's
 // canonical frame, from the wedge's first edge towards its second.
 export function wedgeParam(cell, type, edge, px, py) {
+  if (type === 3) {
+    const { span, start, x, y } = straightFrame(cell, edge);
+    const u = (Math.atan2(py - y, px - x) - start) / span;
+    return Math.min(1, Math.max(0, u));
+  }
   const { x, y } = familySector(cell, type, edge);
   const phi = -edge * (Math.PI / 2);
   const c = Math.cos(phi);
@@ -156,6 +198,16 @@ function laneIntervals(cell, type, edge, pathDiv, occluders) {
       });
     }
   };
+
+  if (type === 3) {
+    const sides = edge === 0 ? [0, 2] : [3, 1];
+    const from = (edge === 0 ? column : row) * pathDiv;
+    sides.forEach((side) => {
+      const { line, vertical } = sideGeometry(cell, side);
+      for (let j = 0; j < count; j += 1) push(vertical, line, from + j, j);
+    });
+    return out;
+  }
 
   if (type === 2) {
     const [dc, dr] = CORNER_OFFSET[edge];
@@ -298,7 +350,8 @@ export default function buildLaneChannels(
         used[id] = 1;
         laneOf[id] = j;
         depthOf[id] = count > 1 ? j / (count - 1) : 0;
-        lengthOf[id] = ((radii[j][0] + radii[j][1]) / 2) * WEDGE_ANGLE[type];
+        lengthOf[id] =
+          ((radii[j][0] + radii[j][1]) / 2) * familySpan(cell, type, edge);
       }
       const joins = laneIntervals(
         cell,

@@ -1,15 +1,14 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 
 import { CuboidCollider, Physics, RigidBody } from '@react-three/rapier';
 
 import {
   DECOR_RUG,
   DECOR_RUG_COLLIDER_POSITION,
-  DYNAMIC_SCENE_ITEMS,
-  FIXED_SCENE_ITEMS,
   GROUND_Y,
   SCENE_ROOT_POSITION,
   SIDEWALK_TILE_SIZE,
+  buildSceneItems,
 } from '../utils/sceneData';
 import { getSceneItemKey } from '../utils/sceneUtils';
 import DumpsterBrickWall from './DumpsterBrickWall';
@@ -52,10 +51,26 @@ function getSidewalkColliderShape(config) {
 function SceneComposition({
   brickWallConfig,
   dumpsterConfig,
+  generation,
   onTrashCollision,
   igniteOnHit,
   onIgnite,
 }) {
+  const items = useMemo(
+    () => buildSceneItems(generation),
+    [
+      generation.dumpsterContents,
+      generation.trashBags,
+      generation.trashFixed,
+      generation.trashHuddle,
+      generation.trashLayout,
+      generation.trashLoose,
+      generation.trashSeed,
+      generation.trashSpread,
+      generation.trashStacks,
+    ]
+  );
+
   return (
     <group position={SCENE_ROOT_POSITION}>
       <DumpsterBrickWall
@@ -63,7 +78,7 @@ function SceneComposition({
         onTrashCollision={onTrashCollision}
       />
 
-      {FIXED_SCENE_ITEMS.map((item) => {
+      {items.fixed.map((item) => {
         const sceneItem =
           item.key === 'dumpster'
             ? {
@@ -102,7 +117,7 @@ function SceneComposition({
         );
       })}
 
-      {DYNAMIC_SCENE_ITEMS.map((item) => (
+      {items.dynamic.map((item) => (
         <DynamicSceneAsset
           key={getSceneItemKey(item)}
           item={item}
@@ -116,6 +131,7 @@ function SceneComposition({
 const PhysicsScene = React.memo(function PhysicsScene({
   brickWallConfig,
   dumpsterConfig,
+  generation,
   sidewalkGroundConfig,
   debug = true,
   onTrashCollision,
@@ -155,6 +171,7 @@ const PhysicsScene = React.memo(function PhysicsScene({
       <SceneComposition
         brickWallConfig={brickWallConfig}
         dumpsterConfig={dumpsterConfig}
+        generation={generation}
         onTrashCollision={onTrashCollision}
         igniteOnHit={igniteOnHit}
         onIgnite={onIgnite}

@@ -119,18 +119,34 @@ export function arcFamily(q, type, edge, size, pathDivU) {
     atan(clamped.y, clamped.x).div(select(isCorner, HALF_PI, Math.PI))
   ).clamp(0, 1);
 
+  // Type 3 (straight; edge 0 runs top-bottom, 1 left-right): lines at every
+  // 1/pathDiv across the cell, lanes counted from the left (or top) edge and
+  // `along` from the top (or right) end, matching laneChannels.js's frame.
+  const half = size.mul(0.5);
+  const isStraight = type.equal(3);
+  const across = select(edge.equal(0), q.x, q.y).add(half);
+  const lengthwise = select(edge.equal(0), q.y.add(half), half.sub(q.x));
+  const straightK = clamp(round(across.mul(pathDivU)), 0, bands);
+  const straightBand = across.sub(straightK.div(pathDivU)).abs();
+  const straightCap = lengthwise.negate().max(lengthwise.sub(size)).max(0);
+  const straightAlong = lengthwise.div(size).clamp(0, 1);
+  const pick = (straight, arc) => select(isStraight, straight, arc);
+
   return {
-    along,
+    along: pick(straightAlong, along),
     // Both terms are smooth, unlike dBand — see strokeMask.
-    aaField: d.add(capOffset),
-    d,
-    dBand: vec2(band, capOffset).length(),
-    lane,
+    aaField: pick(across.add(straightCap), d.add(capOffset)),
+    d: pick(across, d),
+    dBand: pick(
+      vec2(straightBand, straightCap).length(),
+      vec2(band, capOffset).length()
+    ),
+    lane: pick(clamp(across.mul(pathDivU).floor(), 0, bands.sub(1)), lane),
     // How many lanes this family has, so a caller can normalize `lane` into
     // a 0..1 reveal order for growth — see blobShader.js's `growthU`.
-    lanes,
-    rMax,
-    sweep,
+    lanes: pick(bands, lanes),
+    rMax: pick(size, rMax),
+    sweep: pick(straightAlong.sub(0.5).abs().mul(2), sweep),
   };
 }
 

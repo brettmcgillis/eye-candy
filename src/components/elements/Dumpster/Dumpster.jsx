@@ -1,7 +1,6 @@
 import React from 'react';
 
-import { useGLTF } from '@react-three/drei';
-
+import useDracoGltf from '@hooks/useDracoGltf';
 import { modelFile } from '@utils/appUtils';
 
 const DUMPSTER_BASE_ROTATION = [Math.PI / 2, 0, 0];
@@ -12,7 +11,7 @@ export const DUMPSTER_LEFT_LID_PIVOT_POSITION = [-47.5, 51.999, 146.244];
 export const DUMPSTER_RIGHT_LID_PIVOT_POSITION = [47.5, 51.999, 146.244];
 
 function useDumpsterModel() {
-  return useGLTF(modelFile(`Dumpster.glb`));
+  return useDracoGltf(modelFile(`Dumpster.glb`));
 }
 
 function DumpsterSceneGraph({ children, ...props }) {
@@ -306,14 +305,14 @@ export default function Dumpster({
   );
 }
 
-useGLTF.preload(modelFile(`Dumpster.glb`));
+useDracoGltf.preload(modelFile(`Dumpster.glb`));
 
 export function DebugDumpster({
   leftLidRotation = 1.833,
   rightLidRotation = Math.PI / 4,
   ...props
 }) {
-  const { nodes, materials } = useGLTF(modelFile(`Dumpster.glb`));
+  const { nodes, materials } = useDracoGltf(modelFile(`Dumpster.glb`));
   return (
     <group {...props} dispose={null}>
       <group scale={0.01}>

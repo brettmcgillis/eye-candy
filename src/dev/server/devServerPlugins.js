@@ -4,6 +4,7 @@ import blockPartyPlugin from './blockParty/plugin';
 import brutalistPlugin from './brutalist/plugin';
 import cataloggrPlugin from './cataloggr/plugin';
 import darkroomPlugin from './darkroom/plugin';
+import dumpsterFirePlugin from './dumpsterFire/plugin';
 import exhibitAPlugin from './exhibitA/plugin';
 import floraPlugin from './flora/plugin';
 import fractalAutomataPlugin from './fractalAutomata/plugin';
@@ -40,6 +41,7 @@ export default function devServerPlugins() {
     brutalistPlugin(),
     cataloggrPlugin(),
     darkroomPlugin(),
+    dumpsterFirePlugin(),
     exhibitAPlugin(),
     floraPlugin(),
     fractalAutomataPlugin(),

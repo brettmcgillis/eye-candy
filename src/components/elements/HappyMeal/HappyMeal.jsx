@@ -1,23 +1,24 @@
 import React, { useEffect, useMemo } from 'react';
 
-import { createInstances, useGLTF } from '@react-three/drei';
-
+import useDracoGltf from '@hooks/useDracoGltf';
 import { modelFile } from '@utils/appUtils';
 import bakeInstancedGeometry from '@utils/instancedGeometry';
 
 const HAPPY_MEAL_MODEL_PATH = '/happyMeal.glb';
+
 const HAPPY_MEAL_MODEL_FILE = modelFile(HAPPY_MEAL_MODEL_PATH);
+
 const HAPPY_MEAL_MATERIAL_NAME = 'Material.001';
+
 const HAPPY_MEAL_ROTATION = [-Math.PI / 2, 0, 0];
+
 const HAPPY_MEAL_TRANSFORM_CHAIN = [
   { scale: 0.3 },
   { position: [0, 1.774, 0], rotation: HAPPY_MEAL_ROTATION },
 ];
 
-const [HappyMealInstancesRoot, HappyMealInstanceRoot] = createInstances();
-
-function useHappyMealModel() {
-  const { nodes, materials } = useGLTF(HAPPY_MEAL_MODEL_FILE);
+export function useHappyMealModel() {
+  const { nodes, materials } = useDracoGltf(HAPPY_MEAL_MODEL_FILE);
 
   return {
     baseGeometry: nodes.Object_3.geometry,
@@ -25,7 +26,7 @@ function useHappyMealModel() {
   };
 }
 
-function useHappyMealGeometry(baseGeometry) {
+export function useHappyMealGeometry(baseGeometry) {
   const geometry = useMemo(
     () => bakeInstancedGeometry(baseGeometry, HAPPY_MEAL_TRANSFORM_CHAIN),
     [baseGeometry]
@@ -38,39 +39,6 @@ function useHappyMealGeometry(baseGeometry) {
   }, [geometry]);
 
   return geometry;
-}
-
-export function HappyMealInstances({ children, material, ...props }) {
-  const { baseGeometry, sourceMaterial } = useHappyMealModel();
-  const geometry = useHappyMealGeometry(baseGeometry);
-  const instanceMaterial = useMemo(
-    () => material ?? sourceMaterial.clone(),
-    [material, sourceMaterial]
-  );
-
-  useEffect(() => {
-    if (material) {
-      return undefined;
-    }
-
-    return () => {
-      instanceMaterial.dispose?.();
-    };
-  }, [instanceMaterial, material]);
-
-  return (
-    <HappyMealInstancesRoot
-      geometry={geometry}
-      material={instanceMaterial}
-      {...props}
-    >
-      {children}
-    </HappyMealInstancesRoot>
-  );
-}
-
-export function HappyMealInstance(props) {
-  return <HappyMealInstanceRoot {...props} />;
 }
 
 export function HappyMeal(props) {
@@ -89,4 +57,4 @@ export function HappyMeal(props) {
   );
 }
 
-useGLTF.preload(HAPPY_MEAL_MODEL_FILE);
+useDracoGltf.preload(HAPPY_MEAL_MODEL_FILE);

@@ -224,6 +224,10 @@
     {
       "id": "idea-1792622605065-zxaita",
       "text": "Generative scene of the argyle pattern from LoaderPatterns. Ranging from a completely tiled plane, to having perlin noise applied to determine where squares are visible, where they are fading, and where theyre completely faded out."
+    },
+    {
+      "id": "idea-1792629030983-6xwe3m",
+      "text": "CrossTalk style scene but CrossDevice. Inspired by 44ian's TD/p5.js peice.\nFigure out novel scenes that can run across devices. Might need the \"host\" to be able to \"arrange\" devices in 2d or 3d space, and or arrange other scene aspects (spline curves etc). this might require devices to report their viewport dimensions and some identifier. \n- There is a closed spline that all devices get a window to. Particles, objects, etc, flow along this spline giving the illusion that stuff is going from one device to another.\n- A top down view of a stream."
     }
   ],
   "statuses": {

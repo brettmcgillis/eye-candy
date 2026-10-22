@@ -1,11 +1,10 @@
 import React from 'react';
 
-import { useGLTF } from '@react-three/drei';
-
+import useDracoGltf from '@hooks/useDracoGltf';
 import { modelFile } from '@utils/appUtils';
 
 export function NewsPaper1(props) {
-  const { nodes, materials } = useGLTF(modelFile('/newsPaper1.glb'));
+  const { nodes, materials } = useDracoGltf(modelFile('/newsPaper1.glb'));
   return (
     <group {...props} dispose={null}>
       <mesh
@@ -19,7 +18,7 @@ export function NewsPaper1(props) {
 }
 
 export function NewsPaper2(props) {
-  const { nodes, materials } = useGLTF(modelFile('/newsPaper2.glb'));
+  const { nodes, materials } = useDracoGltf(modelFile('/newsPaper2.glb'));
   return (
     <group {...props} dispose={null}>
       <mesh
@@ -32,7 +31,7 @@ export function NewsPaper2(props) {
   );
 }
 export function NewsPaper3(props) {
-  const { nodes, materials } = useGLTF(modelFile('/newsPaper3.glb'));
+  const { nodes, materials } = useDracoGltf(modelFile('/newsPaper3.glb'));
   return (
     <group {...props} dispose={null}>
       <mesh
@@ -45,6 +44,6 @@ export function NewsPaper3(props) {
   );
 }
 
-useGLTF.preload(modelFile('/newsPaper1.glb'));
-useGLTF.preload(modelFile('/newsPaper2.glb'));
-useGLTF.preload(modelFile('/newsPaper3.glb'));
+useDracoGltf.preload(modelFile('/newsPaper1.glb'));
+useDracoGltf.preload(modelFile('/newsPaper2.glb'));
+useDracoGltf.preload(modelFile('/newsPaper3.glb'));

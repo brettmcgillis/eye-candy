@@ -25,6 +25,13 @@ export function rollableKeys() {
 const ROTATION_CHOICES = [0, 45];
 export const SYMMETRY_CHANCE = 0.12;
 export const IRREGULAR_ROLL_CHANCE = 0.35;
+export const STRAIGHTS_ROLL_CHANCE = 0.35;
+
+// Straights roll on sometimes, at a chance per eligible cell in [0.2, 0.7].
+export const rollStraights = (rng) =>
+  rng.chance(STRAIGHTS_ROLL_CHANCE)
+    ? Math.round((0.2 + rng() * 0.5) * 20) / 20
+    : 0;
 
 const MEATBALL_CHOICES = [
   MEATBALLS.HIDE_LOOSE,
@@ -66,6 +73,7 @@ export default function rollBlobConfig(
           ? symmetryAxis(config.planeRotation, rng.chance(0.5))
           : 'none';
         config.blobIrregular = rng.chance(IRREGULAR_ROLL_CHANCE);
+        config.blobStraights = rollStraights(rng);
       }
 
       if (facet === 'palette') {

@@ -1,13 +1,15 @@
 import React, { useEffect, useMemo } from 'react';
 
-import { createInstances, useGLTF } from '@react-three/drei';
-
+import useDracoGltf from '@hooks/useDracoGltf';
 import { modelFile } from '@utils/appUtils';
 import bakeInstancedGeometry from '@utils/instancedGeometry';
 
 const SODA_CAN_MODEL_PATH = '/soda_can.glb';
+
 const SODA_CAN_MODEL_FILE = modelFile(SODA_CAN_MODEL_PATH);
+
 const SODA_CAN_MATERIAL_NAME = 'Material.001';
+
 const SODA_CAN_TRANSFORM_CHAIN = [
   {
     rotation: [-Math.PI / 2, 0, 0],
@@ -15,10 +17,8 @@ const SODA_CAN_TRANSFORM_CHAIN = [
   },
 ];
 
-const [SodaCanInstancesRoot, SodaCanInstanceRoot] = createInstances();
-
-function useSodaCanModel() {
-  const { nodes, materials } = useGLTF(SODA_CAN_MODEL_FILE);
+export function useSodaCanModel() {
+  const { nodes, materials } = useDracoGltf(SODA_CAN_MODEL_FILE);
 
   return {
     baseGeometry: nodes.Cylinder_0.geometry,
@@ -26,7 +26,7 @@ function useSodaCanModel() {
   };
 }
 
-function useSodaCanGeometry(baseGeometry) {
+export function useSodaCanGeometry(baseGeometry) {
   const geometry = useMemo(
     () => bakeInstancedGeometry(baseGeometry, SODA_CAN_TRANSFORM_CHAIN),
     [baseGeometry]
@@ -39,39 +39,6 @@ function useSodaCanGeometry(baseGeometry) {
   }, [geometry]);
 
   return geometry;
-}
-
-export function SodaCanInstances({ children, material, ...props }) {
-  const { baseGeometry, sourceMaterial } = useSodaCanModel();
-  const geometry = useSodaCanGeometry(baseGeometry);
-  const instanceMaterial = useMemo(
-    () => material ?? sourceMaterial.clone(),
-    [material, sourceMaterial]
-  );
-
-  useEffect(() => {
-    if (material) {
-      return undefined;
-    }
-
-    return () => {
-      instanceMaterial.dispose?.();
-    };
-  }, [instanceMaterial, material]);
-
-  return (
-    <SodaCanInstancesRoot
-      geometry={geometry}
-      material={instanceMaterial}
-      {...props}
-    >
-      {children}
-    </SodaCanInstancesRoot>
-  );
-}
-
-export function SodaCanInstance(props) {
-  return <SodaCanInstanceRoot {...props} />;
 }
 
 export function SodaCan(props) {
@@ -90,6 +57,6 @@ export function SodaCan(props) {
   );
 }
 
-useGLTF.preload(SODA_CAN_MODEL_FILE);
+useDracoGltf.preload(SODA_CAN_MODEL_FILE);
 
 export default SodaCan;

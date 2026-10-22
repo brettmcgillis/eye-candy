@@ -30,6 +30,7 @@ export default function getDesignControls(snapshot, designRef) {
         Connect: 'connect',
         Diagonal: 'diagonal',
         Order: 'order',
+        Straight: 'straight',
         Move: 'move',
         Duplicate: 'duplicate',
       },

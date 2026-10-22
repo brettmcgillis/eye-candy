@@ -208,7 +208,9 @@ loadKernelModules(ENTRIES)`, `withCapturer` over `withRenderer`, and shared
     `finishCapture` for `--capture`).
 - `@modules/plotKit` is the three-free plot kit kernels share: `frameSphere`
   and `framePoints` (a camera fitted to a sphere, or to a wide subject's box
-  corners), `createProjector`, marching squares, polyline helpers, and the
+  corners), `createProjector`, marching squares, polyline helpers, mesh line
+  work (`weldMesh`, `meshEdges`, `sectionCuts`, `chainKeyed`, `traceRuns`:
+  contours, creases and section cuts of read-back meshes), and the
   image-driven layers a plot reads from a render and its depth coverage —
   `silhouetteRuns`, `shadePath` (crosshatch … tsp), `outlineRuns`,
   `textureRuns` and `plotLayer`/`pathOf` for pen layers.

@@ -1,12 +1,10 @@
 import React, { useLayoutEffect, useMemo, useRef } from 'react';
 
-import { useGLTF } from '@react-three/drei';
-
 import * as THREE from 'three';
 
+import useDracoGltf from '@hooks/useDracoGltf';
+import { GROUND_Y } from '@modules/dumpsterFire';
 import { modelFile } from '@utils/appUtils';
-
-import { GROUND_Y } from '../utils/sceneData';
 
 // Long curb-with-sidewalk slabs (~7m x 5.9m each). The four variants are
 // near-identical paving sections cycled to break up obvious repetition. Corner
@@ -68,10 +66,10 @@ function centerGeometryHorizontally(sourceGeometry) {
 }
 
 function useSidewalkTiles() {
-  const curb = useGLTF(modelFile(TILE_VARIANTS[0].file));
-  const curb2 = useGLTF(modelFile(TILE_VARIANTS[1].file));
-  const curb3 = useGLTF(modelFile(TILE_VARIANTS[2].file));
-  const curb4 = useGLTF(modelFile(TILE_VARIANTS[3].file));
+  const curb = useDracoGltf(modelFile(TILE_VARIANTS[0].file));
+  const curb2 = useDracoGltf(modelFile(TILE_VARIANTS[1].file));
+  const curb3 = useDracoGltf(modelFile(TILE_VARIANTS[2].file));
+  const curb4 = useDracoGltf(modelFile(TILE_VARIANTS[3].file));
 
   return useMemo(() => {
     const gltfs = [curb, curb2, curb3, curb4];
@@ -199,5 +197,5 @@ export default function SidewalkGround({ config }) {
 }
 
 TILE_VARIANTS.forEach((variant) => {
-  useGLTF.preload(modelFile(variant.file));
+  useDracoGltf.preload(modelFile(variant.file));
 });

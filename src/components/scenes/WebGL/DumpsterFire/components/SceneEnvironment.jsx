@@ -3,10 +3,10 @@ import React, { useCallback } from 'react';
 import { Environment } from '@react-three/drei';
 
 import { CameraRig } from '@modules/cameraRig';
+import { SidewalkGround } from '@modules/dumpsterFireRender';
 
 import useTrashBlasterStore from '../hooks/useTrashBlasterStore';
 import { BACKGROUND, FOG_RANGE, LIGHTING } from '../utils/sceneData';
-import SidewalkGround from './SidewalkGround';
 
 const DEFAULT_SCENE_ENVIRONMENT = Object.freeze({
   backgroundColor: BACKGROUND,

@@ -10,7 +10,7 @@
 // first; strokes are clipped analytically instead, so a pen plot of the
 // stroke layer alone draws nothing the render hides.
 import { canvasBounds } from './bounds';
-import { familySector, laneRadii } from './laneChannels';
+import { familySector, laneRadii, straightFrame } from './laneChannels';
 
 const TAU = Math.PI * 2;
 const CORNER_OFFSET = [
@@ -27,7 +27,11 @@ const round = (n) => Number(n.toFixed(3));
 // cell's interior, a corner's quarter-turn between the two edges meeting
 // there, an isolated cell's whole circle. The start is where laneChannels.js's
 // wedgeParam reads 0, so a spectrum slice at u lands at start + u * span.
-function wedge(type, edge) {
+function wedge(cell, type, edge) {
+  if (type === 3) {
+    const { span, start } = straightFrame(cell, edge);
+    return { span, start };
+  }
   if (type === 0) return { span: TAU, start: Math.PI + (edge * Math.PI) / 2 };
   if (type === 2) {
     const cur = CORNER_OFFSET[edge];
@@ -58,13 +62,17 @@ function familyGeometry(field, index, cell, [type, edge]) {
     center,
     rMax: rMax * field.cellSize,
     type,
-    wedge: wedge(type, edge),
+    wedge: wedge(cell, type, edge),
   };
 }
 
 // Mirrors blobArcs.js's arcFamily: the stroke radii, in micro-cell units.
 function strokeRadii(type, size, pathDiv) {
   const bands = Math.round(size * pathDiv);
+  if (type === 3) {
+    const { reach } = straightFrame({ size }, 0);
+    return Array.from({ length: bands + 1 }, (_, k) => reach + k / pathDiv);
+  }
   if (type === 2) {
     return Array.from({ length: bands }, (_, k) => (k + 1) / pathDiv);
   }
@@ -80,7 +88,16 @@ const pointAt = ([cx, cy], r, angle) => [
   round(cy + r * Math.sin(angle)),
 ];
 
+// A straight family's arcs sweep a sliver of angle about a far centre; they
+// are written as lines.
+const FLAT_SPAN = 1e-3;
+
 function arcPath(center, r, start, span) {
+  if (span < FLAT_SPAN) {
+    const [x0, y0] = pointAt(center, r, start);
+    const [x1, y1] = pointAt(center, r, start + span);
+    return `M ${x0} ${y0} L ${x1} ${y1}`;
+  }
   if (span >= TAU - 1e-9) {
     const [x0, y0] = pointAt(center, r, 0);
     const [x1, y1] = pointAt(center, r, Math.PI);
@@ -94,6 +111,15 @@ function arcPath(center, r, start, span) {
 }
 
 function sectorPath(center, r0, r1, { span, start }) {
+  if (span < FLAT_SPAN) {
+    const corners = [
+      pointAt(center, r1, start),
+      pointAt(center, r1, start + span),
+      pointAt(center, r0, start + span),
+      pointAt(center, r0, start),
+    ];
+    return `M ${corners.map(([x, y]) => `${x} ${y}`).join(' L ')} Z`;
+  }
   if (span >= TAU - 1e-9) {
     const outer = arcPath(center, r1, 0, TAU);
     return r0 > 0 ? `${outer} ${arcPath(center, r0, 0, TAU)} Z` : `${outer} Z`;

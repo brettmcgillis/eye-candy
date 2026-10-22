@@ -20,6 +20,8 @@ import {
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
+import radialGradientTexture from '@utils/radialGradientTexture';
+
 import curlNoise from './curlNoise';
 
 const CURVE_SAMPLES = 512;
@@ -30,52 +32,34 @@ const CURL_FREQUENCY = 1.6;
 
 // ── Texture ──────────────────────────────────────────────────────────────────
 // Asymmetric wispy smoke puff (identical to SmokeParticles.jsx)
-function createSmokeTexture() {
-  const S = 128;
-  const canvas = document.createElement('canvas');
-  canvas.width = S;
-  canvas.height = S;
-  const ctx = canvas.getContext('2d');
-  if (!ctx) return null;
-
-  const core = ctx.createRadialGradient(
-    S * 0.5,
-    S * 0.5,
-    0,
-    S * 0.5,
-    S * 0.5,
-    S * 0.46
-  );
-  core.addColorStop(0, 'rgba(255,255,255,0.72)');
-  core.addColorStop(0.3, 'rgba(255,255,255,0.48)');
-  core.addColorStop(0.65, 'rgba(255,255,255,0.14)');
-  core.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = core;
-  ctx.fillRect(0, 0, S, S);
-
-  ctx.globalCompositeOperation = 'lighter';
-  const lobes = [
-    { ox: 0.2, oy: -0.12, r: 0.24, a: 0.2 },
-    { ox: -0.16, oy: 0.14, r: 0.21, a: 0.17 },
-    { ox: 0.02, oy: 0.22, r: 0.19, a: 0.14 },
-    { ox: -0.19, oy: -0.08, r: 0.18, a: 0.11 },
-    { ox: 0.1, oy: 0.18, r: 0.15, a: 0.09 },
-    { ox: 0.14, oy: -0.2, r: 0.13, a: 0.08 },
-  ];
-  lobes.forEach(({ ox, oy, r, a }) => {
-    const cx = S * (0.5 + ox);
-    const cy = S * (0.5 + oy);
-    const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, S * r);
-    g.addColorStop(0, `rgba(255,255,255,${a})`);
-    g.addColorStop(1, 'rgba(255,255,255,0)');
-    ctx.fillStyle = g;
-    ctx.fillRect(0, 0, S, S);
-  });
-
-  const tex = new THREE.CanvasTexture(canvas);
-  tex.needsUpdate = true;
-  return tex;
-}
+const createSmokeTexture = () =>
+  radialGradientTexture(128, [
+    {
+      r: 0.46,
+      stops: [
+        [0, 0.72],
+        [0.3, 0.48],
+        [0.65, 0.14],
+        [1, 0],
+      ],
+    },
+    ...[
+      { ox: 0.2, oy: -0.12, r: 0.24, a: 0.2 },
+      { ox: -0.16, oy: 0.14, r: 0.21, a: 0.17 },
+      { ox: 0.02, oy: 0.22, r: 0.19, a: 0.14 },
+      { ox: -0.19, oy: -0.08, r: 0.18, a: 0.11 },
+      { ox: 0.1, oy: 0.18, r: 0.15, a: 0.09 },
+      { ox: 0.14, oy: -0.2, r: 0.13, a: 0.08 },
+    ].map(({ ox, oy, r, a }) => ({
+      cx: 0.5 + ox,
+      cy: 0.5 + oy,
+      r,
+      stops: [
+        [0, a],
+        [1, 0],
+      ],
+    })),
+  ]);
 
 // ── Shared helpers (identical to SmokeParticles.jsx) ─────────────────────────
 

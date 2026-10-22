@@ -1,7 +1,6 @@
 import React, { useEffect, useMemo } from 'react';
 
-import { useGLTF } from '@react-three/drei';
-
+import useDracoGltf from '@hooks/useDracoGltf';
 import { modelFile } from '@utils/appUtils';
 import bakeInstancedGeometry from '@utils/instancedGeometry';
 
@@ -11,7 +10,7 @@ const PERSIAN_RUG_MATERIAL_NAME = 'Old_Persian_carpet';
 const PERSIAN_RUG_TRANSFORM_CHAIN = [{ position: [0, 0.106, 0], scale: 0.01 }];
 
 function usePersianRugModel() {
-  const { nodes, materials } = useGLTF(PERSIAN_RUG_MODEL_FILE);
+  const { nodes, materials } = useDracoGltf(PERSIAN_RUG_MODEL_FILE);
 
   return {
     baseGeometry: nodes.Old_Persian_carpet_Old_Persian_carpet_0.geometry,
@@ -51,4 +50,4 @@ export default function PersianRug(props) {
   );
 }
 
-useGLTF.preload(PERSIAN_RUG_MODEL_FILE);
+useDracoGltf.preload(PERSIAN_RUG_MODEL_FILE);

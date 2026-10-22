@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import {
+  FiColumns,
   FiCopy,
   FiCornerUpLeft,
   FiCornerUpRight,
@@ -61,6 +62,7 @@ const TOOL_OPTIONS = [
   { icon: <FiLink />, label: 'Connect', value: 'connect' },
   { icon: <FiShuffle />, label: 'Diagonal', value: 'diagonal' },
   { icon: <FiLayers />, label: 'Order', value: 'order' },
+  { icon: <FiColumns />, label: 'Straight', value: 'straight' },
   { icon: <FiMove />, label: 'Move', value: 'move' },
   { icon: <FiCopy />, label: 'Duplicate', value: 'duplicate' },
   { icon: <FiEye />, label: 'View', value: 'off' },
@@ -289,13 +291,15 @@ export default function TrucheterieDesignerPage() {
             along, and opening or closing it carries across every neighbour on
             that edge. Diagonal flips which corners a four-way cell’s arcs turn
             about; Order swaps which of a cell’s two families sits on top (over,
-            in 3D). The marks show the pivots a click will give. Move drags a
-            cell and everything connected to it, and Duplicate drags a copy of
-            it; red means it cannot land there without touching arcs or changing
-            a side. Irregular connections let a small cell connect to part of a
-            bigger cell’s closed side: its lines finish in a pocket inside the
-            bigger cell, or bend through to an open side at a corner. Turning it
-            off closes those sides. ⌘Z / ⇧⌘Z undo and redo.
+            in 3D). Straight turns a cell open on two opposite sides into
+            straight lanes (a third open side makes a T-junction). The marks
+            show the pivots a click will give. Move drags a cell and everything
+            connected to it, and Duplicate drags a copy of it; red means it
+            cannot land there without touching arcs or changing a side.
+            Irregular connections let a small cell connect to part of a bigger
+            cell’s closed side: its lines finish in a pocket inside the bigger
+            cell, or bend through to an open side at a corner. Turning it off
+            closes those sides. ⌘Z / ⇧⌘Z undo and redo.
           </p>
 
           <section className="rw-control-section">

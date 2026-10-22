@@ -8,6 +8,19 @@ import {
   getCameraControlsKey,
   useSceneCameraControls,
 } from '@modules/cameraRig';
+import { LEVA_KEYS } from '@modules/dumpsterFire';
+import {
+  applySmokeGeneration,
+  cloneDumpsterFireAndSmokeSeed,
+  cloneDumpsterFireAndSmokeSeeds,
+  cloneDumpsterParticleSmokeConfigs,
+  cloneDumpsterParticleSmokeSplines,
+  makeNextDumpsterFireAndSmokeSeed,
+  makeNextDumpsterParticleSmokeConfig,
+  makeNextDumpsterParticleSmokeSpline,
+  serializeDumpsterFireAndSmokeSeeds,
+  serializeDumpsterParticleSmokeSplines,
+} from '@modules/dumpsterFireRender';
 import { useMediaRecorder } from '@modules/mediaRecorder';
 import {
   buildFireAndSmokeControls,
@@ -15,30 +28,14 @@ import {
 } from '@modules/splineAuthoring';
 import { localEnv } from '@utils/appUtils';
 
-import {
-  DUMPSTER_LID_INITIAL_ANGLE,
-  DUMPSTER_LID_MAX_ANGLE,
-  DUMPSTER_LID_MIN_ANGLE,
-} from '../components/ArticulatedDumpster';
+import { DUMPSTER_LID_INITIAL_ANGLE } from '../components/ArticulatedDumpster';
 import {
   DEFAULT_FIRE_LIGHT_RIG,
   DEFAULT_PRESET,
   PRESETS,
   PRESET_CONTROL_KEYS,
 } from '../presets';
-import {
-  cloneDumpsterFireAndSmokeSeed,
-  cloneDumpsterFireAndSmokeSeeds,
-  makeNextDumpsterFireAndSmokeSeed,
-  serializeDumpsterFireAndSmokeSeeds,
-} from '../utils/fireAndSmokeAuthoring';
-import {
-  cloneDumpsterParticleSmokeConfigs,
-  cloneDumpsterParticleSmokeSplines,
-  makeNextDumpsterParticleSmokeConfig,
-  makeNextDumpsterParticleSmokeSpline,
-  serializeDumpsterParticleSmokeSplines,
-} from '../utils/particleSmokeAuthoring';
+import sceneFolders, { SCENE_LABEL, rollFacets } from '../utils/controls';
 import {
   CAMERA,
   DEFAULT_FIRE_AUDIO,
@@ -47,7 +44,6 @@ import {
 } from '../utils/sceneData';
 import useTrashBlasterStore from './useTrashBlasterStore';
 
-const SCENE_LABEL = 'Dumpster Fire';
 const CAMERA_FOLDER_PATH = `${SCENE_LABEL}.Camera`;
 const PARTICLE_SMOKE_FOLDER_PATH = `${SCENE_LABEL}.Combustion.Particle Smoke`;
 const SHOT_TUNING_MODE_OPTIONS = Object.keys(SHOT_TUNING_PRESETS);
@@ -377,9 +373,31 @@ export default function useSceneControls() {
     controlOverrides: cameraControlOverrides,
   });
 
-  const [controls, setControls] = useControls(
-    SCENE_LABEL,
-    () => ({
+  const rollGeneration = useCallback(
+    (rolling) =>
+      setControlsRef.current?.(
+        rollFacets(controlsSnapshotRef.current ?? {}, rolling)
+      ),
+    [controlsSnapshotRef]
+  );
+
+  const [controls, setControls] = useControls(SCENE_LABEL, () => {
+    const generated = sceneFolders(initialPresetSnapshot, {
+      extras: {
+        brickWallTintColor: {
+          after: {
+            brickWallPosition: {
+              label: 'Position',
+              step: 0.05,
+              value: initialPresetSnapshot.brickWallPosition,
+            },
+          },
+        },
+      },
+      onRoll: rollGeneration,
+    });
+
+    return {
       Presets: presetsFolder,
       Camera: folder(cameraControls, { collapsed: true }),
       Overlay: folder(
@@ -391,54 +409,7 @@ export default function useSceneControls() {
         },
         { collapsed: true }
       ),
-      Scene: folder(
-        {
-          sceneBackgroundColor: {
-            label: 'Background',
-            value: initialPresetSnapshot.sceneBackgroundColor,
-          },
-          sceneFogColor: {
-            label: 'Fog',
-            value: initialPresetSnapshot.sceneFogColor,
-          },
-          sceneFogNear: {
-            label: 'Fog Near',
-            value: initialPresetSnapshot.sceneFogNear,
-            min: 0,
-            max: 100,
-            step: 0.1,
-          },
-          sceneFogFar: {
-            label: 'Fog Far',
-            value: initialPresetSnapshot.sceneFogFar,
-            min: 0,
-            max: 150,
-            step: 0.1,
-          },
-          sceneAmbientIntensity: {
-            label: 'Ambient',
-            value: initialPresetSnapshot.sceneAmbientIntensity,
-            min: 0,
-            max: 4,
-            step: 0.01,
-          },
-          sceneDirectionalIntensity: {
-            label: 'Directional',
-            value: initialPresetSnapshot.sceneDirectionalIntensity,
-            min: 0,
-            max: 4,
-            step: 0.01,
-          },
-          sceneEnvMapIntensity: {
-            label: 'Env Map',
-            value: initialPresetSnapshot.sceneEnvMapIntensity,
-            min: 0,
-            max: 4,
-            step: 0.01,
-          },
-        },
-        { collapsed: true }
-      ),
+      Scene: generated.Scene,
       Ground: folder(
         {
           sidewalkGroundEnabled: {
@@ -585,29 +556,8 @@ export default function useSceneControls() {
         },
         { collapsed: true }
       ),
-      Dumpster: folder(
-        {
-          dumpsterLeftLidRotation: {
-            label: 'Left Lid',
-            value:
-              initialPresetSnapshot.dumpsterLeftLidRotation ??
-              DUMPSTER_LID_INITIAL_ANGLE,
-            min: DUMPSTER_LID_MIN_ANGLE,
-            max: DUMPSTER_LID_MAX_ANGLE,
-            step: 0.01,
-          },
-          dumpsterRightLidRotation: {
-            label: 'Right Lid',
-            value:
-              initialPresetSnapshot.dumpsterRightLidRotation ??
-              DUMPSTER_LID_INITIAL_ANGLE,
-            min: DUMPSTER_LID_MIN_ANGLE,
-            max: DUMPSTER_LID_MAX_ANGLE,
-            step: 0.01,
-          },
-        },
-        { collapsed: true }
-      ),
+      Dumpster: generated.Dumpster,
+      Trash: generated.Trash,
       Combustion: folder(
         {
           Authoring: folder(
@@ -960,47 +910,16 @@ ${allEntries}
         },
         { collapsed: true }
       ),
-      'Brick Wall': folder(
-        {
-          brickWallEnabled: {
-            label: 'Enabled',
-            value: initialPresetSnapshot.brickWallEnabled,
-          },
-          brickWallLength: {
-            label: 'Length',
-            value: initialPresetSnapshot.brickWallLength,
-            min: 4,
-            max: 25,
-            step: 0.25,
-          },
-          brickWallHeight: {
-            label: 'Height',
-            value: initialPresetSnapshot.brickWallHeight,
-            min: 0.8,
-            max: 4.5,
-            step: 0.1,
-          },
-          brickWallTintColor: {
-            label: 'Tint',
-            value: initialPresetSnapshot.brickWallTintColor,
-          },
-          brickWallPosition: {
-            label: 'Position',
-            step: 0.05,
-            value: initialPresetSnapshot.brickWallPosition,
-          },
-        },
-        { collapsed: true }
-      ),
-    }),
-    [
-      cameraControls,
-      fireAndSmokeInstances.length,
-      particleSmokeSplines.length,
-      presetRevision,
-      presetsFolder,
-    ]
-  );
+      Smoke: generated.Smoke,
+      'Brick Wall': generated['Brick Wall'],
+    };
+  }, [
+    cameraControls,
+    fireAndSmokeInstances.length,
+    particleSmokeSplines.length,
+    presetRevision,
+    presetsFolder,
+  ]);
 
   const {
     showEffects,
@@ -1027,10 +946,6 @@ ${allEntries}
     sidewalkRows,
     sidewalkRotationDeg,
     sidewalkPosition,
-    brickWallEnabled,
-    brickWallLength,
-    brickWallHeight,
-    brickWallTintColor,
     brickWallPosition,
     fireLightEnabled,
     fireLightColor,
@@ -1072,6 +987,28 @@ ${allEntries}
     throwLaunchKickEnabled,
     throwLaunchKickStrength,
   } = controls;
+
+  const generationKey = LEVA_KEYS.map((key) =>
+    JSON.stringify(controls[key])
+  ).join('|');
+  const generation = useMemo(
+    () => Object.fromEntries(LEVA_KEYS.map((key) => [key, controls[key]])),
+    [generationKey]
+  );
+  const shownSmoke = useMemo(() => {
+    const authored = {
+      fireAndSmokeInstances,
+      particleSmokeConfigs,
+      particleSmokeSplines,
+    };
+    return editSplines ? authored : applySmokeGeneration(authored, generation);
+  }, [
+    editSplines,
+    fireAndSmokeInstances,
+    generation,
+    particleSmokeConfigs,
+    particleSmokeSplines,
+  ]);
 
   useEffect(() => {
     attachSetControls(setControls);
@@ -1126,9 +1063,10 @@ ${allEntries}
   useMediaRecorder({ fileName: mediaRecorderFileName });
 
   return {
-    fireAndSmokeInstances,
-    particleSmokeSplines,
-    particleSmokeConfigs,
+    fireAndSmokeInstances: shownSmoke.fireAndSmokeInstances,
+    particleSmokeSplines: shownSmoke.particleSmokeSplines,
+    particleSmokeConfigs: shownSmoke.particleSmokeConfigs,
+    generation,
     showEffects,
     editSplines,
     igniteOnHit,
@@ -1159,10 +1097,7 @@ ${allEntries}
       position: sidewalkPosition,
     },
     brickWallConfig: {
-      enabled: brickWallEnabled,
-      length: brickWallLength,
-      height: brickWallHeight,
-      tintColor: brickWallTintColor,
+      ...generation,
       position: [
         brickWallPosition?.x ?? 0,
         brickWallPosition?.y ?? 0,

@@ -118,7 +118,7 @@ function crosshatch(darkness, options) {
 // A filled dot in one stroke: a spiral of half-turns `pen` apart, alternately
 // about the centre and half a pen east of it, out to `radius`, then once
 // round the rim.
-function dot(x, y, radius, pen) {
+export function dot(x, y, radius, pen) {
   const turns = Math.max(0, Math.floor((radius - pen * 0.5) / pen));
   const arc = (r, ex) =>
     `A${round(r)} ${round(r)} 0 0 0 ${round(ex)} ${round(y)}`;

@@ -1,4 +1,5 @@
-import { SCENE_PROP_CONFIGS, SHOT_ASSET_OPTIONS } from '@modules/trashCatalog';
+import { SCENE_PROP_CONFIGS } from '@modules/trashCatalog';
+import { SHOT_ASSET_OPTIONS } from '@modules/trashShots';
 
 export const GROUND_Y = -1;
 

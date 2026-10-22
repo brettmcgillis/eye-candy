@@ -3,6 +3,7 @@ import {
   designFromField,
   fieldFromDesign,
   openIrregular,
+  openStraights,
   symmetricDesign,
 } from './design';
 import buildBlobField, { MEATBALLS } from './field';
@@ -23,9 +24,16 @@ export default function fieldFromConfig(config) {
   });
   const axis = config.blobSymmetry ?? 'none';
   const irregular = Boolean(config.blobIrregular);
-  if ((axis === 'none' && !irregular) || field.count === 0) return field;
+  const straights = config.blobStraights ?? 0;
+  if (
+    (axis === 'none' && !irregular && !(straights > 0)) ||
+    field.count === 0
+  ) {
+    return field;
+  }
   let seeded = designFromField(field);
   if (irregular) seeded = openIrregular(seeded, config.blobSeed);
+  seeded = openStraights(seeded, straights, config.blobSeed);
   if (axis !== 'none') {
     seeded = symmetricDesign(seeded, field.gridSize, axis, {
       hideLoose: config.blobMeatballs === MEATBALLS.HIDE_LOOSE,

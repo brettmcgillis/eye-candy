@@ -1,0 +1,32 @@
+.dfl-live {
+  display: grid;
+  gap: 10px;
+}
+
+.dfl-live__toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.dfl-live__panel {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.dfl-live__toggle {
+  align-items: center;
+  display: inline-flex;
+  font-size: 13px;
+  gap: 6px;
+}
+
+.dfl-live__stage {
+  background: #000;
+  border-radius: 8px;
+  margin: 0 auto;
+  overflow: hidden;
+}

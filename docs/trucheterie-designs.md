@@ -93,6 +93,30 @@ Run `npm run trucheterie:check` after changing anything below, and
   file's `gridSize` is ignored. `designFromJson`/`decodeDesign` refuse
   out-of-range cells and clashes rather than drop them.
 
+## Straights
+
+- Mask bit 128 (`STRAIGHT`) draws a cell with one opposite pair of sides
+  open, and at most one more, as straight lanes: family type 3, edge 0 runs
+  top-bottom and 1 left-right. With a third open side it is a T-junction,
+  `[[1, branch], [3, axis]]`: the stub draws first, so the straight lanes
+  stop against it. Four-way cells (crosses) are not supported, because the
+  family on top would hide the other entirely. The bit is ignored while a
+  cell is not eligible. Designer tool: Straight (`canStraighten`,
+  `toggleStraight`). Seeded: `blobStraights` is the chance per eligible cell
+  (`openStraights`, position-seeded, before symmetry). Rolls give it
+  `STRAIGHTS_ROLL_CHANCE` (0.35) of being on, at a chance in [0.2, 0.7].
+- The GPU shader draws real lines (`blobArcs.js`, lanes counted from the
+  left/top edge, `along` from the top/right end). On the CPU a straight
+  family is arcs about a centre `1e5 · size` off (`straightFrame`): every
+  arc-based consumer keeps its maths (lane channels, occluders, SVG, 3D
+  strands, membrane, heights), the bend is ~1e-5 of a cell, and 3D joins
+  ends by lattice point. The SVG writes slivers of angle as lines.
+  `familySector` gives a straight a disc that covers its whole cell, which
+  is right for ink and bounds; it must never be a slot-0 occluder, and
+  `connectionsFor` never puts it first.
+- Mirrors map the axis through the side map (`map[edge] % 2`); a cell on
+  the symmetry axis keeps its straight bit.
+
 ## Irregular connections
 
 - With the design's `irregular` flag on (designer checkbox; `blobIrregular`
@@ -154,7 +178,7 @@ Run `npm run trucheterie:check` after changing anything below, and
   Leva hides them), and so is `blobGridSize` (Start From Seeded Field still
   uses it, with the other Blob Field knobs).
 - `designTool` (`off` = View, `paint`, `erase`, `connect`, `diagonal`,
-  `order`, `move`, `duplicate`), `designBrush` (cell size) and `designAutoConnect` are scene
+  `order`, `straight`, `move`, `duplicate`), `designBrush` (cell size) and `designAutoConnect` are scene
   controls that are never
   render options. They are in every preset (2D: written out, 3D: through
   `sceneDefaults()`), so switching away from a design preset clears it.

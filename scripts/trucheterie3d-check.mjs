@@ -183,6 +183,8 @@ function checkIrregular({ tubes: kernel }) {
       { junction: 'cap', strands: 'both' },
       { junction: 'weave', strands: 'lanes' },
       { lanesAs: 'membrane', strands: 'both' },
+      { blobStraights: 0.7, junction: 'cap', strands: 'both' },
+      { blobStraights: 0.7, lanesAs: 'membrane', strands: 'both' },
     ].forEach((mode) => {
       const label = `${seed} irregular ${JSON.stringify(mode)}`;
       const config = {

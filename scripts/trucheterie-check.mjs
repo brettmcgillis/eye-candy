@@ -413,6 +413,7 @@ function mirrorConnection(axis, [type, edge]) {
   const map = SIDE_MAPS[axis];
   if (type === 0) return [0, 0];
   if (type === 1) return [1, map[edge]];
+  if (type === 3) return [3, map[edge] % 2];
   const a = map[edge];
   const b = map[(edge + 3) % 4];
   return [2, (b + 1) % 4 === a ? a : b];
@@ -425,6 +426,7 @@ function checkSymmetry(blob) {
     blobCanvasSize: 8,
     blobConnectivity: 0.85,
     blobDistribution: 0.15,
+    blobStraights: 0.5,
   };
   blob.SYMMETRY_AXES.filter((axis) => axis !== 'none').forEach((axis) =>
     ['mirror-a', 'mirror-b', 'mirror-c'].forEach((seed) =>
@@ -658,6 +660,124 @@ function checkIrregular(blob) {
   );
 }
 
+// A 2-cell between two others runs straight; a third neighbour makes it a T.
+function checkStraights(blob) {
+  let column = blob.emptyDesign();
+  column = blob.placeCell(column, 0, 0, 2);
+  column = blob.placeCell(column, 0, 2, 2);
+  column = blob.placeCell(column, 0, 4, 2);
+  const straight = blob.toggleStraight(column, 1);
+  check(
+    blob.canStraighten(column, 1) &&
+      !blob.canStraighten(column, 0) &&
+      JSON.stringify(blob.cellConnections(straight, 1)) === '[[3,0]]' &&
+      blob.toggleStraight(straight, 1).cells[1].mask === column.cells[1].mask,
+    'straights: a cell open top and bottom does not toggle to one straight family.'
+  );
+  const tee = blob.placeCell(straight, 2, 2, 2);
+  check(
+    JSON.stringify(blob.cellConnections(tee, 1)) === '[[1,1],[3,0]]',
+    `straights: a third open side is not a T-junction (stub first), got ${JSON.stringify(blob.cellConnections(tee, 1))}.`
+  );
+  let cross = blob.emptyDesign();
+  [
+    [2, 2],
+    [2, 0],
+    [2, 4],
+    [0, 2],
+    [4, 2],
+  ].forEach(([c, r]) => {
+    cross = blob.placeCell(cross, c, r, 2);
+  });
+  check(
+    !blob.canStraighten(cross, 0) && blob.toggleStraight(cross, 0) === cross,
+    'straights: a four-way cell can be made straight (crosses are not supported).'
+  );
+  const decoded = blob.decodeDesign(blob.encodeDesign(tee));
+  check(
+    decoded &&
+      designKey(blob, decoded) === designKey(blob, tee) &&
+      blob.cellConnections(decoded, 1).some(([type]) => type === 3),
+    'straights: the codec drops the straight bit.'
+  );
+
+  [straight, tee].forEach((design, i) => {
+    const label = i === 0 ? 'straight' : 'T-junction';
+    const field = blob.fieldFromDesign(design, 8);
+    const lanes = blob.buildLaneChannels(field.cells, 4);
+    const at = (cellIndex, slot, lane) =>
+      lanes.channelOf[
+        cellIndex * lanes.slotStride + slot * lanes.maxLanes + lane
+      ];
+    const middle = field.cells.findIndex(({ connections }) =>
+      connections.some(([type]) => type === 3)
+    );
+    const slot = field.cells[middle].connections.findIndex(([t]) => t === 3);
+    const { column: midColumn, row: midRow } = field.cells[middle].cell;
+    const ends = field.cells
+      .map((entry, index) => [entry.cell, index])
+      .filter(
+        ([cell]) =>
+          cell.column === midColumn && Math.abs(cell.row - midRow) === 2
+      )
+      .map(([, index]) => index);
+    const joined = Array.from({ length: 8 }, (_, j) => at(middle, slot, j));
+    const reached = (index) =>
+      Array.from({ length: 8 }, (_, j) => at(index, 0, j)).filter((c) =>
+        joined.includes(c)
+      ).length;
+    check(
+      ends.length === 2 && ends.every((index) => reached(index) > 0),
+      `straights ${label}: the straight lanes do not join the cells above and below.`
+    );
+    const svg = blob.renderBlobSvg(field, {
+      height: 200,
+      pathDiv: 4,
+      width: 200,
+    });
+    const radii = [...svg.matchAll(/ A ([\d.]+) /gu)].map(([, r]) => Number(r));
+    check(
+      svg.includes(' L ') && radii.every((r) => r < 1000),
+      `straights ${label}: the SVG writes straight lanes as huge arcs instead of lines.`
+    );
+  });
+
+  let seen = 0;
+  ['str-a', 'str-b', 'str-c'].forEach((seed) => {
+    const seeded = blob.fieldFromConfig({
+      ...blob.sceneDefaults(),
+      blobCanvasSize: 8,
+      blobSeed: seed,
+      blobStraights: 0.6,
+    });
+    seen += seeded.cells.filter(({ connections }) =>
+      connections.some(([type]) => type === 3)
+    ).length;
+    const again = blob.fieldFromDesign(blob.designFromField(seeded), 8, {
+      column: 0,
+      row: 0,
+      size: seeded.gridSize,
+    });
+    check(
+      ['conn0', 'conn1', 'connectorMask', 'sizes'].every(
+        (name) => again[name].join() === seeded[name].join()
+      ),
+      `straights ${seed}: a seeded field with straights does not round-trip through a design.`
+    );
+  });
+  check(seen > 0, 'straights: seeded fields never draw a straight cell.');
+  const rolled = Array.from({ length: 400 }, (_, i) =>
+    blob.rollBlobConfig(`str-roll-${i}`)
+  ).map((c) => c.blobStraights);
+  const on = rolled.filter((v) => v > 0);
+  check(
+    on.length > 400 * blob.STRAIGHTS_ROLL_CHANCE * 0.6 &&
+      on.length < 400 * blob.STRAIGHTS_ROLL_CHANCE * 1.4 &&
+      on.every((v) => v >= 0.2 && v <= 0.7),
+    `straights: ${on.length}/400 rolls turn them on, or a rolled chance leaves [0.2, 0.7].`
+  );
+}
+
 async function checkDesignRotation(blob) {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'trucheterie-check-'));
   try {
@@ -738,6 +858,7 @@ async function main() {
   checkMove(loaded[BARRELS.blob]);
   checkDuplicate(loaded[BARRELS.blob]);
   checkIrregular(loaded[BARRELS.blob]);
+  checkStraights(loaded[BARRELS.blob]);
   checkSymmetry(loaded[BARRELS.blob]);
   await checkSceneForwardsGenerator(loaded[BARRELS.blob]);
   await checkDesignRotation(loaded[BARRELS.blob]);

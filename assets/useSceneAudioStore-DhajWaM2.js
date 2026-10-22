@@ -1,0 +1,1 @@
+import{aj as e}from"./index-BSxlufA8.js";const i=e(u=>({audioSources:0,hasAudio:!1,audioEnabled:!1,registerAudio:()=>u(o=>({audioSources:o.audioSources+1,hasAudio:!0})),unregisterAudio:()=>u(o=>{const a=Math.max(0,o.audioSources-1);return{audioSources:a,hasAudio:a>0}}),toggleAudio:()=>u(o=>({audioEnabled:!o.audioEnabled}))}));export{i as u};

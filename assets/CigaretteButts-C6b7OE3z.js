@@ -1,1 +1,0 @@
-import{aa as e,j as t}from"./index-DH_6Yz05.js";import{u as r}from"./useDracoGltf-D0Kbiprk.js";function l(s){const{nodes:a,materials:o}=r(e("/cigaretteButts.glb"));return t.jsx("group",{...s,dispose:null,children:t.jsx("mesh",{castShadow:!0,receiveShadow:!0,geometry:a.Litter_1_Litter_1_0.geometry,material:o.Litter_1})})}r.preload(e("/cigaretteButts.glb"));export{l as C};

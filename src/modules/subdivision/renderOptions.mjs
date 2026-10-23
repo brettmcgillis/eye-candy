@@ -361,20 +361,14 @@ const RENDER = {
     help: 'Rasterises at width\u00d7ratio by height\u00d7ratio; the layout is unchanged',
   }),
   count: standard.count('pieces'),
-  png: standard.png(),
   webp: standard.webp(),
+  capture: standard.capture(),
   svg: standard.svg(
     'Write a plottable SVG: one layer per pen, outlines + hatching'
   ),
   plotWidthMm: standard.plotWidthMm(200),
-  transparentBackground: {
-    default: false,
-    help: 'Leave the background transparent',
-    label: 'Transparent',
-    scope: 'still',
-    section: 'output',
-    type: 'boolean',
-  },
+  svgColors: standard.svgColors(),
+  transparent: standard.transparent(),
 
   keep: standard.keep(['structure', 'field', 'palette']),
   base: standard.base(),
@@ -383,6 +377,7 @@ const RENDER = {
     'growth',
     'growth: each piece grows level by level, holds, collapses; montage: a cut per piece'
   ),
+  ...standard.videoFormats(),
   fps: standard.fps(),
 
   structureSeed: rollSeed('structure'),

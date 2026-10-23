@@ -1,5 +1,7 @@
 import { mipBloom } from '@modules/tsl';
 
+import withGlow from './withGlow';
+
 export const defaults = {
   levels: 6,
   strength: 1,
@@ -36,7 +38,7 @@ export function create({ input, slot }) {
   });
 
   return {
-    node: input.add(bloom),
+    node: withGlow(input, bloom),
     update: (values) => {
       bloom.strength.value =
         values[`${slot.prefix}Strength`] ?? merged.strength;

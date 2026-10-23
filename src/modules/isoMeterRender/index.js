@@ -11,3 +11,13 @@ export {
   disposeObjects,
 } from './voxelChunks';
 export { default as createWinterkammerStage } from './winterkammerStage';
+export {
+  WINTERKAMMER_MAX_FRAMES,
+  blockSvg,
+  createPiece,
+  createVoxelStage,
+  pieceAt,
+  pieceSvg,
+  rollArgs,
+  winterkammerPainter,
+} from './bench';

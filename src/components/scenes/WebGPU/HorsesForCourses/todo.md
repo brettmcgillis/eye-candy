@@ -8,7 +8,6 @@ Horse statue (oxidized bronze via TSL rust texture) physically sliced into N hor
 using three-pinata. Bottom band anchored; upper bands offset by audio frequency energy —
 like EQ visualizer bars. Dramatic directional/spot lighting.
 
-
 ## // TODO:
 
 ## // Presets
@@ -22,6 +21,7 @@ like EQ visualizer bars. Dramatic directional/spot lighting.
 - [ ] Add floor plane (polished marble / reflective surface beneath statue)
 
 ## // Interactivity
+
 ### // Audio Sources
 
 - **File upload** — any audio file the user provides

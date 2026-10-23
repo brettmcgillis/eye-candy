@@ -391,8 +391,8 @@ const RENDER = {
   height: standard.height(),
   pixelRatio: standard.pixelRatio(),
   count: standard.count('fires'),
-  png: standard.png(),
   webp: standard.webp(),
+  transparent: standard.transparent(),
   svg: standard.svg(
     'Write a plottable SVG per view: the dumpster, litter and wall as slices, contours and creases, the flames as line work and the smoke as stipple, flow lines and shading'
   ),
@@ -408,7 +408,8 @@ const RENDER = {
     type: 'string',
   }),
   svgOcclusion: standard.svgOcclusion(
-    'Drop line work and smoke hidden behind nearer surfaces (uses a depth pass)'
+    'Hide wall, trash and smoke lines behind nearer surfaces; turn off to draw through solid objects',
+    { label: 'Hide occluded lines' }
   ),
   svgStroke: standard.svgStroke(),
   svgStyle: svgOnly(
@@ -538,11 +539,9 @@ const RENDER = {
       when: { svgTexture: [true] },
     })
   ),
-  svgColors: svgOnly(
-    num('svg', 'colour', 'SVG colours', 0, 0, 8, 1, {
-      help: "Plot in the scene's own inks: this many colours picked from the pieces' real (unlit) colours and the fire and smoke, a layer per ink for the Plotterizer to match to pens (0: black line work)",
-    })
-  ),
+  svgColors: standard.svgColors({
+    help: "Plot in the scene's own inks: this many colours picked from the pieces' real (unlit) colours and the fire and smoke, a layer per ink for the Plotterizer to match to pens (0: black line work)",
+  }),
   svgColorLayers: svgOnly(
     choice('svg', 'colour', 'SVG colour layers', SVG_COLOR_LAYERS, 'all', {
       choiceLabels: {
@@ -574,6 +573,7 @@ const RENDER = {
     'burn: the fire and smoke keep going while the camera holds (or drifts by --orbit); turntable: the camera circles the dumpster'
   ),
   view: standard.view(VIEWS, 'hero'),
+  ...standard.videoFormats(),
   fps: standard.fps(),
   hold: standard.hold(8, 'Seconds of footage per fire'),
   turns: standard.turns('fire'),

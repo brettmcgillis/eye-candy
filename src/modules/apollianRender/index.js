@@ -13,3 +13,10 @@ export {
   createUniforms as createApollianUniforms,
 } from './uniforms';
 export { PALETTE_NAMES, getPaletteStops } from '@utils/gradientPalette';
+export {
+  createApollianStage,
+  framingFor,
+  objectAt,
+  plotSvg,
+  rollArgs,
+} from './bench';

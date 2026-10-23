@@ -90,5 +90,5 @@ plus half the stack, so it never intersects a window.
 - `npm run lint:fix`
 - `npm run iso-meter:generate -- --count 3 --svg`
 - `npm run iso-meter:video -- --count 1 --hold 1`
-- `npm run iso-meter:generate -- --count 1 --display voxel --views iso,left --png`
+- `npm run iso-meter:generate -- --count 1 --display voxel --views iso,left`
 - The scene still renders in the browser (human eyeball).

@@ -66,6 +66,7 @@ export default function BirdStudio({
   config,
   flockRef,
   stareAtCursor = false,
+  transparent = false,
 }) {
   const birds = useMemo(
     () => layoutFlock(config),
@@ -86,11 +87,7 @@ export default function BirdStudio({
 
   return (
     <>
-      <Backdrop
-        color={
-          config.backdrop === 'transparent' ? null : config.backgroundColor
-        }
-      />
+      <Backdrop color={transparent ? null : config.backgroundColor} />
       <StudioEnvironment intensity={config.envIntensity} />
       <ambientLight intensity={config.ambientIntensity} />
       <KeyLight bounds={bounds} config={config} />

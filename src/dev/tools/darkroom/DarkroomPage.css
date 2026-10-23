@@ -45,6 +45,28 @@
   border: 1px solid var(--dev-border-strong);
   border-radius: 4px;
   background: repeating-conic-gradient(#0000 0 25%, #8881 0 50%) 0 0 / 16px 16px;
+  cursor: zoom-in;
+  touch-action: none;
+}
+
+.dk-stage__host[data-zoomed='true'] {
+  cursor: grab;
+}
+
+.dk-stage__host[data-zoomed='true']:active {
+  cursor: grabbing;
+}
+
+.dk-stage__host[data-mode='compose'],
+.dk-stage__host[data-mode='compose']:active {
+  cursor: move;
+}
+
+.dk-stage__view {
+  position: absolute;
+  inset: 0;
+  transform-origin: 0 0;
+  will-change: transform;
 }
 
 .dk-stage__host canvas {

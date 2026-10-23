@@ -1,11 +1,14 @@
 import React from 'react';
 
 import { Stat } from '@dev/renderWorkbench/AssetGallery';
+import { liveTabs } from '@dev/renderWorkbench/LiveStage';
 import RollWorkbench from '@dev/renderWorkbench/RollWorkbench';
 
 import * as kernel from '@modules/apollian';
 import { FAMILIES, FAMILY_LABELS } from '@modules/apollian';
 import { PALETTE_NAMES } from '@modules/apollianRender';
+
+import apollianLive from './live';
 
 const PALETTE_CHOICES = PALETTE_NAMES.map((name) => [name, name]);
 
@@ -40,6 +43,8 @@ const preview = {
 export default function ApollianWorkbenchPage() {
   return (
     <RollWorkbench
+      defaultTab="live"
+      leadingTabs={liveTabs(apollianLive, 'apollian')}
       name="Apollian"
       noun={{ many: 'objects', one: 'object' }}
       preview={preview}

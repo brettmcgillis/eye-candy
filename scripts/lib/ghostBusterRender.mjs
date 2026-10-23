@@ -74,6 +74,11 @@ export function rollArgs(kernel, { options, typed }) {
         .map((key) => [key, options[key]])
     ),
     skins,
+    skinLibrary: Object.fromEntries(
+      look.SKIN_NAMES.map((name) => [name, look.resolveSkin(name)])
+    ),
+    mode: options.ghostMode ?? 'new',
+    order: options.skinOrder ?? 'random',
   };
 }
 
@@ -81,7 +86,26 @@ export function rollArgs(kernel, { options, typed }) {
 export function ghostAt(kernel, { batch, index, roll }) {
   const { ghost, look } = kernel;
   const name = ghost.seedFor(batch, index);
-  const config = ghost.rollGhostConfig(name, roll);
+  let selectedRoll = roll;
+  if (
+    roll.order === 'cycle' &&
+    roll.skins.length &&
+    roll.pinned.skin == null &&
+    !roll.keep.includes('skin')
+  ) {
+    const skin = roll.skins[index % roll.skins.length];
+    const base = Object.fromEntries(
+      Object.entries(roll.base).filter(
+        ([key]) => !ghost.LOOK_KEYS.includes(key)
+      )
+    );
+    selectedRoll = {
+      ...roll,
+      base: { ...base, skin },
+      pinned: { ...roll.pinned, skin },
+    };
+  }
+  const config = ghost.rollGhostConfig(name, selectedRoll);
   if (!look.SKIN_NAMES.includes(config.skin)) {
     throw new Error(
       `Unknown skin "${config.skin}"; skins are ${look.SKIN_NAMES.join(', ')}.`
@@ -95,7 +119,7 @@ export function ghostAt(kernel, { batch, index, roll }) {
 // frame loop, stepped at 60 fps until the cloth settles, then captured.
 export async function createGhostCapturer(
   kernel,
-  { height, pixelRatio, width }
+  { height, pixelRatio, transparent, width }
 ) {
   const { ghost, look } = kernel;
   const headless = await createHeadlessRenderer({
@@ -153,7 +177,7 @@ export async function createGhostCapturer(
       current = config;
       ghostRef.current = null;
       stormRef.current = null;
-      await stage.mount({ config, ghostRef, stormRef });
+      await stage.mount({ config, ghostRef, stormRef, transparent });
       await until(
         () => ghostRef.current?.sim && ghostRef.current?.mesh,
         'the ghost to mount'
@@ -173,7 +197,7 @@ export async function createGhostCapturer(
       const lattice = await look.readGhostLattice(
         renderer,
         ghostRef.current,
-        config.skin
+        config
       );
       return {
         bounds: ghost.withStorm(
@@ -197,7 +221,7 @@ export async function createGhostCapturer(
       const lattice = await look.readGhostLattice(
         renderer,
         ghostRef.current,
-        current.skin
+        current
       );
       const pass = (capture) => (only) =>
         capture(
@@ -222,7 +246,7 @@ export async function createGhostCapturer(
           })
         : null;
       return ghost.renderGhostSvg({
-        ...ghost.plotArgs(options, look.resolveSkin(current.skin)),
+        ...ghost.plotArgs(options, look.resolveSkin(current)),
         camera: view,
         coverage: depth,
         image: ghost.needsImage(options) ? image : null,
@@ -244,7 +268,7 @@ export async function createGhostCapturer(
         lattice: await look.readGhostLattice(
           renderer,
           ghostRef.current,
-          current.skin
+          current
         ),
         storm: (await stormRef.current?.snapshot(renderer)) ?? null,
       };
@@ -268,6 +292,7 @@ export const withCapturer = (kernel, options, work) =>
       createGhostCapturer(kernel, {
         height: options.height,
         pixelRatio: options.pixelRatio,
+        transparent: options.transparent,
         width: options.width,
       }),
     work

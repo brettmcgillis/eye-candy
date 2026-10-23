@@ -3,6 +3,7 @@
 // lite and wild are presets over them (variants.js). Dependency-free `.mjs`
 // so plain Node and Vite's config loader can import it.
 import createOptionSchema, {
+  SVG_SHADINGS,
   choice,
   color,
   flag,
@@ -705,8 +706,27 @@ const RENDER = {
   height: standard.height(1080),
   pixelRatio: standard.pixelRatio({ default: 1 }),
   count: standard.count('paintings'),
-  png: standard.png(),
   webp: standard.webp(),
+  capture: standard.capture(),
+  svg: standard.svg(
+    'Write the painting as a pen plot: its colours as ink regions, each shaded from the render'
+  ),
+  plotWidthMm: standard.plotWidthMm(),
+  svgColors: standard.svgColors({
+    default: 5,
+    help: 'Inks the painting is split into, picked from its own colours, a layer each',
+    min: 1,
+  }),
+  svgShading: standard.svgShading(
+    "How each ink's region is shaded from the render's tone",
+    'crosshatch',
+    { choices: SVG_SHADINGS.filter((style) => style !== 'none') }
+  ),
+  svgShadeSpacing: standard.svgShadeSpacing(),
+  svgShadeAngle: standard.svgShadeAngle(),
+  svgShadeGamma: standard.svgShadeGamma(),
+  svgPenMm: standard.svgPenMm(),
+  svgStroke: standard.svgStroke(),
   views: standard.views(VIEWS, 'painting'),
   keep: standard.keep(FACETS),
   palettes: standard.palettes('palette'),
@@ -725,6 +745,7 @@ const RENDER = {
     'loop',
     'loop: each painting plays its seamless loop'
   ),
+  ...standard.videoFormats(),
   fps: standard.fps(),
   loops: video({
     default: 1,

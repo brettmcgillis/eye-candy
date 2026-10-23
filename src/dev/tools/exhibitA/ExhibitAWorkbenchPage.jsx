@@ -1,6 +1,7 @@
 import React from 'react';
 
 import { Stat } from '@dev/renderWorkbench/AssetGallery';
+import { liveTabs } from '@dev/renderWorkbench/LiveStage';
 import RollWorkbench from '@dev/renderWorkbench/RollWorkbench';
 
 import * as kernel from '@modules/exhibitA';
@@ -11,6 +12,8 @@ import {
   exhibitOf,
 } from '@modules/exhibitA';
 import { PALETTE_NAMES } from '@modules/exhibitARender';
+
+import exhibitALive from './live';
 
 const PALETTE_CHOICES = PALETTE_NAMES.map((name) => [name, name]);
 
@@ -48,6 +51,8 @@ const preview = {
 export default function ExhibitAWorkbenchPage() {
   return (
     <RollWorkbench
+      defaultTab="live"
+      leadingTabs={liveTabs(exhibitALive, 'exhibitA')}
       name="ExhibitA"
       noun={{ many: 'exhibits', one: 'exhibit' }}
       preview={preview}

@@ -29,7 +29,80 @@ export const SIZE_FILTER =
   `scale='min(iw,${MAX_VIDEO_DIMENSION})':'min(ih,${MAX_VIDEO_DIMENSION})':` +
   `force_original_aspect_ratio=decrease,scale=trunc(iw/2)*2:trunc(ih/2)*2`;
 
-export default function createFrameSink({ fps, height, out, width }) {
+const ENCODERS = {
+  mp4: [
+    '-c:v',
+    'libx264',
+    '-crf',
+    '17',
+    '-preset',
+    'slow',
+    // moov atom up front: iOS Safari refuses to play a progressively
+    // fetched mp4 whose index is only written after encoding finishes.
+    '-movflags',
+    '+faststart',
+  ],
+  webm: [
+    '-c:v',
+    'libvpx-vp9',
+    '-crf',
+    '20',
+    '-b:v',
+    '0',
+    '-row-mt',
+    '1',
+    '-deadline',
+    'good',
+    '-cpu-used',
+    '2',
+    // libvpx drops the alpha plane when alt-ref frames are on.
+    '-auto-alt-ref',
+    '0',
+  ],
+};
+
+export const VIDEO_FORMATS = Object.keys(ENCODERS);
+
+// `out` names the clip; each ticked video format is written beside it. A
+// kernel without the format keys yet writes the MP4 alone.
+export function videoOutputs(options, out) {
+  const stem = out.replace(/\.(mp4|webm)$/u, '');
+  const ticked = VIDEO_FORMATS.filter((format) => options[format]);
+  const formats =
+    ticked.length > 0 || VIDEO_FORMATS.some((format) => format in options)
+      ? ticked
+      : ['mp4'];
+  return formats.map((format) => ({ file: `${stem}.${format}`, format }));
+}
+
+// One ffmpeg run per clip, split into every format asked for. A transparent
+// clip keeps its alpha in WebM; MP4 has none, so it is laid over `background`.
+function filterGraph({ background, fps, height, outputs, transparent, width }) {
+  const chains = outputs.map(({ format }, index) => {
+    const alpha = transparent && format === 'webm';
+    const steps = `${SIZE_FILTER},format=${alpha ? 'yuva420p' : 'yuv420p'}`;
+    if (!transparent || alpha) return `[i${index}]${steps}[o${index}]`;
+    return (
+      `color=c=${background}:s=${width}x${height}:r=${fps}[bg${index}];` +
+      `[bg${index}][i${index}]overlay=shortest=1,${steps}[o${index}]`
+    );
+  });
+  const split =
+    outputs.length === 1
+      ? '[0:v]null[i0]'
+      : `[0:v]split=${outputs.length}${outputs.map((_, i) => `[i${i}]`).join('')}`;
+  return [split, ...chains].join(';');
+}
+
+export default function createFrameSink({
+  background = '#000000',
+  fps,
+  height,
+  out,
+  outputs = [{ file: out, format: 'mp4' }],
+  transparent = false,
+  width,
+}) {
   const child = spawn(
     'ffmpeg',
     [
@@ -44,19 +117,14 @@ export default function createFrameSink({ fps, height, out, width }) {
       String(fps),
       '-i',
       'pipe:0',
-      '-vf',
-      `${SIZE_FILTER},format=yuv420p`,
-      '-c:v',
-      'libx264',
-      '-crf',
-      '17',
-      '-preset',
-      'slow',
-      // moov atom up front: iOS Safari refuses to play a progressively
-      // fetched mp4 whose index is only written after encoding finishes.
-      '-movflags',
-      '+faststart',
-      out,
+      '-filter_complex',
+      filterGraph({ background, fps, height, outputs, transparent, width }),
+      ...outputs.flatMap(({ file, format }, index) => [
+        '-map',
+        `[o${index}]`,
+        ...ENCODERS[format],
+        file,
+      ]),
     ],
     { stdio: ['pipe', 'ignore', 'pipe'] }
   );
@@ -109,4 +177,26 @@ export default function createFrameSink({ fps, height, out, width }) {
       }
     },
   };
+}
+
+// Re-encodes a finished clip into another format, for encoders that write one
+// file through ffmpeg filters of their own (Rorschach's montage).
+export function transcodeVideo(from, to, format) {
+  return new Promise((resolve, reject) => {
+    const child = spawn(
+      'ffmpeg',
+      ['-y', '-i', from, '-vf', 'format=yuv420p', ...ENCODERS[format], to],
+      { stdio: ['ignore', 'ignore', 'pipe'] }
+    );
+    let stderr = '';
+    child.stderr.on('data', (chunk) => {
+      stderr += chunk;
+    });
+    child.on('error', reject);
+    child.on('close', (code) =>
+      code === 0
+        ? resolve(to)
+        : reject(new Error(`ffmpeg exited ${code}\n${stderr.slice(-2000)}`))
+    );
+  });
 }

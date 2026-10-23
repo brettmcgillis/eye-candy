@@ -103,6 +103,15 @@ export default function createExhibitRig() {
   return {
     group,
 
+    // What a plot draws: the exhibit without its stage, and whether it is a
+    // ray-marched field (no mesh of its own to read back).
+    plotSubject() {
+      return {
+        field: proxy.visible,
+        subject: [meshes.group, proxy].filter((object) => object.visible),
+      };
+    },
+
     setExhibit(config, build, footprint) {
       current = { build, footprint };
       version += 1;

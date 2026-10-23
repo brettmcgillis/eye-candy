@@ -8,6 +8,7 @@ import {
   uniform,
   vec2,
   vec3,
+  vec4,
 } from 'three/tsl';
 
 export const defaults = {
@@ -51,7 +52,7 @@ export function create({ input, slot }) {
   );
 
   return {
-    node: input.add(vec3(noise.sub(0.5).mul(uAmount))),
+    node: vec4(input.rgb.add(vec3(noise.sub(0.5).mul(uAmount))), input.a),
     update: (values) => {
       uAmount.value = values[`${slot.prefix}Amount`] ?? slot.amount;
       uScale.value = values[`${slot.prefix}Scale`] ?? slot.scale;

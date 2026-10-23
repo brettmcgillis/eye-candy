@@ -1,11 +1,13 @@
 import { createRng } from '@modules/flora';
 
+import { LOOK_KEYS, LOOK_OPTIONS } from './lookOptions.mjs';
 import {
   RENDER_OPTIONS,
   facets,
   keysInFacet,
   sceneDefaults,
 } from './renderOptions.mjs';
+import rollLook from './rollLook';
 
 function rollValue(item, rng) {
   const { max, min, step } = item.roll;
@@ -80,19 +82,52 @@ const FACET_ROLLS = {
 // one can be held while the others move.
 export default function rollGhostConfig(
   batchSeed,
-  { base = {}, keep = [], pinned = {}, skins = null } = {}
+  {
+    base = {},
+    keep = [],
+    pinned = {},
+    skins = null,
+    skinLibrary = {},
+    mode = 'new',
+  } = {}
 ) {
-  const config = { ...sceneDefaults(), ...base };
+  const config = { ...sceneDefaults(), ...base, ghostMode: mode };
+  const skinRng = createRng(`${batchSeed}:skin`);
+  if (mode === 'new' && !keep.includes('skin') && pinned.skin == null) {
+    FACET_ROLLS.skin(config, skinRng, { skins });
+  }
+  config.skin = pinned.skin ?? config.skin;
+  const skin = skinLibrary[config.skin] ?? {};
+  LOOK_KEYS.forEach((key) => {
+    const inheritBase =
+      mode !== 'new' || keep.includes(LOOK_OPTIONS[key].facet);
+    config[key] = (inheritBase ? base[key] : null) ?? skin[key] ?? null;
+  });
+  const textures = [
+    ...new Set(
+      Object.values(skinLibrary)
+        .flatMap((item) => [item.outerTextureUrl, item.innerTextureUrl])
+        .filter(Boolean)
+    ),
+  ];
 
   facets()
-    .filter((facet) => !keep.includes(facet))
+    .filter((facet) => facet !== 'skin' && !keep.includes(facet))
     .forEach((facet) => {
       const rng = createRng(`${batchSeed}:${facet}`);
       keysInFacet(facet).forEach((key) => {
         const item = RENDER_OPTIONS[key];
         if (item.roll) config[key] = rollValue(item, rng);
       });
-      FACET_ROLLS[facet]?.(config, rng, { skins });
+      if (Object.values(LOOK_OPTIONS).some((item) => item.facet === facet)) {
+        if (mode !== 'named')
+          Object.assign(
+            config,
+            rollLook(config, facet, rng, { mode, textures })
+          );
+      } else {
+        FACET_ROLLS[facet]?.(config, rng, { skins });
+      }
     });
 
   Object.entries(pinned).forEach(([key, value]) => {

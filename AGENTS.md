@@ -355,6 +355,10 @@ directly from the local three.js checkout:
   update it** — don't add sections logging what you built, and don't touch its
   back-link or existing content as a side effect of implementing something.
   See `docs/scene-conventions.md` §15.
+- **Every request to kick off a new scene: ask whether it gets a render
+  bench** (one question, every time, before building). If yes, it ships with
+  roll randomization, video, SVG pen-plot output and a Live tab as the default
+  scope. See `docs/scene-conventions.md` §17 and `docs/render-workbench.md` § 0.
 - **New scenes and local presets self-register in Cataloggr** through their
   existing config and preset files. When creating a scene or dev tool,
   scaffold its `todo.md` with `npm run todo:new -- <dir> "<Name>"` (never

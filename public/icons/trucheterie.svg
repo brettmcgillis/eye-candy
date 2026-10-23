@@ -1,1 +1,15 @@
-<svg stroke="#141414" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" color="#141414" height="256" width="256" xmlns="http://www.w3.org/2000/svg"><circle cx="9" cy="9" r="7"></circle><circle cx="15" cy="15" r="7"></circle></svg>
+<svg
+  stroke="#141414"
+  fill="none"
+  stroke-width="2"
+  viewBox="0 0 24 24"
+  stroke-linecap="round"
+  stroke-linejoin="round"
+  color="#141414"
+  height="256"
+  width="256"
+  xmlns="http://www.w3.org/2000/svg"
+>
+  <circle cx="9" cy="9" r="7"></circle>
+  <circle cx="15" cy="15" r="7"></circle>
+</svg>

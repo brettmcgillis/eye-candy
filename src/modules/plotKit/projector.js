@@ -21,6 +21,16 @@ export default function createProjector(camera, width, height) {
   ]);
   const right = normalize(cross(forward, camera.up));
   const up = cross(right, forward);
+  if (camera.projection === 'orthographic') {
+    return (x, y, z) => {
+      const v = [x - camera.eye[0], y - camera.eye[1], z - camera.eye[2]];
+      return {
+        depth: dot(v, forward),
+        x: ((dot(v, right) / camera.halfWidth + 1) / 2) * width,
+        y: ((1 - dot(v, up) / camera.halfHeight) / 2) * height,
+      };
+    };
+  }
   const tanY = Math.tan((camera.fov * DEG) / 2);
   const tanX = tanY * (width / height);
   return (x, y, z) => {

@@ -8,6 +8,7 @@ import {
   FiX,
 } from 'react-icons/fi';
 
+import { liveTabs } from '@dev/renderWorkbench/LiveStage';
 import ResultsPanel, {
   activeJobCount,
 } from '@dev/renderWorkbench/ResultsPanel';
@@ -35,6 +36,7 @@ import './FloraWorkbenchPage.css';
 import BouquetTray from './components/BouquetTray';
 import OptionSections from './components/OptionSections';
 import PreviewDetails from './components/PreviewDetails';
+import floraLive from './live';
 
 const FACETS = facets();
 const INITIAL_OPTIONS = {
@@ -347,6 +349,18 @@ export default function FloraWorkbenchPage() {
               jobsApi={jobsApi}
               renderDetails={renderDetails}
               selectionActions={selectionActions}
+              defaultTab="live"
+              leadingTabs={liveTabs(
+                floraLive,
+                'flora'
+              )({
+                jobsApi,
+                kind,
+                options,
+                pins: { pins: pins.pins, setPins: pins.setPins },
+                setOption,
+                setOptions,
+              })}
             />
           }
         />

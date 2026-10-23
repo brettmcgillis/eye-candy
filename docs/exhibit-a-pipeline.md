@@ -39,6 +39,7 @@ the kernel first, land every consumer in the same commit, and run
   `drawHold`, then holds). `--orbit` drifts the camera on the last three.
   An unpinned `draw` roll skips the ray-marched families, which have nothing
   to build.
+- **Plot** (`--svg`): hidden-line line work in the exhibit's own colours (plotKit `meshPlotSvg`): mesh families' contours and creases; a ray-marched field's outline (from its written depth) plus the render's brightness contours. The field proxy box is `userData.plot = false`.
 
 ## ExhibitACLI
 

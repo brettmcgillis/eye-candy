@@ -10,6 +10,7 @@ export {
 export { default as frameFlock, anglesFor } from './framing';
 export {
   default as renderFlockSvg,
+  needsAlbedo,
   needsDepth,
   needsImage,
   plotArgs,

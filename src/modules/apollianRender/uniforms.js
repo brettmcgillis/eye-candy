@@ -60,6 +60,7 @@ export function createUniforms() {
     exposure: uniform(1.2),
     floorShadow: uniform(0.75),
     floorY: uniform(-2),
+    transparent: uniform(0),
     fog: uniform(0.04),
     hitEpsilon: uniform(0.0004),
     ior: uniform(1.2),

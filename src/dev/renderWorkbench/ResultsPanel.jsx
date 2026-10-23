@@ -28,6 +28,7 @@ export default function ResultsPanel({
     removeAssets,
     removeMany,
     removeSavedAssets,
+    retry,
     savedCollections,
     tool,
   } = jobsApi;
@@ -58,6 +59,8 @@ export default function ResultsPanel({
   function handleQueueClick(event) {
     const button = event.target.closest('[data-cancel-job]');
     if (button) cancel(button.dataset.cancelJob);
+    const retryButton = event.target.closest('[data-retry-job]');
+    if (retryButton) retry(retryButton.dataset.retryJob);
   }
 
   const tabs = [

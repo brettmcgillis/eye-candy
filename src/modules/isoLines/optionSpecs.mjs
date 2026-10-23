@@ -355,12 +355,14 @@ export function sharedRender({ facets, name }) {
     height: standard.height(),
     pixelRatio: standard.pixelRatio(),
     count: standard.count('pieces'),
-    png: standard.png(),
     webp: standard.webp(),
+    capture: standard.capture(),
+    transparent: standard.transparent(),
     svg: standard.svg(
       'Write a plottable SVG: the contours chained into paths, one pen per colour group'
     ),
     plotWidthMm: standard.plotWidthMm(),
+    svgColors: standard.svgColors(),
     stillTime: still({
       default: 0,
       help: 'Seconds of field flow a still is frozen at',
@@ -398,6 +400,7 @@ export function sharedRender({ facets, name }) {
     keep: standard.keep(facets),
     base: standard.base(),
     palettes: standard.palettes('colour'),
+    ...standard.videoFormats(),
     fps: standard.fps(),
     hold: standard.hold(6, 'Seconds each piece plays for, or holds built'),
   };

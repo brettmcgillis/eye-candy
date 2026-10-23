@@ -102,7 +102,7 @@ const meshCount = (root) => {
 // captured.
 export async function createFireCapturer(
   kernel,
-  { height, pixelRatio, width }
+  { height, pixelRatio, transparent, width }
 ) {
   const { fire, look } = kernel;
   const headless = await createHeadlessRenderer({
@@ -171,7 +171,7 @@ export async function createFireCapturer(
       Math.random = fire.burnRandom(name);
       solidsRef.current = null;
       effectsRef.current = null;
-      await stage.mount({ config, effectsRef, solidsRef });
+      await stage.mount({ config, effectsRef, solidsRef, transparent });
       let last = -1;
       let steady = 0;
       await until(
@@ -304,6 +304,7 @@ export const withCapturer = (kernel, options, work) =>
       createFireCapturer(kernel, {
         height: options.height,
         pixelRatio: options.pixelRatio,
+        transparent: options.transparent,
         width: options.width,
       }),
     work

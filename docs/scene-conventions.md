@@ -484,6 +484,25 @@ the only proactive root `TODO.md` edit; scene status and publishing oversight
 and unregistered scene ideas belong in Cataloggr rather than checkbox
 inventories in the root TODO.
 
+## 17. Every new scene kickoff asks about a render bench
+
+Most work-in-progress scenes end up with a render workbench (stills, video,
+plots). So when the user asks to start a new scene, **ask whether it gets a
+render bench before building anything** — one question, asked every time, never
+assumed either way and never skipped because the scene "looks simple". Ask it
+alongside any other kickoff questions, not after the scene is built.
+
+- **No:** build the scene as usual. Nothing in the scene may block adding a
+  bench later, so keep the generator's state in a seed-driven config rather than
+  in component-local randomness.
+- **Yes:** the scene is built as a generator from the start, per
+  `docs/render-workbench.md` § 6 and the core requirements in § 0 there:
+  randomization (roll), video, SVG plot output and a Live tab. Optional ones are
+  dropped only when the user says so (an SVG that cannot exist for the scene,
+  e.g. pure volumetric fog, is still named in the kickoff so the user decides).
+  Design the kernel so the scene's controls, the CLIs and the bench all read one
+  `renderOptions.mjs` (render-workbench § 1).
+
 ---
 
 ## Scaffold & process (do not violate)

@@ -1,10 +1,13 @@
 import React from 'react';
 
 import { Stat } from '@dev/renderWorkbench/AssetGallery';
+import { liveTabs } from '@dev/renderWorkbench/LiveStage';
 import RollWorkbench from '@dev/renderWorkbench/RollWorkbench';
 
 import * as kernel from '@modules/fractalAutomata';
 import { PALETTE_NAMES } from '@modules/fractalAutomataRender';
+
+import fractalAutomataLive from './live';
 
 const PALETTE_CHOICES = ['None', ...PALETTE_NAMES].map((name) => [name, name]);
 
@@ -31,6 +34,8 @@ const preview = {
 export default function FractalAutomataWorkbenchPage() {
   return (
     <RollWorkbench
+      defaultTab="live"
+      leadingTabs={liveTabs(fractalAutomataLive, 'fractalAutomata')}
       name="Fractal Automata"
       noun={{ many: 'structures', one: 'structure' }}
       preview={preview}

@@ -422,6 +422,7 @@ export default function LiveDumpster({ jobsApi, options, setOptions }) {
           effectsRef={effectsRef}
           key={stageKey}
           solidsRef={solidsRef}
+          transparent={options.transparent}
         />
         <Director
           bridgeRef={bridgeRef}

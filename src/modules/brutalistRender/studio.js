@@ -48,6 +48,7 @@ export function createStudio(uniforms) {
   );
   floor.rotation.x = -Math.PI / 2;
   floor.receiveShadow = true;
+  floor.userData.backdrop = 'shadow';
   group.add(floor);
 
   const wallMaterial = new THREE.MeshBasicNodeMaterial({
@@ -71,6 +72,7 @@ export function createStudio(uniforms) {
     wallMaterial
   );
   wall.position.y = ROOM_HEIGHT / 2;
+  wall.userData.backdrop = 'hide';
   group.add(wall);
 
   const plinthMaterial = new THREE.MeshStandardNodeMaterial({

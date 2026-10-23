@@ -1,6 +1,8 @@
 import { gaussianBlur } from 'three/addons/tsl/display/GaussianBlurNode.js';
 import { max, uniform } from 'three/tsl';
 
+import withGlow from './withGlow';
+
 export const defaults = {
   radius: 0.4,
   strength: 0.35,
@@ -44,7 +46,7 @@ export function create({ input, slot }) {
   });
 
   return {
-    node: input.add(blurred.mul(uStrength)),
+    node: withGlow(input, blurred.mul(uStrength)),
     rebuildKeys: [`${slot.prefix}Radius`],
     update: (values) => {
       uThreshold.value = values[`${slot.prefix}Threshold`] ?? slot.threshold;

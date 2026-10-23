@@ -237,3 +237,7 @@ quarter of the frame; Spectrum is the costly mode).
 - Spectrum flow in the shader rather than as CPU repaints.
 - Weave dips are locally steep (rise over run ~4–6) at a few grid-corner
   crossings per field.
+
+## Plot
+
+- **Plot** (`--svg`): the tubes as hidden-line line work in lane colours (plotKit `meshPlotSvg`): swept-mesh outlines and ends, plus each lane's centre stroke lifted onto the near surface (`rig.plotParts`). A membrane's skin (GPU vertices) gives only its silhouette, plus its lane centre lines.

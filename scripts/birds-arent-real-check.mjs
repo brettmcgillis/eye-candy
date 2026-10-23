@@ -101,7 +101,7 @@ function checkRolls(kernel) {
       check(config[key] !== undefined, `roll check-${i} leaves out "${key}".`)
     );
     try {
-      normalizeOptions('still', { ...config, png: true });
+      normalizeOptions('still', config);
     } catch (error) {
       failures.push(`roll check-${i} fails validation: ${error.message}`);
     }
@@ -248,7 +248,7 @@ async function checkPlot({ birds }) {
 async function checkRender(kernel) {
   const { birds, look } = kernel;
   const options = {
-    ...normalizeOptions('still', { png: true }),
+    ...normalizeOptions('still'),
     height: 120,
     pixelRatio: 1,
     svgShading: 'none',

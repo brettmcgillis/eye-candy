@@ -11,19 +11,11 @@ import {
   withCapturer,
 } from './lib/birdsArentRealRender.mjs';
 import { runStills, sidecarFor } from './lib/generatorCli.mjs';
-import { finishCapture, readCapture } from './lib/liveCapture.mjs';
 import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 runStills({
-  gpu: ({ capture }) => !capture,
   kernelLabel: 'BirdsArentReal',
-  async item(context) {
-    if (context.capture) {
-      if (context.index === 0) await finishCapture(context);
-      return;
-    }
-    const { batch, capturer, index, kernel, options, roll, save, step } =
-      context;
+  async item({ batch, capturer, index, kernel, options, roll, save, step }) {
     const drawn = await step(`rolling flock ${index + 1}`, () =>
       flockAt(kernel, { batch, index, roll })
     );
@@ -50,13 +42,10 @@ runStills({
   parseCli,
   resolveViews,
   script: 'birds-arent-real',
-  setup: async ({ kernel, options, typed }) =>
-    options.capture
-      ? { capture: await readCapture(options.capture) }
-      : {
-          batch: options.batch ?? kernel.birds.randomSeed(),
-          roll: rollArgs(kernel, { options, typed }),
-        },
+  setup: ({ kernel, options, typed }) => ({
+    batch: options.batch ?? kernel.birds.randomSeed(),
+    roll: rollArgs(kernel, { options, typed }),
+  }),
   title: 'birdsarentreal',
   usageFor,
   withCapturer,

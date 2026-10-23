@@ -4,6 +4,7 @@ import createRenderJobService, {
   RenderJobRequestError,
   optionsToFlags,
 } from './jobService';
+import liveCaptureRoute from './liveCapture';
 import createRenderJobPlugin from './plugin';
 import appendPreset, { uniqueName } from './presetFile';
 
@@ -107,6 +108,13 @@ export default function createSchemaToolPlugin({
   tool,
   writePreset = createScenePresetWriter(preset),
 }) {
+  const service = createSchemaJobService({
+    kinds,
+    normalizeOptions,
+    options,
+    slug,
+    tool,
+  });
   return createRenderJobPlugin({
     routes: [
       {
@@ -116,15 +124,11 @@ export default function createSchemaToolPlugin({
         method: 'POST',
         path: '/presets',
       },
+      // A bench with a Live tab declares standard.capture().
+      ...(options.capture ? [liveCaptureRoute({ service, slug })] : []),
       ...routes,
     ],
-    service: createSchemaJobService({
-      kinds,
-      normalizeOptions,
-      options,
-      slug,
-      tool,
-    }),
+    service,
     tool,
   });
 }

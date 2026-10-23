@@ -1,6 +1,7 @@
 export { default as SUBDIVISION_RELIEF_CAMERA } from './camera';
 export { default as SUBDIVISION_RELIEF_LIGHTING } from './lighting';
 export { default as createReliefRig } from './rig';
+export { createReliefStage, pieceAt, plotSvg, rollArgs } from './stage';
 export {
   PALETTE_NAMES,
   PALETTE_NONE,

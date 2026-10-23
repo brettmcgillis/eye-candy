@@ -1,12 +1,14 @@
 import React from 'react';
 
 import { Stat } from '@dev/renderWorkbench/AssetGallery';
+import { liveTabs } from '@dev/renderWorkbench/LiveStage';
 import RollWorkbench from '@dev/renderWorkbench/RollWorkbench';
 import SourceImageField from '@dev/renderWorkbench/SourceImageField';
 
 import * as kernel from '@modules/subdivision';
 import { PALETTE_NAMES } from '@utils/gradientPalette';
 
+import subdivisionLive from '../live';
 import './SubdivisionWorkbenchPage.css';
 
 const PALETTE_CHOICES = [kernel.PALETTE_NONE, ...PALETTE_NAMES].map((name) => [
@@ -60,6 +62,8 @@ export default function SubdivisionWorkbenchPage() {
   return (
     <RollWorkbench
       baseLabel={baseLabel}
+      defaultTab="live"
+      leadingTabs={liveTabs(subdivisionLive, 'subdivision')}
       name="Subdivision"
       noun={{ many: 'pieces', one: 'piece' }}
       preview={preview}

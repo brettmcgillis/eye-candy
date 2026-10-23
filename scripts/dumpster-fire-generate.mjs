@@ -11,19 +11,11 @@ import {
   withCapturer,
 } from './lib/dumpsterFireRender.mjs';
 import { runStills, sidecarFor } from './lib/generatorCli.mjs';
-import { finishCapture, readCapture } from './lib/liveCapture.mjs';
 import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 runStills({
-  gpu: ({ capture }) => !capture,
   kernelLabel: 'DumpsterFire',
-  async item(context) {
-    if (context.capture) {
-      if (context.index === 0) await finishCapture(context);
-      return;
-    }
-    const { batch, capturer, index, kernel, options, roll, save, step } =
-      context;
+  async item({ batch, capturer, index, kernel, options, roll, save, step }) {
     const drawn = await step(`rolling fire ${index + 1}`, () =>
       fireAt(kernel, { batch, index, roll })
     );
@@ -50,13 +42,10 @@ runStills({
   parseCli,
   resolveViews,
   script: 'dumpster-fire',
-  setup: async ({ kernel, options, typed }) =>
-    options.capture
-      ? { capture: await readCapture(options.capture) }
-      : {
-          batch: options.batch ?? kernel.fire.randomSeed(),
-          roll: rollArgs(kernel, { options, typed }),
-        },
+  setup: ({ kernel, options, typed }) => ({
+    batch: options.batch ?? kernel.fire.randomSeed(),
+    roll: rollArgs(kernel, { options, typed }),
+  }),
   title: 'dumpsterfire',
   usageFor,
   withCapturer,

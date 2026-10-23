@@ -94,7 +94,7 @@ function checkRolls({ fire }) {
   for (let i = 0; i < 40; i += 1) {
     const config = fire.rollDumpsterConfig(fire.seedFor('roll', i), {});
     systems.add(config.smokeSystem);
-    const normalized = normalizeOptions('still', { ...config, png: true });
+    const normalized = normalizeOptions('still', config);
     check(normalized, `roll ${i} does not normalize.`);
     if (config.brickWallEnabled) {
       check(
@@ -159,7 +159,7 @@ async function checkRender(kernel) {
   const width = 180;
   const height = 225;
   const options = {
-    ...normalizeOptions('still', { png: true }),
+    ...normalizeOptions('still'),
     height,
     pixelRatio: 1,
     svg: true,

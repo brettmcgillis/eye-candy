@@ -438,8 +438,16 @@ const RENDER = {
   height: standard.height(),
   pixelRatio: standard.pixelRatio({ default: 1 }),
   count: standard.count('structures'),
-  png: standard.png(),
   webp: standard.webp(),
+  capture: standard.capture(),
+  svg: standard.svg(
+    'Write the structure as hidden-line line work in its state colours'
+  ),
+  plotWidthMm: standard.plotWidthMm(),
+  svgColors: standard.svgColors(),
+  svgStroke: standard.svgStroke(),
+  svgOcclusion: standard.svgOcclusion('Drop lines hidden behind nearer cells'),
+  transparent: standard.transparent(),
   views: standard.views(VIEWS, 'hero'),
 
   fov: standard.fov(45, {
@@ -468,6 +476,7 @@ const RENDER = {
     'turntable: orbit the structure; keyLight: the key light sweeps once round; godrayLight: the godray light orbits the structure (forces godrays on)'
   ),
   view: standard.view(VIEWS, 'hero'),
+  ...standard.videoFormats(),
   fps: standard.fps(),
   hold: standard.hold(12, 'Seconds per structure', { min: 1 }),
   turns: standard.turns('piece', {

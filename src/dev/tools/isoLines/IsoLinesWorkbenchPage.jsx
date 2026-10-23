@@ -1,10 +1,13 @@
 import React from 'react';
 
 import { Stat } from '@dev/renderWorkbench/AssetGallery';
+import { liveTabs } from '@dev/renderWorkbench/LiveStage';
 import RollWorkbench from '@dev/renderWorkbench/RollWorkbench';
 
 import * as kernel from '@modules/isoLines';
 import { PALETTE_NAMES } from '@modules/isoLinesRender';
+
+import isoLinesLive from './live';
 
 const PALETTE_CHOICES = [
   ['None', 'None'],
@@ -36,9 +39,11 @@ const preview = {
 export default function IsoLinesWorkbenchPage() {
   return (
     <RollWorkbench
+      defaultTab="live"
       jobTitle={(job) =>
         job.kind === 'video' ? 'IsoLines video' : 'IsoLines stills'
       }
+      leadingTabs={liveTabs(isoLinesLive, 'isoLines')}
       name="IsoLines"
       noun={{ many: 'pieces', one: 'piece' }}
       preview={preview}

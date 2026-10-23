@@ -28,15 +28,12 @@ runStills({
     save,
     step,
   }) {
-    const { iso, relief } = kernel;
+    const { look, relief } = kernel;
     const aspect = options.width / options.height;
     const drawn = await pieceAt(kernel, { batch, index, roll });
-    const { config, image } = drawn;
+    const { config } = drawn;
     const build = await step(`building ${drawn.name}`, () =>
-      iso.createIsoBuilder().build(config, {
-        aspect,
-        image,
-        mode: relief.segmentMode(config),
+      look.buildPiece(drawn, options, {
         time: options.stillTime,
         withLines: options.svg,
       })
@@ -60,20 +57,7 @@ runStills({
       );
     }
     if (options.svg) {
-      await out.file(
-        'plan.svg',
-        iso.renderIsoSvg({
-          aspect,
-          config,
-          height: options.height,
-          lines: build.lines,
-          minLength: options.svgMinLength,
-          pens: options.svgPens,
-          stops: drawn.stops,
-          stroke: options.svgStroke,
-          width: options.width,
-        })
-      );
+      await out.file('plan.svg', look.planSvg(drawn, build, options));
     }
   },
   kernelLabel: 'IsoLinesRelief',

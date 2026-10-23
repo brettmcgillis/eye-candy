@@ -4,13 +4,12 @@ import {
   frameView,
   loadKernel,
   parseCli,
-  renderSvg,
   rollArgs,
   sidecarFor,
   specimenAt,
   withCapturer,
 } from './lib/fungiRender.mjs';
-import { runStills } from './lib/generatorCli.mjs';
+import { capturerSvg, runStills } from './lib/generatorCli.mjs';
 import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 runStills({
@@ -23,22 +22,11 @@ runStills({
     await out.eachView(async (view) => {
       const framing = {
         ...frameView(kernel, { bounds, options, view }),
-        levels: (specimen) =>
-          kernel.fungi.stillLevels(specimen, {
-            grow: options.grow,
-            rot: options.rot,
-          }),
+        levels: kernel.look.stillLevelsFor(options),
       };
       await out.image(view, () => capturer.capture(framing));
       if (options.svg) {
-        await out.svg(
-          view,
-          await renderSvg(kernel, capturer, {
-            ...drawn,
-            options,
-            view: framing,
-          })
-        );
+        await out.svg(view, await capturerSvg(capturer, framing, options));
       }
     });
   },

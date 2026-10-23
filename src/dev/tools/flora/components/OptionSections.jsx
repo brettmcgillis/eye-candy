@@ -1,8 +1,14 @@
 import React from 'react';
 
 import { SchemaField } from '@dev/renderWorkbench/SchemaFields';
+import { FormatPicker } from '@dev/renderWorkbench/SchemaSections';
 
-import { PALETTE_NONE, VIEWS, sectionsFor } from '@modules/flora';
+import {
+  PALETTE_NONE,
+  RENDER_OPTIONS,
+  VIEWS,
+  sectionsFor,
+} from '@modules/flora';
 import { PALETTE_NAMES } from '@utils/gradientPalette';
 
 const PALETTE_CHOICES = [PALETTE_NONE, ...PALETTE_NAMES].map((name) => [
@@ -24,10 +30,11 @@ const HANDLED = new Set([
   'in',
   'keepImages',
   'mode',
-  'png',
+  'mp4',
   'svg',
   'stillsOut',
   'views',
+  'webm',
   'webp',
   'width',
 ]);
@@ -76,33 +83,17 @@ export default function OptionSections({ kind, options, setOption }) {
 
   return (
     <>
+      <FormatPicker
+        kind={kind}
+        options={options}
+        renderOptions={RENDER_OPTIONS}
+        setOption={setOption}
+      />
       {kind === 'still' ? (
-        <>
-          <ViewPicker
-            onChange={(value) => setOption('views', value)}
-            value={options.views}
-          />
-          <fieldset className="rw-fieldset rw-formats">
-            <legend>Image files</legend>
-            {['png', 'webp', 'svg'].map((format) => (
-              <label htmlFor={`fw-${format}`} key={format}>
-                <input
-                  checked={Boolean(options[format])}
-                  disabled={
-                    options[format] &&
-                    !['png', 'webp', 'svg'].some(
-                      (other) => other !== format && options[other]
-                    )
-                  }
-                  id={`fw-${format}`}
-                  onChange={(event) => setOption(format, event.target.checked)}
-                  type="checkbox"
-                />
-                {format.toUpperCase()}
-              </label>
-            ))}
-          </fieldset>
-        </>
+        <ViewPicker
+          onChange={(value) => setOption('views', value)}
+          value={options.views}
+        />
       ) : null}
       {kind === 'video' && ['montage', 'growth'].includes(options.mode) ? (
         <fieldset className="rw-fieldset rw-formats">

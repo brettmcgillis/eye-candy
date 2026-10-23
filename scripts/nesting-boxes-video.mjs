@@ -2,11 +2,9 @@
 import { usageFor } from '../src/modules/nestingBoxes/renderOptions.mjs';
 import { azimuthOffset, runVideo } from './lib/generatorCli.mjs';
 import {
-  frameView,
   loadKernel,
   parseCli,
   rollArgs,
-  settleBackdrop,
   treeAt,
   withCapturer,
 } from './lib/nestingBoxesRender.mjs';
@@ -47,7 +45,7 @@ runVideo({
   overlay: sceneIconFile('nesting-boxes'),
   parseCli,
   plan({ kernel, options, typed }) {
-    const { boxes } = kernel;
+    const { boxes, look } = kernel;
     const roll = rollArgs(kernel, { options, typed });
     const batch = options.batch ?? boxes.randomSeed();
     const dt = 1 / options.fps;
@@ -70,7 +68,7 @@ runVideo({
         return {
           async enter(capturer) {
             // eslint-disable-next-line no-param-reassign
-            item.drawn = await settleBackdrop(capturer, item.drawn, {
+            item.drawn = await look.settleBackdrop(capturer, item.drawn, {
               options,
               roll,
             });
@@ -79,7 +77,7 @@ runVideo({
           },
           frame: (capturer, clock) =>
             capturer.capture(
-              frameView({
+              look.frameView({
                 azimuthOffset: azimuthOffset(options, clock),
                 bounds: growing ? bounds.all : bounds.settled,
                 options,

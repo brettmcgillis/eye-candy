@@ -146,6 +146,10 @@ grain under it; it is a material switch, not a uniform.
 
 - `npm run imperfection:check`
 - `npm run lint:fix`
-- `npm run imperfection:generate -- --count 1 --png`
+- `npm run imperfection:generate -- --count 1`
 - `npm run imperfection:video -- --count 1 --loopSeconds 4`
 - The scene still renders in the browser (human eyeball).
+
+## Plot
+
+- Plot SVG (`--svg`): the painting split into `--svgColors` inks (default 5) from its own colours, each ink's region shaded with `--svgShading` (`imperfectionRender/plot.js`), tone taken relative to the ink so a pale region draws as fully as a dark one.

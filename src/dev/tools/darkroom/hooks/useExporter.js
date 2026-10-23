@@ -34,6 +34,7 @@ export default function useExporter({ preview, submit }) {
       audio,
       end,
       fps,
+      framing,
       kind,
       options,
       size,
@@ -83,7 +84,7 @@ export default function useExporter({ preview, submit }) {
           fps,
           height: size.height,
           kind,
-          options,
+          options: { ...options, framing },
           session,
           source: sourceInfo
             ? {

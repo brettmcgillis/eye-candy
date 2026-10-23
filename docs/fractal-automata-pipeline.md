@@ -65,7 +65,7 @@ scene's own `godrays*` controls.
   light's azimuth sweeps `turns` times), `godrayLight` (forces godrays on and
   circles the light at 45% of the structure's half-width). The structure is
   built once per clip; only lights and camera move.
-- No plot SVG: the structure is millions of unit cubes, not line work.
+- Plot SVG (`--svg`): the greedy mesh as hidden-line line work in its state colours (`createMeshPlotter`, plotKit `meshPlotSvg`), so merged faces draw no seams; `--svgColors` merges the inks.
 
 ## Definition of done
 

@@ -16,3 +16,10 @@ export {
   voxelBounds,
 } from './voxelBuild';
 export { PALETTE_NAMES, getPaletteStops } from '@utils/gradientPalette';
+export {
+  createAutomataStage,
+  frameView,
+  rollArgs,
+  settleStructure,
+  structureAt,
+} from './stage';

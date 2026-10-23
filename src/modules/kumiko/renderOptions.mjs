@@ -367,9 +367,11 @@ const RENDER = {
   height: standard.height(),
   pixelRatio: standard.pixelRatio(),
   count: standard.count('panels'),
-  png: standard.png(),
   webp: standard.webp(),
+  capture: standard.capture(),
+  transparent: standard.transparent(),
   svg: standard.svg('Write an SVG of the flat panel (see --svgStyle)'),
+  svgColors: standard.svgColors(),
   views: standard.views(VIEWS, 'flat', {
     help: 'Comma-separated views: flat, front, angle, raking (flat is the 2D art; the rest are 3D renders)',
   }),
@@ -398,6 +400,25 @@ const RENDER = {
   samples: standard.samples({ help: 'MSAA samples (3D views)' }),
   shadows: standard.shadows({ help: 'Key-light shadow map (3D views)' }),
 
+  mode: standard.mode(
+    ['montage', 'hold'],
+    'montage',
+    'montage: one held panel after another; hold: repeat the first panel'
+  ),
+  ...standard.videoFormats(),
+  fps: standard.fps(),
+  hold: standard.hold(3, 'Seconds each panel is held in the video', {
+    max: 60,
+  }),
+  videoView: choice(
+    'video',
+    null,
+    'Video view',
+    ['front', 'angle', 'raking'],
+    'angle',
+    { scene: false, scope: 'video' }
+  ),
+
   keep: standard.keep(['layout', 'patterns', 'mix', 'palette']),
   base: standard.base('panel'),
   palettes: standard.palettes('palette'),
@@ -413,6 +434,7 @@ export const RENDER_OPTIONS = {
 
 export const SURFACE_DEFAULTS = {
   'cli-still': { batch: null },
+  'cli-video': { batch: null, count: 3, out: 'output/kumiko.mp4' },
   workbench: { count: 6, batch: null },
 };
 

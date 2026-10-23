@@ -1,7 +1,6 @@
 #!/usr/bin/env node
 import { usageFor } from '../src/modules/fractalAutomata/renderOptions.mjs';
 import {
-  frameView,
   loadKernel,
   parseCli,
   rollArgs,
@@ -77,7 +76,7 @@ runVideo({
                   }
                 : drawn.config;
             return capturer.capture(
-              frameView({
+              kernel.look.frameView({
                 azimuthOffset:
                   options.mode === 'turntable'
                     ? 360 * options.turns * share

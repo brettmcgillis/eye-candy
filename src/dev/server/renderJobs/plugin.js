@@ -13,6 +13,7 @@ const CONTENT_TYPES = {
   '.mp4': 'video/mp4',
   '.png': 'image/png',
   '.svg': 'image/svg+xml; charset=utf-8',
+  '.webm': 'video/webm',
   '.webp': 'image/webp',
 };
 
@@ -131,7 +132,20 @@ export default function createRenderJobPlugin({ routes = [], service, tool }) {
   return {
     name: `${tool}-dev-plugin`,
     apply: 'serve',
+    closeBundle() {
+      service.stop?.();
+    },
     configureServer(server) {
+      // After listen: a restart closes the old server (and its CLIs) first.
+      const resume = () =>
+        service.listJobs(server.config.root).catch((error) => {
+          server.config.logger.warn(
+            `[${tool}] could not resume render jobs: ${error.message}`
+          );
+        });
+      if (server.httpServer) server.httpServer.once('listening', resume);
+      else resume();
+
       server.middlewares.use(async (req, res, next) => {
         const pathname = req.url?.split('?')[0] ?? '';
         if (!pathname.startsWith(base)) {
@@ -224,6 +238,12 @@ export default function createRenderJobPlugin({ routes = [], service, tool }) {
         if (rest === '/cancel' && method === 'POST') {
           await json(async () => ({
             job: await service.cancelJob(rootDir, id),
+          }));
+          return;
+        }
+        if (rest === '/retry' && method === 'POST') {
+          await json(async () => ({
+            job: await service.retryJob(rootDir, id),
           }));
           return;
         }

@@ -1,7 +1,6 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import {
   RENDER_OPTIONS,
-  SCENE_KEYS,
   defaultsFor,
   normalizeOptions,
 } from '../../src/modules/rugPull/renderOptions.mjs';
@@ -34,30 +33,9 @@ export const parseCli = createParseCli({
   normalizeOptions,
 });
 
-export function rollArgs(kernel, { options, typed }) {
-  const scene = new Set(SCENE_KEYS);
-  return {
-    base: options.base ? kernel.rug.configFrom(options.base) : {},
-    designPool: options.designPool,
-    houseRate: options.houseRate,
-    keep: String(options.keep ?? '')
-      .split(',')
-      .map((facet) => facet.trim())
-      .filter(Boolean),
-    palettePool: options.palettePool,
-    pinned: Object.fromEntries(
-      [...typed]
-        .filter((key) => scene.has(key))
-        .map((key) => [key, options[key]])
-    ),
-  };
-}
+export const rollArgs = (kernel, args) => kernel.look.rollArgs(args);
 
-export function rugAt(kernel, { batch, index, roll }) {
-  const name = kernel.rug.seedFor(batch, index);
-  const config = kernel.rug.rollRugConfig(name, roll);
-  return { build: kernel.rug.buildRug(config), config, name };
-}
+export const rugAt = (kernel, args) => kernel.look.rugAt(args);
 
 export const viewsOf = (options) =>
   String(options.views)
@@ -74,119 +52,25 @@ export function cartoonFrame(kernel, build, options) {
   });
 }
 
-// Lays the rug out for a mode and lets the cloth settle, as the scene does
-// before its first frame.
-export function drape(kernel, { build, config }, mode, steps) {
-  const { look, rug } = kernel;
-  const layout = rug.clothLayout(build, config);
-  const rodHeight = rug.rodHeightFor(build, config);
-  const cloth = rug.createRugCloth(layout, {
-    ...config,
-    floorGap: look.FLOOR_GAP,
-    iterations: 12,
-    mode: mode === 'flat' ? 'floor' : mode,
-    rodHeight,
-    rumple: mode === 'flat' ? 0 : config.rumple,
-    cornerFlip: mode === 'flat' ? 0 : config.cornerFlip,
-    seed: build.cols,
-    wallGap: look.WALL_GAP,
-    wind: 0,
-  });
-  if (mode !== 'flat') cloth.settle(steps);
-  return { cloth, layout, rodHeight };
-}
+export const drape = (kernel, woven, mode, steps) =>
+  kernel.look.drape(woven, mode, steps);
 
 // One renderer per output size, reused across rugs and views: device and
 // pipeline setup dominate a capture, and the rig's materials compile once.
-export async function createRugCapturer(
-  kernel,
-  { height, samples = 4, width }
-) {
-  const { THREE, TSL, look } = kernel;
+export async function createRugCapturer(kernel, options) {
   const headless = await createHeadlessRenderer({
-    configure(renderer) {
-      /* eslint-disable no-param-reassign */
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.05;
-      renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-      /* eslint-enable no-param-reassign */
-    },
-    height,
-    width,
+    height: options.height,
+    width: options.width,
   });
-  const { renderer } = headless;
-  const scene = new THREE.Scene();
-  scene.background = new THREE.Color('#141110');
-  const cameras = {
-    orthographic: new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100),
-    perspective: new THREE.PerspectiveCamera(35, width / height, 0.05, 100),
-  };
-  const rig = look.createRugRig();
-  scene.add(rig.group);
-  const pipelines = {};
-
-  function pipelineFor(projection) {
-    if (!pipelines[projection]) {
-      const pipeline = new THREE.RenderPipeline(renderer);
-      pipeline.outputNode = TSL.pass(
-        scene,
-        cameras[projection],
-        samples > 0 ? { samples } : {}
-      );
-      pipelines[projection] = pipeline;
-    }
-    return pipelines[projection];
-  }
-
-  function aim(view) {
-    const camera = cameras[view.projection];
-    if (view.projection === 'orthographic') {
-      Object.assign(camera, {
-        bottom: -view.halfHeight,
-        left: -view.halfWidth,
-        right: view.halfWidth,
-        top: view.halfHeight,
-      });
-    } else {
-      camera.fov = view.fov;
-      camera.aspect = width / height;
-    }
-    camera.near = view.near;
-    camera.far = view.far;
-    camera.up.set(...view.up);
-    camera.position.set(...view.eye);
-    camera.lookAt(...view.target);
-    camera.updateProjectionMatrix();
-    camera.updateMatrixWorld();
-  }
-
-  async function render(pipeline) {
-    return headless.readFrame(() => pipeline.render());
-  }
-
+  const stage = kernel.look.createRugStage({
+    ...options,
+    readFrame: headless.readFrame,
+    renderer: headless.renderer,
+  });
   return {
-    rig,
-
-    load({ build, config }) {
-      rig.apply(config);
-      rig.setBuild(build);
-    },
-
-    async capture(view, draped, { config, mode }) {
-      rig.setLayout(draped.layout, {
-        clipCount: config.clipCount,
-        hangStyle: config.hangStyle,
-        mode: mode === 'flat' ? 'floor' : mode,
-        rodHeight: draped.rodHeight,
-      });
-      rig.updateCloth(draped.cloth.positions);
-      aim(view);
-      return render(pipelineFor(view.projection));
-    },
-
+    ...stage,
     dispose() {
-      rig.dispose();
+      stage.dispose();
       headless.dispose();
     },
   };
@@ -199,6 +83,7 @@ export const withCapturer = (kernel, options, work) =>
       createRugCapturer(kernel, {
         height: options.height * options.pixelRatio,
         samples: options.samples,
+        transparent: options.transparent,
         width: options.width * options.pixelRatio,
       }),
     work

@@ -473,8 +473,16 @@ const RENDER = {
   count: standard.count('pieces', {
     help: 'How many fields to roll; a batch uses seed, seed-1, seed-2…',
   }),
-  png: standard.png(),
   webp: standard.webp(),
+  capture: standard.capture(),
+  svg: standard.svg(
+    'Write the tubes as hidden-line line work in their lane colours: outlines, ends and each lane’s centre stroke'
+  ),
+  plotWidthMm: standard.plotWidthMm(),
+  svgColors: standard.svgColors(),
+  svgStroke: standard.svgStroke(),
+  svgOcclusion: standard.svgOcclusion('Drop lines hidden behind nearer tubes'),
+  transparent: standard.transparent(),
   views: standard.views(VIEWS, 'hero'),
   projection: standard.projection(PROJECTIONS, 'perspective'),
   fov: standard.fov(30),
@@ -491,6 +499,7 @@ const RENDER = {
     'growth: tubes extrude along their channels from the centre, then hold; flow: the grown field with its palette drifting; turntable: orbit a still field; inflate: a membrane inflates from flat, holds, then deflates'
   ),
   view: standard.view(VIEWS, 'hero'),
+  ...standard.videoFormats(),
   fps: standard.fps(),
   hold: standard.hold(
     3,

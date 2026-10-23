@@ -528,12 +528,14 @@ const RENDER = {
   height: standard.height(),
   pixelRatio: standard.pixelRatio(),
   count: standard.count('objects'),
-  png: standard.png(),
   webp: standard.webp(),
+  capture: standard.capture(),
+  transparent: standard.transparent(),
   svg: standard.svg(
     'Write a plottable SVG of the slice: outlines, contours by pen or hatching'
   ),
   plotWidthMm: standard.plotWidthMm(),
+  svgColors: standard.svgColors(),
   views: standard.views(VIEWS, 'hero,slice'),
   svgStyle: plot(
     choice('svg', null, 'SVG style', SVG_STYLES, 'pens', {
@@ -603,6 +605,7 @@ const RENDER = {
   view: standard.view(VIEWS, 'hero', {
     help: 'Camera view for the clip; slice films the 2D section',
   }),
+  ...standard.videoFormats(),
   fps: standard.fps(),
   hold: standard.hold(
     8,

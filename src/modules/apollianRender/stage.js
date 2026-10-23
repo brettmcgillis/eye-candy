@@ -379,14 +379,27 @@ export default function buildStageMaterial(family, surface, u, buffers) {
 
     // The floor is a shadow catcher: unshadowed, it is the backdrop itself,
     // so the stage reads as one sweep of paper with no edge to it.
-    const backdrop = mix(u.floorColor, u.background, floorShade);
+    // Transparent, the paper goes and only its shadow stays, as alpha.
+    const clear = u.transparent.greaterThan(0.5);
+    const backdrop = select(
+      clear,
+      vec3(0),
+      mix(u.floorColor, u.background, floorShade)
+    );
+    const paperAlpha = select(clear, floorShade.oneMinus(), float(1));
     const centreT = u.stageCentre.sub(ro).dot(rd);
     const beyond = max(travelled.sub(centreT), 0).div(size);
     const fogged = coverage.mul(exp(u.fog.mul(beyond).mul(beyond).negate()));
-    return vec4(mix(backdrop, tonemap(lit.mul(u.exposure)), fogged), 1);
+    return vec4(
+      mix(backdrop, tonemap(lit.mul(u.exposure)), fogged),
+      mix(paperAlpha, float(1), fogged)
+    );
   })();
 
+  // Unblended, so the shader's alpha is written straight (a transparent
+  // capture); an opaque material would force it to 1.
   const material = new THREE.MeshBasicNodeMaterial({
+    blending: THREE.NoBlending,
     depthTest: false,
     depthWrite: false,
     toneMapped: false,

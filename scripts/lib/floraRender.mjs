@@ -7,7 +7,11 @@ import {
   normalizeOptions,
 } from '../../src/modules/flora/renderOptions.mjs';
 import { DEG, createParseCli, withRenderer } from './generatorCli.mjs';
-import { createHeadlessRenderer, loadThree } from './headlessWebgpu.mjs';
+import {
+  createHeadlessRenderer,
+  loadThree,
+  setBackdrop,
+} from './headlessWebgpu.mjs';
 import loadModules from './loadModules.mjs';
 
 // Barrels only — see docs/flora-pipeline.md.
@@ -133,9 +137,16 @@ function viewDirection(angles, view, azimuthOffset) {
 // One renderer per output size, reused across frames: device and pipeline
 // setup dominate a capture. Rigs are pooled so a batch compiles the flower
 // materials once.
-export async function createFloraCapturer(
+export async function createFloraCapturerLegacy(
   kernel,
-  { height, pixelRatio = 1, samples = 4, shadows = true, width }
+  {
+    height,
+    pixelRatio = 1,
+    samples = 4,
+    shadows = true,
+    transparent = false,
+    width,
+  }
 ) {
   const { THREE, TSL, flora, lights, look } = kernel;
 
@@ -241,7 +252,11 @@ export async function createFloraCapturer(
       light.shadow.camera.updateProjectionMatrix();
     });
     scene.add(lightGroup);
-    scene.background = new THREE.Color(config.backgroundColor);
+    setBackdrop(
+      { THREE, renderer: headless.renderer, scene },
+      config.backgroundColor,
+      transparent
+    );
   }
 
   return {
@@ -333,6 +348,40 @@ export async function createFloraCapturer(
 
     dispose() {
       rigs.forEach(({ rig }) => rig.dispose());
+      headless.dispose();
+    },
+  };
+}
+
+export async function createFloraCapturer(
+  kernel,
+  {
+    height,
+    pixelRatio = 1,
+    samples = 4,
+    shadows = true,
+    transparent = false,
+    width,
+  }
+) {
+  const headless = await createHeadlessRenderer({ height, width });
+  const stage = kernel.look.createFloraStage(
+    { flora: kernel.flora, lights: kernel.lights },
+    {
+      height,
+      pixelRatio,
+      readFrame: headless.readFrame,
+      renderer: headless.renderer,
+      samples,
+      shadows,
+      transparent,
+      width,
+    }
+  );
+  return {
+    ...stage,
+    dispose() {
+      stage.dispose();
       headless.dispose();
     },
   };
@@ -433,6 +482,7 @@ export const withCapturer = (kernel, options, work) =>
         pixelRatio: options.pixelRatio,
         samples: options.samples,
         shadows: options.shadows,
+        transparent: options.transparent,
         width: options.width * options.pixelRatio,
       }),
     work

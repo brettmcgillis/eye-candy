@@ -25,12 +25,43 @@ component tree**, mounted on the headless renderer by the CLI and in a
          float / turntable            src/dev/server/ghostBuster → generate --capture
 ```
 
-| Piece                        | Rule                                                                                                                                                                                                                                                                                                          |
-| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@presets/ghost/ghostSkins`  | The one skin library. GhostBuster's preset menu reads it (`presets/scenePresets.js` re-exports it as `SCENE_PRESETS`), and so do this tool and PrintShop. **Add a skin there and every consumer has it** — nothing else to edit.                                                                              |
-| `@modules/ghostBuster`       | **Three-free.** May import only `@modules/flora` (`createRng`), `@modules/plotKit` (the shared plot layers and framing), `@elements/WebGPU/cloth/clothTopology`, `@elements/WebGPU/cloth/clothDecay`, `@elements/WebGPU/ghost/ghostRig` and `@elements/WebGPU/rainCloud/rainCloudRig`. The check enforces it. |
-| `@modules/ghostBusterRender` | The only home of the stage. `GhostStudio` is GhostBuster's studio (`StudioEnvironment` and `Backdrop` from `@modules/renderStage`, ambient, spot, orbit light, grid floor) plus the pose wrapper; `ghostProps(skin)` is GhostBuster's prop mapping.                                                           |
-| `renderOptions.mjs`          | Every knob, once. Facets: `location`, `skin`, `pose`, `camera`. The skin is a `string` option the page and CLI validate against the library, so the schema stays dependency-free.                                                                                                                             |
+| Piece                        | Rule                                                                                                                                                                                                                                                                                                                                                                                                |
+| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@presets/ghost/ghostSkins`  | The one skin library. GhostBuster's preset menu reads it (`presets/scenePresets.js` re-exports it as `SCENE_PRESETS`), and so do this tool and PrintShop. **Add a skin there and every consumer has it** — nothing else to edit.                                                                                                                                                                    |
+| `@modules/ghostBuster`       | **Three-free.** May import only `@modules/flora` (`createRng`), `@modules/plotKit` (the shared plot layers and framing), `@elements/WebGPU/cloth/clothTopology`, `@elements/WebGPU/cloth/clothDecay`, `@elements/WebGPU/ghost/ghostRig` and `@elements/WebGPU/rainCloud/rainCloudRig`. The check enforces it.                                                                                       |
+| `@modules/ghostBusterRender` | The only home of the stage. `GhostStudio` is GhostBuster's studio (`StudioEnvironment` and `Backdrop` from `@modules/renderStage`, ambient, spot, orbit light, grid floor) plus the pose wrapper; `ghostProps(skin)` is GhostBuster's prop mapping.                                                                                                                                                 |
+| `renderOptions.mjs`          | Every knob, once. Facets: `location`, `skin`, `material`, `fabric`, `texture`, `outline`, `emissive`, `shape`, `wear`, `face`, `decay`, `storm`, `motion`, `lighting`, `pose`, `camera`. `lookOptions.mjs` declares the inherited look controls and is composed into this schema. The skin is a `string` option the page and CLI validate against the library, so the schema stays dependency-free. |
+
+## Creating ghosts and working with named skins
+
+`ghostMode` selects `new` (the default), `variations`, or `named`. New
+rolls pick a library skin as a starting point and roll character traits on
+independent facet streams. Variations retain the base skin and mutate the
+base's traits with narrower numeric windows and small colour shifts. Named
+mode preserves look traits; pose, camera and location still follow their
+own hold/pin settings. Wind rolls stay gentle so identity comes from the
+ghost's appearance rather than its drape alone.
+
+The CLI adapter supplies a resolved `skinLibrary` to the three-free roller.
+`rollLook.js` keeps simulation resolution and collision safety settings fixed,
+uses conservative shape/physics windows, sparse decay/glow, coordinated colours
+within each facet, and a shared storm enable decision. Pins apply last, and
+holding a facet leaves its values untouched. Every rolled config carries the
+resolved look values for replay, including traits whose effect is currently off.
+
+Look defaults are nullable: an absent value inherits the named skin. The
+renderer calls `resolveSkin(config)` to merge explicit non-null overrides over
+that skin; passing a name still resolves an unmodified library skin. Texture
+URLs accept `none` to explicitly clear an inherited texture. The stage,
+lattice readback and SVG colour/detail arguments all resolve the same config.
+
+The workbench loads a named skin into the form, can reload its authored values,
+and can roll the current ghost directly in Live. Named and variations mode
+send the current form as `base`; edited and held controls remain ordinary
+schema pins. Gallery generations load their own full traits, while older
+sidecars inherit missing traits from their named skin. Live captures preserve
+these edits in their config. Captured generations remain the way to keep
+custom looks without changing the authored skin library.
 
 ## Headless R3F
 
@@ -132,12 +163,41 @@ screen so foreshortening can't squeeze it, and splits it wherever the
 region under it changes. Each region is a layer in the skin's colour,
 which the Plotterizer matches to a pen:
 
-| Layer (pen)                    | Region                                                                                                                                                                     | Colour                                                |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------- |
-| cloth fill (20)                | cloth seen from outside, and inside slivers not seen through a hole                                                                                                        | `color`                                               |
-| cloth shadow (21)              | `svgFillShades: 2`: a second line between the turns, tone above `svgFillShadow` only                                                                                       | `color` darkened                                      |
-| inside fill (22)               | `svgFillInside: cloth`: the sheet's inside seen through an eye hole (inside its edge on screen); `hole`: each hole filled by a spiral of its own shape, one stroke per eye | `innerEmissiveColor` when it glows, else `innerColor` |
-| goo / rot / blood fill (23–25) | clothDecay's goo, rot and blood above half                                                                                                                                 | `dripColor`, `holeRimColor`, `bloodColor`             |
+| Layer (pen)                    | Region                                                                                                                                                                                      | Colour                                    |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------- |
+| cloth fill (20)                | the exterior face of the sheet                                                                                                                                                              | `color`                                   |
+| cloth shadow (21)              | `svgFillShades: 2`: a second line between the turns, tone above `svgFillShadow` only                                                                                                        | `color` darkened                          |
+| inside fill (22)               | `svgFillInside: cloth`: every visible inner surface, including folded hems and the inside seen through eye holes; `hole`: each hole filled by a spiral of its own shape, one stroke per eye | `innerColor` (material mode)              |
+| goo / rot / blood fill (23–25) | clothDecay's goo, rot and blood above half                                                                                                                                                  | `dripColor`, `holeRimColor`, `bloodColor` |
+
+`svgColorMode` chooses the source of the inks independently of the final
+`svgColors` ink budget:
+
+- `material` (default) preserves exact authored or overridden outer `color`,
+  `innerColor`, eye-rim, outline, decay and storm colours. A small emissive
+  intensity never replaces the inner material colour.
+- `render` splits each region's fill strokes by the captured cloth's RGB,
+  using `svgSampleColors` inks (default six). This includes texture colours,
+  emissive glow and lighting as seen in the capture. Palette sampling is
+  masked to the cloth, and inner/outer region labels stay distinct.
+- `monochrome` draws black strokes, including fills and eye rims.
+
+Face classification uses the render mesh triangle winding, rather than
+assuming the nearest patch is exterior or that interior cloth only appears
+inside an eye hole. `svgFillInside: cloth` is the faithful surface mode;
+`hole` is a stylized eye fill. Only visible surfaces are drawn: an interior
+that the chosen view hides has no fill strokes.
+
+The workbench's **Colour pen plot** sets rows, visible inner cloth and the
+material colours with no ink reduction. **One of each named ghost** additionally
+resets holds, sets `ghostMode: named`, `skinOrder: cycle`, a front view and a
+count equal to the library size. It preserves the named looks while pose can
+vary. `skinOrder: cycle` also works in new/variations mode, visits the allowed
+`skins` in library order, and wraps only after exhausting them. It starts
+each skin from its own traits, so one named ghost's colours cannot leak into
+the next; explicit look pins still apply. A pinned or held skin overrides
+cycling. Reduce `svgColors` only when ready to fit the result to fewer pens;
+zero preserves the original colour layers.
 
 The eye rims' band is left to the rims layer (now in `cutoutRimColor`).
 `svgFillSpacing` is millimetres on paper (through `plotWidthMm`, the UV

@@ -23,7 +23,10 @@ import {
   readJsonFlags,
   readPackageVersion,
 } from './lib/cliArgs.mjs';
-import createFrameSink from './lib/frameSink.mjs';
+import createFrameSink, {
+  transcodeVideo,
+  videoOutputs,
+} from './lib/frameSink.mjs';
 import createProgress, { runStage } from './lib/progress.mjs';
 import {
   REPO_ROOT,
@@ -577,13 +580,19 @@ async function main() {
     width: Math.round(options.width * options.pixelRatio),
     height: Math.round(options.height * options.pixelRatio),
   };
-  const out = path.resolve(REPO_ROOT, String(options.out));
+  const outputs = videoOutputs(
+    options,
+    path.resolve(REPO_ROOT, String(options.out))
+  );
+  const out =
+    outputs.find(({ format }) => format === 'mp4')?.file ??
+    outputs[0].file.replace(/\.webm$/u, '.mp4');
   await mkdir(path.dirname(out), { recursive: true });
   process.stdout.write(
     `rorschach video: mode ${options.mode}, ${options.width}x${options.height} at ${options.pixelRatio}x, ` +
       `${options.fps}fps, renderer ${options.renderer}, ` +
       `overlay ${options.overlay ? 'on' : 'off'}\n` +
-      `output: ${out}\n`
+      `output: ${outputs.map(({ file }) => file).join(', ')}\n`
   );
 
   const kernel = await runStage('loading the Rorschach kernel', loadKernel);
@@ -683,8 +692,26 @@ async function main() {
       presets = rendered.presets;
     }
 
-    process.stdout.write(`saved video: ${out}\n`);
-    const metadataPath = await writeVideoMetadata(out, options, presets);
+    // Every mode encodes the MP4 first; the other formats come from it.
+    await Promise.all(
+      outputs
+        .filter(({ format }) => format !== 'mp4')
+        .map(({ file, format }) =>
+          runStage(`encoding ${format}`, () =>
+            transcodeVideo(out, file, format)
+          )
+        )
+    );
+    const metadataPath = await writeVideoMetadata(
+      outputs[0].file,
+      options,
+      presets
+    );
+    if (!outputs.some(({ file }) => file === out))
+      await rm(out, { force: true });
+    process.stdout.write(
+      `saved video: ${outputs.map(({ file }) => file).join(', ')}\n`
+    );
     process.stdout.write(`saved metadata: ${metadataPath}\n`);
   } finally {
     await disposeCapturers();

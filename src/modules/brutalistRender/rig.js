@@ -118,6 +118,7 @@ export default function createBrutalistRig({
 
   if (forestStage) {
     groundMesh.receiveShadow = true;
+    groundMesh.userData.backdrop = 'shadow';
     group.add(sky, groundMesh, forest.group);
   } else {
     group.add(studio.group);

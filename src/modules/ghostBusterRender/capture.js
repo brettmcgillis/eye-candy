@@ -10,14 +10,14 @@ export {
 } from '@modules/renderStage';
 
 // The settled cloth in world space, read back from the sim's GPU buffer.
-export async function readGhostLattice(renderer, ghost, skinName) {
+export async function readGhostLattice(renderer, ghost, config) {
   const { mesh, sim } = ghost;
   const buffer = await renderer.getArrayBufferAsync(sim.posBuf.value);
   mesh.updateWorldMatrix(true, false);
   return ghostLattice({
     local: new Float32Array(buffer),
     matrixWorld: mesh.matrixWorld.elements,
-    skin: resolveSkin(skinName),
+    skin: resolveSkin(config),
   });
 }
 

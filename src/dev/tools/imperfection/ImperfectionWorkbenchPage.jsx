@@ -1,10 +1,13 @@
 import React from 'react';
 
 import { Stat } from '@dev/renderWorkbench/AssetGallery';
+import { liveTabs } from '@dev/renderWorkbench/LiveStage';
 import RollWorkbench from '@dev/renderWorkbench/RollWorkbench';
 
 import * as kernel from '@modules/imperfection';
 import { PALETTE_NAMES } from '@modules/imperfectionRender';
+
+import imperfectionLive from './live';
 
 const sections = {
   choices: {
@@ -36,6 +39,8 @@ const preview = {
 export default function ImperfectionWorkbenchPage() {
   return (
     <RollWorkbench
+      defaultTab="live"
+      leadingTabs={liveTabs(imperfectionLive, 'imperfection')}
       name="Imperfection"
       noun={{ many: 'paintings', one: 'painting' }}
       preview={preview}

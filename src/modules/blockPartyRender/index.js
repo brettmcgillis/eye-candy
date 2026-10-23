@@ -10,3 +10,4 @@ export {
   createCityUniforms,
 } from './uniforms';
 export { default as paletteStops, PALETTE_NAMES } from './paletteStops';
+export { cityAt, createCityStage, frameView, rollArgs } from './stage';

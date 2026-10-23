@@ -70,7 +70,7 @@ async function main() {
     height: Math.round(options.height * options.pixelRatio),
   };
   const outRoot = path.resolve(REPO_ROOT, String(options.out));
-  const formats = ['png', 'svg', 'webp'].filter((format) => options[format]);
+  const formats = ['webp', 'svg'].filter((format) => options[format]);
 
   await mkdir(outRoot, { recursive: true });
   process.stdout.write(
@@ -139,22 +139,17 @@ async function main() {
               );
             }
 
-            if (options.png || options.webp) {
+            if (options.webp) {
               const raster = await renderFrame(kernel, {
                 config,
                 options: renderOptions,
                 test,
                 view,
               });
-              if (options.png) {
-                await writeFile(path.join(dir, `${view}.png`), raster);
-              }
-              if (options.webp) {
-                await writeFile(
-                  path.join(dir, `${view}.webp`),
-                  await sharp(raster).webp({ lossless: true }).toBuffer()
-                );
-              }
+              await writeFile(
+                path.join(dir, `${view}.webp`),
+                await sharp(raster).webp({ lossless: true }).toBuffer()
+              );
             }
           }
         );

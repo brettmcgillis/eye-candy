@@ -147,12 +147,14 @@ const RENDER = {
   height: standard.height(2560),
   pixelRatio: standard.pixelRatio(),
   count: standard.count('specimens'),
-  png: standard.png(),
   webp: standard.webp(),
+  capture: standard.capture(),
+  transparent: standard.transparent(),
   svg: standard.svg(
     'Write a plottable SVG: fibre centrelines, plate edges and bead circles, one pen per gradient stop'
   ),
   plotWidthMm: standard.plotWidthMm(),
+  svgColors: standard.svgColors(),
   svgOcclusion: standard.svgOcclusion(
     'Drop line work hidden behind nearer geometry (uses a depth pass)'
   ),
@@ -198,6 +200,7 @@ const RENDER = {
     'lifecycle: grow→spore→rot→unravel per specimen; growth: grow and hold; turntable: orbit a grown specimen; montage: a cut per specimen'
   ),
   view: standard.view(VIEWS, 'front'),
+  ...standard.videoFormats(),
   fps: standard.fps(),
   hold: standard.hold(
     4,

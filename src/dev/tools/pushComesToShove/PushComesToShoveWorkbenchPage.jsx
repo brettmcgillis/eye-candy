@@ -1,10 +1,13 @@
 import React from 'react';
 
 import { Stat } from '@dev/renderWorkbench/AssetGallery';
+import { liveTabs } from '@dev/renderWorkbench/LiveStage';
 import RollWorkbench from '@dev/renderWorkbench/RollWorkbench';
 
 import * as kernel from '@modules/pushComesToShove';
 import { PALETTE_NAMES } from '@modules/pushComesToShoveRender';
+
+import pushComesToShoveLive from './live';
 
 const TARGETS = {
   paintCylinders: 'cylinders',
@@ -44,6 +47,8 @@ const preview = {
 export default function PushComesToShoveWorkbenchPage() {
   return (
     <RollWorkbench
+      defaultTab="live"
+      leadingTabs={liveTabs(pushComesToShoveLive, 'pushComesToShove')}
       name="Push Comes to Shove"
       noun={{ many: 'panels', one: 'panel' }}
       preview={preview}

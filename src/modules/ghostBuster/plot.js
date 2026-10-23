@@ -6,8 +6,10 @@ import {
 } from '@elements/WebGPU/cloth/clothDecay';
 import {
   chain,
+  colorRuns,
   createProjector,
   createTone,
+  imagePalette,
   isoSegments,
   nearSilhouette,
   outlineOf,
@@ -185,8 +187,8 @@ function createSurface(
           alive: inside && live[c11] && live[c00] && live[c10],
           weights: [
             [c00, 1 - tx],
-            [c10, tx - ty],
             [c11, ty],
+            [c10, tx - ty],
           ],
         };
   }
@@ -247,9 +249,24 @@ function createSurface(
     return n[0] * view[0] + n[1] * view[1] + n[2] * view[2];
   }
 
+  function outside(u, v, eye) {
+    const { weights } = locate(u, v);
+    const vertices = weights.map(([m]) =>
+      Array.from(rPos.subarray(m * 3, m * 3 + 3))
+    );
+    // locate's triangles wind opposite the render index buffer.
+    const normal = cross3(
+      sub3(vertices[1], vertices[0]),
+      sub3(vertices[2], vertices[0])
+    );
+    const view = sub3(vertices[0], eye);
+    return normal[0] * view[0] + normal[1] * view[1] + normal[2] * view[2] <= 0;
+  }
+
   return {
     decayed,
     facing,
+    outside,
     field,
     point,
     resolution: Math.max(segmentsX, segmentsY),
@@ -282,20 +299,31 @@ const fillColors = (skin) => ({
   blood: skin?.bloodColor ?? '#000000',
   cloth: skin?.color ?? '#000000',
   goo: skin?.dripColor ?? '#000000',
-  inside:
-    (skin?.innerEmissiveIntensity > 0
-      ? skin.innerEmissiveColor
-      : skin?.innerColor) ?? '#000000',
+  inside: skin?.innerColor || skin?.color || '#000000',
   rot: skin?.holeRimColor ?? '#000000',
   shadow: shadeOf(skin?.color, 0.55),
 });
+
+// Each line layer's ink in a colour plot: the cloth's lines in its shadow
+// tone (a white sheet still reads on white paper), the rest in the skin's
+// own colours.
+const lineColors = (skin) => ({
+  blood: skin?.bloodColor ?? '#000000',
+  cloth: shadeOf(skin?.color, 0.55),
+  cloud: skin?.cloudColor ?? '#000000',
+  goo: skin?.dripColor ?? '#000000',
+  lightning: skin?.lightningColor ?? '#000000',
+  rain: skin?.rainColor ?? '#000000',
+  outline: skin?.outlineColor ?? '#000000',
+  rot: skin?.holeRimColor ?? '#000000',
+});
+const BLACK_LINES = {};
 
 const pxPerMm = ({ plotWidthMm, width }) =>
   plotWidthMm ? width / plotWidthMm : 96 / 25.4;
 
 // How many output px one unit of UV spans on the visible cloth (the
-// median, so foreshortened edges don't set it), and which way the cloth's
-// normals face where it is seen from outside: the nearest visible point is.
+// median, so foreshortened edges don't set it).
 function surveyCloth(surface, project, visible) {
   const scales = [];
   let nearest = null;
@@ -328,18 +356,6 @@ function surveyCloth(surface, project, visible) {
   };
 }
 
-const insidePolygon = (polygon, x, y) => {
-  let inside = false;
-  for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i, i += 1) {
-    const [xi, yi] = polygon[i];
-    const [xj, yj] = polygon[j];
-    if (yi > y !== yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi) {
-      inside = !inside;
-    }
-  }
-  return inside;
-};
-
 // The cloth filled with one long line that follows it — a spiral round the
 // crown (`spiral`) or rows across it (`rows`) — wiggling by tone. The line
 // is split by what lies under it, each piece onto its region's layer: the
@@ -363,7 +379,6 @@ function clothFill({
 }) {
   const { nearest, scale } = surveyCloth(surface, project, visible);
   if (!nearest || !scale) return {};
-  const outerSign = Math.sign(surface.facing(nearest.u, nearest.v, camera.eye));
   const pitch = fill.spacing / scale;
   const params = lattice.decay?.params ?? null;
   const holeDistance = (u, v, cutout) =>
@@ -417,8 +432,6 @@ function clothFill({
     };
     return { center, edge, open, radiusAt };
   });
-  const throughHole = (x, y) =>
-    holes.some((hole) => insidePolygon(hole.edge, x, y));
 
   const stains =
     decayed && params && (params.holeRimWidth > 0 || params.bloodAmount > 0);
@@ -430,15 +443,15 @@ function clothFill({
   const regionAt = (u, v, p) => {
     if (surface.field(u, v) <= ALPHA_CUT) return null;
     if (visible && !visible(p.x, p.y, p.depth)) return null;
-    if (inRim(u, v)) return null;
+    const outside = surface.outside(u, v, camera.eye);
+    if (outside && inRim(u, v)) return null;
     if (goo(u, v)) return 'goo';
     if (stains) {
       const { blood, rot } = decayed.stain(u, v);
       if (blood > 0.5) return 'blood';
       if (rot > 0.5) return 'rot';
     }
-    const outside = Math.sign(surface.facing(u, v, camera.eye)) === outerSign;
-    if (outside || !throughHole(p.x, p.y)) return 'cloth';
+    if (outside) return 'cloth';
     return fill.inside === 'cloth' ? 'inside' : null;
   };
 
@@ -599,6 +612,7 @@ function uvLines(style, count, step) {
 // halftone or stipple from the render) each on a layer of their own.
 export default function renderGhostSvg({
   camera,
+  colors = BLACK_LINES,
   decay = true,
   edges = true,
   fill = null,
@@ -845,16 +859,35 @@ export default function renderGhostSvg({
         width,
       })
     : {};
+  const sampled = fill?.colorMode === 'render' && image && coverage;
+  const palette = sampled
+    ? imagePalette({ image, mask: coverage, k: fill.sampleColors })
+    : null;
   const fillLayers = FILL_LAYERS.filter(({ key }) => filled[key]?.length)
-    .map(({ index, key, label }) =>
-      plotLayer(
+    .map(({ index, key, label }) => {
+      if (sampled && palette.length) {
+        return Object.entries(
+          colorRuns(filled[key], { image, mask: coverage, palette, pixelRatio })
+        )
+          .map(([color, runs], ink) =>
+            plotLayer(
+              30 + index * fill.sampleColors + ink,
+              label,
+              stroke,
+              pathOf(runs),
+              color
+            )
+          )
+          .join('');
+      }
+      return plotLayer(
         index,
         label,
         stroke,
         pathOf(filled[key]),
         fill.colors[key] ?? '#000000'
-      )
-    )
+      );
+    })
     .join('');
 
   const shading = shade
@@ -889,21 +922,21 @@ export default function renderGhostSvg({
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" ` +
     `width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="background-color:${paper}">` +
-    `${plotLayer(0, 'contours', stroke, pathOf(paths))}` +
-    `${outlineLoops.length ? plotLayer(1, 'silhouette', stroke, pathOf(outlineLoops)) : ''}` +
-    `${shading ? plotLayer(2, 'shading', stroke, shading) : ''}` +
-    `${foldPaths.length ? plotLayer(3, 'folds', stroke, pathOf(foldPaths)) : ''}` +
-    `${halo.length ? plotLayer(4, 'outline', stroke, pathOf(halo)) : ''}` +
+    `${plotLayer(0, 'contours', stroke, pathOf(paths), colors.cloth)}` +
+    `${outlineLoops.length ? plotLayer(1, 'silhouette', stroke, pathOf(outlineLoops), colors.cloth) : ''}` +
+    `${shading ? plotLayer(2, 'shading', stroke, shading, colors.cloth) : ''}` +
+    `${foldPaths.length ? plotLayer(3, 'folds', stroke, pathOf(foldPaths), colors.cloth) : ''}` +
+    `${halo.length ? plotLayer(4, 'outline', stroke, pathOf(halo), colors.outline) : ''}` +
     `${rimRuns.length ? plotLayer(5, 'rims', stroke, pathOf(rimRuns), rims.color) : ''}` +
-    `${weaveRuns.length ? plotLayer(6, 'weave', stroke, pathOf(weaveRuns)) : ''}` +
-    `${textureLines.length ? plotLayer(7, 'texture', stroke, pathOf(textureLines)) : ''}` +
-    `${weather.cloudRuns.length ? plotLayer(8, 'cloud', stroke, pathOf(weather.cloudRuns)) : ''}` +
-    `${weather.rainRuns.length ? plotLayer(9, 'rain', stroke, pathOf(weather.rainRuns)) : ''}` +
-    `${weather.splashRuns.length ? plotLayer(10, 'splashes', stroke, pathOf(weather.splashRuns)) : ''}` +
-    `${weather.boltRuns.length ? plotLayer(11, 'lightning', stroke, pathOf(weather.boltRuns)) : ''}` +
-    `${decayPaths.rot.length ? plotLayer(12, 'rot', stroke, pathOf(decayPaths.rot)) : ''}` +
-    `${decayPaths.blood.length ? plotLayer(13, 'blood', stroke, pathOf(decayPaths.blood)) : ''}` +
-    `${decayPaths.goo.length ? plotLayer(14, 'goo', stroke, pathOf(decayPaths.goo)) : ''}` +
+    `${weaveRuns.length ? plotLayer(6, 'weave', stroke, pathOf(weaveRuns), colors.cloth) : ''}` +
+    `${textureLines.length ? plotLayer(7, 'texture', stroke, pathOf(textureLines), colors.cloth) : ''}` +
+    `${weather.cloudRuns.length ? plotLayer(8, 'cloud', stroke, pathOf(weather.cloudRuns), colors.cloud) : ''}` +
+    `${weather.rainRuns.length ? plotLayer(9, 'rain', stroke, pathOf(weather.rainRuns), colors.rain) : ''}` +
+    `${weather.splashRuns.length ? plotLayer(10, 'splashes', stroke, pathOf(weather.splashRuns), colors.rain) : ''}` +
+    `${weather.boltRuns.length ? plotLayer(11, 'lightning', stroke, pathOf(weather.boltRuns), colors.lightning) : ''}` +
+    `${decayPaths.rot.length ? plotLayer(12, 'rot', stroke, pathOf(decayPaths.rot), colors.rot) : ''}` +
+    `${decayPaths.blood.length ? plotLayer(13, 'blood', stroke, pathOf(decayPaths.blood), colors.blood) : ''}` +
+    `${decayPaths.goo.length ? plotLayer(14, 'goo', stroke, pathOf(decayPaths.goo), colors.goo) : ''}` +
     `${fillLayers}</svg>`
   );
 }
@@ -913,12 +946,17 @@ export default function renderGhostSvg({
 // and depth it captured.
 export function plotArgs(options, skin = null) {
   return {
+    colors:
+      options.svgColorMode === 'monochrome' ? BLACK_LINES : lineColors(skin),
     decay: options.svgDecay,
     edges: options.svgEdges,
     fill:
       options.svgFill && options.svgFill !== 'none'
         ? {
-            colors: fillColors(skin),
+            colors:
+              options.svgColorMode === 'monochrome' ? {} : fillColors(skin),
+            colorMode: options.svgColorMode ?? 'material',
+            sampleColors: options.svgSampleColors ?? 6,
             inside: options.svgFillInside,
             mode: options.svgFill,
             shades: options.svgFillShades,
@@ -937,7 +975,10 @@ export function plotArgs(options, skin = null) {
     rims:
       options.svgRims && skin?.cutoutRimWidth > 0
         ? {
-            color: skin.cutoutRimColor ?? '#000000',
+            color:
+              options.svgColorMode === 'monochrome'
+                ? '#000000'
+                : (skin.cutoutRimColor ?? '#000000'),
             offset: skin.cutoutRimOffset ?? 0,
             width: skin.cutoutRimWidth,
           }

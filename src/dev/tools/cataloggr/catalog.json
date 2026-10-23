@@ -228,6 +228,14 @@
     {
       "id": "idea-1792629030983-6xwe3m",
       "text": "CrossTalk style scene but CrossDevice. Inspired by 44ian's TD/p5.js peice.\nFigure out novel scenes that can run across devices. Might need the \"host\" to be able to \"arrange\" devices in 2d or 3d space, and or arrange other scene aspects (spline curves etc). this might require devices to report their viewport dimensions and some identifier. \n- There is a closed spline that all devices get a window to. Particles, objects, etc, flow along this spline giving the illusion that stuff is going from one device to another.\n- A top down view of a stream."
+    },
+    {
+      "id": "idea-1792695979914-r5vird",
+      "text": "Generative control panels. Sliders, buttons, dials, knobs, patch inputs, all arranged randomly. its unclear if these belong to a vehicle, an electronic device, an audio workstation or instrument due to the wide variety and randomization\ninspired by https://www.shadertoy.com/view/cdSfDV & https://www.shadertoy.com/view/cs2GWD\n- could use square subdivision to get a series of block sizes and then fill with variants\n- could use circle packing to make the dial from hell."
+    },
+    {
+      "id": "idea-1792699447903-puyxfk",
+      "text": "new dev tool: file converter"
     }
   ],
   "statuses": {

@@ -115,7 +115,10 @@ function orderSections(ids) {
   return [...content, ...shared];
 }
 
-const FORMATS = { png: 'PNG', webp: 'WebP', svg: 'SVG' };
+const FORMATS = {
+  still: { svg: 'SVG', webp: 'WebP' },
+  video: { mp4: 'MP4', webm: 'WebM' },
+};
 const MAX_SIDE = 8192;
 
 const listOf = (names) =>
@@ -135,11 +138,12 @@ export function resolveList(list, allowed, name, fail) {
 }
 
 // The checks every generator shares; each applies only when its keys exist.
-function checkOutput(options, fail, resolveViews) {
-  const formats = Object.keys(FORMATS).filter((key) => key in options);
+function checkOutput(kind, options, fail, resolveViews) {
+  const named = FORMATS[kind] ?? {};
+  const formats = Object.keys(named).filter((key) => key in options);
   if (formats.length > 0 && !formats.some((key) => options[key])) {
     throw fail(
-      `Select at least one output format: ${listOf(formats.map((key) => FORMATS[key]))}.`
+      `Select at least one output format: ${listOf(formats.map((key) => named[key]))}.`
     );
   }
   if (options.width != null && options.pixelRatio != null) {
@@ -266,7 +270,7 @@ export default function createOptionSchema({
         coerce(key, spec, given[key], defaults[key], fail),
       ])
     );
-    checkOutput(normalized, fail, resolveViews);
+    checkOutput(kind, normalized, fail, resolveViews);
     validate?.(kind, normalized, fail);
     return normalized;
   }

@@ -278,7 +278,12 @@ function RugComponent() {
 // and its Live tab renders in the page. `solidsRef` reaches the solid
 // pieces (each tagged `userData.plotObject`) and `effectsRef` the fire and
 // smoke (tagged `userData.effect`), for capture.
-export default function DumpsterStage({ config, effectsRef, solidsRef }) {
+export default function DumpsterStage({
+  config,
+  effectsRef,
+  solidsRef,
+  transparent = false,
+}) {
   const trash = useMemo(
     () => layoutTrash(config),
     [
@@ -297,12 +302,14 @@ export default function DumpsterStage({ config, effectsRef, solidsRef }) {
 
   return (
     <>
-      <Backdrop color={config.sceneBackgroundColor} />
-      <Fog
-        color={config.sceneFogColor}
-        far={config.sceneFogFar}
-        near={config.sceneFogNear}
-      />
+      <Backdrop color={transparent ? null : config.sceneBackgroundColor} />
+      {transparent ? null : (
+        <Fog
+          color={config.sceneFogColor}
+          far={config.sceneFogFar}
+          near={config.sceneFogNear}
+        />
+      )}
       <ambientLight intensity={config.sceneAmbientIntensity} />
       <directionalLight
         intensity={config.sceneDirectionalIntensity}

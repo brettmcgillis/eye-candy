@@ -1,15 +1,17 @@
-const FORMAT_ORDER = ['png', 'webp', 'svg', 'mp4'];
-const MEDIA_ASSET_PATTERN = /\.(png|svg|webp|mp4)$/u;
+const FORMAT_ORDER = ['webp', 'png', 'svg', 'mp4', 'webm'];
+const MEDIA_ASSET_PATTERN = /\.(png|svg|webp|mp4|webm)$/u;
+const VIDEO_FORMATS = new Set(['mp4', 'webm']);
 
 export function assetFormat(asset) {
   return asset.path.split('.').pop().toLowerCase();
 }
 
+export const isVideoAsset = (asset) => VIDEO_FORMATS.has(assetFormat(asset));
+
+// A clip's formats share one key, apart from any still of the same name.
 function mediaAssetKey(asset) {
-  const format = assetFormat(asset);
-  return format === 'mp4'
-    ? asset.path
-    : asset.path.slice(0, -(format.length + 1));
+  const stem = asset.path.slice(0, -(assetFormat(asset).length + 1));
+  return isVideoAsset(asset) ? `${stem}.video` : stem;
 }
 
 export function countMediaItems(collections) {
@@ -34,7 +36,7 @@ export function groupMediaAssets(assets, metadataAssets) {
       );
       return;
     }
-    metadataByKey.set(asset.path.replace(/\.json$/u, '.mp4'), asset);
+    metadataByKey.set(asset.path.replace(/\.json$/u, '.video'), asset);
   });
   const groups = new Map();
   assets.forEach((asset) => {
@@ -45,7 +47,11 @@ export function groupMediaAssets(assets, metadataAssets) {
       metadataAsset:
         metadataByKey.get(key) ??
         metadataByDirectory.get(key.split('/').slice(0, -1).join('/')),
-      name: key.split('/').slice(-2).join(' / '),
+      name: key
+        .replace(/\.video$/u, '')
+        .split('/')
+        .slice(-2)
+        .join(' / '),
     };
     group.assets.push(asset);
     groups.set(key, group);

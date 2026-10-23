@@ -28,6 +28,7 @@ import {
   assetFormat,
   groupMediaAssets,
   isMediaAsset,
+  isVideoAsset,
   plotterHref,
   thumbnailUrl,
 } from './assetGroups';
@@ -68,7 +69,7 @@ function defaultCollectionTitle(job) {
 
 function collectionLabel(job, groups, collectionTitle) {
   const videoCount = groups.filter((group) =>
-    group.assets.some((asset) => assetFormat(asset) === 'mp4')
+    group.assets.some(isVideoAsset)
   ).length;
   const stillCount = groups.length - videoCount;
   const counts = [
@@ -89,7 +90,7 @@ function collectionLabel(job, groups, collectionTitle) {
 }
 
 function isVideoGroup(group) {
-  return group.assets.some((asset) => assetFormat(asset) === 'mp4');
+  return group.assets.some(isVideoAsset);
 }
 
 export function Stat({ label, value }) {
@@ -143,7 +144,7 @@ function MediaPreview({
   eager = false,
   thumb = null,
 }) {
-  if (assetFormat(asset) === 'mp4') {
+  if (isVideoAsset(asset)) {
     const source = controls ? asset.url : `${asset.url}#t=0.001`;
     return (
       // Generated clips currently have no audio track to caption.
@@ -475,7 +476,7 @@ function AssetCard({
   selected,
 }) {
   const asset = group.assets[0];
-  const isVideo = assetFormat(asset) === 'mp4';
+  const isVideo = isVideoAsset(asset);
   const collectionName = job.outputDirectory.split('/').pop();
 
   return (

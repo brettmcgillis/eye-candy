@@ -1,5 +1,18 @@
 import { output, render, roll, still, video } from './specs.mjs';
 
+// plotKit's shadePath styles, for a plot shaded from its render.
+export const SVG_SHADINGS = [
+  'none',
+  'crosshatch',
+  'halftone',
+  'stipple',
+  'squiggle',
+  'scribble',
+  'tsp',
+];
+const SHADED = SVG_SHADINGS.filter((style) => style !== 'none');
+const ANGLED = ['crosshatch', 'halftone', 'squiggle', 'scribble'];
+
 // The app's overlay chrome comes in the safe-area insets Instagram's UI
 // leaves clear.
 export const IG_PRESETS = ['story', 'reel', 'post'];
@@ -32,6 +45,19 @@ const standard = {
       placeholder: 'WORD',
       text: true,
       type: 'seed',
+      ...extra,
+    }),
+  // A Live-tab capture to finish (runStills reads it; the dev server's
+  // /captures route sets it).
+  capture: (extra = {}) =>
+    output({
+      cliOnly: true,
+      default: null,
+      help: 'A Live-tab capture folder to finish (formats, overlay, sidecar) instead of rendering',
+      nullable: true,
+      placeholder: 'PATH',
+      scope: 'still',
+      type: 'string',
       ...extra,
     }),
   count: (nouns, extra = {}) =>
@@ -204,11 +230,12 @@ const standard = {
       type: 'number',
       ...extra,
     }),
-  png: (extra = {}) =>
-    still({
-      default: false,
-      help: 'Write PNG files',
-      label: 'PNG',
+  mp4: (extra = {}) =>
+    video({
+      default: true,
+      help: 'Write an MP4 (H.264)',
+      label: 'MP4',
+      section: 'output',
       type: 'boolean',
       ...extra,
     }),
@@ -253,6 +280,72 @@ const standard = {
     }),
   svg: (help, extra = {}) =>
     still({ default: false, help, label: 'SVG', type: 'boolean', ...extra }),
+  // 0 keeps the plot as the bench draws it; 1–8 regroup it into that many
+  // inks (plotKit inkLayers, run on every SVG a still writes).
+  svgColors: (extra = {}) =>
+    still({
+      default: 0,
+      group: 'colour',
+      help: 'Plot in this many inks picked from the plot’s own colours, a layer per ink for the Plotterizer to match to pens (0: as drawn)',
+      label: 'SVG colours',
+      max: 8,
+      min: 0,
+      placeholder: 'N',
+      section: 'svg',
+      step: 1,
+      type: 'number',
+      ...extra,
+    }),
+  svgShadeAngle: (extra = {}) =>
+    still({
+      default: 45,
+      help: 'Degrees the hatching and the halftone grid run at',
+      label: 'SVG shade angle',
+      max: 90,
+      min: -90,
+      section: 'svg',
+      step: 1,
+      type: 'number',
+      when: { svgShading: ANGLED },
+      ...extra,
+    }),
+  svgShadeGamma: (extra = {}) =>
+    still({
+      default: 1,
+      help: 'Above 1 keeps shading to the darkest areas; below 1 spreads it into the lights',
+      label: 'SVG shade gamma',
+      max: 3,
+      min: 0.3,
+      section: 'svg',
+      step: 0.05,
+      type: 'number',
+      when: { svgShading: SHADED },
+      ...extra,
+    }),
+  svgShadeSpacing: (value = 6, extra = {}) =>
+    still({
+      default: value,
+      help: 'Shading line, cell or stipple spacing in output px',
+      label: 'SVG shade spacing',
+      max: 40,
+      min: 1.5,
+      placeholder: 'PX',
+      section: 'svg',
+      step: 0.5,
+      type: 'number',
+      when: { svgShading: SHADED },
+      ...extra,
+    }),
+  svgShading: (help, value = 'none', extra = {}) =>
+    still({
+      choices: SVG_SHADINGS,
+      default: value,
+      help,
+      label: 'SVG shading',
+      section: 'svg',
+      type: 'enum',
+      ...extra,
+    }),
   svgOcclusion: (help, extra = {}) =>
     still({
       default: true,
@@ -329,6 +422,26 @@ const standard = {
       label: 'Views',
       placeholder: 'LIST',
       type: 'string',
+      ...extra,
+    }),
+  transparent: (extra = {}) =>
+    output({
+      aliases: ['transparentBackground'],
+      default: false,
+      help: 'Leave the background transparent: alpha in WebP and WebM; MP4 fills it with the background colour',
+      label: 'Transparent',
+      type: 'boolean',
+      ...extra,
+    }),
+  // The video formats every video CLI writes, ticked like the image ones.
+  videoFormats: () => ({ mp4: standard.mp4(), webm: standard.webm() }),
+  webm: (extra = {}) =>
+    video({
+      default: false,
+      help: 'Write a WebM (VP9; keeps alpha with --transparent)',
+      label: 'WebM',
+      section: 'output',
+      type: 'boolean',
       ...extra,
     }),
   webp: (extra = {}) =>

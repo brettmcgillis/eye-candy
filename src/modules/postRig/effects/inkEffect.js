@@ -12,6 +12,7 @@ import {
   smoothstep,
   uniform,
   vec2,
+  vec4,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
@@ -113,7 +114,10 @@ export function create({ ctx, input, slot }) {
   })();
 
   return {
-    node: mix(input, uColor, edge.mul(uStrength)),
+    node: vec4(
+      mix(input.rgb, uColor, edge.mul(uStrength)),
+      max(input.a, edge.mul(uStrength))
+    ),
     update: (values) => {
       uColor.value.set(values[`${slot.prefix}Color`] ?? slot.color);
       uStrength.value = values[`${slot.prefix}Strength`] ?? slot.strength;

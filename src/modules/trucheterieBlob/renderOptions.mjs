@@ -227,10 +227,11 @@ const RENDER = {
   margin: standard.margin(0.08, 'Padding around the drawn field', {
     max: 1,
   }),
-  png: standard.png(),
   webp: standard.webp(),
+  capture: standard.capture(),
   svg: standard.svg('Write a plottable SVG of stroke centrelines'),
   plotWidthMm: standard.plotWidthMm(),
+  svgColors: standard.svgColors(),
   svgStroke: standard.svgStroke({
     default: 1,
     help: 'Multiplier on the render’s pen width; 0 draws hairlines for plotting',
@@ -244,14 +245,7 @@ const RENDER = {
     section: 'svg',
     type: 'boolean',
   },
-  transparentBackground: {
-    default: false,
-    help: 'Render with alpha instead of filling Scene Background',
-    label: 'Transparent',
-    scope: 'still',
-    section: 'output',
-    type: 'boolean',
-  },
+  transparent: standard.transparent(),
 
   keep: standard.keep(['structure', 'palette']),
   base: standard.base('field'),
@@ -265,6 +259,7 @@ const RENDER = {
     'montage',
     'montage: a cut per field; growth: a front spreads from the centre, drawing each ring, then recedes; flow: the grown field with its palette flowing through the channels; stream: Spectrum lanes, the gradient travelling along every lane'
   ),
+  ...standard.videoFormats(),
   fps: standard.fps(),
   hold: standard.hold(
     3,

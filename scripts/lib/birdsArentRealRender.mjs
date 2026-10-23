@@ -95,7 +95,7 @@ export function boundsOf(kernel, config) {
 // loop, stepped at 60 fps for the settle, then captured.
 export async function createFlockCapturer(
   kernel,
-  { height, pixelRatio, width }
+  { height, pixelRatio, transparent, width }
 ) {
   const { birds, look } = kernel;
   const headless = await createHeadlessRenderer({
@@ -118,6 +118,7 @@ export async function createFlockCapturer(
     width,
   });
   const captureDepth = look.createDepthCapture(renderer);
+  const captureAlbedo = look.createAlbedoCapture(renderer);
   const flockRef = { current: null };
   let clock = 0;
 
@@ -146,7 +147,7 @@ export async function createFlockCapturer(
     // the clock it settled at and the sphere the framing fits.
     async load(config, options) {
       flockRef.current = null;
-      await stage.mount({ config, flockRef });
+      await stage.mount({ config, flockRef, transparent });
       const meshes = Math.max(1, Math.round(config.birdCount)) * 3;
       await until(
         () =>
@@ -193,9 +194,19 @@ export async function createFlockCapturer(
             flock
           )
         : null;
+      const albedo = birds.needsAlbedo(options)
+        ? await captureAlbedo(
+            stage.scene,
+            stage.camera,
+            width * pixelRatio,
+            height * pixelRatio,
+            flock
+          )
+        : null;
       const image = birds.needsImage(options) ? await frame(clock) : null;
       return birds.renderFlockSvg({
         ...birds.plotArgs(options),
+        albedo,
         camera: view,
         coverage: depth,
         flock: look.readFlockMesh(flock),
@@ -228,6 +239,7 @@ export const withCapturer = (kernel, options, work) =>
       createFlockCapturer(kernel, {
         height: options.height,
         pixelRatio: options.pixelRatio,
+        transparent: options.transparent,
         width: options.width,
       }),
     work

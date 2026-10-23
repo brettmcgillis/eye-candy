@@ -76,6 +76,7 @@ export default function createTubeRig() {
   );
   floorMesh.rotation.x = -Math.PI / 2;
   floorMesh.receiveShadow = true;
+  floorMesh.userData.backdrop = 'shadow';
   group.add(floorMesh);
 
   const studio = createStudio();
@@ -186,6 +187,8 @@ export default function createTubeRig() {
     skin.castShadow = shadows;
     skin.receiveShadow = shadows;
     skin.frustumCulled = false;
+    // Its vertices live on the GPU, so a plot reads only its silhouette.
+    skin.userData.plot = false;
     group.add(skin);
     skinLevel = level;
     syncEnvMap();
@@ -263,6 +266,45 @@ export default function createTubeRig() {
       floorMesh.visible = config.floorEnabled;
       floorMesh.position.y = lowest * scale - config.floorGap;
       floorMesh.scale.setScalar(reach * scale * 4);
+    },
+
+    // What a plot draws: the tube meshes (for depth, albedo and edges) and
+    // each chain's centre line in world space, lifted by its half-height
+    // toward `eye` so it rides the tube's near surface.
+    plotParts(eye) {
+      const parts = meshes();
+      const placed = body ?? skin;
+      if (!placed || !current) return { lines: [], meshes: parts };
+      placed.updateWorldMatrix(true, false);
+      const { matrixWorld } = placed;
+      const scale = matrixWorld.getMaxScaleOnAxis();
+      const half = current.tubes.gridSize / 2;
+      const point = new THREE.Vector3();
+      const toward = new THREE.Vector3();
+      const chains = [
+        ...current.tubes.chains,
+        ...(current.membrane?.chains ?? []),
+      ];
+      const lines = chains.map((chain) => {
+        const line = [];
+        for (let k = 0; k < chain.points.length / 3; k += 1) {
+          // The swept mesh's frame (mesh.js localPoints): grid-centred, z up.
+          point
+            .set(
+              chain.points[k * 3] - half,
+              chain.points[k * 3 + 2],
+              chain.points[k * 3 + 1] - half
+            )
+            .applyMatrix4(matrixWorld);
+          toward.fromArray(eye).sub(point).normalize();
+          const lift =
+            Math.min(chain.radius ?? 0, chain.radii?.[k] ?? Infinity) * scale;
+          line.push(point.clone().addScaledVector(toward, lift).toArray());
+        }
+        if (chain.loop && line.length > 2) line.push(line[0]);
+        return line;
+      });
+      return { lines, meshes: parts };
     },
 
     // 0 (nothing) to just past 1 (fully grown); 2 is the resting value.

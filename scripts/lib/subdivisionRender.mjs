@@ -104,7 +104,7 @@ export const rasterSize = (options) => ({
 
 function fillImage(kernel, piece, config, options, grow) {
   const svg = kernel.subdivision.renderFillSvg(piece, config, {
-    background: !options.transparentBackground,
+    background: !options.transparent,
     grow,
     size: rasterSize(options),
   });

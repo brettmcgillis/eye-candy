@@ -238,5 +238,7 @@ export function createFieldProxy() {
   mesh.castShadow = true;
   mesh.receiveShadow = false;
   mesh.frustumCulled = false;
+  // The box is only where the rays start; a plot reads the solid from depth.
+  mesh.userData.plot = false;
   return mesh;
 }

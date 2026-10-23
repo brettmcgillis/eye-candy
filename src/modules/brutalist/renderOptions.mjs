@@ -600,12 +600,14 @@ const RENDER = {
   height: standard.height(),
   pixelRatio: standard.pixelRatio(),
   count: standard.count('structures'),
-  png: standard.png(),
   webp: standard.webp(),
+  capture: standard.capture(),
+  transparent: standard.transparent(),
   svg: standard.svg(
     'Write a plottable SVG per view: every mass and opening edge, hidden lines removed'
   ),
   plotWidthMm: standard.plotWidthMm(),
+  svgColors: standard.svgColors(),
   views: standard.views(VIEWS, 'approach'),
   svgOcclusion: standard.svgOcclusion(
     'Drop line work hidden behind nearer masses (uses a depth pass)'
@@ -631,6 +633,7 @@ const RENDER = {
   view: standard.view(VIEWS, 'approach', {
     help: 'Camera view the clip starts from',
   }),
+  ...standard.videoFormats(),
   fps: standard.fps(),
   hold: standard.hold(8, 'Seconds per structure', { min: 0.5 }),
   turns: standard.turns('structure', { default: 0.25, min: 0.05, step: 0.05 }),

@@ -109,6 +109,20 @@ export default function useRenderJobs(tool) {
     [refresh]
   );
 
+  const retry = useCallback(
+    async (id) => {
+      try {
+        await request(`${ENDPOINT}/${id}/retry`, { method: 'POST' });
+      } catch (nextError) {
+        await refresh();
+        setError(nextError.message);
+        return;
+      }
+      await refresh();
+    },
+    [refresh]
+  );
+
   const remove = useCallback(
     async (id, outputDirectory) => {
       await request(`${ENDPOINT}/${id}`, {
@@ -190,6 +204,7 @@ export default function useRenderJobs(tool) {
     removeAssets,
     removeMany,
     removeSavedAssets,
+    retry,
     savedCollections,
     submit,
     tool,

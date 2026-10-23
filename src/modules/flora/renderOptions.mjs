@@ -382,12 +382,14 @@ const RENDER = {
     help: 'Renders at width×ratio by height×ratio; minimum stroke widths scale with it, so a 2x still is the 1x still, sharper',
   }),
   count: standard.count('flowers (or bouquets)'),
-  png: standard.png(),
   webp: standard.webp(),
+  capture: standard.capture({ scene: false }),
+  transparent: standard.transparent(),
   svg: standard.svg(
     'Write a plottable SVG of fiber centrelines and ornament outlines'
   ),
   plotWidthMm: standard.plotWidthMm(),
+  svgColors: standard.svgColors(),
   svgOcclusion: standard.svgOcclusion(
     'Drop line work hidden behind nearer geometry (uses a depth pass)'
   ),
@@ -539,6 +541,7 @@ const RENDER = {
     workbenchOnly: true,
   },
   view: standard.view(VIEWS, 'front'),
+  ...standard.videoFormats(),
   fps: standard.fps(),
   hold: standard.hold(
     4,

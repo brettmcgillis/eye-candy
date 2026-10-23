@@ -134,5 +134,6 @@ export function createSky(u) {
   );
   mesh.frustumCulled = false;
   mesh.renderOrder = -1;
+  mesh.userData.backdrop = 'hide';
   return mesh;
 }

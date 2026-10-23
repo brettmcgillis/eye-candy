@@ -1,8 +1,3 @@
-// Every knob GhostBusterCLI and its Live tab accept, declared once
-// (docs/ghost-buster-pipeline.md). A generation is a skin (GhostBuster's
-// preset library), a pose, a camera and a location. Dependency-free `.mjs`
-// so plain Node and Vite's config loader can import it; the skin names come
-// from @presets/ghost/ghostSkins at runtime.
 import createOptionSchema, {
   choice,
   color,
@@ -14,9 +9,12 @@ import createOptionSchema, {
   spec,
   standard,
 } from '../optionSchema/index.mjs';
+import { LOOK_OPTIONS } from './lookOptions.mjs';
+
+export { LOOK_KEYS, LOOK_OPTIONS } from './lookOptions.mjs';
 
 export const LOCATIONS = ['blank'];
-export const BACKDROPS = ['solid', 'skin', 'transparent'];
+export const BACKDROPS = ['solid', 'skin'];
 export const VIEWS = [
   'hero',
   'front',
@@ -65,12 +63,9 @@ const LOCATION = {
   backdrop: inFacet(
     'location',
     choice('stage', null, 'Backdrop', BACKDROPS, 'solid', {
-      choiceLabels: {
-        skin: 'Skin studio',
-        solid: 'Solid colour',
-        transparent: 'Transparent',
-      },
-      help: "solid: one colour; skin: the skin's own GhostBuster background; transparent: alpha in PNG/WebP",
+      choiceAliases: { transparent: 'solid' },
+      choiceLabels: { skin: 'Skin studio', solid: 'Solid colour' },
+      help: "solid: one colour; skin: the skin's own GhostBuster background",
     })
   ),
   backgroundColor: inFacet(
@@ -86,6 +81,31 @@ const LOCATION = {
 };
 
 const SKIN = {
+  skinOrder: choice(
+    'ghost',
+    null,
+    'Batch skins',
+    ['random', 'cycle'],
+    'random',
+    {
+      help: 'random: pick freely; cycle: visit each allowed named skin in library order, repeating only after all are used',
+    }
+  ),
+  ghostMode: choice(
+    'ghost',
+    null,
+    'Create',
+    ['new', 'variations', 'named'],
+    'new',
+    {
+      help: 'new: discover ghosts; variations: mutate the base ghost; named: preserve its traits',
+      choiceLabels: {
+        new: 'New ghosts',
+        variations: 'Variations',
+        named: 'Named ghost',
+      },
+    }
+  ),
   skin: inFacet(
     'skin',
     spec('string', 'ghost', null, 'Skin', DEFAULT_SKIN, {
@@ -105,28 +125,28 @@ const POSE = {
   ),
   windStrength: rolled(
     'pose',
-    [0, 1.4],
+    [0.05, 0.45],
     num('pose', null, 'Wind', 0.3, 0, 3, 0.01, {
       help: 'Wind strength the cloth and rig feel',
     })
   ),
   windGust: rolled(
     'pose',
-    [0, 0.6],
+    [0, 0.15],
     num('pose', null, 'Gust', 0, 0, 1, 0.01, {
       help: 'How much the wind swells and drops over time',
     })
   ),
   tiltBack: rolled(
     'pose',
-    [-8, 22],
+    [-4, 8],
     num('pose', null, 'Tilt back', 0, -45, 60, 1, {
       help: 'Degrees the ghost leans back about its head',
     })
   ),
   settle: rolled(
     'pose',
-    [3, 9],
+    [4, 6],
     num('pose', null, 'Settle', 4, 0.5, 30, 0.5, {
       help: 'Seconds the cloth simulates before the still is taken',
     })
@@ -204,12 +224,31 @@ const RENDER = {
   height: standard.height(),
   pixelRatio: standard.pixelRatio(),
   count: standard.count('ghosts'),
-  png: standard.png(),
   webp: standard.webp(),
+  transparent: standard.transparent(),
   svg: standard.svg(
     'Write a plottable SVG per view: cloth lines and edges, hidden lines removed'
   ),
   plotWidthMm: standard.plotWidthMm(),
+  svgColors: standard.svgColors(),
+  svgColorMode: choice(
+    'svg',
+    null,
+    'SVG colour source',
+    ['material', 'render', 'monochrome'],
+    'material',
+    {
+      help: 'material: exact outer/inner and detail colours; render: sample the captured appearance, including textures and glow; monochrome: black strokes',
+      scene: false,
+      scope: 'still',
+    }
+  ),
+  svgSampleColors: num('svg', null, 'Sampled fill colours', 6, 2, 12, 1, {
+    help: 'Colours sampled from the rendered cloth for fill strokes; SVG colours can then reduce the whole plot to a final ink count',
+    scene: false,
+    scope: 'still',
+    when: { svgColorMode: ['render'] },
+  }),
   views: standard.views(VIEWS, 'hero'),
   capture: output({
     cliOnly: true,
@@ -389,7 +428,7 @@ const RENDER = {
     SVG_FILL_INSIDE,
     'cloth',
     {
-      help: "What the inside layer fills in the eye holes — cloth: the inside of the sheet seen through them; hole: the hole's own shape; none: nothing",
+      help: 'Inside fills — cloth: all visible inner cloth, including folds and eye interiors; hole: a stylized spiral inside each eye hole; none: omit inner fills',
       scene: false,
       scope: 'still',
       when: { svgFill: ['spiral', 'rows'] },
@@ -400,7 +439,13 @@ const RENDER = {
     0.08,
     'Space round the ghost, as a share of the frame'
   ),
-  keep: standard.keep(['location', 'skin', 'pose', 'camera']),
+  keep: standard.keep([
+    'location',
+    'skin',
+    ...new Set(Object.values(LOOK_OPTIONS).map((item) => item.facet)),
+    'pose',
+    'camera',
+  ]),
   base: standard.base('ghost'),
   skins: standard.palettes('skin', {
     help: 'Skin names the skin roll picks from (the CLI fills this from the GhostBuster skins)',
@@ -411,6 +456,7 @@ const RENDER = {
     'float: the ghost keeps drifting in its wind while the camera holds (or drifts by --orbit); turntable: the camera circles it'
   ),
   view: standard.view(VIEWS, 'hero'),
+  ...standard.videoFormats(),
   fps: standard.fps(),
   hold: standard.hold(6, 'Seconds of footage per ghost'),
   turns: standard.turns('ghost'),
@@ -420,6 +466,7 @@ const RENDER = {
 export const RENDER_OPTIONS = {
   ...LOCATION,
   ...SKIN,
+  ...LOOK_OPTIONS,
   ...POSE,
   ...CAMERA,
   ...RENDER,

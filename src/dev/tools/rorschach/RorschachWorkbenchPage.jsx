@@ -9,6 +9,7 @@ import {
   FiX,
 } from 'react-icons/fi';
 
+import { liveTabs } from '@dev/renderWorkbench/LiveStage';
 import ResultsPanel, {
   activeJobCount,
 } from '@dev/renderWorkbench/ResultsPanel';
@@ -18,6 +19,7 @@ import {
   Segmented,
   ToggleField,
 } from '@dev/renderWorkbench/SchemaFields';
+import { FormatPicker } from '@dev/renderWorkbench/SchemaSections';
 import WorkbenchLayout from '@dev/renderWorkbench/WorkbenchLayout';
 import '@dev/renderWorkbench/renderWorkbench.css';
 import usePins from '@dev/renderWorkbench/usePins';
@@ -44,6 +46,7 @@ import PreviewDetails from './components/PreviewDetails';
 import RollingSection from './components/RollingSection';
 import TestSection from './components/TestSection';
 import WatercolourSection from './components/WatercolourSection';
+import rorschachLive from './live';
 
 // The overlay is laid out in CSS pixels; every profile here is a phone-viewed
 // format, so all of them emulate a phone viewport rather than only the ones
@@ -135,6 +138,7 @@ export default function RorschachWorkbenchPage() {
     context: pinContext,
     heldFacets,
     pins,
+    setPins,
     toggleFacet: togglePinGroup,
   } = usePins({ facets: FACETS, keysInFacet, specs: RENDER_OPTIONS });
 
@@ -287,6 +291,11 @@ export default function RorschachWorkbenchPage() {
                 onChange={setKind}
                 options={OUTPUT_OPTIONS}
                 value={kind}
+              />
+              <SchemaField
+                onChange={(value) => setOption('transparent', value)}
+                option="transparent"
+                value={options.transparent}
               />
 
               <Segmented
@@ -684,55 +693,29 @@ export default function RorschachWorkbenchPage() {
 
               <OverlaySection options={options} setOption={setOption} />
 
-              {kind === 'still' ? (
-                <fieldset className="rw-fieldset rw-formats">
-                  <legend>Image files</legend>
-                  <label htmlFor="rw-png">
-                    <input
-                      checked={Boolean(options.png)}
-                      disabled={options.png && !options.svg && !options.webp}
-                      id="rw-png"
-                      onChange={(event) =>
-                        setOption('png', event.target.checked)
-                      }
-                      type="checkbox"
-                    />
-                    PNG
-                  </label>
-                  <label htmlFor="rw-svg">
-                    <input
-                      checked={Boolean(options.svg)}
-                      disabled={options.svg && !options.png && !options.webp}
-                      id="rw-svg"
-                      onChange={(event) =>
-                        setOption('svg', event.target.checked)
-                      }
-                      type="checkbox"
-                    />
-                    SVG
-                  </label>
-                  <label htmlFor="rw-webp">
-                    <input
-                      checked={Boolean(options.webp)}
-                      disabled={options.webp && !options.png && !options.svg}
-                      id="rw-webp"
-                      onChange={(event) =>
-                        setOption('webp', event.target.checked)
-                      }
-                      type="checkbox"
-                    />
-                    WebP
-                  </label>
-                  {options.svg ? (
-                    <NumberField
-                      id="rw-plot-width"
-                      option="plotWidthMm"
-                      label="Plot width (mm)"
-                      onChange={(value) => setOption('plotWidthMm', value)}
-                      value={options.plotWidthMm}
-                    />
-                  ) : null}
-                </fieldset>
+              <FormatPicker
+                kind={kind}
+                options={options}
+                renderOptions={RENDER_OPTIONS}
+                setOption={setOption}
+              />
+              {kind === 'still' && options.svg ? (
+                <>
+                  <NumberField
+                    id="rw-plot-width"
+                    option="plotWidthMm"
+                    label="Plot width (mm)"
+                    onChange={(value) => setOption('plotWidthMm', value)}
+                    value={options.plotWidthMm}
+                  />
+                  <NumberField
+                    id="rw-svg-colors"
+                    option="svgColors"
+                    label="SVG colours"
+                    onChange={(value) => setOption('svgColors', value)}
+                    value={options.svgColors}
+                  />
+                </>
               ) : null}
 
               <button
@@ -760,7 +743,19 @@ export default function RorschachWorkbenchPage() {
           }
           results={
             <ResultsPanel
+              defaultTab="live"
               jobsApi={jobsApi}
+              leadingTabs={liveTabs(
+                rorschachLive,
+                'rorschach'
+              )({
+                jobsApi,
+                kind,
+                options,
+                pins: { pins, setPins },
+                setOption,
+                setOptions,
+              })}
               renderDetails={(detail) => (
                 <PreviewDetails onUseAsBase={useAsBase} {...detail} />
               )}

@@ -2,6 +2,7 @@
 // and its Live tab both mount, and the readbacks a capture takes from it.
 export {
   aimCamera,
+  createAlbedoCapture,
   createDepthCapture,
   depthProbe,
   tightRows,

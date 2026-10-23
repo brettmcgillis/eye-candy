@@ -46,12 +46,7 @@ export const VIEW_ANGLES = {
 };
 
 // The flat look's outline band; here the gap between prisms does its job.
-const DROPPED = new Set([
-  'outlineColor',
-  'outlineStrength',
-  'outlineWidth',
-  'transparentBackground',
-]);
+const DROPPED = new Set(['outlineColor', 'outlineStrength', 'outlineWidth']);
 const LOOP_KEYS = new Set([
   'growStyle',
   'growSeconds',

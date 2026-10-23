@@ -116,7 +116,7 @@ export function renderSvg(kernel, field, config, options) {
   const { penHalfWidth } = look.penGeometry(field.gridSize);
   return kernel.blob.renderBlobSvg(field, {
     background:
-      options.svgFill && !options.transparentBackground
+      options.svgFill && !options.transparent
         ? look.acesFilmicHex(config.sceneBgColor)
         : null,
     height: options.height,

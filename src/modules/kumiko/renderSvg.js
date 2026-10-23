@@ -126,6 +126,7 @@ export default function renderKumikoSvg({
   stops,
   stroke = 0.3,
   style = 'fill',
+  transparent = false,
 }) {
   const margin = frame ? frame.margin : 0.04;
   const pad = Math.max(panel.width, panel.height) * margin;
@@ -139,7 +140,7 @@ export default function renderKumikoSvg({
     size = `width="${frame.width}" height="${frame.height}"`;
   }
   const background =
-    style === 'fill'
+    style === 'fill' && !transparent
       ? `<rect x="${f(viewBox[0])}" y="${f(viewBox[1])}" width="${f(viewBox[2])}" height="${f(viewBox[3])}" fill="${config.backgroundColor}"/>`
       : '';
   let body;

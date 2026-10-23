@@ -406,12 +406,14 @@ const RENDER = {
   height: standard.height(),
   pixelRatio: standard.pixelRatio(),
   count: standard.count('trees'),
-  png: standard.png(),
   webp: standard.webp(),
+  capture: standard.capture(),
+  transparent: standard.transparent(),
   svg: standard.svg(
     'Write a plottable SVG per view: every leaf box edge, hidden lines removed, one pen per colour'
   ),
   plotWidthMm: standard.plotWidthMm(),
+  svgColors: standard.svgColors(),
   views: standard.views(VIEWS, 'hero'),
   svgOcclusion: standard.svgOcclusion(
     'Drop line work hidden behind nearer boxes (uses a depth pass)'
@@ -447,6 +449,7 @@ const RENDER = {
     'grow: the root box splits level by level, then holds; loop: the scene’s grow → hold → shrink → rest cycle, one per tree; drift: a settled tree drifting; turntable: orbit a settled tree'
   ),
   view: standard.view(VIEWS, 'hero'),
+  ...standard.videoFormats(),
   fps: standard.fps(),
   hold: standard.hold(
     6,

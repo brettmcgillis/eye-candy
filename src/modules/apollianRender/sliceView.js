@@ -52,6 +52,8 @@ export default function buildSliceMaterial(family, u, buffers) {
     const aa = float(2).div(u.resolution.y);
     const l = frame.length();
     const col = vec3(0).toVar();
+    const alpha = float(1).toVar();
+    const clear = u.transparent.greaterThan(0.5);
 
     const lights = (point) => {
       const ro = vec3(0, EYE_HEIGHT, 0);
@@ -85,12 +87,14 @@ export default function buildSliceMaterial(family, u, buffers) {
       return lit.mul(float(1).sub(tanh(l.mul(0.75)))).mul(0.5 * PAPER_GAIN);
     };
 
+    // Transparent, the paper and its lighting go: only the plot is drawn.
     const paper = mix(
       u.slicePaper,
       u.slicePaper.mul(lights(frame)),
       u.sliceShadow
     );
-    col.assign(paper);
+    col.assign(select(clear, vec3(0), paper));
+    alpha.assign(select(clear, float(0), float(1)));
 
     If(u.sliceMode.equal(2), () => {
       const count = u.stackCount;
@@ -110,6 +114,7 @@ export default function buildSliceMaterial(family, u, buffers) {
             d
           );
           col.assign(mix(fill, fill.mul(0.25), edge.mul(u.sliceLine.min(1))));
+          alpha.assign(1);
           Break();
         });
       });
@@ -118,12 +123,13 @@ export default function buildSliceMaterial(family, u, buffers) {
       const info = field.sliceInfo(point);
       const d = info.x.div(u.sliceHalf);
       const bcol = paletteColor(paletteCoordinate(info.y, u), u);
-      col.assign(mix(col, bcol, smoothstep(aa.negate(), aa, d.negate())));
-      col.addAssign(
-        sqrt(bcol.zxy)
-          .mul(u.sliceGlow)
-          .mul(exp(tanh(l).mul(100).add(10).mul(max(d, 0)).negate()))
-      );
+      const inside = smoothstep(aa.negate(), aa, d.negate());
+      const glow = sqrt(bcol.zxy)
+        .mul(u.sliceGlow)
+        .mul(exp(tanh(l).mul(100).add(10).mul(max(d, 0)).negate()));
+      col.assign(mix(col, bcol, inside));
+      col.addAssign(glow);
+      alpha.assign(max(alpha, max(inside, max(glow.x, max(glow.y, glow.z)))));
 
       If(u.sliceMode.equal(1), () => {
         const sign = select(u.bandSide.equal(1), float(-1), float(1));
@@ -142,14 +148,19 @@ export default function buildSliceMaterial(family, u, buffers) {
         );
         const span = u.bandCount.sub(1).sub(lo).max(1);
         const ink = paletteColor(paletteCoordinate(k.sub(lo).div(span), u), u);
-        col.assign(mix(col, ink, select(kept, line, float(0))));
+        const inked = select(kept, line, float(0));
+        col.assign(mix(col, ink, inked));
+        alpha.assign(max(alpha, inked));
       });
     });
 
-    return vec4(col, 1);
+    return vec4(col, alpha.min(1));
   })();
 
+  // Unblended, so the shader's alpha is written straight (a transparent
+  // capture); an opaque material would force it to 1.
   const material = new THREE.MeshBasicNodeMaterial({
+    blending: THREE.NoBlending,
     depthTest: false,
     depthWrite: false,
     toneMapped: false,

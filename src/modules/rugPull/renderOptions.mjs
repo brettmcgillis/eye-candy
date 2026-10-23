@@ -433,9 +433,11 @@ const RENDER = {
     step: 0.01,
     type: 'number',
   }),
-  png: standard.png(),
   webp: standard.webp(),
+  capture: standard.capture(),
+  transparent: standard.transparent(),
   svg: standard.svg('Write the knot chart as SVG: one path per yarn'),
+  svgColors: standard.svgColors(),
   settleSteps: still({
     default: 480,
     help: 'Cloth solver steps before a 3D view is taken',
@@ -448,6 +450,22 @@ const RENDER = {
     type: 'number',
   }),
   samples: standard.samples(),
+  mode: standard.mode(
+    ['montage', 'hold'],
+    'montage',
+    'montage: one held rug after another; hold: repeat the first rug'
+  ),
+  ...standard.videoFormats(),
+  fps: standard.fps(),
+  hold: standard.hold(3, 'Seconds each rug is held in the video', { max: 60 }),
+  videoView: choice(
+    'video',
+    null,
+    'Video view',
+    ['flat', 'floor', 'wall'],
+    'floor',
+    { scene: false, scope: 'video' }
+  ),
   designPool: {
     default: '',
     help: `Comma-separated designs the roll picks from (empty: all): ${DESIGN_CHOICES.join(', ')}`,
@@ -494,6 +512,7 @@ export const RENDER_OPTIONS = {
 
 export const SURFACE_DEFAULTS = {
   'cli-still': { batch: null },
+  'cli-video': { batch: null, count: 3, out: 'output/rug-pull.mp4' },
   workbench: { count: 6 },
 };
 

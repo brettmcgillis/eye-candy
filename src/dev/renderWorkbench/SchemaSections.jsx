@@ -2,7 +2,7 @@ import React from 'react';
 
 import { SchemaField } from './SchemaFields';
 
-const FORMATS = ['png', 'webp', 'svg'];
+const FORMATS = ['webp', 'svg', 'mp4', 'webm'];
 
 // Laid out by RollWorkbench itself.
 const PAGE_KEYS = [
@@ -55,11 +55,13 @@ export function ListPicker({
   );
 }
 
-// At least one format stays ticked: the server rejects a still with none.
-function FormatPicker({ formats, options, setOption }) {
+// At least one format stays ticked: the server rejects a job with none.
+export function FormatPicker({ kind, options, renderOptions, setOption }) {
+  const formats = FORMATS.filter((key) => renderOptions[key]?.scope === kind);
+  if (formats.length === 0) return null;
   return (
     <fieldset className="rw-fieldset rw-formats">
-      <legend>Image files</legend>
+      <legend>{kind === 'video' ? 'Video files' : 'Image files'}</legend>
       {formats.map((format) => (
         <label htmlFor={`rw-format-${format}`} key={format}>
           <input
@@ -72,7 +74,7 @@ function FormatPicker({ formats, options, setOption }) {
             onChange={(event) => setOption(format, event.target.checked)}
             type="checkbox"
           />
-          {format.toUpperCase()}
+          {renderOptions[format].label}
         </label>
       ))}
     </fieldset>
@@ -104,7 +106,6 @@ export default function SchemaSections({
     ...handled,
     ...pickers.map((picker) => picker.key),
   ]);
-  const formats = FORMATS.filter((key) => RENDER_OPTIONS[key]?.scope === kind);
   const sections = sectionsFor(kind, 'workbench')
     .map((section) => ({
       ...section,
@@ -139,13 +140,12 @@ export default function SchemaSections({
           value={options.views}
         />
       ) : null}
-      {formats.length > 0 ? (
-        <FormatPicker
-          formats={formats}
-          options={options}
-          setOption={setOption}
-        />
-      ) : null}
+      <FormatPicker
+        kind={kind}
+        options={options}
+        renderOptions={RENDER_OPTIONS}
+        setOption={setOption}
+      />
       {sections.map((section) => (
         <details
           className="rw-control-section rw-advanced"

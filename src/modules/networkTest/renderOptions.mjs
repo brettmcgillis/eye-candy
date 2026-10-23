@@ -584,12 +584,14 @@ const RENDER = {
   height: standard.height(),
   pixelRatio: standard.pixelRatio(),
   count: standard.count('networks'),
-  png: standard.png(),
   webp: standard.webp(),
+  capture: standard.capture(),
+  transparent: standard.transparent(),
   svg: standard.svg(
     'Write a plottable SVG per view: edges chained into paths, one pen per class and depth band'
   ),
   plotWidthMm: standard.plotWidthMm(),
+  svgColors: standard.svgColors(),
   views: standard.views(VIEWS, 'hero'),
   stillTime: still({
     default: 4,
@@ -649,6 +651,7 @@ const RENDER = {
     'grow: the network grows out from its roots, holds, then grows back in, drifting and signalling throughout; drift: points wander and rewire; pulse: a settled network carrying signals; turntable: orbit a settled network'
   ),
   view: standard.view(VIEWS, 'hero'),
+  ...standard.videoFormats(),
   fps: standard.fps(),
   hold: standard.hold(
     4,

@@ -2,6 +2,8 @@ import { bloom } from 'three/addons/tsl/display/BloomNode.js';
 import { pass } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
+import { withGlow } from '@modules/postRig';
+
 // The scene's PostRig declaration: bloom only above 1.0, so nothing but the
 // glow gene's emissive ever blooms and the rest stays Flora-clean.
 export const FUNGI_POST = {
@@ -30,7 +32,7 @@ export default function createSpecimenPost(
     FUNGI_POST.bloom.threshold
   );
   const post = new THREE.RenderPipeline(renderer);
-  post.outputNode = color.add(glow);
+  post.outputNode = withGlow(color, glow);
   return {
     post,
     setGlow(amount) {

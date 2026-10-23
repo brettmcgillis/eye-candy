@@ -1,68 +1,14 @@
 import * as THREE from 'three/webgpu';
 
 import { SCENE_CAMERA_DISTANCE, flameVertex } from '@modules/dumpsterFire';
+import { meshEntry, readMeshes } from '@modules/renderStage';
 
 const vertex = new THREE.Vector3();
 const normal = new THREE.Vector3();
 const instance = new THREE.Matrix4();
 const placed = new THREE.Matrix4();
 
-// One mesh's vertices through `matrix` (skinned on the CPU exactly as the
-// GPU skins them), beside the rest positions that weld its seams.
-function meshEntry(mesh, matrix, displace = null) {
-  const { index, attributes } = mesh.geometry;
-  const { position } = attributes;
-  const world = new Float32Array(position.count * 3);
-  const rest = new Float32Array(position.count * 3);
-  for (let i = 0; i < position.count; i += 1) {
-    vertex.fromBufferAttribute(position, i);
-    rest[i * 3] = vertex.x;
-    rest[i * 3 + 1] = vertex.y;
-    rest[i * 3 + 2] = vertex.z;
-    if (displace) {
-      normal.fromBufferAttribute(attributes.normal, i);
-      vertex.fromArray(displace(vertex.toArray(), normal.toArray()));
-    } else if (mesh.isSkinnedMesh) {
-      mesh.getVertexPosition(i, vertex);
-    }
-    vertex.applyMatrix4(matrix);
-    world[i * 3] = vertex.x;
-    world[i * 3 + 1] = vertex.y;
-    world[i * 3 + 2] = vertex.z;
-  }
-  return {
-    index: index ? Uint32Array.from(index.array) : null,
-    position: world,
-    rest,
-  };
-}
-
 const inverseOf = (matrix) => Array.from(matrix.clone().invert().elements);
-
-const plotted = (object) =>
-  object.isMesh &&
-  object.visible &&
-  object.geometry?.attributes?.position &&
-  object.userData.plot !== false;
-
-// Every mesh under `root` in world space, an instanced mesh as one entry
-// per instance.
-function entriesUnder(root) {
-  const entries = [];
-  root.traverseVisible((object) => {
-    if (!plotted(object)) return;
-    if (object.isInstancedMesh) {
-      for (let i = 0; i < object.count; i += 1) {
-        object.getMatrixAt(i, instance);
-        placed.multiplyMatrices(object.matrixWorld, instance);
-        entries.push(meshEntry(object, placed));
-      }
-    } else {
-      entries.push(meshEntry(object, object.matrixWorld));
-    }
-  });
-  return entries;
-}
 
 // The solid pieces as the plot reads them: one object per
 // `userData.plotObject` (a wall block each), with the world → object
@@ -91,7 +37,7 @@ export function readSolids(root, { sidewalk = false } = {}) {
         creases: !tag.plotSidewalk || sidewalk,
         inverse: inverseOf(node.matrixWorld),
         sections: !tag.plotSidewalk,
-        meshes: entriesUnder(node),
+        meshes: readMeshes(node),
       });
       return;
     }

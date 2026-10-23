@@ -8,8 +8,12 @@ export {
   createDepthCapture,
   createNormalCapture,
   depthProbe,
+  meshEntry,
+  readMeshes,
+  setBackdrop,
   tightRows,
 } from './capture';
+export { default as createMeshPlotter } from './meshPlotter';
 export { default as createStageRoot } from './createStageRoot';
 export { default as ShadowFloor } from './ShadowFloor';
 export {

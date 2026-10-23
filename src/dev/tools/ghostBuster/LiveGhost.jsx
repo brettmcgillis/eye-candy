@@ -137,12 +137,12 @@ function Director({ bridgeRef, config, ghostRef, options, paused, stormRef }) {
   const measure = useCallback(async () => {
     const ghost = ghostRef.current;
     if (!ghost?.sim) return boundsRef.current;
-    const lattice = await readGhostLattice(get().gl, ghost, config.skin);
+    const lattice = await readGhostLattice(get().gl, ghost, config);
     boundsRef.current =
       withStorm(latticeBounds(lattice), stormRef.current?.extent()) ??
       GHOST_BOUNDS;
     return boundsRef.current;
-  }, [config.skin, get, ghostRef, stormRef]);
+  }, [config, get, ghostRef, stormRef]);
 
   // The camera as the generation's own camera keys, measured against the
   // framing the CLI would fit, so a CLI re-render starts from this view.
@@ -205,7 +205,7 @@ function Director({ bridgeRef, config, ghostRef, options, paused, stormRef }) {
 
     let svg = null;
     if (options.svg) {
-      const lattice = await readGhostLattice(gl, ghostRef.current, config.skin);
+      const lattice = await readGhostLattice(gl, ghostRef.current, config);
       const view = {
         eye: camera.position.toArray(),
         far: camera.far,
@@ -229,7 +229,7 @@ function Director({ bridgeRef, config, ghostRef, options, paused, stormRef }) {
             })
           : null;
       svg = renderGhostSvg({
-        ...plotArgs(options, resolveSkin(config.skin)),
+        ...plotArgs(options, resolveSkin(config)),
         camera: view,
         coverage: depth,
         image: { data: image, height, width },
@@ -254,7 +254,7 @@ function Director({ bridgeRef, config, ghostRef, options, paused, stormRef }) {
   }, [
     captureDepth,
     captureNormals,
-    config.skin,
+    config,
     get,
     ghostRef,
     liveRef,
@@ -430,6 +430,7 @@ export default function LiveGhost({ jobsApi, options, setOptions }) {
           key={stageKey}
           paused={paused}
           stormRef={stormRef}
+          transparent={options.transparent}
         />
         <Director
           bridgeRef={bridgeRef}
@@ -519,23 +520,26 @@ export default function LiveGhost({ jobsApi, options, setOptions }) {
             Idle
           </button>
         </div>
-        <div className="rw-field-grid gb-live__wind">
-          {WIND_SLIDERS.map(({ key, label, max, min, step, unit }) => (
-            <label className="rw-field" htmlFor={`gb-live-${key}`} key={key}>
-              {label} · {options[key]}
-              {unit}
-              <input
-                id={`gb-live-${key}`}
-                max={max}
-                min={min}
-                onChange={(event) => setWind(key, Number(event.target.value))}
-                step={step}
-                type="range"
-                value={options[key]}
-              />
-            </label>
-          ))}
-        </div>
+        <details>
+          <summary>Wind (optional)</summary>
+          <div className="rw-field-grid gb-live__wind">
+            {WIND_SLIDERS.map(({ key, label, max, min, step, unit }) => (
+              <label className="rw-field" htmlFor={`gb-live-${key}`} key={key}>
+                {label} · {options[key]}
+                {unit}
+                <input
+                  id={`gb-live-${key}`}
+                  max={max}
+                  min={min}
+                  onChange={(event) => setWind(key, Number(event.target.value))}
+                  step={step}
+                  type="range"
+                  value={options[key]}
+                />
+              </label>
+            ))}
+          </div>
+        </details>
       </div>
       <p className="rw-hint">
         Space pause · C capture · R restart · F frame · WASD gust · 1 wave · 2

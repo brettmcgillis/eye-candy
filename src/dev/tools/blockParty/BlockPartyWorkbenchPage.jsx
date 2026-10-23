@@ -1,11 +1,14 @@
 import React from 'react';
 
 import { Stat } from '@dev/renderWorkbench/AssetGallery';
+import { liveTabs } from '@dev/renderWorkbench/LiveStage';
 import RollWorkbench from '@dev/renderWorkbench/RollWorkbench';
 
 import * as kernel from '@modules/blockParty';
 import { PALETTE_NONE } from '@modules/blockParty';
 import { PALETTE_NAMES } from '@modules/blockPartyRender';
+
+import blockPartyLive from './live';
 
 const PALETTE_CHOICES = [PALETTE_NONE, ...PALETTE_NAMES].map((name) => [
   name,
@@ -35,6 +38,8 @@ const preview = {
 export default function BlockPartyWorkbenchPage() {
   return (
     <RollWorkbench
+      defaultTab="live"
+      leadingTabs={liveTabs(blockPartyLive, 'blockParty')}
       name="Block Party"
       noun={{ many: 'cities', one: 'city' }}
       preview={preview}

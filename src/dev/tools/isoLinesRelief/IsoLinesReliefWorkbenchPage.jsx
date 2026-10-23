@@ -1,10 +1,13 @@
 import React from 'react';
 
 import { Stat } from '@dev/renderWorkbench/AssetGallery';
+import { liveTabs } from '@dev/renderWorkbench/LiveStage';
 import RollWorkbench from '@dev/renderWorkbench/RollWorkbench';
 
 import * as kernel from '@modules/isoLinesRelief';
 import { PALETTE_NAMES } from '@modules/isoLinesReliefRender';
+
+import isoLinesReliefLive from './live';
 
 const PALETTE_CHOICES = [
   ['None', 'None'],
@@ -37,6 +40,8 @@ const preview = {
 export default function IsoLinesReliefWorkbenchPage() {
   return (
     <RollWorkbench
+      defaultTab="live"
+      leadingTabs={liveTabs(isoLinesReliefLive, 'isoLinesRelief')}
       name="IsoLinesRelief"
       noun={{ many: 'pieces', one: 'piece' }}
       preview={preview}

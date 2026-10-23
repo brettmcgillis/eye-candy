@@ -1102,8 +1102,18 @@ const RENDER = {
   height: standard.height(),
   pixelRatio: standard.pixelRatio(),
   count: standard.count('exhibits'),
-  png: standard.png(),
   webp: standard.webp(),
+  capture: standard.capture(),
+  svg: standard.svg(
+    "Write the exhibit as hidden-line line work in its own colours (a ray-marched field: its outline and the render's brightness contours)"
+  ),
+  plotWidthMm: standard.plotWidthMm(),
+  svgColors: standard.svgColors(),
+  svgStroke: standard.svgStroke(),
+  svgOcclusion: standard.svgOcclusion(
+    'Drop lines hidden behind nearer surface'
+  ),
+  transparent: standard.transparent(),
   views: standard.views(VIEWS, 'hero'),
   projection: standard.projection(PROJECTIONS, 'perspective'),
   fov: standard.fov(30),
@@ -1129,6 +1139,7 @@ const RENDER = {
     'turntable: orbit the exhibit; sweep: the key light swings round it; evolve: its parameter walks; draw: it builds from nothing'
   ),
   view: standard.view(VIEWS, 'hero'),
+  ...standard.videoFormats(),
   fps: standard.fps(),
   hold: standard.hold(8, 'Seconds per exhibit'),
   turns: standard.turns('exhibit'),

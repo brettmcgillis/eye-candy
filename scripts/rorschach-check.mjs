@@ -115,6 +115,10 @@ async function checkEveryOptionHasAControl() {
   const bound = new Set([
     ...[...source.matchAll(/option="(\w+)"/gu)].map(([, name]) => name),
     ...[...source.matchAll(/setOption\('(\w+)'/gu)].map(([, name]) => name),
+    // The shared picker binds every output format and Transparent.
+    ...(source.includes('<FormatPicker')
+      ? ['mp4', 'svg', 'transparent', 'webm', 'webp']
+      : []),
   ]);
 
   ['still', 'video'].forEach((kind) => {

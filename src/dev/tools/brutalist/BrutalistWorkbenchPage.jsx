@@ -1,10 +1,13 @@
 import React from 'react';
 
 import { Stat } from '@dev/renderWorkbench/AssetGallery';
+import { liveTabs } from '@dev/renderWorkbench/LiveStage';
 import RollWorkbench from '@dev/renderWorkbench/RollWorkbench';
 import { Segmented } from '@dev/renderWorkbench/SchemaFields';
 
 import * as kernel from '@modules/brutalist';
+
+import brutalistLive from './live';
 
 const STAGE_OPTIONS = kernel.RENDER_OPTIONS.stage.choices.map((stage) => ({
   label: stage,
@@ -49,8 +52,10 @@ export default function BrutalistWorkbenchPage() {
   return (
     <RollWorkbench
       controls={StagePicker}
+      defaultTab="live"
       hint="hold form to see one structure in other weather, sites and moods."
       jobTitle={jobTitle}
+      leadingTabs={liveTabs(brutalistLive, 'brutalist')}
       name="Brutalist"
       noun={{ many: 'structures', one: 'structure' }}
       preview={preview}

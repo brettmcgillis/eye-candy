@@ -23,11 +23,11 @@ runStills({
     const layout = await step(`building ${drawn.name}`, async () =>
       capturer.load(drawn)
     );
-    await out.eachView((view) =>
-      out.image(view, () =>
-        capturer.capture(viewFor(kernel, { layout, options, view }))
-      )
-    );
+    await out.eachView(async (view) => {
+      const framed = viewFor(kernel, { layout, options, view });
+      await out.image(view, () => capturer.capture(framed));
+      if (options.svg) await out.svg(view, await capturer.svg(framed, options));
+    });
   },
   kernelLabel: 'ExhibitA',
   loadKernel,

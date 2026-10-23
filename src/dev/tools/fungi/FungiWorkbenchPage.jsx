@@ -1,9 +1,12 @@
 import React from 'react';
 
 import { Stat } from '@dev/renderWorkbench/AssetGallery';
+import { liveTabs } from '@dev/renderWorkbench/LiveStage';
 import RollWorkbench from '@dev/renderWorkbench/RollWorkbench';
 
 import * as kernel from '@modules/fungi';
+
+import fungiLive from './live';
 
 const sections = { open: ['form', 'output', 'video'] };
 
@@ -24,6 +27,8 @@ const preview = {
 export default function FungiWorkbenchPage() {
   return (
     <RollWorkbench
+      defaultTab="live"
+      leadingTabs={liveTabs(fungiLive, 'fungi')}
       name="Fungi"
       noun={{ many: 'specimens', one: 'specimen' }}
       preview={preview}

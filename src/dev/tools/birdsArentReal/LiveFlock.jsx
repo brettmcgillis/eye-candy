@@ -35,6 +35,7 @@ import {
   flockBounds,
   frameFlock,
   layoutFlock,
+  needsAlbedo,
   needsDepth,
   plotArgs,
   renderFlockSvg,
@@ -42,6 +43,7 @@ import {
 import {
   BirdStudio,
   aimCamera,
+  createAlbedoCapture,
   createDepthCapture,
   depthProbe,
   readFlockMesh,
@@ -98,6 +100,7 @@ const typing = (event) =>
 function Director({ bridgeRef, config, flockRef, options, paused }) {
   const get = useThree((state) => state.get);
   const captureDepth = useMemo(() => createDepthCapture(get().gl), [get]);
+  const captureAlbedo = useMemo(() => createAlbedoCapture(get().gl), [get]);
   const frozenRef = useRef(0);
   const liveRef = useLiveClock();
   const bounds = useMemo(() => flockBounds(layoutFlock(config)), [config]);
@@ -223,8 +226,12 @@ function Director({ bridgeRef, config, flockRef, options, paused }) {
       const depth = needsDepth(options)
         ? await captureDepth(scene, camera, width, height, flockRef.current)
         : null;
+      const albedo = needsAlbedo(options)
+        ? await captureAlbedo(scene, camera, width, height, flockRef.current)
+        : null;
       svg = renderFlockSvg({
         ...plotArgs(options),
+        albedo,
         camera: view,
         coverage: depth,
         flock: readFlockMesh(flockRef.current),
@@ -241,7 +248,16 @@ function Director({ bridgeRef, config, flockRef, options, paused }) {
     if (wasRunning) resumeClock(state);
     else render();
     return { png: await pngBase64(image, width, height), svg };
-  }, [bounds, captureDepth, flockRef, get, liveRef, options, render]);
+  }, [
+    bounds,
+    captureAlbedo,
+    captureDepth,
+    flockRef,
+    get,
+    liveRef,
+    options,
+    render,
+  ]);
 
   useEffect(() => {
     Object.assign(bridgeRef.current, { cameraKeys, capture, frame });
@@ -355,6 +371,7 @@ export default function LiveFlock({ jobsApi, options, setOptions }) {
           flockRef={flockRef}
           key={stageKey}
           stareAtCursor={stare && !paused}
+          transparent={options.transparent}
         />
         <Director
           bridgeRef={bridgeRef}

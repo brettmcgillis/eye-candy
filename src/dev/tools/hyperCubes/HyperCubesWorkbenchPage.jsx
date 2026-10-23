@@ -1,10 +1,13 @@
 import React from 'react';
 
 import { Stat } from '@dev/renderWorkbench/AssetGallery';
+import { liveTabs } from '@dev/renderWorkbench/LiveStage';
 import RollWorkbench from '@dev/renderWorkbench/RollWorkbench';
 
 import * as kernel from '@modules/hyperCubes';
 import { PALETTE_NAMES } from '@modules/hyperCubesRender';
+
+import hyperCubesLive from './live';
 
 const PALETTE_CHOICES = [
   ['None', 'None'],
@@ -36,6 +39,8 @@ const preview = {
 export default function HyperCubesWorkbenchPage() {
   return (
     <RollWorkbench
+      defaultTab="live"
+      leadingTabs={liveTabs(hyperCubesLive, 'hyperCubes')}
       name="HyperCubes"
       noun={{ many: 'structures', one: 'structure' }}
       preview={preview}

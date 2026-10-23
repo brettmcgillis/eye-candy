@@ -24,11 +24,11 @@ runStills({
       capturer.load(drawn)
     );
     const out = await save(drawn.name, sidecarFor({ ...drawn, options }));
-    await out.eachView((view) =>
-      out.image(view, () =>
-        capturer.capture(kernel.tubes.frameView({ bounds, options, view }))
-      )
-    );
+    await out.eachView(async (view) => {
+      const framed = kernel.tubes.frameView({ bounds, options, view });
+      await out.image(view, () => capturer.capture(framed));
+      if (options.svg) await out.svg(view, await capturer.svg(framed, options));
+    });
   },
   kernelLabel: 'Trucheterie3D',
   loadKernel,

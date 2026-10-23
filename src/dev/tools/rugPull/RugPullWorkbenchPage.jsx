@@ -1,9 +1,12 @@
 import React from 'react';
 
 import { Stat } from '@dev/renderWorkbench/AssetGallery';
+import { liveTabs } from '@dev/renderWorkbench/LiveStage';
 import RollWorkbench from '@dev/renderWorkbench/RollWorkbench';
 
 import * as kernel from '@modules/rugPull';
+
+import rugPullLive from './live';
 
 const sections = { open: ['output', 'mine'] };
 
@@ -38,8 +41,10 @@ const jobTitle = () => 'Rug Pull weave';
 export default function RugPullWorkbenchPage() {
   return (
     <RollWorkbench
+      defaultTab="live"
       jobTitle={jobTitle}
       kinds={['still']}
+      leadingTabs={liveTabs(rugPullLive, 'rugPull')}
       name="Rug Pull"
       noun={{ many: 'rugs', one: 'rug' }}
       preview={preview}

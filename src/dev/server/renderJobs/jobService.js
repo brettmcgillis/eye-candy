@@ -6,7 +6,8 @@ import path from 'node:path';
 const MAX_LOG_LINES = 160;
 const MANIFEST_FILE = 'manifest.json';
 const MANIFEST_VERSION = 1;
-const MEDIA = /\.(mp4|png|svg|webp)$/u;
+const MEDIA = /\.(mp4|png|svg|webm|webp)$/u;
+const VIDEO = /\.(mp4|webm)$/u;
 const TERMINAL_STATUSES = new Set(['cancelled', 'completed', 'failed']);
 const ACTIVE_STATUSES = new Set(['cancelling', 'queued', 'running']);
 
@@ -52,26 +53,41 @@ function assertCollectionDirectory(rootDir, outputRoot, collectionName) {
 }
 
 function publicJob(job) {
-  const result = { ...job };
+  const result = { ...job, retryable: Boolean(job.args) };
   delete result.child;
   delete result.args;
+  delete result.resume;
   return result;
 }
 
 function manifestFor(job) {
-  const manifest = publicJob(job);
+  const manifest = { ...job };
+  delete manifest.child;
   delete manifest.assets;
   delete manifest.storageBytes;
   return { ...manifest, manifestVersion: MANIFEST_VERSION };
 }
 
+const JOB_STATE = 'job-state: ';
+
+// Returns true when the CLI reported a new resume point.
 function addLog(job, source, message) {
   const currentJob = job;
+  let stateChanged = false;
   String(message)
     .split(/\r?\n/u)
     .map((line) => line.replaceAll('\u001b[K', '').trim())
     .filter(Boolean)
     .forEach((line) => {
+      if (line.startsWith(JOB_STATE)) {
+        try {
+          currentJob.resume = JSON.parse(line.slice(JOB_STATE.length));
+          stateChanged = true;
+        } catch {
+          // A chunk boundary split the line; the next item reports again.
+        }
+        return;
+      }
       currentJob.logs.push({
         source,
         text: line,
@@ -106,6 +122,7 @@ function addLog(job, source, message) {
         currentJob.progress = Math.max(currentJob.progress, 92);
       }
     });
+  return stateChanged;
 }
 
 async function readManifest(outputDir) {
@@ -167,12 +184,13 @@ export default function createRenderJobService({
 }) {
   const jobs = new Map();
   const queue = [];
+  let stopped = false;
 
   const assetUrl = (id, relativePath) =>
     `/dev-api/${tool}/jobs/${id}/assets/${toUrlPath(relativePath)}`;
 
   async function persistJob(rootDir, job) {
-    if (job.source !== 'workbench') return;
+    if (job.source !== 'workbench' || stopped) return;
     const outputDir = assertCollectionDirectory(rootDir, outputRoot, job.id);
     await fs.mkdir(outputDir, { recursive: true });
     await fs.writeFile(
@@ -340,8 +358,8 @@ export default function createRenderJobService({
     });
 
     const videoMetadataTargets = targets
-      .filter((target) => target.endsWith('.mp4'))
-      .map((target) => target.replace(/\.mp4$/u, '.json'));
+      .filter((target) => VIDEO.test(target))
+      .map((target) => target.replace(VIDEO, '.json'));
     await Promise.all(
       [...targets, ...videoMetadataTargets].map((target) =>
         fs.rm(target, { force: true })
@@ -408,7 +426,17 @@ export default function createRenderJobService({
           if (!existing && manifest) Object.assign(job, manifest);
           Object.assign(job, { child: existing?.child ?? null, id, source });
           job.collectionRoot = root;
-          if (interrupted) {
+          if (interrupted && job.args) {
+            Object.assign(job, {
+              completedAt: null,
+              error: null,
+              phase: 'queued',
+              status: 'queued',
+            });
+            addLog(job, 'server', 'Resuming after the dev server restarted.');
+            queue.push(job);
+            await persistJob(rootDir, job);
+          } else if (interrupted) {
             job.completedAt = new Date().toISOString();
             job.error =
               'Render interrupted when the development server stopped.';
@@ -428,16 +456,28 @@ export default function createRenderJobService({
   }
 
   function start(rootDir, job) {
-    const child = spawn(process.execPath, job.args, { cwd: rootDir });
+    const child = spawn(process.execPath, job.args, {
+      cwd: rootDir,
+      env: {
+        ...process.env,
+        RENDER_JOB_STATE: JSON.stringify(job.resume ?? {}),
+      },
+    });
     Object.assign(job, { child, phase: 'starting', status: 'running' });
-    persistJob(rootDir, job).catch((error) => addLog(job, 'server', error));
+    const persist = () =>
+      persistJob(rootDir, job).catch((error) => addLog(job, 'server', error));
+    persist();
 
-    child.stdout.on('data', (chunk) => addLog(job, 'stdout', chunk));
+    child.stdout.on('data', (chunk) => {
+      if (addLog(job, 'stdout', chunk)) persist();
+    });
     child.stderr.on('data', (chunk) => addLog(job, 'stderr', chunk));
     child.on('error', (error) => {
       Object.assign(job, { error: error.message });
     });
     child.on('close', async (code, signal) => {
+      // A stopped service has handed its jobs to the next one on disk.
+      if (stopped) return;
       Object.assign(job, {
         child: null,
         completedAt: new Date().toISOString(),
@@ -469,7 +509,7 @@ export default function createRenderJobService({
   }
 
   function drain(rootDir) {
-    while (queue.length > 0 && runningCount() < maxConcurrent) {
+    while (!stopped && queue.length > 0 && runningCount() < maxConcurrent) {
       const job = queue.shift();
       if (job.status === 'queued') start(rootDir, job);
     }
@@ -537,7 +577,7 @@ export default function createRenderJobService({
     return publicJob(job);
   }
 
-  async function listJobs(rootDir) {
+  async function scanJobs(rootDir) {
     const collections = (
       await Promise.all([
         discoverCollections(rootDir, outputRoot, 'workbench'),
@@ -552,9 +592,19 @@ export default function createRenderJobService({
         jobs.delete(id);
       }
     });
+    drain(rootDir);
     return collections
       .sort((left, right) => right.createdAt.localeCompare(left.createdAt))
       .map(publicJob);
+  }
+
+  // Overlapping scans would each re-queue the same interrupted job.
+  let scanning = null;
+  function listJobs(rootDir) {
+    scanning ??= scanJobs(rootDir).finally(() => {
+      scanning = null;
+    });
+    return scanning;
   }
 
   function getJob(id) {
@@ -579,6 +629,44 @@ export default function createRenderJobService({
     job.child.kill('SIGTERM');
     await persistJob(rootDir, job);
     return publicJob(job);
+  }
+
+  // Re-runs a stopped job in its own collection; a stills batch picks up
+  // after the last generation it finished.
+  async function retryJob(rootDir, id) {
+    const job = getJob(id);
+    if (!['cancelled', 'failed'].includes(job.status) || job.child) {
+      throw requestError(
+        409,
+        'JOB_NOT_RETRYABLE',
+        'Only a failed or cancelled job can be retried.'
+      );
+    }
+    if (!job.args) {
+      throw requestError(
+        409,
+        'JOB_NOT_RETRYABLE',
+        'This job was recorded before retry support; submit it again.'
+      );
+    }
+    Object.assign(job, {
+      completedAt: null,
+      error: null,
+      phase: 'queued',
+      status: 'queued',
+    });
+    addLog(job, 'server', 'Retrying.');
+    queue.push(job);
+    await persistJob(rootDir, job);
+    drain(rootDir);
+    return publicJob(job);
+  }
+
+  // The dev server is closing (a restart builds a new service): leave every
+  // manifest as it stands so the next service resumes the work.
+  function stop() {
+    stopped = true;
+    jobs.forEach((job) => job.child?.kill('SIGTERM'));
   }
 
   function deletableCollection(rootDir, id, confirmedOutputDirectory) {
@@ -692,9 +780,9 @@ export default function createRenderJobService({
       return target;
     });
     const metadataTargets = paths
-      .filter((relativePath) => relativePath.endsWith('.mp4'))
+      .filter((relativePath) => VIDEO.test(relativePath))
       .map((relativePath) =>
-        path.resolve(outputDir, relativePath.replace(/\.mp4$/u, '.json'))
+        path.resolve(outputDir, relativePath.replace(VIDEO, '.json'))
       );
     const folderTargets = itemFolders
       ? [...new Set(targets.map((target) => path.dirname(target)))].filter(
@@ -838,6 +926,8 @@ export default function createRenderJobService({
     listJobs,
     readSidecar,
     resolveAsset,
+    retryJob,
+    stop,
   };
   return api;
 }

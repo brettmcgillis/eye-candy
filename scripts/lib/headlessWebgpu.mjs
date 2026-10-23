@@ -42,7 +42,10 @@ export async function loadThree() {
   const webgpu = await import('webgpu');
   const gpu = webgpu.create([]);
 
-  globalThis.navigator = { ...globalThis.navigator, gpu };
+  Object.defineProperty(globalThis, 'navigator', {
+    configurable: true,
+    value: { ...globalThis.navigator, gpu },
+  });
   globalThis.self = globalThis;
   globalThis.requestAnimationFrame = (callback) => {
     lastFrameId += 1;
@@ -180,4 +183,37 @@ export async function createHeadlessRenderer({
       renderer.dispose?.();
     },
   };
+}
+
+// A transparent capture clears to zero alpha and draws no background, so the
+// subject keeps its edges when WebP / WebM carry the alpha out. A rig tags
+// the world it draws round the subject: `userData.backdrop = 'shadow'` (a
+// floor or wall) keeps only the shadows falling on it, `'hide'` goes.
+export function setBackdrop(
+  { THREE, renderer, scene },
+  color,
+  transparent,
+  { shadowOpacity = 0.5 } = {}
+) {
+  /* eslint-disable no-param-reassign */
+  scene.background = transparent ? null : new THREE.Color(color);
+  scene.traverse((object) => {
+    const role = object.userData.backdrop;
+    if (role === 'hide') object.visible = !transparent;
+    if (role !== 'shadow' || !object.isMesh) return;
+    const { userData } = object;
+    if (transparent && !userData.ownMaterial) {
+      userData.ownMaterial = object.material;
+      userData.shadowMaterial ??= new THREE.ShadowNodeMaterial({
+        opacity: shadowOpacity,
+        transparent: true,
+      });
+      object.material = userData.shadowMaterial;
+    } else if (!transparent && userData.ownMaterial) {
+      object.material = userData.ownMaterial;
+      userData.ownMaterial = null;
+    }
+  });
+  /* eslint-enable no-param-reassign */
+  renderer.setClearColor(transparent ? 0x000000 : color, transparent ? 0 : 1);
 }

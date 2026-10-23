@@ -26,7 +26,7 @@ runStills({
           backgroundColor: drawn.config.sceneBgColor,
           bounds,
           margin: options.margin,
-          transparentBackground: options.transparentBackground,
+          transparentBackground: options.transparent,
         })
       );
       if (options.svg) {

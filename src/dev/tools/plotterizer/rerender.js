@@ -34,7 +34,6 @@ export function rerenderOptions(render, widthMm, nibMm) {
     count: 1,
     height: Math.max(16, Math.round(render.height * scale)),
     plotWidthMm: Math.round(widthMm * 10) / 10,
-    png: false,
     svg: true,
     webp: false,
     width: Math.max(16, Math.round(render.width * scale)),

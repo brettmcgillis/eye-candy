@@ -31,6 +31,7 @@ export {
   traceRuns,
   weldMesh,
 } from './mesh';
+export { default as meshPlotSvg } from './meshPlot';
 export { default as outlineRuns, outlineOf } from './outline';
 export { default as createProjector } from './projector';
 export {

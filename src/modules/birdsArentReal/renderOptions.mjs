@@ -16,7 +16,7 @@ import createOptionSchema, {
 } from '../optionSchema/index.mjs';
 
 export const LOCATIONS = ['blank'];
-export const BACKDROPS = ['solid', 'transparent'];
+export const BACKDROPS = ['solid'];
 export const FLOORS = ['shadow', 'none'];
 export const ARRANGEMENTS = ['cluster', 'line', 'ring'];
 export const FACINGS = ['forward', 'random', 'inward', 'outward'];
@@ -75,8 +75,9 @@ const LOCATION = {
   backdrop: inFacet(
     'location',
     choice('stage', null, 'Backdrop', BACKDROPS, 'solid', {
-      choiceLabels: { solid: 'Solid colour', transparent: 'Transparent' },
-      help: 'solid: one colour; transparent: alpha in PNG/WebP',
+      choiceAliases: { transparent: 'solid' },
+      choiceLabels: { solid: 'Solid colour' },
+      help: 'solid: one colour',
     })
   ),
   backgroundColor: inFacet(
@@ -301,8 +302,8 @@ const RENDER = {
   height: standard.height(),
   pixelRatio: standard.pixelRatio(),
   count: standard.count('flocks'),
-  png: standard.png(),
   webp: standard.webp(),
+  transparent: standard.transparent(),
   svg: standard.svg(
     'Write a plottable SVG per view: slices, contours, creases and silhouette, hidden lines removed'
   ),
@@ -413,11 +414,10 @@ const RENDER = {
       when: { svgTexture: [true] },
     })
   ),
-  svgColors: svgOnly(
-    num('svg', null, 'SVG colours', 0, 0, 8, 1, {
-      help: "Split the sections into the render's own inks: this many colours picked from the birds (0: one black layer), a layer each, for the Plotterizer to match to pens",
-    })
-  ),
+  svgColors: standard.svgColors({
+    group: null,
+    help: "Split the sections into the render's own inks: this many colours picked from the birds (0: one black layer), a layer each, for the Plotterizer to match to pens",
+  }),
   svgWiggle: svgOnly(
     num('svg', null, 'SVG wiggle', 0, 0, 3, 0.05, {
       help: 'Millimetres the section lines swing across themselves in the darkest tone (0: straight), so the lines carry the shading',
@@ -436,6 +436,7 @@ const RENDER = {
     'idle: the flock keeps looking round while the camera holds (or drifts by --orbit); turntable: the camera circles it'
   ),
   view: standard.view(VIEWS, 'hero'),
+  ...standard.videoFormats(),
   fps: standard.fps(),
   hold: standard.hold(6, 'Seconds of footage per flock'),
   turns: standard.turns('flock'),

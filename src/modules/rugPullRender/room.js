@@ -73,17 +73,20 @@ export default function createRoom() {
   );
   floorMesh.rotation.x = -Math.PI / 2;
   floorMesh.receiveShadow = true;
+  floorMesh.userData.backdrop = 'shadow';
   const wallMesh = new THREE.Mesh(
     new THREE.PlaneGeometry(40, 8),
     plasterMaterial(u.wall)
   );
   wallMesh.receiveShadow = true;
+  wallMesh.userData.backdrop = 'shadow';
   const base = new THREE.Mesh(
     new THREE.BoxGeometry(40, 0.12, 0.02),
     new THREE.MeshStandardMaterial({ color: '#efe8dc', roughness: 0.6 })
   );
   base.receiveShadow = true;
   base.castShadow = true;
+  base.userData.backdrop = 'hide';
   const hardware = new THREE.Group();
   group.add(floorMesh, wallMesh, base, hardware);
 

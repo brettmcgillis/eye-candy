@@ -13,22 +13,119 @@ plumbing they all sit on. Follow it for every new generator.
    └── src/dev/server/<tool>/plugin.js       createSchemaToolPlugin config
 ```
 
+## 0. Core requirements for every bench
+
+A new bench ships with all five, designed in from the kernel up rather than
+bolted on. The user is asked at scene kickoff whether the scene gets a bench at
+all (`docs/scene-conventions.md` §17); once it does, these are the default scope.
+
+1. **Randomization (roll).** Unique images in bulk must be a one-command job:
+   - Every look-defining knob is `rolled(facet, [min, max] | null, …)` (or
+     `inFacet`) with a sensible window, so `count` generations from one `batch`
+     seed each differ and are reproducible. Design the kernel so the whole
+     generation is a pure function of `(options, seed)` — no hidden
+     `Math.random`, no wall-clock input.
+   - The bench exposes roll and `count` (RollWorkbench does); a typed flag pins
+     a rollable option, everything else rolls.
+   - Every generation writes its `props.json` sidecar so any image can be
+     reproduced, saved as a scene preset, or re-rendered at another size.
+2. **Video.** `scripts/<slug>-video.mjs` via `runVideo` is part of the first
+   cut, not a follow-up: at least `hold`, `fps`, and a `montage` mode that cuts
+   one generation after another; plus the scene's own motion (grow, turntable,
+   drift, loop) when it has any. The kernel must therefore expose its time
+   parameter (see the TSL `time` / `setClock` note in § 5).
+3. **SVG output for pen plotting.** The kernel provides a plot (`plot.js`,
+   three-free where possible, built on `@modules/plotKit`) with pen layers, and
+   `runStills` writes it through `out.svg` so `plotWidthMm`, thumbnails and
+   **Open in Plotterizer** come free. If a look has no honest line
+   equivalent, say so at kickoff and agree the nearest plot (outline, depth
+   contours, shade hatching, section cuts) rather than silently omitting it.
+   Every plot can come out in colour: `standard.svgColors()` (0: as drawn,
+   1–8 inks) and `writePlot` regroups any SVG into that many ink layers from
+   the plot's own colours (plotKit `inkLayers`, below), so a kernel's job is
+   to draw each line in its real colour. A plot drawn from read-back pixels
+   takes its colours from the unlit albedo (`docs/dumpster-fire-pipeline.md`
+   § Colour plots); one whose colours the kernel knows (GhostBuster's skin)
+   names them per layer.
+4. **A Live tab.** The bench's first tab (`leadingTabs`) mounts the real stage
+   in the page so the exact image is found by hand: orbit, pause, tweak the
+   form's options live, then **Capture** the frozen frame. Without a Live tab
+   the only route to a specific image is rolling and hoping.
+   - The Live tab mounts the same stage the CLIs mount headlessly, so Live
+     and render never diverge. An R3F stage (`@modules/renderStage`,
+     `createStageRoot`) has its own `Live<Tool>.jsx`: `LiveGhost`,
+     `LiveFlock`, `LiveDumpster`. A three-only stage lives in
+     `src/modules/<tool>Render/stage.js` (or `bench.js` where `stage.js`
+     is taken) as `create<X>Stage({ renderer, readFrame, width, height,
+pixelRatio, samples, shadows, transparent, … })` — browser-safe,
+     setting its own tone mapping and shadows, drawing through
+     `readFrame(draw)` — beside the bench's `rollArgs`, generation builder
+     and framing. The CLI's capturer is `createHeadlessRenderer` plus that
+     stage; the page's is `src/dev/renderWorkbench/LiveStage.jsx` over
+     `src/dev/tools/<tool>/live.js`, passed as
+     `leadingTabs={liveTabs(live, '<tool>')}` with `defaultTab="live"`.
+     Bespoke pages use the same pair directly on `ResultsPanel` and pass the
+     complete pin context (`{ pins, setPins }`) so **Keep** updates the form.
+   - `live.js` exports `{ createStage, generate, frame, configOf, name }`
+     and optionally `load` (a generation the build re-rolls, or a stage
+     with its own load arguments), `keep`, `cameraKeys`, `stageKey`,
+     `flat` (pan and zoom, no orbit; may be a function of the options),
+     `checks` and `hint`. A stage may add `settle(options)` (after every
+     load), `step(delta)` (each unpaused frame) and `captureDepth` /
+     `depthProbe` (passed as `svg`'s `visible` when `svgOcclusion` is on).
+     Images and SVG rasters come in through injected `loadImage` /
+     `rasterize` (a canvas in the page, sharp in Node); a flat SVG bench
+     can use `@modules/renderStage/svgStage`.
+   - It reads and writes the form (`context.options`, `setOption`): **Use this
+     camera** writes the orbit back as camera keys, sliders and buttons write
+     the generation's options, Space pauses, F frames the subject.
+   - Capture renders the frozen frame at the form's size offscreen, plus the
+     plot from the same stage, and posts to `/captures` (`liveCapture.js`,
+     `src/dev/server/renderJobs/liveCapture.js`; the route exists when the
+     schema has `standard.capture()`); `runStills` finishes `--capture <dir>`
+     like any still (formats, overlay, sidecar), no kernel, no GPU.
+   - `npm run live:check [tool…]` runs every `live.js` headlessly (build,
+     roll, frame, capture, plot; one process per bench) and fails on a flat
+     frame or an empty plot; `workbench-chrome:check` fails a bench with no
+     Live tab.
+
+5. **One set of outputs.** Stills write WebP (lossless) and SVG; video
+   writes MP4 and WebM (`...standard.videoFormats()`), ticked like the
+   image formats. There is no PNG output — PNG is only internal plumbing
+   (Live-capture upload, thumbnails, overlay). Transparency is not a format
+   but a feature of the output: `standard.transparent()` (section `output`,
+   both kinds) clears the capture to zero alpha with no background
+   (`setBackdrop` in `headlessWebgpu.mjs`; a rig tags the world it draws
+   round the subject `userData.backdrop = 'shadow'` — a floor or wall that
+   keeps only its shadows — or `'hide'`), and every post pass keeps alpha
+   (glow brings its own: `withGlow` from `@modules/postRig`). WebP and WebM (VP9 `yuva420p`)
+   carry the alpha, and MP4 is laid over the background colour
+   (`runVideo`'s `background(options)`, else the kernel's background key).
+   The workbench's `FormatPicker` shows the formats for the kind plus the
+   Transparent toggle. `npm run workbench-chrome:check` enforces this; a bench
+   whose subject fills the frame (Imperfection) is listed in its `FULL_FRAME`
+   instead of offering Transparent.
+
+Items 1–4 are not yet enforced by a script (`checkWorkbenchPage` and
+`workbench-chrome:check` don't look for them); review them by hand when adding
+a bench.
+
 ## 1. Declaring options — `@modules/optionSchema`
 
 One way to write a spec. Import the builders from
 `../optionSchema/index.mjs` (relative: the file must load in plain Node and
 in Vite's config loader, so it stays dependency-free).
 
-| Builder                                                                  | Makes                                                                                                                                                                                                                                                                                                                                                       |
-| ------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `num(section, group, label, value, min, max, step, extra)`               | a scene number control                                                                                                                                                                                                                                                                                                                                      |
-| `choice(section, group, label, choices, value, extra)`                   | a scene enum (`choiceLabels` names its choices)                                                                                                                                                                                                                                                                                                             |
-| `flag(…)`, `color(…)`, `spec(type, section, group, label, value, extra)` | a scene boolean, colour, or anything else                                                                                                                                                                                                                                                                                                                   |
-| `rolled(facet, [min, max] \| null, item)`, `inFacet(facet, item)`        | lets the dice set it (in that window)                                                                                                                                                                                                                                                                                                                       |
-| `sceneOnly(item)`                                                        | a scene control that is never a render option                                                                                                                                                                                                                                                                                                               |
-| `rigOf({ facet })`                                                       | a builder for light/post rig keys (`rig: true`, section `post`)                                                                                                                                                                                                                                                                                             |
-| `output`, `still`, `video`, `render`, `roll`                             | scope/section wrappers for literal render options                                                                                                                                                                                                                                                                                                           |
-| `standard.<key>(…)`                                                      | the shared render options: `batch`, `out`, `width`, `height`, `pixelRatio`, `count`, `png`, `webp`, `svg`, `plotWidthMm`, `views`, `svgStroke`, `svgPenMm`, `svgOcclusion`, `samples`, `shadows`, `projection`, `fov`, `margin`, `keep`, `base`, `palettes`, `mode`, `view`, `fps`, `hold`, `turns`, `orbit`, `overlay`, `ig`, `viewport`, `overlayOptions` |
+| Builder                                                                  | Makes                                                                                                                                                                                                                                                                                                                                                                                              |
+| ------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `num(section, group, label, value, min, max, step, extra)`               | a scene number control                                                                                                                                                                                                                                                                                                                                                                             |
+| `choice(section, group, label, choices, value, extra)`                   | a scene enum (`choiceLabels` names its choices)                                                                                                                                                                                                                                                                                                                                                    |
+| `flag(…)`, `color(…)`, `spec(type, section, group, label, value, extra)` | a scene boolean, colour, or anything else                                                                                                                                                                                                                                                                                                                                                          |
+| `rolled(facet, [min, max] \| null, item)`, `inFacet(facet, item)`        | lets the dice set it (in that window)                                                                                                                                                                                                                                                                                                                                                              |
+| `sceneOnly(item)`                                                        | a scene control that is never a render option                                                                                                                                                                                                                                                                                                                                                      |
+| `rigOf({ facet })`                                                       | a builder for light/post rig keys (`rig: true`, section `post`)                                                                                                                                                                                                                                                                                                                                    |
+| `output`, `still`, `video`, `render`, `roll`                             | scope/section wrappers for literal render options                                                                                                                                                                                                                                                                                                                                                  |
+| `standard.<key>(…)`                                                      | the shared render options: `batch`, `out`, `width`, `height`, `pixelRatio`, `count`, `webp`, `svg`, `transparent`, `mp4`, `webm`, `videoFormats`, `plotWidthMm`, `views`, `svgStroke`, `svgPenMm`, `svgOcclusion`, `samples`, `shadows`, `projection`, `fov`, `margin`, `keep`, `base`, `palettes`, `mode`, `view`, `fps`, `hold`, `turns`, `orbit`, `overlay`, `ig`, `viewport`, `overlayOptions` |
 
 `group` is the dotted folder path inside the section, or `null`. Every builder
 takes `extra` last and spreads it, so any field can be overridden. A kernel
@@ -115,6 +212,8 @@ lists such as families) and `followWhen`. `preview.stats(config, metadata)`
 fills the gallery's stats; `controls` and `afterFields` are components for a
 tool's own form pieces. The Format picker sets width, height and the
 overlay's `ig` safe area together (Post and Square → `post`, Reel → `reel`).
+`prepareOptions(chosen, options)` optionally derives the submission payload after
+pins are applied, for example to attach the current ghost as a variation base.
 `leadingTabs` (an array, or a function of the
 page's context — `{ jobsApi, kind, options, pins, setOption, setOptions }`)
 and `defaultTab` pass through to `ResultsPanel`, for a live view that reads
@@ -130,7 +229,8 @@ gallery item its whole folder — keep and delete move every file in it.
 `createSchemaToolPlugin({ tool, slug, options, normalizeOptions, kinds,
 preset, routes })` serves `/dev-api/<tool>/jobs|saved|presets`. It runs
 `scripts/<slug>-generate.mjs` (stills into the job folder) and
-`scripts/<slug>-video.mjs` (one `<slug>.mp4`), forwards a rollable option only
+`scripts/<slug>-video.mjs` (`<slug>.mp4` and/or `<slug>.webm`: the CLI
+writes each ticked format beside the `out` it is given), forwards a rollable option only
 when the page sent it (a typed flag is a pin), and keeps curated media in
 `public/images/<slug>`. `preset` (`scene`, `base`, `requires`, `name`,
 `configFrom`, `presetFromConfig`, optional `value`) writes a generation into
@@ -153,6 +253,18 @@ what it draws.
 - Plots: every `.svg` a still writes (`out.svg`, or `out.file` with an
   `.svg` name) goes through `writePlot`, so a tool gets these with no code of
   its own:
+  - `svgColors` > 0 regroups the plot into that many inks
+    (`src/modules/plotKit/inkLayers.mjs`, dependency-free): each shape's own
+    stroke (or fill) colour, weighted by its path data, near-duplicates
+    (ΔE < 8) folded, then Ward-merged by `samplePalette`
+    (`plotKit/palette.mjs`); one layer per ink
+    (`pen-20+ ink N #rrggbb`), darkest first, each shape recoloured to its
+    ink and carrying the presentation attributes and transforms of the
+    groups it left. A first fill-only rect stays as the paper.
+  - A mesh opts out of every mesh plot with `userData.plot = false` (a
+    ray-marching proxy, GPU-placed vertices); albedo capture copies a node
+    material's `colorNode`, `positionNode` and `fragmentNode`, so palette
+    attributes, solved membranes and ray-marched fields keep their colour.
   - `plotWidthMm` sets the SVG's physical `width`/`height` in mm, leaving the
     `viewBox` alone. An SVG that already carries a physical size (Kumiko's
     panel, Subdivision's `widthMm`) keeps it, so those tools skip the option.
@@ -205,8 +317,8 @@ loadKernelModules(ENTRIES)`, `withCapturer` over `withRenderer`, and shared
     decoder path), as FakeBird and StylizedCloud2 do.
   - A Live tab: `src/dev/renderWorkbench/liveCapture.js` (`pngBase64`),
     `src/dev/server/renderJobs/liveCapture.js` (the `POST /captures`
-    route) and `scripts/lib/liveCapture.mjs` (`readCapture`,
-    `finishCapture` for `--capture`).
+    route) and generatorCli's `readCapture` / `finishCapture` (what
+    `runStills` runs for `--capture`).
 - `@modules/plotKit` is the three-free plot kit kernels share: `frameSphere`
   and `framePoints` (a camera fitted to a sphere, or to a wide subject's box
   corners), `createProjector`, marching squares, polyline helpers, mesh line
@@ -216,6 +328,14 @@ loadKernelModules(ENTRIES)`, `withCapturer` over `withRenderer`, and shared
   fed by renderStage's `createAlbedoCapture`; see
   `docs/dumpster-fire-pipeline.md` § Colour plots), and the
   image-driven layers a plot reads from a render and its depth coverage —
+  `meshPlotSvg` (any subject's read-back meshes as hidden-line contours and
+  creases, its own world polylines, the render's brightness contours for a
+  ray-marched surface, and the silhouette, inked from the albedo — what a
+  three-only capturer with no line work of its own plots, through
+  `@modules/renderStage/meshPlotter` (`createMeshPlotter(renderer, {
+advance })`; the CLI passes headlessWebgpu's `advanceFrame`) and
+  renderStage's `readMeshes`; ExhibitA, FractalAutomata, Trucheterie3D), `inkLayers`
+  (the `svgColors` pass), `foldClose`,
   `silhouetteRuns`, `shadePath` (crosshatch … tsp), `outlineRuns`,
   `textureRuns` and `plotLayer`/`pathOf` for pen layers.
 
@@ -224,14 +344,22 @@ Rorschach's CLIs predate this and stay bespoke; its stills call
 
 ## 6. Spinning up a new generator
 
+Confirm with the user first that the scene gets a bench (`docs/scene-conventions.md`
+§17), then build to the core requirements in § 0 (roll, video, SVG plot, Live tab).
+
 1. Kernel: `renderOptions.mjs` from the builders and `standard`, then
-   `createOptionSchema` with `views`.
-2. CLIs: `scripts/lib/<tool>Render.mjs` (capturer, `parseCli`,
-   `loadKernel`, `withCapturer`) and `scripts/<slug>-generate.mjs` /
-   `-video.mjs` as `runStills` / `runVideo` calls; npm scripts.
+   `createOptionSchema` with `views`; every look knob rolled, a plot module
+   for SVG, a time parameter for video.
+2. CLIs: the stage in `src/modules/<tool>Render/stage.js` (§ 0.4),
+   `scripts/lib/<tool>Render.mjs` (`parseCli`, `loadKernel`, a capturer
+   wrapping the stage on the headless renderer, `withCapturer`) and
+   `scripts/<slug>-generate.mjs` / `-video.mjs` as `runStills` /
+   `runVideo` calls; npm scripts.
 3. Scene: `utils/controls.js` over `createSchemaFolders`.
 4. Workbench: `src/dev/tools/<tool>/` with `devPage.config.js`
-   (`group: 'render-workbenches'`), the `RollWorkbench` page and `todo.md`;
+   (`group: 'render-workbenches'`), the `RollWorkbench` page, its
+   `live.js` passed through `liveTabs` (or an R3F `Live<Tool>.jsx`) as
+   `leadingTabs`, and `todo.md`; a clean `npm run live:check -- <tool>`;
    add the tool's `.eslintrc.json` block (`docs/dev-tooling.md` §4).
 5. Server: `src/dev/server/<tool>/plugin.js` over `createSchemaToolPlugin`,
    registered in `devServerPlugins.js`.

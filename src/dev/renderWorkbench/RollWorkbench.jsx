@@ -55,6 +55,7 @@ export default function RollWorkbench({
   name,
   noun,
   preview,
+  prepareOptions,
   schema,
   sections,
   selectionActions,
@@ -154,7 +155,11 @@ export default function RollWorkbench({
     setSubmitting(true);
     setOutcome(null);
     try {
-      await submit({ kind, options: pins.chosen(options) });
+      const chosen = pins.chosen(options);
+      await submit({
+        kind,
+        options: prepareOptions ? prepareOptions(chosen, options) : chosen,
+      });
       setOutcome({ ok: true });
     } catch (failure) {
       setOutcome({ message: failure.message, ok: false });

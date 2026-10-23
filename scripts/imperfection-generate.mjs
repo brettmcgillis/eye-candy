@@ -21,9 +21,19 @@ runStills({
       paintingAt(kernel, { batch, index, options, roll })
     );
     const out = await save(drawn.name, sidecarFor({ ...drawn, options }));
-    await out.eachView((view) =>
-      out.image(view, () => capturer.capture(drawn.config, { view }))
-    );
+    await out.eachView(async (view) => {
+      const frame = await capturer.capture(drawn.config, { view });
+      await out.image(view, () => frame);
+      if (options.svg) {
+        await out.svg(
+          view,
+          kernel.look.renderPaintingSvg({
+            ...kernel.look.plotArgs(options),
+            image: frame,
+          })
+        );
+      }
+    });
   },
   kernelLabel: 'Imperfection',
   loadKernel,

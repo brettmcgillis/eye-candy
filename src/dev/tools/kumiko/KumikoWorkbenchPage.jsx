@@ -1,9 +1,12 @@
 import React from 'react';
 
 import { Stat } from '@dev/renderWorkbench/AssetGallery';
+import { liveTabs } from '@dev/renderWorkbench/LiveStage';
 import RollWorkbench from '@dev/renderWorkbench/RollWorkbench';
 
 import * as kernel from '@modules/kumiko';
+
+import kumikoLive from './live';
 
 const { POOL_KEYS } = kernel;
 
@@ -61,8 +64,10 @@ export default function KumikoWorkbenchPage() {
   return (
     <RollWorkbench
       afterFields={PoolButtons}
+      defaultTab="live"
       jobTitle={jobTitle}
       kinds={['still']}
+      leadingTabs={liveTabs(kumikoLive, 'kumiko')}
       name="Kumiko"
       noun={{ many: 'panels', one: 'panel' }}
       preview={preview}

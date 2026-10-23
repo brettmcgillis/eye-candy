@@ -1,10 +1,13 @@
 import React from 'react';
 
 import { Stat } from '@dev/renderWorkbench/AssetGallery';
+import { liveTabs } from '@dev/renderWorkbench/LiveStage';
 import RollWorkbench from '@dev/renderWorkbench/RollWorkbench';
 
 import * as kernel from '@modules/networkTest';
 import { PALETTE_NAMES } from '@modules/networkTestRender';
+
+import networkTestLive from './live';
 
 const PALETTE_CHOICES = [
   ['None', 'None'],
@@ -40,6 +43,8 @@ const preview = {
 export default function NetworkTestWorkbenchPage() {
   return (
     <RollWorkbench
+      defaultTab="live"
+      leadingTabs={liveTabs(networkTestLive, 'networkTest')}
       name="NetworkTest"
       noun={{ many: 'networks', one: 'network' }}
       preview={preview}

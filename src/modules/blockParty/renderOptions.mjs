@@ -452,12 +452,14 @@ const RENDER = {
   height: standard.height(),
   pixelRatio: standard.pixelRatio(),
   count: standard.count('cities'),
-  png: standard.png(),
   webp: standard.webp(),
+  capture: standard.capture(),
+  transparent: standard.transparent(),
   svg: standard.svg(
     'Write a plottable SVG per view: cell, card and tower edges, pit strata and stacked tower rings, one pen per colour'
   ),
   plotWidthMm: standard.plotWidthMm(),
+  svgColors: standard.svgColors(),
   views: standard.views(VIEWS, 'front'),
   svgOcclusion: standard.svgOcclusion(
     'Drop line work hidden behind nearer geometry (uses a depth pass)'
@@ -481,6 +483,7 @@ const RENDER = {
     'build: the city emerges from the centre out, then holds; rebuild: districts recede and re-emerge one at a time; turntable: orbit a settled city'
   ),
   view: standard.view(VIEWS, 'front'),
+  ...standard.videoFormats(),
   fps: standard.fps(),
   hold: standard.hold(
     12,

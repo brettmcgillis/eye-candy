@@ -1,5 +1,5 @@
 import React from 'react';
-import { FiCheck, FiStopCircle } from 'react-icons/fi';
+import { FiCheck, FiRotateCw, FiStopCircle } from 'react-icons/fi';
 
 const DEFAULT_TITLES = { still: 'Still batch', video: 'Video render' };
 
@@ -31,6 +31,15 @@ export default function JobStatus({ job, title }) {
           type="button"
         >
           <FiStopCircle /> Cancel
+        </button>
+      ) : null}
+      {job.retryable && ['cancelled', 'failed'].includes(job.status) ? (
+        <button
+          className="dev-button rw-job__cancel"
+          data-retry-job={job.id}
+          type="button"
+        >
+          <FiRotateCw /> Retry
         </button>
       ) : null}
       {job.logs.length > 0 ? (

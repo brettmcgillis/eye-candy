@@ -103,7 +103,7 @@ runVideo({
       options.mode === 'grow' ||
       options.orbit !== 0;
     const pad = (drawn) =>
-      padFor(drawn, {
+      padFor(kernel, drawn, {
         drift: options.mode === 'drift' || options.mode === 'grow',
       });
     return {

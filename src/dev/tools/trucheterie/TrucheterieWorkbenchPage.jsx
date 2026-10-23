@@ -1,6 +1,7 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import { FiFilm, FiImage, FiRefreshCw, FiSquare, FiX } from 'react-icons/fi';
 
+import { liveTabs } from '@dev/renderWorkbench/LiveStage';
 import ResultsPanel, {
   activeJobCount,
 } from '@dev/renderWorkbench/ResultsPanel';
@@ -9,6 +10,7 @@ import {
   SchemaProvider,
   Segmented,
 } from '@dev/renderWorkbench/SchemaFields';
+import { FormatPicker } from '@dev/renderWorkbench/SchemaSections';
 import WorkbenchLayout from '@dev/renderWorkbench/WorkbenchLayout';
 import '@dev/renderWorkbench/renderWorkbench.css';
 import usePins from '@dev/renderWorkbench/usePins';
@@ -30,6 +32,7 @@ import { PALETTE_NAMES } from '@utils/gradientPalette';
 import DevPageHeaderBar from '../../shell/DevPageHeaderBar';
 import './TrucheterieWorkbenchPage.css';
 import PreviewDetails from './components/PreviewDetails';
+import trucheterieLive from './live';
 
 const FACETS = facets();
 const PROFILES = {
@@ -78,10 +81,11 @@ const HANDLED = new Set([
   'hold',
   'margin',
   'mode',
+  'mp4',
   'paletteDrift',
-  'png',
   'svg',
-  'transparentBackground',
+  'transparent',
+  'webm',
   'webp',
   'width',
 ]);
@@ -280,41 +284,13 @@ export default function TrucheterieWorkbenchPage() {
                 ))}
               </div>
 
-              {kind === 'still' ? (
-                <fieldset className="rw-fieldset rw-formats">
-                  <legend>Image files</legend>
-                  {['png', 'webp', 'svg'].map((format) => (
-                    <label htmlFor={`tw-${format}`} key={format}>
-                      <input
-                        checked={Boolean(options[format])}
-                        disabled={
-                          options[format] &&
-                          !['png', 'webp', 'svg'].some(
-                            (other) => other !== format && options[other]
-                          )
-                        }
-                        id={`tw-${format}`}
-                        onChange={(event) =>
-                          setOption(format, event.target.checked)
-                        }
-                        type="checkbox"
-                      />
-                      {format.toUpperCase()}
-                    </label>
-                  ))}
-                  <label htmlFor="tw-transparent">
-                    <input
-                      checked={Boolean(options.transparentBackground)}
-                      id="tw-transparent"
-                      onChange={(event) =>
-                        setOption('transparentBackground', event.target.checked)
-                      }
-                      type="checkbox"
-                    />
-                    Transparent
-                  </label>
-                </fieldset>
-              ) : (
+              <FormatPicker
+                kind={kind}
+                options={options}
+                renderOptions={RENDER_OPTIONS}
+                setOption={setOption}
+              />
+              {kind === 'still' ? null : (
                 <div className="rw-field-grid">
                   {[
                     'fps',
@@ -381,8 +357,20 @@ export default function TrucheterieWorkbenchPage() {
           results={
             <ResultsPanel
               collectionTitle={jobTitle}
+              defaultTab="live"
               jobTitle={jobTitle}
               jobsApi={jobsApi}
+              leadingTabs={liveTabs(
+                trucheterieLive,
+                'trucheterie'
+              )({
+                jobsApi,
+                kind,
+                options,
+                pins,
+                setOption,
+                setOptions,
+              })}
               renderDetails={renderDetails}
               selectionActions={() => null}
             />

@@ -36,8 +36,8 @@ export const hasStorm = (skin) =>
 export const stormProps = (skin) =>
   Object.fromEntries(RAIN_CLOUD_KEYS.map((key) => [key, skin[key]]));
 
-export function backdropColor(config, skin) {
-  if (config.backdrop === 'transparent') return null;
+export function backdropColor(config, skin, transparent = false) {
+  if (transparent) return null;
   return config.backdrop === 'skin' ? skin.bgColor : config.backgroundColor;
 }
 
@@ -175,8 +175,9 @@ export default function GhostStudio({
   jumpRef = null,
   paused = false,
   stormRef = null,
+  transparent = false,
 }) {
-  const skin = useMemo(() => resolveSkin(config.skin), [config.skin]);
+  const skin = useMemo(() => resolveSkin(config), [config]);
   const props = useMemo(() => ghostProps(skin), [skin]);
   const storm = useMemo(
     () => (hasStorm(skin) ? stormProps(skin) : null),
@@ -227,7 +228,7 @@ export default function GhostStudio({
 
   return (
     <>
-      <Backdrop color={backdropColor(config, skin)} />
+      <Backdrop color={backdropColor(config, skin, transparent)} />
 
       <StudioEnvironment
         intensity={skin.sceneEnvIntensity}

@@ -26,6 +26,7 @@ export default function darkroomDevPlugin() {
   return {
     name: 'darkroom-dev-plugin',
     apply: 'serve',
+    closeBundle: jobs.closeBundle,
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
         const pathname = req.url?.split('?')[0] ?? '';

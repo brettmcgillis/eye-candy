@@ -1,17 +1,13 @@
 /* eslint-disable import/no-extraneous-dependencies */
 import {
   RENDER_OPTIONS,
-  SCENE_KEYS,
-  SOURCE_IMAGE_MAX,
   canonicalArgv,
   defaultsFor,
   normalizeOptions,
 } from '../../src/modules/subdivisionRelief/renderOptions.mjs';
 import {
   createParseCli,
-  keepList,
   loadKernelModules,
-  pinnedFrom,
   sidecarFor,
   withRenderer,
 } from './generatorCli.mjs';
@@ -44,53 +40,13 @@ export function assertPalette({ look }, { options, typed }) {
   }
 }
 
-export function rollArgs({ look, relief }, { options, typed }) {
-  return {
-    base: options.base ? relief.configFrom(options.base) : {},
-    keep: keepList(options),
-    paletteNames: look.PALETTE_NAMES,
-    pinned: relief.sceneNamed(pinnedFrom({ options, typed }, SCENE_KEYS)),
-    seeds: {
-      field: options.fieldSeed ?? undefined,
-      palette: options.paletteSeed ?? undefined,
-      relief: options.reliefSeed ?? undefined,
-      structure: options.structureSeed ?? undefined,
-    },
-  };
-}
+export const rollArgs = (kernel, args) => kernel.look.rollArgs(args);
 
-// What a batch draws at `index`: a seeded batch names its pieces seed,
-// seed-1…; without one every piece gets a random seed.
-export async function pieceAt(kernel, { index, options, roll }) {
-  const { look, relief, subdivision } = kernel;
-  const seed =
-    options.batch == null
-      ? subdivision.randomSeed()
-      : subdivision.seedFor(options.batch, index);
-  const config = relief.rollReliefConfig(seed, roll);
-  const image =
-    config.field === 'image'
-      ? await loadImage(config.sourceImage, SOURCE_IMAGE_MAX)
-      : null;
-  const stops =
-    config.palette === look.PALETTE_NONE
-      ? null
-      : look.getPaletteStops(config.palette);
-  const piece = relief.buildReliefPiece(config, {
-    canvas: { height: options.height, width: options.width },
-    image,
-    stops,
-  });
-  return { config, name: seed, piece };
-}
+export const pieceAt = (kernel, args) =>
+  kernel.look.pieceAt({ ...args, loadImage });
 
-export function plotSvg({ relief, subdivision }, { config, piece }, options) {
-  return subdivision.renderPlotSvg(
-    piece,
-    { ...relief.pieceSettings(config), ...relief.plotOptionsFrom(options) },
-    { widthMm: options.plotWidthMm }
-  );
-}
+export const plotSvg = (kernel, drawn, options) =>
+  kernel.look.plotSvg(drawn, options);
 
 export function sidecarOf({ config, name, piece }, options) {
   return {
@@ -106,116 +62,20 @@ export function sidecarOf({ config, name, piece }, options) {
 
 // One renderer per output size, reused across pieces and frames: device and
 // pipeline setup dominate a capture, and the rig's materials compile once.
-export async function createReliefCapturer(
-  kernel,
-  { height, samples = 4, width }
-) {
-  const { THREE, TSL, lights, look, relief } = kernel;
-
+export async function createReliefCapturer(kernel, options) {
   const headless = await createHeadlessRenderer({
-    configure(renderer) {
-      // eslint-disable-next-line no-param-reassign
-      renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      // eslint-disable-next-line no-param-reassign
-      renderer.shadowMap.enabled = true;
-      // eslint-disable-next-line no-param-reassign
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
-    },
-    height,
-    width,
+    height: options.height,
+    width: options.width,
   });
-  const { renderer } = headless;
-  const scene = new THREE.Scene();
-  const cameras = {
-    orthographic: new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 100),
-    perspective: new THREE.PerspectiveCamera(30, width / height, 0.1, 100),
-  };
-  const rig = look.createReliefRig();
-  const lightGroup = lights.createSceneLights(
-    lights.buildSceneLightingRuntimeConfig({
-      controls: {},
-      lighting: look.SUBDIVISION_RELIEF_LIGHTING,
-    }),
-    { shadows: true }
-  );
-  const passOptions = samples > 0 ? { samples } : {};
-  const pipelines = {};
-  scene.add(rig.group, lightGroup);
-
-  function pipelineFor(projection) {
-    if (!pipelines[projection]) {
-      const pipeline = new THREE.RenderPipeline(renderer);
-      pipeline.outputNode = TSL.pass(scene, cameras[projection], passOptions);
-      pipelines[projection] = pipeline;
-    }
-    return pipelines[projection];
-  }
-
-  // The scene's shadow box is sized for its default panel; a larger canvas
-  // would fall outside it.
-  function fitShadows(canvas) {
-    const reach =
-      (Math.hypot(canvas.width, canvas.height) / 2) *
-        relief.WORLD_SCALE *
-        relief.PLATE_MARGIN +
-      1;
-    lightGroup.traverse((light) => {
-      if (!light.isDirectionalLight || !light.castShadow) return;
-      const { camera } = light.shadow;
-      const extent = Math.max(camera.right, reach);
-      Object.assign(camera, {
-        bottom: -extent,
-        far: Math.max(camera.far, light.position.length() + reach * 2),
-        left: -extent,
-        right: extent,
-        top: extent,
-      });
-      camera.updateProjectionMatrix();
-    });
-  }
-
-  function aim(view) {
-    const camera = cameras[view.projection];
-    if (view.projection === 'orthographic') {
-      Object.assign(camera, {
-        bottom: -view.halfHeight,
-        left: -view.halfWidth,
-        right: view.halfWidth,
-        top: view.halfHeight,
-      });
-    } else {
-      camera.fov = view.fov;
-      camera.aspect = width / height;
-    }
-    camera.near = view.near;
-    camera.far = view.far;
-    camera.up.set(...view.up);
-    camera.position.set(...view.eye);
-    camera.lookAt(...view.target);
-    camera.updateProjectionMatrix();
-    camera.updateMatrixWorld();
-  }
-
+  const stage = kernel.look.createReliefStage({
+    ...options,
+    readFrame: headless.readFrame,
+    renderer: headless.renderer,
+  });
   return {
-    rig,
-
-    load({ config, piece }) {
-      rig.apply(config);
-      rig.setPiece(piece);
-      fitShadows(piece.canvas);
-      scene.background = new THREE.Color(config.bgColor);
-    },
-
-    // `grow` in levels (default: fully split); `motion` as motionAt gives it.
-    async capture(view, { grow, motion }) {
-      aim(view);
-      rig.setGrow(grow);
-      rig.setMotion(motion);
-      return headless.readFrame(() => pipelineFor(view.projection).render());
-    },
-
+    ...stage,
     dispose() {
-      rig.dispose();
+      stage.dispose();
       headless.dispose();
     },
   };
@@ -228,6 +88,7 @@ export const withCapturer = (kernel, options, work) =>
       createReliefCapturer(kernel, {
         height: options.height * options.pixelRatio,
         samples: options.samples,
+        transparent: options.transparent,
         width: options.width * options.pixelRatio,
       }),
     work

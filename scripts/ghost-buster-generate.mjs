@@ -11,19 +11,11 @@ import {
   rollArgs,
   withCapturer,
 } from './lib/ghostBusterRender.mjs';
-import { finishCapture, readCapture } from './lib/liveCapture.mjs';
 import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 runStills({
-  gpu: ({ capture }) => !capture,
   kernelLabel: 'GhostBuster',
-  async item(context) {
-    if (context.capture) {
-      if (context.index === 0) await finishCapture(context);
-      return;
-    }
-    const { batch, capturer, index, kernel, options, roll, save, step } =
-      context;
+  async item({ batch, capturer, index, kernel, options, roll, save, step }) {
     const drawn = await step(`rolling ghost ${index + 1}`, () =>
       ghostAt(kernel, { batch, index, roll })
     );
@@ -50,13 +42,10 @@ runStills({
   parseCli,
   resolveViews,
   script: 'ghost-buster',
-  setup: async ({ kernel, options, typed }) =>
-    options.capture
-      ? { capture: await readCapture(options.capture) }
-      : {
-          batch: options.batch ?? kernel.ghost.randomSeed(),
-          roll: rollArgs(kernel, { options, typed }),
-        },
+  setup: ({ kernel, options, typed }) => ({
+    batch: options.batch ?? kernel.ghost.randomSeed(),
+    roll: rollArgs(kernel, { options, typed }),
+  }),
   title: 'ghostbuster',
   usageFor,
   withCapturer,

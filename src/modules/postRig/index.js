@@ -9,6 +9,7 @@
 // be combined — this module exists to compose them instead.
 export { default as PostRig } from './PostRig';
 export { default as createPostChain } from './createPostChain';
+export { default as withGlow } from './effects/withGlow';
 export { default as useScenePostControls } from './useScenePostControls';
 export { default as buildScenePostControls } from './buildScenePostControls';
 export {

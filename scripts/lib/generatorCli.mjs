@@ -1,12 +1,13 @@
 /* eslint-disable import/no-extraneous-dependencies, no-await-in-loop */
-import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 import sharp from 'sharp';
 
 import { sizePlot } from '../../src/dev/tools/plotterizer/kernel/index.mjs';
+import inkLayers from '../../src/modules/plotKit/inkLayers.mjs';
 import { parseArgs, providedKeys, readPackageVersion } from './cliArgs.mjs';
-import createFrameSink from './frameSink.mjs';
+import createFrameSink, { videoOutputs } from './frameSink.mjs';
 import { loadThree, setClock } from './headlessWebgpu.mjs';
 import loadModules, { REPO_ROOT } from './loadModules.mjs';
 import overlayLayer from './overlayLayer.mjs';
@@ -18,7 +19,7 @@ import { writeVideoSidecar } from './videoMetadata.mjs';
 // runStills / runVideo call, and its scripts/lib/<tool>Render.mjs holds only
 // its capturer and kernel-specific steps.
 
-export { REPO_ROOT };
+export { REPO_ROOT, videoOutputs };
 
 export const DEG = Math.PI / 180;
 
@@ -172,12 +173,17 @@ export const azimuthOffset = (options, { frame, frames, total, written }) =>
     : (options.orbit * written) / total;
 
 export const plotOf = (options) => ({
+  inks: options.svgColors ?? 0,
   plotWidthMm: options.plotWidthMm,
   svg: Boolean(options.svg),
 });
 
+// Every plot leaves the bench through here: regrouped into `inks` layers
+// when asked, then sized for the page.
 export async function writePlot(filePath, svg, plot) {
-  if (plot.svg) await writeFile(filePath, sizePlot(svg, plot.plotWidthMm));
+  if (!plot.svg) return;
+  const inked = plot.inks > 0 ? inkLayers(svg, plot.inks) : svg;
+  await writeFile(filePath, sizePlot(inked, plot.plotWidthMm));
 }
 
 // Dawn keeps the event loop alive after the renderer is disposed, so a run
@@ -209,11 +215,61 @@ async function begin(kind, { overlay, parseCli, prepare, script, usageFor }) {
   return { ...parsed, options: ready, plot: plotOf(ready) };
 }
 
-const formatsOf = (options) =>
-  ['png', 'webp'].filter((format) => options[format]);
+const formatsOf = (options) => ['webp'].filter((format) => options[format]);
+
+// What a transparent clip's MP4 is laid over: the kernel's background
+// colour, under whichever name its schema gives it.
+const BACKGROUND_KEYS = [
+  'backgroundColor',
+  'background',
+  'bgColor',
+  'sceneBackgroundColor',
+  'sceneBgColor',
+  'studioBackground',
+];
+const backgroundOf = (options) =>
+  BACKGROUND_KEYS.map((key) => options[key]).find(
+    (value) => typeof value === 'string' && value.startsWith('#')
+  ) ?? '#000000';
 
 const sizeOf = (options) =>
   `${options.width}x${options.height} at ${options.pixelRatio}x`;
+
+// A Live-tab capture folder (live.png, optional live.svg, capture.json) as
+// the dev server staged it (src/dev/server/renderJobs/liveCapture.js).
+export async function readCapture(folder) {
+  const dir = path.resolve(REPO_ROOT, folder);
+  const manifest = JSON.parse(
+    await readFile(path.join(dir, 'capture.json'), 'utf8')
+  );
+  return { ...manifest, dir };
+}
+
+// A Live-tab capture arrives rendered: the page drew the PNG and the plot
+// from the running stage, and this only finishes it the way any still is
+// finished — formats, overlay and sidecar — then drops the upload.
+export async function finishCapture({ capture, options, save }) {
+  const out = await save(
+    capture.name,
+    sidecarFor({ config: capture.config, name: capture.name, options })
+  );
+  await out.view('live', async () => {
+    await out.image('live', () => readFile(path.join(capture.dir, 'live.png')));
+    if (options.svg && capture.svg) {
+      await out.svg(
+        'live',
+        await readFile(path.join(capture.dir, 'live.svg'), 'utf8')
+      );
+    }
+  });
+  await rm(capture.dir, { force: true, recursive: true });
+}
+
+// Set by the workbench job runner (src/dev/server/renderJobs/jobService.js):
+// `{ batch, next }` from the run it is resuming, `{}` for a fresh one.
+const jobState = process.env.RENDER_JOB_STATE
+  ? JSON.parse(process.env.RENDER_JOB_STATE)
+  : null;
 
 // The stills CLI. `item(ctx)` makes one generation: roll it, `save` it (its
 // folder and props.json), then write its images and SVGs. The driver owns
@@ -242,24 +298,50 @@ export function runStills(spec) {
         `formats ${labels.join('+')}\noutput: ${outRoot}\n`
     );
 
-    const kernel = await runStage(
-      `loading the ${spec.kernelLabel} kernel`,
-      spec.loadKernel
-    );
+    // `--capture` finishes a Live-tab frame instead of rendering: no kernel,
+    // no renderer, one generation.
+    const capture = options.capture ? await readCapture(options.capture) : null;
+    const kernel = capture
+      ? null
+      : await runStage(
+          `loading the ${spec.kernelLabel} kernel`,
+          spec.loadKernel
+        );
     const base = { formats, kernel, options, parsed, typed, views };
-    const context = { ...base, ...(await spec.setup?.(base)) };
+    const context = capture
+      ? { ...base, capture }
+      : { ...base, ...(await spec.setup?.(base)) };
+    const item = capture
+      ? (ctx) => (ctx.index === 0 ? finishCapture(ctx) : null)
+      : spec.item;
+    if (jobState?.batch != null && context.batch != null) {
+      context.batch = jobState.batch;
+    }
     const units = views?.length || 1;
     const progress = createProgress(
       spec.progressLabel ?? 'rendering views',
       options.count * units
     );
+    const first = Math.min(jobState?.next ?? 0, options.count);
+    const reportState = (next) => {
+      if (jobState) {
+        progress.log(
+          `job-state: ${JSON.stringify({ batch: context.batch, next })}`
+        );
+      }
+    };
+    reportState(first);
+    if (first > 0) {
+      progress.log(`resuming at ${first + 1}/${options.count}`);
+      progress.update(first * units);
+    }
     const overlay = overlayFor(spec.overlay, options);
     const encode = spec.encode
       ? (frame, format) => spec.encode(frame, format, options)
       : (frame, format) => encodeFrame(frame, format, overlay);
 
     const work = async (capturer) => {
-      for (let index = 0; index < options.count; index += 1) {
+      for (let index = first; index < options.count; index += 1) {
         let saved = null;
         let done = 0;
         const save = async (name, sidecar) => {
@@ -300,7 +382,7 @@ export function runStills(spec) {
           };
           return saved;
         };
-        await spec.item({
+        await item({
           ...context,
           capturer,
           index,
@@ -309,10 +391,12 @@ export function runStills(spec) {
         });
         progress.update((index + 1) * units);
         if (saved) progress.log(`saved ${saved.name}: ${saved.dir}`);
+        reportState(index + 1);
       }
     };
 
-    const gpu = spec.gpu ? spec.gpu(context) : Boolean(spec.withCapturer);
+    const gpu =
+      !capture && (spec.gpu ? spec.gpu(context) : Boolean(spec.withCapturer));
     if (gpu) await spec.withCapturer(kernel, options, work);
     else await work(null);
     progress.done(spec.doneLabel ?? 'rendered views');
@@ -335,11 +419,14 @@ export function runVideo(spec) {
     const nouns =
       typeof spec.nouns === 'function' ? spec.nouns(options) : spec.nouns;
 
+    const outputs = videoOutputs(options, out);
+
     await mkdir(path.dirname(out), { recursive: true });
     process.stdout.write(
       `${spec.title} video: ${options.mode ? `mode ${options.mode}, ` : ''}` +
-        `${options.count} ${nouns}, ${sizeOf(options)}, ${options.fps}fps\n` +
-        `output: ${out}\n`
+        `${options.count} ${nouns}, ${sizeOf(options)}, ${options.fps}fps` +
+        `${options.transparent ? ', transparent' : ''}\n` +
+        `output: ${outputs.map(({ file }) => file).join(', ')}\n`
     );
 
     const kernel = await runStage(
@@ -355,7 +442,13 @@ export function runVideo(spec) {
       height: options.height * options.pixelRatio,
       width: options.width * options.pixelRatio,
     };
-    const sink = createFrameSink({ ...size, fps: options.fps, out });
+    const sink = createFrameSink({
+      ...size,
+      background: spec.background?.(options) ?? backgroundOf(options),
+      fps: options.fps,
+      outputs,
+      transparent: Boolean(options.transparent),
+    });
     // A plan that replays finished frames (`overlay: false`) already carries
     // whatever chrome they were rendered with.
     const overlay =
@@ -406,13 +499,14 @@ export function runVideo(spec) {
     }
     progress.done('rendered frames');
 
-    const metadataPath = await writeVideoSidecar(out, {
+    const metadataPath = await writeVideoSidecar(outputs[0].file, {
       ...plan.sidecar?.(),
       presets: plan.presets(),
       render: renderRecord(options),
     });
     process.stdout.write(
-      `saved video: ${out}\nsaved metadata: ${metadataPath}\n`
+      `saved video: ${outputs.map(({ file }) => file).join(', ')}\n` +
+        `saved metadata: ${metadataPath}\n`
     );
     return true;
   });

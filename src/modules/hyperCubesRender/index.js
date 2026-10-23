@@ -4,4 +4,5 @@ export { default as HYPER_CUBES_POST } from './post';
 export { default as createCubeRig } from './rig';
 export { STUDIO_EMITTERS } from './environment';
 export { cyclicNoise } from './materials';
+export { createCubeStage, rollArgs, structureAt } from './stage';
 export { PALETTE_NAMES, getPaletteStops } from '@utils/gradientPalette';

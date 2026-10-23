@@ -78,7 +78,7 @@ runVideo({
               backgroundColor: drawn.config.sceneBgColor,
               bounds,
               margin: options.margin,
-              transparentBackground: options.transparentBackground,
+              transparentBackground: options.transparent,
             });
             still = image.data;
             return still;

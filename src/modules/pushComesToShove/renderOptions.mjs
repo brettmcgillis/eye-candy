@@ -342,12 +342,14 @@ const RENDER = {
   height: standard.height(),
   pixelRatio: standard.pixelRatio(),
   count: standard.count('panels'),
-  png: standard.png(),
   webp: standard.webp(),
+  capture: standard.capture(),
+  transparent: standard.transparent(),
   svg: standard.svg(
     'Write a plottable SVG per view: hole rims, wire centrelines and cylinder caps, hidden lines removed, one pen per colour'
   ),
   plotWidthMm: standard.plotWidthMm(),
+  svgColors: standard.svgColors(),
   views: standard.views(VIEWS, 'front'),
   svgOcclusion: standard.svgOcclusion(
     'Drop line work hidden behind the panel, cylinders and nearer wires (uses a depth pass)'
@@ -393,6 +395,7 @@ const RENDER = {
     'loop: each panel runs for hold seconds and crossfades into the next, the last into the first, so the clip loops seamlessly; run: each panel runs for hold seconds, hard cuts between them'
   ),
   view: standard.view(VIEWS, 'front'),
+  ...standard.videoFormats(),
   fps: standard.fps(),
   hold: standard.hold(8, 'Seconds of footage per panel', { min: 1 }),
   fade: video({

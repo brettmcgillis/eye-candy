@@ -1568,3 +1568,37 @@ body:has(.rw-preview) {
   flex: 1;
   min-width: 8rem;
 }
+
+/* The shared Live tab (LiveStage.jsx). */
+.rw-live {
+  display: grid;
+  gap: 10px;
+}
+
+.rw-live__toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rw-live__seed {
+  color: var(--dev-text-muted);
+  font-family: ui-monospace, monospace;
+  font-size: 12px;
+  margin-left: auto;
+}
+
+.rw-live__stage {
+  background: #000;
+  border-radius: 8px;
+  margin: 0 auto;
+  overflow: hidden;
+}
+
+.rw-live__canvas {
+  display: block;
+  height: 100%;
+  touch-action: none;
+  width: 100%;
+}

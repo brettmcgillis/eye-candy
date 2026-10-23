@@ -24,7 +24,7 @@ runStills({
       networkAt(kernel, { batch, index, roll })
     );
     capturer?.load(drawn);
-    const pad = padFor(drawn);
+    const pad = padFor(kernel, drawn);
     const instances = settledInstances(kernel, drawn, options.stillTime);
     const out = await save(drawn.name, {
       ...sidecarFor({ ...drawn, options }),
@@ -45,24 +45,7 @@ runStills({
       });
       await out.image(view, () => capturer.capture(framing, instances));
       if (options.svg) {
-        await out.svg(
-          view,
-          net.renderNetworkTestSvg({
-            camera: framing,
-            config: drawn.config,
-            depthPens: options.svgDepthPens,
-            height: options.height,
-            instances: net.buildInstances({
-              config: drawn.config,
-              network: drawn.network,
-              stops: drawn.stops,
-            }),
-            minAlpha: options.svgMinAlpha,
-            nodes: options.svgNodes,
-            stroke: options.svgStroke,
-            width: options.width,
-          })
-        );
+        await out.svg(view, kernel.look.networkSvg(drawn, framing, options));
       }
     });
   },

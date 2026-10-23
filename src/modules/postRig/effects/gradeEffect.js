@@ -1,5 +1,6 @@
 import {
   abs,
+  float,
   screenSize,
   screenUV,
   select,
@@ -53,7 +54,10 @@ export function create({ input, slot }) {
   const boxed = uLetterbox.greaterThan(0).and(abs(p.x).greaterThan(uLetterbox));
 
   return {
-    node: vec4(select(boxed, graded.mul(0), graded), 1),
+    node: vec4(
+      select(boxed, graded.mul(0), graded),
+      select(boxed, float(1), input.a)
+    ),
     update: (values) => {
       uTint.value.set(values[`${slot.prefix}Tint`] ?? merged.tint);
       uVignette.value = values[`${slot.prefix}Vignette`] ?? merged.vignette;

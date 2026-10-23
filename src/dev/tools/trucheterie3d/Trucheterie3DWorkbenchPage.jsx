@@ -1,11 +1,14 @@
 import React, { useMemo } from 'react';
 
 import { Stat } from '@dev/renderWorkbench/AssetGallery';
+import { liveTabs } from '@dev/renderWorkbench/LiveStage';
 import RollWorkbench from '@dev/renderWorkbench/RollWorkbench';
 import useDesignChoices from '@dev/trucheterieDesigns/useDesignChoices';
 
 import * as kernel from '@modules/trucheterie3d';
 import { PALETTE_NAMES } from '@modules/trucheterie3dRender';
+
+import trucheterie3dLive from './live';
 
 const PALETTE_CHOICES = PALETTE_NAMES.map((name) => [name, name]);
 
@@ -40,7 +43,9 @@ export default function Trucheterie3DWorkbenchPage() {
   );
   return (
     <RollWorkbench
+      defaultTab="live"
       initialOptions={initialOptions}
+      leadingTabs={liveTabs(trucheterie3dLive, 'trucheterie3d')}
       name="Trucheterie3D"
       noun={{ many: 'fields', one: 'field' }}
       preview={preview}

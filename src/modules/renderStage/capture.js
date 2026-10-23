@@ -1,6 +1,67 @@
 import { normalView, pass, vec4 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
+const vertex = new THREE.Vector3();
+const normal = new THREE.Vector3();
+const instance = new THREE.Matrix4();
+const placed = new THREE.Matrix4();
+
+// One mesh's vertices through `matrix` (skinned on the CPU exactly as the
+// GPU skins them), beside the rest positions that weld its seams.
+export function meshEntry(mesh, matrix, displace = null) {
+  const { index, attributes } = mesh.geometry;
+  const { position } = attributes;
+  const world = new Float32Array(position.count * 3);
+  const rest = new Float32Array(position.count * 3);
+  for (let i = 0; i < position.count; i += 1) {
+    vertex.fromBufferAttribute(position, i);
+    rest[i * 3] = vertex.x;
+    rest[i * 3 + 1] = vertex.y;
+    rest[i * 3 + 2] = vertex.z;
+    if (displace) {
+      normal.fromBufferAttribute(attributes.normal, i);
+      vertex.fromArray(displace(vertex.toArray(), normal.toArray()));
+    } else if (mesh.isSkinnedMesh) {
+      mesh.getVertexPosition(i, vertex);
+    }
+    vertex.applyMatrix4(matrix);
+    world[i * 3] = vertex.x;
+    world[i * 3 + 1] = vertex.y;
+    world[i * 3 + 2] = vertex.z;
+  }
+  return {
+    index: index ? Uint32Array.from(index.array) : null,
+    position: world,
+    rest,
+  };
+}
+
+const plotted = (object) =>
+  object.isMesh &&
+  object.visible &&
+  object.geometry?.attributes?.position &&
+  object.userData.plot !== false;
+
+// Every plotted mesh under `root` in world space (`userData.plot = false`
+// opts one out), an instanced mesh as one entry per instance, each beside
+// the rest positions that weld its seams.
+export function readMeshes(root) {
+  const entries = [];
+  root.traverseVisible((object) => {
+    if (!plotted(object)) return;
+    if (object.isInstancedMesh) {
+      for (let i = 0; i < object.count; i += 1) {
+        object.getMatrixAt(i, instance);
+        placed.multiplyMatrices(object.matrixWorld, instance);
+        entries.push(meshEntry(object, placed));
+      }
+    } else {
+      entries.push(meshEntry(object, object.matrixWorld));
+    }
+  });
+  return entries;
+}
+
 // Points a camera at a framed view ({ eye, target, up, fov, near, far }).
 export function aimCamera(camera, view, aspect) {
   Object.assign(camera, {
@@ -204,6 +265,16 @@ function flatOf(material, cache) {
       toneMapped: false,
       vertexColors: source.vertexColors,
     });
+    // A node material's colour (a per-state or per-instance palette) is its
+    // albedo too, and its GPU-placed vertices (a solved membrane, a grown
+    // tube) are where it draws.
+    if (source.colorNode) flat.colorNode = source.colorNode;
+    if (source.positionNode) flat.positionNode = source.positionNode;
+    // A ray-marched surface draws itself: its own shading stands in.
+    if (source.fragmentNode) {
+      flat.fragmentNode = source.fragmentNode;
+      flat.depthNode = source.depthNode;
+    }
     cache.set(source, flat);
   }
   return cache.get(source);
@@ -275,4 +346,37 @@ export function createAlbedoCapture(renderer) {
     }
     return { covered, data, height, width };
   };
+}
+
+// A transparent capture clears to zero alpha and draws no background, so the
+// subject keeps its edges when WebP / WebM carry the alpha out. A rig tags
+// the world it draws round the subject: `userData.backdrop = 'shadow'` (a
+// floor or wall) keeps only the shadows falling on it, `'hide'` goes.
+export function setBackdrop(
+  { renderer, scene },
+  color,
+  transparent,
+  { shadowOpacity = 0.5 } = {}
+) {
+  /* eslint-disable no-param-reassign */
+  scene.background = transparent ? null : new THREE.Color(color);
+  scene.traverse((object) => {
+    const role = object.userData.backdrop;
+    if (role === 'hide') object.visible = !transparent;
+    if (role !== 'shadow' || !object.isMesh) return;
+    const { userData } = object;
+    if (transparent && !userData.ownMaterial) {
+      userData.ownMaterial = object.material;
+      userData.shadowMaterial ??= new THREE.ShadowNodeMaterial({
+        opacity: shadowOpacity,
+        transparent: true,
+      });
+      object.material = userData.shadowMaterial;
+    } else if (!transparent && userData.ownMaterial) {
+      object.material = userData.ownMaterial;
+      userData.ownMaterial = null;
+    }
+  });
+  /* eslint-enable no-param-reassign */
+  renderer.setClearColor(transparent ? 0x000000 : color, transparent ? 0 : 1);
 }

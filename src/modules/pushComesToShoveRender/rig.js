@@ -50,6 +50,7 @@ export default function createShoveRig() {
   );
   Object.assign(panel, { castShadow: true, receiveShadow: true });
   wall.receiveShadow = true;
+  wall.userData.backdrop = 'shadow';
   group.add(panel, wall);
 
   let layout = null;

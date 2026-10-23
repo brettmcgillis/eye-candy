@@ -4,7 +4,6 @@ import {
   usageFor,
 } from '../src/modules/fractalAutomata/renderOptions.mjs';
 import {
-  frameView,
   loadKernel,
   parseCli,
   rollArgs,
@@ -25,11 +24,15 @@ runStills({
       drawn.name,
       sidecarFor({ ...drawn, options, stats })
     );
-    await out.eachView((view) =>
-      out.image(view, () =>
-        capturer.capture(frameView({ bounds: loaded.bounds, options, view }))
-      )
-    );
+    await out.eachView(async (view) => {
+      const framed = kernel.look.frameView({
+        bounds: loaded.bounds,
+        options,
+        view,
+      });
+      await out.image(view, () => capturer.capture(framed));
+      if (options.svg) await out.svg(view, await capturer.svg(framed, options));
+    });
   },
   kernelLabel: 'Fractal Automata',
   loadKernel,

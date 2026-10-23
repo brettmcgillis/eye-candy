@@ -113,12 +113,88 @@ function checkRolls(kernel) {
       check(config[key] !== undefined, `roll check-${i} leaves out "${key}".`)
     );
     try {
-      normalizeOptions('still', { ...config, png: true });
+      normalizeOptions('still', config);
     } catch (error) {
       failures.push(`roll check-${i} fails validation: ${error.message}`);
     }
   }
   check(skins.size > 3, 'the skin roll keeps landing on the same skins.');
+  const original = {
+    ...ghost.sceneDefaults(),
+    skin: 'Linen',
+    ...look.resolveSkin('Linen'),
+  };
+  const named = ghost.rollGhostConfig('named-check', {
+    ...roll,
+    base: original,
+    mode: 'named',
+  });
+  ghost.LOOK_KEYS.forEach((key) =>
+    check(named[key] === original[key], `named mode changed ${key}.`)
+  );
+  const variation = ghost.rollGhostConfig('variation-check', {
+    ...roll,
+    base: original,
+    mode: 'variations',
+    keep: ['shape'],
+    pinned: { color: '#123456', rainVisible: false },
+  });
+  check(variation.skin === 'Linen', 'variations changed the base skin.');
+  check(
+    variation.color === '#123456' && variation.rainVisible === false,
+    'look pins must win, including false.'
+  );
+  ghost
+    .keysInFacet('shape')
+    .forEach((key) =>
+      check(variation[key] === original[key], `holding shape changed ${key}.`)
+    );
+  const resolved = look.resolveSkin({
+    skin: 'Nebula',
+    color: '#123456',
+    outlineEnabled: false,
+    outerTextureUrl: 'none',
+  });
+  check(
+    resolved.color === '#123456' &&
+      !resolved.outlineEnabled &&
+      resolved.outerTextureUrl === '',
+    'resolved overrides lost a colour, false flag or cleared texture.'
+  );
+  const unheld = ghost.rollGhostConfig('facet-check', roll);
+  const held = ghost.rollGhostConfig('facet-check', {
+    ...roll,
+    base: unheld,
+    keep: ['material'],
+  });
+  ghost
+    .keysInFacet('shape')
+    .forEach((key) =>
+      check(
+        unheld[key] === held[key],
+        `holding material shifted the shape stream at ${key}.`
+      )
+    );
+  const collection = look.SKIN_NAMES.map(
+    (skin, index) =>
+      ghostAt(kernel, {
+        batch: 'named-collection',
+        index,
+        roll: { ...roll, mode: 'named', order: 'cycle', base: original },
+      }).config
+  );
+  check(
+    collection.every((config, index) => config.skin === look.SKIN_NAMES[index]),
+    'a named collection repeated or skipped a skin.'
+  );
+  check(
+    collection.every(
+      (config) =>
+        config.color === look.resolveSkin(config.skin).color &&
+        config.innerColor === look.resolveSkin(config.skin).innerColor
+    ),
+    'the named collection leaked the base ghost colours into other skins.'
+  );
   const again = ghost.rollGhostConfig('check', roll);
   check(
     JSON.stringify(again) ===
@@ -158,6 +234,74 @@ async function checkPlot({ ghost }) {
     options,
     view: 'hero',
   });
+  const plotSkin = {
+    color: '#efb24a',
+    innerColor: '#195aa5',
+    innerEmissiveColor: '#ff0000',
+    innerEmissiveIntensity: 0.1,
+  };
+  const fillOptions = {
+    ...defaultsFor('still'),
+    width: 400,
+    height: 400,
+    plotWidthMm: 100,
+    svgFill: 'rows',
+    svgFillInside: 'cloth',
+    svgColorMode: 'material',
+  };
+  const colorArgs = ghost.plotArgs(fillOptions, plotSkin);
+  check(
+    colorArgs.fill.colors.inside === plotSkin.innerColor,
+    'material colour plots replaced innerColor with emissive colour.'
+  );
+  const underside = ghost.renderGhostSvg({
+    ...colorArgs,
+    camera: { ...camera, eye: [0, -2, 0], target: [0, 0, 0], up: [0, 0, 1] },
+    lattice,
+  });
+  check(
+    /inside fill #195aa5/u.test(underside),
+    'the underside of the sheet must plot in its inner material colour.'
+  );
+  check(
+    !/cloth fill #efb24a/u.test(underside),
+    'the underside was mislabeled as exterior cloth.'
+  );
+  const exterior = ghost.renderGhostSvg({ ...colorArgs, camera, lattice });
+  check(
+    /cloth fill #efb24a/u.test(exterior) &&
+      !/inside fill #195aa5/u.test(exterior),
+    'the exterior of a flat sheet must not alternate inner and outer fill colours.'
+  );
+  const colorImage = {
+    data: new Uint8Array(400 * 400 * 4),
+    width: 400,
+    height: 400,
+  };
+  for (let i = 0; i < 400 * 400; i += 1) {
+    colorImage.data.set(
+      i % 400 < 200 ? [255, 0, 0, 255] : [0, 0, 255, 255],
+      i * 4
+    );
+  }
+  const sampled = ghost.renderGhostSvg({
+    ...ghost.plotArgs(
+      { ...fillOptions, svgColorMode: 'render', svgSampleColors: 2 },
+      plotSkin
+    ),
+    camera,
+    lattice,
+    image: colorImage,
+    coverage: {
+      covered: new Uint8Array(400 * 400).fill(1),
+      width: 400,
+      height: 400,
+    },
+  });
+  check(
+    /cloth fill #ff0000/u.test(sampled) && /cloth fill #0000ff/u.test(sampled),
+    'render-colour fills did not split their strokes into sampled colours.'
+  );
   const plot = (edges) =>
     ghost.renderGhostSvg({ camera, edges, height: 400, lattice, width: 400 });
   const runs = (svg) => (svg.match(/M/gu) ?? []).length;

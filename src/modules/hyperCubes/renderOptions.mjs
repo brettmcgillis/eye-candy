@@ -388,12 +388,14 @@ const RENDER = {
   height: standard.height(),
   pixelRatio: standard.pixelRatio(),
   count: standard.count('structures'),
-  png: standard.png(),
   webp: standard.webp(),
+  capture: standard.capture(),
+  transparent: standard.transparent(),
   svg: standard.svg(
     'Write a plottable SVG per view: solid and frame edges, hidden lines removed, one pen per colour'
   ),
   plotWidthMm: standard.plotWidthMm(),
+  svgColors: standard.svgColors(),
   views: standard.views(VIEWS, 'hero'),
   svgOcclusion: standard.svgOcclusion(
     'Drop line work hidden behind nearer cells (uses a depth pass)'
@@ -418,6 +420,7 @@ const RENDER = {
     'grow: every cut slides in from the walls, level by level, then holds; morph: each structure holds, then morphs into the next and back to the first; turntable: orbit a settled structure'
   ),
   view: standard.view(VIEWS, 'hero'),
+  ...standard.videoFormats(),
   fps: standard.fps(),
   hold: standard.hold(
     3,

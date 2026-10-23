@@ -1,10 +1,13 @@
 import React from 'react';
 
 import { Stat } from '@dev/renderWorkbench/AssetGallery';
+import { liveTabs } from '@dev/renderWorkbench/LiveStage';
 import RollWorkbench from '@dev/renderWorkbench/RollWorkbench';
 
 import * as kernel from '@modules/nestingBoxes';
 import { PALETTE_NAMES } from '@modules/nestingBoxesRender';
+
+import nestingBoxesLive from './live';
 
 const PALETTE_CHOICES = PALETTE_NAMES.map((name) => [name, name]);
 
@@ -30,6 +33,8 @@ const preview = {
 export default function NestingBoxesWorkbenchPage() {
   return (
     <RollWorkbench
+      defaultTab="live"
+      leadingTabs={liveTabs(nestingBoxesLive, 'nestingBoxes')}
       name="Nesting Boxes"
       noun={{ many: 'trees', one: 'tree' }}
       preview={preview}

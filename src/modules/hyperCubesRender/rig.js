@@ -70,6 +70,7 @@ export default function createCubeRig() {
     createFloorMaterial(floorUniforms)
   );
   floor.receiveShadow = true;
+  floor.userData.backdrop = 'shadow';
   group.add(floor);
 
   const ofShape = (items, shape) =>

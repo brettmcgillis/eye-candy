@@ -18,12 +18,19 @@ import useRenderJobs from '@dev/renderWorkbench/useRenderJobs';
 import DevPageHeaderBar from '../../shell/DevPageHeaderBar';
 import './DarkroomPage.css';
 import ExportPanel from './components/ExportPanel';
+import FramingPanel from './components/FramingPanel';
 import PreviewDetails from './components/PreviewDetails';
 import SourcePanel from './components/SourcePanel';
 import TechniqueFields from './components/TechniqueFields';
 import useDarkroomStage from './hooks/useDarkroomStage';
 import useExporter from './hooks/useExporter';
+import usePanZoom from './hooks/usePanZoom';
 import useSourceLibrary from './hooks/useSourceLibrary';
+import {
+  FRAMING_DEFAULTS,
+  FRAMING_SPECS,
+  moveFraming,
+} from './sources/framing';
 import {
   createCameraSource,
   createImageSource,
@@ -90,6 +97,8 @@ export default function DarkroomPage() {
   const [sourceError, setSourceError] = useState(null);
   const [loading, setLoading] = useState(false);
   const [facing, setFacing] = useState('front');
+  const [framingInput, setFramingInput] = useState(FRAMING_DEFAULTS);
+  const [stageMode, setStageMode] = useState('inspect');
   const [recording, setRecording] = useState(null);
   const recorderRef = useRef(null);
   const [, refresh] = useReducer((count) => count + 1, 0);
@@ -121,6 +130,36 @@ export default function DarkroomPage() {
   );
 
   const preview = useDarkroomStage({ options, size, source, technique });
+  const framing = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(framingInput).map(([key, value]) => [
+          key,
+          coerce(FRAMING_SPECS[key], value),
+        ])
+      ),
+    [framingInput]
+  );
+  const framingRef = useRef(framing);
+  framingRef.current = framing;
+  const composeRef = useRef(null);
+  composeRef.current =
+    stageMode === 'compose' && source
+      ? {
+          begin: () => framingRef.current,
+          reset: () => setFramingInput(FRAMING_DEFAULTS),
+          update(start, anchor, at, factor) {
+            const next = moveFraming(start, anchor, at, factor, {
+              fit: options.fit,
+              frame: source.frame,
+              size,
+            });
+            framingRef.current = next;
+            setFramingInput(next);
+          },
+        }
+      : null;
+  const frameRef = usePanZoom(preview.hostRef, composeRef);
   const exporter = useExporter({ preview, submit: jobsApi.submit });
   const exporting = ['rendering', 'uploading'].includes(
     exporter.progress?.phase
@@ -128,6 +167,10 @@ export default function DarkroomPage() {
   const clock = useClipClock(source);
 
   useEffect(() => () => sourceRef.current?.dispose(), []);
+
+  useEffect(() => {
+    source?.frame.setFraming(framing);
+  }, [framing, source]);
 
   const swapSource = useCallback(async (make, nextInfo) => {
     setLoading(true);
@@ -283,6 +326,7 @@ export default function DarkroomPage() {
     const next = techniqueById(id);
     setTechniqueId(next.id);
     setPreset('');
+    setFramingInput({ ...FRAMING_DEFAULTS, ...saved.framing });
     setValuesById((current) => ({
       ...current,
       [next.id]: {
@@ -303,6 +347,7 @@ export default function DarkroomPage() {
     (kind) =>
       exporter.run({
         ...exportSettings,
+        framing,
         kind,
         options,
         size,
@@ -310,7 +355,7 @@ export default function DarkroomPage() {
         sourceInfo: info?.name ? info : null,
         technique,
       }),
-    [exportSettings, exporter, info, options, size, technique]
+    [exportSettings, exporter, framing, info, options, size, technique]
   );
 
   const renderDetails = useCallback(
@@ -349,6 +394,16 @@ export default function DarkroomPage() {
             onStopRecording={() => recorderRef.current?.stop()}
             recording={recording}
             source={source}
+          />
+
+          <FramingPanel
+            mode={stageMode}
+            onChange={(key, value) =>
+              setFramingInput((current) => ({ ...current, [key]: value }))
+            }
+            onMode={setStageMode}
+            onReset={() => setFramingInput(FRAMING_DEFAULTS)}
+            values={framingInput}
           />
 
           <section className="rw-control-section">
@@ -460,12 +515,19 @@ export default function DarkroomPage() {
           <div
             className="dk-stage__host"
             data-engine={preview.engine}
-            ref={preview.hostRef}
+            data-mode={stageMode}
+            ref={frameRef}
             style={{
               '--dk-aspect': size.width / size.height,
               aspectRatio: `${size.width} / ${size.height}`,
             }}
+            title={
+              stageMode === 'compose'
+                ? 'Drag to move the picture, scroll or pinch to zoom it, double-click to reset'
+                : 'Scroll or pinch to zoom, drag to pan, double-click to reset'
+            }
           >
+            <div className="dk-stage__view" ref={preview.hostRef} />
             {source ? null : (
               <p className="dk-stage__empty">Pick a source to start.</p>
             )}

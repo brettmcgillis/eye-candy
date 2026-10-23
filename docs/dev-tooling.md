@@ -136,7 +136,15 @@ Codex).
   reads generation sidecars back by URL. `createRenderJobPlugin` serves the
   `/dev-api/<tool>/jobs|saved` surface plus any tool routes; `presetFile.js`
   splices an entry into a scene's preset object and formats it with prettier.
-  A schema generator's plugin is one `createSchemaToolPlugin` call
+- **Jobs survive a dev-server restart.** The manifest keeps the job's argv
+  and its resume point; a queued or running job is re-queued when the next
+  server starts, and a failed or cancelled one can be retried
+  (`POST /jobs/:id/retry`) into the same collection. `runStills` reads
+  `RENDER_JOB_STATE` (`{ batch, next }`) and reports `job-state:` lines after
+  each generation, so a stills batch continues where it stopped with the same
+  batch seed; a video, or a CLI not built on `runStills`, starts over. A
+  wrapping plugin must forward `closeBundle` so a restart stops its CLIs.
+- A schema generator's plugin is one `createSchemaToolPlugin` call
   (`renderJobs/schemaTool.js`, see `docs/render-workbench.md`); only a tool
   with its own job shape (Flora's bouquets, Rorschach, Darkroom) writes a
   `prepare`.

@@ -5,7 +5,6 @@ import {
 } from '../src/modules/kumiko/renderOptions.mjs';
 import { runStills } from './lib/generatorCli.mjs';
 import {
-  frameView,
   loadKernel,
   panelAt,
   parseCli,
@@ -48,7 +47,7 @@ runStills({
         // eslint-disable-next-line no-await-in-loop
         await out.image(view, () =>
           step(`rendering ${drawn.seed}, ${view}`, () =>
-            capturer.capture(frameView({ bounds, options, view }))
+            capturer.capture(kernel.look.frameView({ bounds, options, view }))
           )
         );
       }

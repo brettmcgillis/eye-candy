@@ -11,3 +11,10 @@ export {
   configureSurfaceTexture,
 } from './surfaces';
 export { PALETTE_NAMES, getPaletteStops } from '@utils/gradientPalette';
+export {
+  createTreeStage,
+  frameView,
+  rollArgs,
+  settleBackdrop,
+  treeAt,
+} from './stage';

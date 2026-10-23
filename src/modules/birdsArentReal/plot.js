@@ -28,6 +28,7 @@ const AXES = { grid: [1, 2], none: [], sections: [2], slices: [1] };
 // given the depth pass's `coverage`, the silhouette, the Outline-style
 // halo, the shading and the texture contours read from the render.
 export default function renderFlockSvg({
+  albedo = null,
   camera,
   color = null,
   contours = true,
@@ -98,7 +99,8 @@ export default function renderFlockSvg({
   });
 
   // Tone as wiggle on the sections, then the sections split into the
-  // render's own inks: a layer per colour, the outline layers left black.
+  // birds' own inks — their unlit colour (albedo) when captured, else the
+  // render — a layer per colour, the outline layers left black.
   const toned =
     wiggle && image && coverage
       ? wiggleRuns(sliceRuns, {
@@ -108,12 +110,13 @@ export default function renderFlockSvg({
             Math.max(wiggle.amplitude * 4 * (1.6 - t), wiggle.minWave),
         })
       : sliceRuns;
+  const inks = albedo ?? image;
   const palette =
-    color && image && coverage
-      ? imagePalette({ image, k: color.inks, mask: coverage })
+    color && inks && coverage
+      ? imagePalette({ image: inks, k: color.inks, mask: coverage })
       : [];
   const inkRuns = palette.length
-    ? colorRuns(toned, { image, mask: coverage, palette, pixelRatio })
+    ? colorRuns(toned, { image: inks, mask: coverage, palette, pixelRatio })
     : null;
   const sectionLayers = inkRuns
     ? palette
@@ -222,6 +225,9 @@ export const needsDepth = (options) =>
   );
 
 // Whether a plot reads the render itself (shading, texture contours).
+// Whether a plot needs the flock's albedo pass (a colour plot's inks).
+export const needsAlbedo = (options) => options.svgColors > 0;
+
 export const needsImage = (options) =>
   Boolean(
     colouring(options) ||

@@ -1,28 +1,6 @@
-const toLinear = (c) => {
-  const v = c / 255;
-  return v <= 0.04045 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4;
-};
+import { nearestInk, samplePalette } from './palette.mjs';
 
-function lab(r, g, b) {
-  const [lr, lg, lb] = [toLinear(r), toLinear(g), toLinear(b)];
-  const f = (t) => (t > 0.008856 ? Math.cbrt(t) : 7.787 * t + 16 / 116);
-  const x = f((0.4124 * lr + 0.3576 * lg + 0.1805 * lb) / 0.9505);
-  const y = f(0.2126 * lr + 0.7152 * lg + 0.0722 * lb);
-  const z = f((0.0193 * lr + 0.1192 * lg + 0.9505 * lb) / 1.089);
-  return [116 * y - 16, 500 * (x - y), 200 * (y - z)];
-}
-
-const hex = (rgb) =>
-  `#${rgb
-    .map((v) =>
-      Math.round(Math.min(255, Math.max(0, v)))
-        .toString(16)
-        .padStart(2, '0')
-    )
-    .join('')}`;
-
-const distance2 = (a, b) =>
-  (a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2 + (a[2] - b[2]) ** 2;
+export { nearestInk, samplePalette };
 
 // The render's colour at an output-pixel point (RGBA at × pixelRatio), or
 // null off the subject.
@@ -37,122 +15,6 @@ function colorAt({ image, mask, pixelRatio }) {
     if (mask && !mask.covered[i]) return null;
     return [image.data[i * 4], image.data[i * 4 + 1], image.data[i * 4 + 2]];
   };
-}
-
-// Weighted k-means in CIELAB from farthest-first seeds (no randomness):
-// `k` groups of { lab, rgb, w, n } as weighted means.
-function kmeans(samples, k) {
-  const centers = [samples[Math.floor(samples.length / 2)].lab];
-  while (centers.length < Math.min(k, samples.length)) {
-    let far = samples[0];
-    let farD = -1;
-    samples.forEach((sample) => {
-      const d = Math.min(...centers.map((c) => distance2(c, sample.lab)));
-      if (d > farD) {
-        farD = d;
-        far = sample;
-      }
-    });
-    centers.push(far.lab);
-  }
-  const gather = () => {
-    const groups = centers.map(() => ({
-      lab: [0, 0, 0],
-      n: 0,
-      rgb: [0, 0, 0],
-      w: 0,
-    }));
-    samples.forEach((sample) => {
-      let best = 0;
-      centers.forEach((c, j) => {
-        if (distance2(c, sample.lab) < distance2(centers[best], sample.lab)) {
-          best = j;
-        }
-      });
-      const group = groups[best];
-      group.n += 1;
-      group.w += sample.weight;
-      for (let a = 0; a < 3; a += 1) {
-        group.lab[a] += sample.lab[a] * sample.weight;
-        group.rgb[a] += sample.rgb[a] * sample.weight;
-      }
-    });
-    return groups;
-  };
-  let groups = gather();
-  for (let round = 0; round < 16; round += 1) {
-    groups.forEach((group, j) => {
-      if (group.w) centers[j] = group.lab.map((v) => v / group.w);
-    });
-    groups = gather();
-  }
-  return groups
-    .filter((group) => group.w > 0)
-    .map((group) => ({
-      lab: group.lab.map((v) => v / group.w),
-      n: group.n,
-      rgb: group.rgb.map((v) => v / group.w),
-      w: group.w,
-    }));
-}
-
-// Ward's merge: the pair whose union costs least (area-weighted squared
-// distance) joins until `k` remain, so specks fold into their neighbours
-// while large distinct areas keep an ink each.
-function wardMerge(groups, k) {
-  const list = groups.map((group) => ({ ...group }));
-  while (list.length > k) {
-    let best = [0, 1];
-    let bestCost = Infinity;
-    for (let i = 0; i < list.length; i += 1) {
-      for (let j = i + 1; j < list.length; j += 1) {
-        const cost =
-          ((list[i].w * list[j].w) / (list[i].w + list[j].w)) *
-          distance2(list[i].lab, list[j].lab);
-        if (cost < bestCost) {
-          bestCost = cost;
-          best = [i, j];
-        }
-      }
-    }
-    const [i, j] = best;
-    const a = list[i];
-    const b = list[j];
-    const w = a.w + b.w;
-    list[i] = {
-      lab: a.lab.map((v, c) => (v * a.w + b.lab[c] * b.w) / w),
-      n: a.n + b.n,
-      rgb: a.rgb.map((v, c) => (v * a.w + b.rgb[c] * b.w) / w),
-      w,
-    };
-    list.splice(j, 1);
-  }
-  return list;
-}
-
-// `k` inks from colour samples ({ rgb, weight? }), darkest first: many
-// small k-means clusters merged down by Ward's cost, so the inks follow the
-// subject's large distinct areas rather than its outliers. `vivid` (0–2)
-// weights samples by chroma, so a green dumpster outvotes a grey street.
-export function samplePalette(input, k, { vivid = 0 } = {}) {
-  const samples = input.map((sample) => {
-    const point = lab(...sample.rgb);
-    const chroma = Math.hypot(point[1], point[2]);
-    return {
-      lab: point,
-      rgb: sample.rgb,
-      weight: (sample.weight ?? 1) * (1 + (vivid * chroma) / 40),
-    };
-  });
-  if (!samples.length || k < 1) return [];
-  const total = samples.length;
-  return wardMerge(kmeans(samples, Math.max(k, Math.min(24, k * 4))), k)
-    .map((group) => ({
-      color: hex(group.rgb),
-      lab: group.lab,
-      share: group.n / total,
-    }))
-    .sort((a, b) => a.lab[0] - b.lab[0]);
 }
 
 // The pixels of an RGBA image (inside `mask`) as palette samples, about
@@ -184,20 +46,6 @@ export function imageSamples({ image, mask = null, weight = 1 }) {
 // The subject's `k` inks from its render: see samplePalette.
 export function imagePalette({ image, k, mask = null, vivid = 0 }) {
   return samplePalette(imageSamples({ image, mask }), k, { vivid });
-}
-
-// rgb → the index of the nearest palette ink in CIELAB.
-export function nearestInk(palette) {
-  return (rgb) => {
-    const point = lab(...rgb);
-    let best = 0;
-    palette.forEach((entry, j) => {
-      if (distance2(entry.lab, point) < distance2(palette[best].lab, point)) {
-        best = j;
-      }
-    });
-    return best;
-  };
 }
 
 // An image's ink at an output-pixel point, or -1 off `mask`.

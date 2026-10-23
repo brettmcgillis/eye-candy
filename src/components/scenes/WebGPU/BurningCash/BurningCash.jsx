@@ -4,6 +4,7 @@ import { useFrame } from '@react-three/fiber';
 
 import ScatteredCash from '@elements/ScatteredCash/ScatteredCash';
 import { CameraRig } from '@modules/cameraRig';
+import { Embers } from '@modules/clothBurnRender';
 import Bloom from '@postprocessing/WebGPU/bloom/Bloom';
 
 import BillPallet, {
@@ -12,7 +13,6 @@ import BillPallet, {
 } from './components/BillPallet';
 import BillStacks from './components/BillStacks';
 import ClothBills from './components/ClothBills';
-import Embers from './components/Embers';
 import IgniteOverlay from './components/IgniteOverlay';
 import ScaleLineup from './components/ScaleLineup';
 import useSceneControls from './hooks/useSceneControls';

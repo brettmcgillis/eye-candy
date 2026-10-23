@@ -9,19 +9,10 @@ import React, {
 
 import { useFrame } from '@react-three/fiber';
 
-import {
-  Fn,
-  attribute,
-  float,
-  fract,
-  mix,
-  smoothstep,
-  uniform,
-  uv,
-  vec3,
-  vec4,
-} from 'three/tsl';
+import { uniform } from 'three/tsl';
 import * as THREE from 'three/webgpu';
+
+import createEmberMaterial from './emberMaterial';
 
 const DEAD_TIME = -1e6;
 
@@ -67,6 +58,7 @@ const Embers = forwardRef(function Embers(
 
     const geometry = new THREE.PlaneGeometry(1, 1);
     const instGeometry = new THREE.InstancedBufferGeometry().copy(geometry);
+    geometry.dispose();
     instGeometry.instanceCount = count;
     instGeometry.setAttribute('aSpawnPos', spawnPos);
     instGeometry.setAttribute('aVelocity', velocity);
@@ -82,56 +74,16 @@ const Embers = forwardRef(function Embers(
     const colorCoolU = uniform(new THREE.Color(colorCool));
     const intensityU = uniform(intensity);
 
-    const material = new THREE.SpriteNodeMaterial({
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
+    const material = createEmberMaterial({
+      timeU,
+      sizeU,
+      riseU,
+      lifeMinU,
+      lifeMaxU,
+      colorHotU,
+      colorCoolU,
+      intensityU,
     });
-
-    const age = timeU.sub(attribute('aSpawnTime')).toVar('emberAge');
-    const life = mix(lifeMinU, lifeMaxU, attribute('aSeed')).toVar('emberLife');
-    const ageNorm = age.div(life).clamp(0, 1).toVar('emberAgeNorm');
-
-    material.positionNode = Fn(() => {
-      const s = attribute('aSeed');
-      const wobble = vec3(
-        age
-          .mul(mix(float(5), float(11), s))
-          .add(s.mul(40))
-          .sin(),
-        0,
-        age.mul(mix(float(4), float(9), fract(s.mul(7.31)))).cos()
-      ).mul(0.04);
-      const buoyancy = vec3(
-        0,
-        riseU.mul(age).mul(ageNorm.mul(0.7).add(0.3)),
-        0
-      );
-      return attribute('aSpawnPos')
-        .add(attribute('aVelocity').mul(age))
-        .add(buoyancy)
-        .add(wobble);
-    })();
-
-    material.scaleNode = sizeU
-      .mul(smoothstep(0, 0.05, ageNorm))
-      .mul(float(1).sub(ageNorm).pow(0.7))
-      .mul(mix(float(0.6), float(1.4), fract(attribute('aSeed').mul(13.7))));
-
-    material.colorNode = Fn(() => {
-      const d = uv().sub(0.5).length();
-      const mask = smoothstep(0.5, 0.12, d);
-      const flicker = age
-        .mul(mix(float(18), float(30), attribute('aSeed')))
-        .sin()
-        .mul(0.25)
-        .add(0.75);
-      const col = mix(colorHotU, colorCoolU, ageNorm.pow(1.5));
-      const alive = smoothstep(0, 0.001, age).mul(
-        float(1).sub(smoothstep(0.85, 1.0, ageNorm))
-      );
-      return vec4(col.mul(intensityU).mul(flicker), mask.mul(alive));
-    })();
 
     const emberMesh = new THREE.Mesh(instGeometry, material);
     emberMesh.frustumCulled = false;

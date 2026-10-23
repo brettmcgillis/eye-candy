@@ -21,8 +21,6 @@ import {
   float,
   frontFacing,
   mix,
-  mx_noise_float as mxNoiseFloat,
-  smoothstep,
   texture as tslTexture,
   uniform,
   uv,
@@ -32,6 +30,7 @@ import {
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
+import { createBurnNodes } from '@modules/clothBurnRender';
 import { VerletPhysics, triNoise3Dvec } from '@modules/verletPhysics';
 
 // Pre-baked per-face bill textures (see public/textures/cash). Layer order:
@@ -287,13 +286,17 @@ function buildBillGeometry(
     glowIntensityU,
   } = burnUniforms;
 
-  const burnNoise = Fn(() => {
-    const seed = attribute('instanceSeed');
-    const burnUV = uv().mul(vec2(noiseScaleU.mul(2.35), noiseScaleU));
-    return mxNoiseFloat(vec3(burnUV, seed.mul(43.7)))
-      .mul(0.5)
-      .add(0.5);
+  const front = createBurnNodes({
+    progress: attribute('instanceBurn'),
+    seed: attribute('instanceSeed'),
+    noiseScale: noiseScaleU,
+    edgeWidth: edgeWidthU,
+    charWidth: charWidthU,
+    colorA: glowColorAU,
+    colorB: glowColorBU,
+    intensity: glowIntensityU,
   });
+  const burnNoise = front.noise;
 
   const material = new THREE.MeshBasicNodeMaterial({
     side: THREE.DoubleSide,
@@ -315,17 +318,14 @@ function buildBillGeometry(
   material.colorNode = Fn(() => {
     const texColor = billFaceColor();
 
-    const burn = attribute('instanceBurn');
-    const d = burnNoise().sub(burn).toVar();
+    const d = front.distance;
     d.lessThan(0).discard();
 
     // Glowing burn front, then a charred band trailing behind it.
-    const glow = smoothstep(edgeWidthU, float(0), d).toVar();
-    const char = smoothstep(charWidthU, edgeWidthU.mul(0.5), d);
+    const { char } = front;
 
     const base = mix(texColor.rgb, vec3(0.01, 0.008, 0.006), char.mul(0.92));
-    const emberCol = mix(glowColorAU, glowColorBU, glow.pow(2.5));
-    const rgb = base.add(emberCol.mul(glow.pow(1.5)).mul(glowIntensityU));
+    const rgb = base.add(front.emission);
 
     return vec4(rgb, texColor.a.mul(vClothOpacity));
   })();

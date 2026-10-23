@@ -21,7 +21,11 @@ import checkWorkbenchPage from './lib/workbenchPage.mjs';
 const KERNEL_DIR = path.join(REPO_ROOT, 'src', 'modules', 'dumpsterFire');
 const TOOL_DIR = path.join(REPO_ROOT, 'src/dev/tools/dumpsterFire');
 const PLOT_KIT = '/src/modules/plotKit/index.js';
-const ALLOWED_KERNEL_IMPORTS = new Set(['@modules/flora', '@modules/plotKit']);
+const ALLOWED_KERNEL_IMPORTS = new Set([
+  '@modules/flora',
+  '@modules/plotKit',
+  '@modules/materialxNoise',
+]);
 
 const failures = [];
 const check = (condition, message) => {

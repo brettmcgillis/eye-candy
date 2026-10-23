@@ -20,6 +20,7 @@ import {
   uniform as nodeUniform,
   positionWorld,
   screenUV,
+  select,
   sin,
   texture as textureSample,
   uv,
@@ -27,6 +28,8 @@ import {
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
+import { BURN_DEFAULTS, burnProgress } from '@modules/clothBurn';
+import { BurnEmbers, createBurnNodes } from '@modules/clothBurnRender';
 import { fabricWeave } from '@modules/tsl';
 
 import { DECAY_DEFAULTS } from './clothDecay';
@@ -125,6 +128,7 @@ const ClothMesh = forwardRef(function ClothMesh(
     // Rot and blood round holes and tears, hem drips, an angry brow on the
     // cutouts (clothDecay.js): the flat skin keys, DECAY_DEFAULTS when unset.
     decay = null,
+    burn = null,
     // Legacy single texture URL. Use outerTextureUrl / innerTextureUrl for
     // discrete per-side textures.
     textureUrl = null,
@@ -180,6 +184,22 @@ const ClothMesh = forwardRef(function ClothMesh(
     lastPointerY: 0,
   });
   const meshRef = useRef();
+  const emberRef = useRef(null);
+  const burnEnabled = useRef(Boolean(burn?.burnEnabled)).current;
+  const burnParams = { ...BURN_DEFAULTS, ...burn };
+  const burnUniforms = useMemo(
+    () => ({
+      progress: nodeUniform(burnParams.burnAmount),
+      seed: nodeUniform(alphaSeed / 200),
+      noiseScale: nodeUniform(burnParams.burnNoiseScale),
+      edgeWidth: nodeUniform(burnParams.burnEdgeWidth),
+      charWidth: nodeUniform(burnParams.burnCharWidth),
+      colorA: nodeUniform(new THREE.Color(burnParams.burnColorA)),
+      colorB: nodeUniform(new THREE.Color(burnParams.burnColorB)),
+      intensity: nodeUniform(burnParams.burnGlowIntensity),
+    }),
+    []
+  );
   const cursorSphereRef = useRef();
   const colliderSphereRefs = useRef([]);
   const materialKeysRef = useRef(null);
@@ -281,6 +301,25 @@ const ClothMesh = forwardRef(function ClothMesh(
     };
   }, []); // GPU buffers built once — intentionally static
 
+  const burnNodes = useMemo(() => {
+    if (!burnEnabled) return null;
+    const nodes = createBurnNodes(burnUniforms);
+    sim.material.opacityNode = sim.material.opacityNode.mul(
+      select(nodes.distance.greaterThanEqual(0), 1, 0)
+    );
+    return nodes;
+  }, [sim, burnEnabled, burnUniforms]);
+  const burnKey = JSON.stringify(burnParams);
+  useEffect(() => {
+    burnUniforms.noiseScale.value = burnParams.burnNoiseScale;
+    burnUniforms.edgeWidth.value = burnParams.burnEdgeWidth;
+    burnUniforms.charWidth.value = burnParams.burnCharWidth;
+    burnUniforms.seed.value = alphaSeed / 200;
+    burnUniforms.colorA.value.set(burnParams.burnColorA);
+    burnUniforms.colorB.value.set(burnParams.burnColorB);
+    burnUniforms.intensity.value = burnParams.burnGlowIntensity;
+  }, [burnKey, alphaSeed, burnUniforms]);
+
   const outlineThicknessU = useMemo(() => nodeUniform(outlineThickness), []);
 
   const outlineMaterial = useMemo(() => {
@@ -332,12 +371,22 @@ const ClothMesh = forwardRef(function ClothMesh(
       get sim() {
         return sim;
       },
+      get burnState() {
+        return burnEnabled
+          ? {
+              params: burnParams,
+              progress: burnUniforms.progress.value,
+              seed: burnUniforms.seed.value,
+              embers: emberRef.current,
+            }
+          : null;
+      },
       resetSim() {
         sim.reset();
         simState.current.timeSinceLastStep = 0;
       },
     }),
-    [sim]
+    [sim, burnKey, burnEnabled, burnUniforms]
   );
 
   const textureReady = Boolean(texture);
@@ -353,9 +402,7 @@ const ClothMesh = forwardRef(function ClothMesh(
       const wrap = textureTile
         ? THREE.RepeatWrapping
         : THREE.ClampToEdgeWrapping;
-      tex.wrapS = wrap;
-      tex.wrapT = wrap;
-      tex.needsUpdate = true;
+      Object.assign(tex, { wrapS: wrap, wrapT: wrap, needsUpdate: true });
 
       // Build UV transform: scale + rotate around center
       const uvCentered = uv().sub(0.5);
@@ -482,12 +529,16 @@ const ClothMesh = forwardRef(function ClothMesh(
     );
     // The weave's own ambient occlusion: valleys between threads, the shadow
     // under a stitch, and weathering all darken the albedo.
-    sim.material.colorNode = weaveNodes
-      ? faceColor.mul(weaveNodes.shadeNode)
+    const burnedColor = burnNodes
+      ? mix(faceColor, burnNodes.charColor, burnNodes.char.mul(0.92))
       : faceColor;
+    sim.material.colorNode = weaveNodes
+      ? burnedColor.mul(weaveNodes.shadeNode)
+      : burnedColor;
     sim.material.needsUpdate = true;
   }, [
     sim,
+    burnNodes,
     weaveNodes,
     innerColor,
     textureUrl,
@@ -545,19 +596,18 @@ const ClothMesh = forwardRef(function ClothMesh(
       const outerEmissive = texUniforms.outerEmissiveColorU.mul(outerI);
       const innerEmissive = texUniforms.innerEmissiveColorU.mul(innerI);
 
-      sim.material.emissiveNode = mix(
-        outerEmissive,
-        innerEmissive,
-        frontFacing
-      ).add(decayGlow);
+      sim.material.emissiveNode = mix(outerEmissive, innerEmissive, frontFacing)
+        .add(decayGlow)
+        .add(burnNodes?.emission ?? 0);
     } else {
-      sim.material.emissiveNode = decayGlow;
+      sim.material.emissiveNode = decayGlow.add(burnNodes?.emission ?? 0);
     }
     sim.material.needsUpdate = true;
     // emissiveCenter is an array — track elements individually to avoid
     // re-running on every render from a new array reference.
   }, [
     sim,
+    burnNodes,
     outerEmissiveColor,
     outerEmissiveIntensity,
     innerEmissiveColor,
@@ -639,6 +689,8 @@ const ClothMesh = forwardRef(function ClothMesh(
     const s = simState.current;
     // Own clock rather than TSL `time`, so a plot knows the drips' phase.
     sim.dripTimeU.value = clock.elapsedTime;
+    if (burnEnabled)
+      burnUniforms.progress.value = burnProgress(burnParams, clock.elapsedTime);
 
     if (fabricUniforms) {
       const f = { ...FABRIC_DEFAULTS, ...fabric };
@@ -810,6 +862,16 @@ const ClothMesh = forwardRef(function ClothMesh(
 
   return (
     <group>
+      {burnEnabled ? (
+        <BurnEmbers
+          ref={emberRef}
+          sim={sim}
+          segmentsX={segmentsX}
+          segmentsY={segmentsY}
+          params={burnParams}
+          burnUniforms={burnUniforms}
+        />
+      ) : null}
       <mesh
         ref={meshRef}
         geometry={sim.geometry}

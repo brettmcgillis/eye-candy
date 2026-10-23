@@ -14,10 +14,22 @@ export async function readGhostLattice(renderer, ghost, config) {
   const { mesh, sim } = ghost;
   const buffer = await renderer.getArrayBufferAsync(sim.posBuf.value);
   mesh.updateWorldMatrix(true, false);
+  const { burnState } = ghost;
+  const embers = burnState?.embers
+    ? await burnState.embers.snapshot(renderer)
+    : null;
   return ghostLattice({
     local: new Float32Array(buffer),
     matrixWorld: mesh.matrixWorld.elements,
     skin: resolveSkin(config),
+    burn: burnState
+      ? {
+          params: burnState.params,
+          progress: burnState.progress,
+          seed: burnState.seed,
+          embers,
+        }
+      : null,
   });
 }
 

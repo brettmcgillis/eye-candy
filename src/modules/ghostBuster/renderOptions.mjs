@@ -387,6 +387,11 @@ const RENDER = {
     scene: false,
     scope: 'still',
   }),
+  svgBurn: flag('svg', null, 'SVG burning', true, {
+    scene: false,
+    scope: 'still',
+    help: 'Trace the char and glowing burn front, plus the captured embers, in separate pen layers',
+  }),
   svgStorm: flag('svg', null, 'SVG storm', true, {
     help: "A storm skin's cloud (outline and puff contours), rain streaks, splashes and lightning, each on its own layer",
     scene: false,

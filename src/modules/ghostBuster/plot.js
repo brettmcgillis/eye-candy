@@ -4,6 +4,7 @@ import {
   dripAt,
   eyeHoleDistance,
 } from '@elements/WebGPU/cloth/clothDecay';
+import { burnAt, emberPoints } from '@modules/clothBurn';
 import {
   chain,
   colorRuns,
@@ -129,6 +130,7 @@ function createSurface(
     segmentsY,
     shapeDist,
     decay = null,
+    burn = null,
     tear = null,
   },
   time = 0
@@ -196,6 +198,9 @@ function createSurface(
   const mix = (array, stride, offset, weights) =>
     weights.reduce((sum, [m, w]) => sum + array[m * stride + offset] * w, 0);
 
+  const burning = burn
+    ? (u, v) => burnAt(u, 1 - v, burn.params, burn.progress, burn.seed)
+    : null;
   const tearAlpha = tear ? createTear(tear) : () => 1;
   const decayed = decay ? createDecay(decay, time) : null;
   const dripAlpha = decay?.table ? (u, v) => decayed.drip(u, v).alpha : () => 1;
@@ -212,7 +217,7 @@ function createSurface(
         : Math.hypot(u - cutout.u, 1 - v - cutout.v) - cutout.radius;
       f *= clamp01((hole + width) / width);
     });
-    return f;
+    return burning ? f * burning(u, v).alpha : f;
   }
 
   function point(u, v) {
@@ -265,6 +270,7 @@ function createSurface(
 
   return {
     decayed,
+    burning,
     facing,
     outside,
     field,
@@ -280,6 +286,9 @@ const FILL_LAYERS = [
   { index: 23, key: 'goo', label: 'goo fill' },
   { index: 24, key: 'rot', label: 'rot fill' },
   { index: 25, key: 'blood', label: 'blood fill' },
+  { index: 26, key: 'char', label: 'char fill' },
+  { index: 27, key: 'burnGlow', label: 'burn glow fill' },
+  { index: 28, key: 'burnHot', label: 'burn hot fill' },
 ];
 
 const shadeOf = (hex, k) => {
@@ -296,6 +305,9 @@ const shadeOf = (hex, k) => {
 
 // Each fill layer's suggested pen: the skin's own colours.
 const fillColors = (skin) => ({
+  char: '#1a1712',
+  burnGlow: skin?.burnColorA ?? '#ff4000',
+  burnHot: skin?.burnColorB ?? '#ffd089',
   blood: skin?.bloodColor ?? '#000000',
   cloth: skin?.color ?? '#000000',
   goo: skin?.dripColor ?? '#000000',
@@ -308,6 +320,11 @@ const fillColors = (skin) => ({
 // tone (a white sheet still reads on white paper), the rest in the skin's
 // own colours.
 const lineColors = (skin) => ({
+  char: '#1a1712',
+  burnGlow: skin?.burnColorA ?? '#ff4000',
+  burnHot: skin?.burnColorB ?? '#ffd089',
+  emberHot: skin?.emberColorHot ?? '#ffe8a3',
+  emberCool: skin?.emberColorCool ?? '#ff3c00',
   blood: skin?.bloodColor ?? '#000000',
   cloth: shadeOf(skin?.color, 0.55),
   cloud: skin?.cloudColor ?? '#000000',
@@ -445,6 +462,12 @@ function clothFill({
     if (visible && !visible(p.x, p.y, p.depth)) return null;
     const outside = surface.outside(u, v, camera.eye);
     if (outside && inRim(u, v)) return null;
+    if (surface.burning && fill.burn !== false) {
+      const front = surface.burning(u, v);
+      if (front.glow > 0.7) return 'burnHot';
+      if (front.glow > 0.1) return 'burnGlow';
+      if (front.char > 0.5) return 'char';
+    }
     if (goo(u, v)) return 'goo';
     if (stains) {
       const { blood, rot } = decayed.stain(u, v);
@@ -611,6 +634,7 @@ function uvLines(style, count, step) {
 // depth pass's `coverage`, the silhouette and the `shade` (crosshatch,
 // halftone or stipple from the render) each on a layer of their own.
 export default function renderGhostSvg({
+  burn = true,
   camera,
   colors = BLACK_LINES,
   decay = true,
@@ -692,6 +716,48 @@ export default function renderGhostSvg({
         ALPHA_CUT
       )
     ).forEach((uvs) => trace(uvs, paths, { onEdge: true }));
+  }
+  const burnRuns = { char: [], glow: [], hot: [] };
+  if (burn && surface.burning) {
+    const onCloth = (u, v) => surface.field(u, v) > ALPHA_CUT;
+    [
+      ['char', 'char', 0.5],
+      ['glow', 'glow', 0.1],
+      ['hot', 'glow', 0.7],
+    ].forEach(([key, channel, level]) => {
+      chain(
+        isoSegments(
+          (u, v) => surface.burning(u, v)[channel],
+          fine * 2,
+          level,
+          onCloth
+        )
+      ).forEach((uvs) => trace(uvs, burnRuns[key]));
+    });
+  }
+  const emberRuns = { hot: [], cool: [] };
+  if (burn && lattice.burn?.embers) {
+    const { embers, params, matrixWorld } = lattice.burn;
+    emberPoints(embers, params, matrixWorld).forEach(({ phase, position }) => {
+      const p = project(...position);
+      if (
+        p.depth <= 0 ||
+        p.x < 0 ||
+        p.y < 0 ||
+        p.x > width ||
+        p.y > height ||
+        (visible && !visible(p.x, p.y, p.depth))
+      )
+        return;
+      const r = Math.max(stroke, 0.8);
+      emberRuns[phase < 0.5 ? 'hot' : 'cool'].push([
+        { x: p.x - r, y: p.y },
+        { x: p.x, y: p.y - r },
+        { x: p.x + r, y: p.y },
+        { x: p.x, y: p.y + r },
+        { x: p.x - r, y: p.y },
+      ]);
+    });
   }
   const foldRuns = [];
   if (folds) {
@@ -937,6 +1003,11 @@ export default function renderGhostSvg({
     `${decayPaths.rot.length ? plotLayer(12, 'rot', stroke, pathOf(decayPaths.rot), colors.rot) : ''}` +
     `${decayPaths.blood.length ? plotLayer(13, 'blood', stroke, pathOf(decayPaths.blood), colors.blood) : ''}` +
     `${decayPaths.goo.length ? plotLayer(14, 'goo', stroke, pathOf(decayPaths.goo), colors.goo) : ''}` +
+    `${burnRuns.char.length ? plotLayer(15, 'char', stroke, pathOf(burnRuns.char), colors.char) : ''}` +
+    `${burnRuns.glow.length ? plotLayer(16, 'burn glow', stroke, pathOf(burnRuns.glow), colors.burnGlow) : ''}` +
+    `${burnRuns.hot.length ? plotLayer(17, 'burn hot', stroke, pathOf(burnRuns.hot), colors.burnHot) : ''}` +
+    `${emberRuns.hot.length ? plotLayer(18, 'embers hot', stroke, pathOf(emberRuns.hot), colors.emberHot) : ''}` +
+    `${emberRuns.cool.length ? plotLayer(19, 'embers cool', stroke, pathOf(emberRuns.cool), colors.emberCool) : ''}` +
     `${fillLayers}</svg>`
   );
 }
@@ -949,12 +1020,14 @@ export function plotArgs(options, skin = null) {
     colors:
       options.svgColorMode === 'monochrome' ? BLACK_LINES : lineColors(skin),
     decay: options.svgDecay,
+    burn: options.svgBurn,
     edges: options.svgEdges,
     fill:
       options.svgFill && options.svgFill !== 'none'
         ? {
             colors:
               options.svgColorMode === 'monochrome' ? {} : fillColors(skin),
+            burn: options.svgBurn,
             colorMode: options.svgColorMode ?? 'material',
             sampleColors: options.svgSampleColors ?? 6,
             inside: options.svgFillInside,

@@ -28,12 +28,16 @@ Run `npm run dumpster-fire:check` after changing any piece below.
                                           /presets → the scene's PRESETS
 ```
 
-| Piece                         | Rule                                                                                                                                                                                                                              |
-| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@modules/dumpsterFire`       | **Three-free.** May import only `@modules/flora` (`createRng`) and `@modules/plotKit`. The check enforces it. Owns the scene-space constants (`SCENE_ROOT_POSITION`, the wall coursing, `BLOCK_SIZE`); the scene re-exports them. |
-| `@modules/dumpsterFireRender` | The only home of the stage, and of anything the scene and the stage both draw. **No drei**: models load through `@hooks/useDracoGltf`, the environment is renderStage's `StudioEnvironment`.                                      |
-| `renderOptions.mjs`           | Every knob, once. Facets `trash`, `wall`, `smoke`, `dumpster`, `stage`, `camera`. Scene keys keep the names the scene's Leva and presets already used (`brickWall*`, `scene*`, `dumpster*LidRotation`).                           |
-| CLI-only keys                 | `mood`, `settle`, `viewFrame` and `view*` are generation keys (`config: true`, `scene: false`): rolled, kept in sidecars, never in a scene preset. Camera keys are `view*` because scene keys must not start with `camera`.       |
+| Piece                         | Rule                                                                                                                                                                                                                                                                                                        |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@modules/dumpsterFire`       | **Three-free.** May import only `@modules/flora` (`createRng`), `@modules/plotKit` and `@modules/materialxNoise` (the shared three-free MaterialX noise mirror). The check enforces it. Owns the scene-space constants (`SCENE_ROOT_POSITION`, the wall coursing, `BLOCK_SIZE`); the scene re-exports them. |
+| `@modules/dumpsterFireRender` | The only home of the stage, and of anything the scene and the stage both draw. **No drei**: models load through `@hooks/useDracoGltf`, the environment is renderStage's `StudioEnvironment`.                                                                                                                |
+| `renderOptions.mjs`           | Every knob, once. Facets `trash`, `wall`, `smoke`, `dumpster`, `stage`, `camera`. Scene keys keep the names the scene's Leva and presets already used (`brickWall*`, `scene*`, `dumpster*LidRotation`).                                                                                                     |
+| CLI-only keys                 | `mood`, `settle`, `viewFrame` and `view*` are generation keys (`config: true`, `scene: false`): rolled, kept in sidecars, never in a scene preset. Camera keys are `view*` because scene keys must not start with `camera`.                                                                                 |
+
+`noise.js` re-exports `perlin3` and `fractal3` from `@modules/materialxNoise`;
+its flame displacement mirror stays local. BurningCash/GhostBuster share the
+same CPU noise without depending on the DumpsterFire kernel.
 
 ## A generation
 

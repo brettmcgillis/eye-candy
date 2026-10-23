@@ -25,12 +25,12 @@ component tree**, mounted on the headless renderer by the CLI and in a
          float / turntable            src/dev/server/ghostBuster → generate --capture
 ```
 
-| Piece                        | Rule                                                                                                                                                                                                                                                                                                                                                                                                |
-| ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@presets/ghost/ghostSkins`  | The one skin library. GhostBuster's preset menu reads it (`presets/scenePresets.js` re-exports it as `SCENE_PRESETS`), and so do this tool and PrintShop. **Add a skin there and every consumer has it** — nothing else to edit.                                                                                                                                                                    |
-| `@modules/ghostBuster`       | **Three-free.** May import only `@modules/flora` (`createRng`), `@modules/plotKit` (the shared plot layers and framing), `@elements/WebGPU/cloth/clothTopology`, `@elements/WebGPU/cloth/clothDecay`, `@elements/WebGPU/ghost/ghostRig` and `@elements/WebGPU/rainCloud/rainCloudRig`. The check enforces it.                                                                                       |
-| `@modules/ghostBusterRender` | The only home of the stage. `GhostStudio` is GhostBuster's studio (`StudioEnvironment` and `Backdrop` from `@modules/renderStage`, ambient, spot, orbit light, grid floor) plus the pose wrapper; `ghostProps(skin)` is GhostBuster's prop mapping.                                                                                                                                                 |
-| `renderOptions.mjs`          | Every knob, once. Facets: `location`, `skin`, `material`, `fabric`, `texture`, `outline`, `emissive`, `shape`, `wear`, `face`, `decay`, `storm`, `motion`, `lighting`, `pose`, `camera`. `lookOptions.mjs` declares the inherited look controls and is composed into this schema. The skin is a `string` option the page and CLI validate against the library, so the schema stays dependency-free. |
+| Piece                        | Rule                                                                                                                                                                                                                                                                                                                                                                                                        |
+| ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@presets/ghost/ghostSkins`  | The one skin library. GhostBuster's preset menu reads it (`presets/scenePresets.js` re-exports it as `SCENE_PRESETS`), and so do this tool and PrintShop. **Add a skin there and every consumer has it** — nothing else to edit.                                                                                                                                                                            |
+| `@modules/ghostBuster`       | **Three-free.** May import only `@modules/flora` (`createRng`), `@modules/clothBurn` (the three-free burn and ember mirrors), `@modules/plotKit` (the shared plot layers and framing), `@elements/WebGPU/cloth/clothTopology`, `@elements/WebGPU/cloth/clothDecay`, `@elements/WebGPU/ghost/ghostRig` and `@elements/WebGPU/rainCloud/rainCloudRig`. The check enforces it.                                 |
+| `@modules/ghostBusterRender` | The only home of the stage. `GhostStudio` is GhostBuster's studio (`StudioEnvironment` and `Backdrop` from `@modules/renderStage`, ambient, spot, orbit light, grid floor) plus the pose wrapper; `ghostProps(skin)` is GhostBuster's prop mapping.                                                                                                                                                         |
+| `renderOptions.mjs`          | Every knob, once. Facets: `location`, `skin`, `burn`, `material`, `fabric`, `texture`, `outline`, `emissive`, `shape`, `wear`, `face`, `decay`, `storm`, `motion`, `lighting`, `pose`, `camera`. `lookOptions.mjs` declares the inherited look controls and is composed into this schema. The skin is a `string` option the page and CLI validate against the library, so the schema stays dependency-free. |
 
 ## Creating ghosts and working with named skins
 
@@ -188,10 +188,11 @@ inside an eye hole. `svgFillInside: cloth` is the faithful surface mode;
 `hole` is a stylized eye fill. Only visible surfaces are drawn: an interior
 that the chosen view hides has no fill strokes.
 
-The workbench's **Colour pen plot** sets rows, visible inner cloth and the
-material colours with no ink reduction. **One of each named ghost** additionally
-resets holds, sets `ghostMode: named`, `skinOrder: cycle`, a front view and a
-count equal to the library size. It preserves the named looks while pose can
+The SVG section controls colour source, fills, inner cloth and ink reduction.
+**One of each named ghost** is a batch setup: it resets holds and sets
+`ghostMode: named`, `skinOrder: cycle`, a front view and a count equal to the
+library size. It does not change output formats or SVG settings.
+It preserves the named looks while pose can
 vary. `skinOrder: cycle` also works in new/variations mode, visits the allowed
 `skins` in library order, and wraps only after exhausting them. It starts
 each skin from its own traits, so one named ghost's colours cannot leak into
@@ -230,6 +231,47 @@ colours.
 Evil's "horns" are its ear pins raised, spread and given tiny colliders: a
 cloth tent can only make a cone apex, so they read as sharp devil ears.
 Real horns would need horn meshes the cloth drapes over.
+
+## Burning skin
+
+**Burning** is the partially consumed parchment ghost. It stays at
+its authored `burnAmount` and continually emits embers; `burnLoop` defaults off.
+The shared Burning folder exposes the mask, char width, glowing edge,
+colours, ember rate, size, rise and drift. The scene builds that folder from
+the kernel's look specs, so it stays in step with GhostBusterCLI. The
+`burn` facet rolls these traits, with burning uncommon in new ghosts;
+named mode preserves the authored Burning skin.
+
+This is BurningCash's mechanism, promoted for both consumers:
+
+- `@modules/clothBurnRender` owns `createBurnNodes`, the exact MaterialX
+  noise field, discard threshold, char band and two-colour hot edge from
+  BurningCash's `ClothBills`. Both the bill and ghost read those nodes.
+  `createEmberMaterial` owns BurningCash's sprite motion, buoyancy, shrinking,
+  flicker, hot-to-cool colour and fade. `Embers` is its original CPU-fed
+  ring buffer; `BurnEmbers` uses that same material with a 256-slot GPU-fed
+  ring, sampling the ghost's simulated cloth at the active burn front.
+- `@modules/clothBurn` is three-free: defaults, ranges, phase, the CPU burn
+  field and the ember snapshot's positions. `@modules/materialxNoise` is
+  the shared MaterialX CPU noise mirror (also used by DumpsterFire).
+- ClothMesh applies the burn to both faces' colour/emission and to opacity,
+  so depth and silhouette captures have the same holes. Its forwarded
+  `burnState` carries the exact uniforms and ember buffers through
+  GhostCharacter to `readGhostLattice`. Ordinary skins keep their existing
+  material graphs and mount no ember system.
+
+Headless spawning is seeded and driven by the R3F clock, with no CPU readbacks
+in the frame loop. Only capture reads the GPU particle origins, velocities
+and birth times. Framing includes live embers. The capture's same time and
+matrix drive the plot, including stationary Live captures and video.
+
+`svgBurn` (on) adds char (pen-15), orange glow (16), hot edge (17), hot
+embers (18) and cooling embers (19). Material fills have matching char,
+glow and hot regions (26–28), while Render-colour fills sample the captured
+appearance. Cut-away cloth is always cut in the plot, even with `svgBurn`
+off. Burning joins **One of each named ghost** automatically through the
+skin library. Run `npm run ghost-buster:check` for the real burning stage,
+particle readback, sustained phase and its colour SVG layers.
 
 ## Storm skins
 

@@ -15,6 +15,7 @@ import RainCloud, {
   RAIN_SHADOW_LAYER,
 } from '@elements/WebGPU/rainCloud/RainCloud';
 import { GridMaterial } from '@materials/WebGPU/gridMaterial';
+import { burnFromControls } from '@modules/clothBurn';
 import { animated, stillTime } from '@modules/ghostBuster';
 import { Backdrop, StudioEnvironment } from '@modules/renderStage';
 
@@ -95,6 +96,7 @@ export function ghostProps(skin) {
     eyeColor: skin.eyeColor,
     eyeIntensity: skin.eyeIntensity,
     decay: decayFromControls(skin),
+    burn: burnFromControls(skin),
     fabric: fabricFromControls(skin),
     gravity: skin.gravity,
     groundLightAngle: skin.groundLightAngle,

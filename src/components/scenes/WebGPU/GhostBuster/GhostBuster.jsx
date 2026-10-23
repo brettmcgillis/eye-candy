@@ -20,6 +20,7 @@ import RainCloud, {
   RAIN_SHADOW_LAYER,
 } from '@elements/WebGPU/rainCloud/RainCloud';
 import { GridMaterial } from '@materials/WebGPU/gridMaterial';
+import { burnFromControls } from '@modules/clothBurn';
 
 import GhostPlacard from './components/GhostPlacard';
 import useAnimationInput from './hooks/useAnimationInput';
@@ -300,6 +301,7 @@ export default function GhostBuster() {
         clearcoatRoughness={controls.clearcoatRoughness}
         fabric={fabricFromControls(controls)}
         decay={decayFromControls(controls)}
+        burn={burnFromControls(controls)}
         innerRoughness={controls.innerRoughness ?? null}
         innerMetalness={controls.innerMetalness ?? null}
         outerTextureUrl={controls.outerTextureUrl || null}

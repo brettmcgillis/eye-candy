@@ -5,6 +5,7 @@ import {
   fbm2D,
 } from '@elements/WebGPU/cloth/clothTopology';
 import { CUTOUTS } from '@elements/WebGPU/ghost/ghostRig';
+import { burnAt, emberPoints } from '@modules/clothBurn';
 
 // Vertices outside the cloth circle never move from the flat rest disk; a
 // line sampled near the hem would interpolate toward them. Each takes the
@@ -49,22 +50,37 @@ function fillOutside(settled, { idAt, segmentsX, segmentsY, shapeDistArr }) {
 }
 
 // The sphere round the visible cloth, for framing a settled drape.
-export function latticeBounds({ alpha, positions, shapeDist }) {
+export function latticeBounds({
+  alpha,
+  boundsAlpha = alpha,
+  positions,
+  shapeDist,
+  burn,
+}) {
   const min = [Infinity, Infinity, Infinity];
   const max = [-Infinity, -Infinity, -Infinity];
   for (let i = 0; i < shapeDist.length; i += 1) {
-    if (shapeDist[i] >= 0 && alpha[i] >= 0.5) {
+    if (shapeDist[i] >= 0 && boundsAlpha[i] >= 0.5) {
       for (let c = 0; c < 3; c += 1) {
         min[c] = Math.min(min[c], positions[i * 3 + c]);
         max[c] = Math.max(max[c], positions[i * 3 + c]);
       }
     }
   }
+  const sparks = burn
+    ? emberPoints(burn.embers, burn.params, burn.matrixWorld)
+    : [];
+  sparks.forEach(({ position }) =>
+    position.forEach((value, axis) => {
+      min[axis] = Math.min(min[axis], value);
+      max[axis] = Math.max(max[axis], value);
+    })
+  );
   if (min[0] === Infinity) return null;
   const center = min.map((v, c) => (v + max[c]) / 2);
   let radius = 0;
   for (let i = 0; i < shapeDist.length; i += 1) {
-    if (shapeDist[i] >= 0 && alpha[i] >= 0.5) {
+    if (shapeDist[i] >= 0 && boundsAlpha[i] >= 0.5) {
       radius = Math.max(
         radius,
         Math.hypot(
@@ -75,6 +91,12 @@ export function latticeBounds({ alpha, positions, shapeDist }) {
       );
     }
   }
+  sparks.forEach(({ position }) => {
+    radius = Math.max(
+      radius,
+      Math.hypot(...position.map((value, axis) => value - center[axis]))
+    );
+  });
   return { center, radius };
 }
 
@@ -99,7 +121,12 @@ function noiseTable(scale, seed) {
 // The plot's view of a settled ghost: the sim's positions (read back from the
 // GPU, in the cloth mesh's space) carried into world space by the mesh's
 // matrix, with the alpha and shape the shader cuts the cloth by.
-export default function ghostLattice({ local, matrixWorld, skin }) {
+export default function ghostLattice({
+  local,
+  matrixWorld,
+  skin,
+  burn = null,
+}) {
   const segments = skin.clothSegments;
   const topology = buildClothTopology({
     centered: true,
@@ -120,6 +147,20 @@ export default function ghostLattice({ local, matrixWorld, skin }) {
   });
 
   const { vCount } = topology;
+  const burnAlpha = render.slice();
+  if (burn) {
+    for (let x = 0; x <= segments; x += 1) {
+      for (let y = 0; y <= segments; y += 1) {
+        burnAlpha[x * (segments + 1) + y] *= burnAt(
+          x / segments,
+          1 - y / segments,
+          burn.params,
+          burn.progress,
+          burn.seed
+        ).alpha;
+      }
+    }
+  }
   const stride = local.length >= vCount * 4 ? 4 : 3;
   const m = matrixWorld;
   const positions = new Float32Array(vCount * 3);
@@ -147,6 +188,8 @@ export default function ghostLattice({ local, matrixWorld, skin }) {
 
   return {
     alpha: render,
+    boundsAlpha: burnAlpha,
+    burn: burn ? { ...burn, matrixWorld: Array.from(matrixWorld) } : null,
     cutouts: CUTOUTS,
     decay: {
       noise: stained ? noiseTable(skin.alphaScale, skin.alphaSeed) : null,

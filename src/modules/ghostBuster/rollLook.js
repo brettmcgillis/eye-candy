@@ -1,6 +1,17 @@
 import { LOOK_OPTIONS } from './lookOptions.mjs';
 
 const WINDOWS = {
+  burnAmount: [0.2, 0.42],
+  burnSpeed: [0.05, 0.15],
+  burnNoiseScale: [2, 5],
+  burnEdgeWidth: [0.03, 0.09],
+  burnCharWidth: [0.12, 0.25],
+  burnGlowIntensity: [3, 7],
+  emberRate: [20, 70],
+  emberSize: [0.008, 0.02],
+  emberRise: [0.3, 0.7],
+  emberDrift: [0.05, 0.25],
+  emberIntensity: [2, 5],
   clothWidth: [0.85, 1.4],
   clothHeight: [0.85, 1.4],
   stiffness: [0.1, 0.25],
@@ -74,6 +85,8 @@ const WINDOWS = {
 };
 
 const CHANCES = {
+  burnEnabled: 0.12,
+  burnLoop: 0,
   outlineEnabled: 0.3,
   outlineInside: 0.3,
   smoothEdges: 0.5,

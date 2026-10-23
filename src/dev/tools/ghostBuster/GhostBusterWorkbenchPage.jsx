@@ -60,30 +60,14 @@ function GhostControls({ kind, options, pins, setOption, setOptions }) {
     setOptions((current) => ({ ...current, ...config }));
   };
 
-  const colorPlot = (collection = false) => {
-    if (collection) pins.clear();
+  const namedCollection = () => {
+    pins.clear();
     setOptions((current) => ({
       ...current,
-      svg: true,
-      svgColorMode: 'material',
-      svgColors: 0,
-      svgFill: 'rows',
-      svgFillInside: 'cloth',
-      svgFillShades: 1,
-      svgStyle: 'none',
-      svgSilhouette: true,
-      svgRims: true,
-      svgWeave: true,
-      svgDecay: true,
-      svgStorm: true,
-      ...(collection
-        ? {
-            ghostMode: 'named',
-            skinOrder: 'cycle',
-            count: SKIN_NAMES.length,
-            views: 'front',
-          }
-        : {}),
+      ghostMode: 'named',
+      skinOrder: 'cycle',
+      count: SKIN_NAMES.length,
+      views: 'front',
     }));
   };
 
@@ -134,23 +118,15 @@ function GhostControls({ kind, options, pins, setOption, setOptions }) {
             <button
               className="dev-button"
               type="button"
-              onClick={() => colorPlot()}
-            >
-              Colour pen plot
-            </button>
-            <button
-              className="dev-button"
-              type="button"
-              onClick={() => colorPlot(true)}
+              onClick={namedCollection}
             >
               One of each named ghost
             </button>
           </div>
           <p className="rw-hint">
-            Colour pen plot keeps outer and inner material colours separate.
-            Choose Render as the SVG colour source to include texture and glow
-            colours. The named collection resets holds and visits every skin
-            once, preserving its authored traits.
+            The named collection resets holds and visits every skin once,
+            preserving its authored traits. Configure colour and fill options in
+            the SVG section.
           </p>
         </>
       ) : null}

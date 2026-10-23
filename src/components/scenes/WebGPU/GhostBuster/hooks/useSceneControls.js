@@ -1,9 +1,20 @@
 import { button, folder, useControls } from 'leva';
 
 import usePresetsFolder from '@hooks/usePresetsFolder';
+import { LOOK_OPTIONS } from '@modules/ghostBuster';
+import createSchemaFolders from '@modules/schemaControls';
 import { OUTLINE_MODES } from '@postprocessing/WebGPU/outline/Outline';
 
 import { GHOST_TEXTURE_OPTIONS, SCENE_PRESETS } from '../presets/scenePresets';
+
+const burningFolders = createSchemaFolders({
+  label: 'Ghost Buster',
+  options: LOOK_OPTIONS,
+  keys: Object.keys(LOOK_OPTIONS).filter(
+    (key) => LOOK_OPTIONS[key].facet === 'burn'
+  ),
+  folders: { burn: 'Burning' },
+});
 
 const DEFAULT_PRESET = 'Original';
 const DEFAULT_PRESET_SNAPSHOT = SCENE_PRESETS[DEFAULT_PRESET];
@@ -39,6 +50,7 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
 
   const [controls, setControls] = useControls('Ghost Buster', () => ({
     Presets: presetsFolder,
+    ...burningFolders(ini),
 
     Background: folder(
       {

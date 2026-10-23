@@ -1,3 +1,4 @@
+import { BURN_DEFAULTS } from '@modules/clothBurn';
 import { textureFile } from '@utils/appUtils';
 
 const PURPLE_NEBULA_1 = textureFile('purpleNebula1.png');
@@ -31,6 +32,7 @@ export const DEFAULT_GHOST_SKIN = 'Original';
 // consumer reads it from here.
 const GHOST_SKINS = {
   Original: {
+    ...BURN_DEFAULTS,
     // Background
     bgColor: '#1a1a2e',
     // Lighting
@@ -187,6 +189,32 @@ const GHOST_SKINS = {
     dripTint: 0,
     cutoutBrow: 0,
     cutoutBrowSlant: 0,
+  },
+
+  Burning: {
+    ...BURN_DEFAULTS,
+    burnSpeed: 0.5,
+    burnAmount: 0.25,
+    burnLoop: false,
+    burnNoiseScale: 8.2,
+    burnEdgeWidth: 0.045,
+    burnCharWidth: 0.32,
+    burnEnabled: true,
+    color: '#e6ddc5',
+    innerColor: '#a85a32',
+    bgColor: '#100c0a',
+    ambientIntensity: 0.35,
+    sceneEnvIntensity: 0.25,
+    roughness: 0.95,
+    innerRoughness: 0.95,
+    eyeColor: '#ff6b24',
+    eyeIntensity: 0.6,
+    edgeFade: 0.08,
+    baseWind: 0.2,
+    windAmplitude: 0.00025,
+    bobAmplitude: 0.02,
+    cutoutRimColor: '#382116',
+    cutoutRimWidth: 0.002,
   },
 
   Hero: {

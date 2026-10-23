@@ -1,3 +1,4 @@
+import { BURN_DEFAULTS, BURN_RANGES } from '../clothBurn/index.mjs';
 import {
   choice,
   color,
@@ -7,7 +8,24 @@ import {
   spec,
 } from '../optionSchema/index.mjs';
 
+const BURN_OPTIONS = Object.fromEntries(
+  Object.entries(BURN_DEFAULTS).map(([key, value]) => {
+    const label = key
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/^./, (letter) => letter.toUpperCase());
+    const range = BURN_RANGES[key];
+    let item;
+    if (range)
+      item = num('burn', null, label, null, ...range, { nullable: true });
+    else if (typeof value === 'boolean')
+      item = flag('burn', null, label, null, { nullable: true });
+    else item = color('burn', null, label, null, { nullable: true });
+    return [key, inFacet('burn', item)];
+  })
+);
+
 export const LOOK_OPTIONS = {
+  ...BURN_OPTIONS,
   bgColor: inFacet(
     'lighting',
     color('lighting', null, 'Bg Color', null, { nullable: true })

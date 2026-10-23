@@ -39,6 +39,7 @@ const ALLOWED_KERNEL_IMPORTS = new Set([
   '@elements/WebGPU/ghost/ghostRig',
   '@elements/WebGPU/rainCloud/rainCloudRig',
   '@modules/flora',
+  '@modules/clothBurn',
   '@modules/plotKit',
 ]);
 
@@ -757,6 +758,73 @@ async function checkRender(kernel) {
   }
 }
 
+async function checkBurnRender(kernel) {
+  const { ghost, look } = kernel;
+  const burning = look.resolveSkin('Burning');
+  check(
+    burning.burnEnabled && !burning.burnLoop,
+    'Burning must stay partially burned by default.'
+  );
+  check(
+    !look.resolveSkin('Original').burnEnabled,
+    'burning leaked into Original.'
+  );
+  const options = {
+    ...defaultsFor('still'),
+    width: 128,
+    height: 160,
+    pixelRatio: 1,
+    svgFill: 'rows',
+    svgStyle: 'none',
+    svgColorMode: 'material',
+    svgFillSpacing: 1.5,
+  };
+  const capturer = await createGhostCapturer(kernel, options);
+  try {
+    const config = {
+      ...ghost.sceneDefaults(),
+      skin: 'Burning',
+      settle: 2,
+      windStrength: 0.15,
+      backdrop: 'skin',
+    };
+    const { bounds } = await capturer.load(config);
+    const { lattice } = await capturer.readback();
+    check(
+      lattice.burn &&
+        Math.abs(lattice.burn.progress - burning.burnAmount) < 1e-6,
+      'the sustained burn advanced or was missing from readback.'
+    );
+    check(
+      lattice.burn?.embers?.births.some((value) => value > 0),
+      'Burning emitted no GPU embers.'
+    );
+    const view = ghost.frameGhost({ bounds, config, options, view: 'front' });
+    await capturer.capture(view);
+    const svg = await capturer.svg(view, options);
+    ['char', 'burn glow', 'burn hot'].forEach((name) =>
+      check(svg.includes(` ${name} #`), `Burning has no ${name} SVG layer.`)
+    );
+    check(
+      / embers (hot|cool) #/u.test(svg),
+      'Burning has no captured ember SVG layer.'
+    );
+    check(
+      svg.includes(burning.burnColorA) && svg.includes(burning.burnColorB),
+      'the plot lost the burn-front colours.'
+    );
+    const first = await capturer.capture(view);
+    await capturer.load(config);
+    const repeated = await capturer.capture(view);
+    check(
+      first.data.every((value, index) => value === repeated.data[index]),
+      'Burning is not deterministic when reloaded at the same clock.'
+    );
+  } finally {
+    capturer.dispose();
+  }
+}
+
 async function main() {
   await checkKernelPurity();
   await checkWorkbenchPage(PAGE, RENDER_OPTIONS, check);
@@ -768,6 +836,7 @@ async function main() {
   await checkDecay(kernel);
   await checkRender(kernel);
   await checkStormRender(kernel);
+  await checkBurnRender(kernel);
 
   if (failures.length > 0) {
     console.error(`ghost-buster:check failed (${failures.length}):\n`);

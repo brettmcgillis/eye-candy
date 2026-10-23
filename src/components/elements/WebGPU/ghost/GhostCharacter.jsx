@@ -138,6 +138,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     clearcoatRoughness = 0,
     fabric = null,
     decay = null,
+    burn = null,
     innerRoughness = null,
     innerMetalness = null,
     textureUrl = null,
@@ -344,6 +345,9 @@ const GhostCharacter = forwardRef(function GhostCharacter(
       get sim() {
         return clothRef.current?.sim;
       },
+      get burnState() {
+        return clothRef.current?.burnState;
+      },
       resetSim() {
         clothRef.current?.resetSim();
       },
@@ -423,7 +427,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
         <ClothMesh
           key={`cloth-${segmentsX}-${segmentsY}-${clothWidth}-${clothHeight}-${
             fabric ? 'woven' : 'plain'
-          }`}
+          }-${burn?.burnEnabled ? 'burning' : 'intact'}`}
           ref={clothRef}
           width={clothWidth}
           height={clothHeight}
@@ -459,6 +463,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
           cutouts={CUTOUTS}
           fabric={fabric}
           decay={decay}
+          burn={burn}
           cutoutRimColor={cutoutRimColor}
           cutoutRimWidth={cutoutRimWidth}
           cutoutRimOffset={cutoutRimOffset}

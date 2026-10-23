@@ -4,6 +4,7 @@
 export { default as Backdrop } from './Backdrop';
 export {
   aimCamera,
+  createAlbedoCapture,
   createDepthCapture,
   createNormalCapture,
   depthProbe,

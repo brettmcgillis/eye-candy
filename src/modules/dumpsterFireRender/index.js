@@ -4,6 +4,7 @@
 // cinderblocks, fire lights and smoke authoring.
 export {
   aimCamera,
+  createAlbedoCapture,
   createDepthCapture,
   depthProbe,
   tightRows,

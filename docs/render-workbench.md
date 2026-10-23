@@ -194,7 +194,8 @@ loadKernelModules(ENTRIES)`, `withCapturer` over `withRenderer`, and shared
     root), GhostBuster's `StudioEnvironment` and `Backdrop`, `ShadowFloor`
     (a shadow catcher), `aimCamera`, `createDepthCapture` (subject-only
     linear depth; `only` takes one object or a list), `createNormalCapture`
-    (subject-only view-space normals), `depthProbe` and `tightRows`.
+    (subject-only view-space normals), `createAlbedoCapture` (subject-only
+    flat material colour, for a colour plot's inks), `depthProbe` and `tightRows`.
   - `scripts/lib/r3fHeadless.mjs` — `installTextureLoader` (public/ files
     and a GLB's embedded `blob:` images through sharp) and
     `installGltfLoader` (Draco decoded and WebP re-encoded as PNG with
@@ -210,7 +211,10 @@ loadKernelModules(ENTRIES)`, `withCapturer` over `withRenderer`, and shared
   and `framePoints` (a camera fitted to a sphere, or to a wide subject's box
   corners), `createProjector`, marching squares, polyline helpers, mesh line
   work (`weldMesh`, `meshEdges`, `sectionCuts`, `chainKeyed`, `traceRuns`:
-  contours, creases and section cuts of read-back meshes), and the
+  contours, creases and section cuts of read-back meshes), colour plots
+  (`samplePalette`, `inkMap`, `inkMask`, `composeInks`: a layer per ink,
+  fed by renderStage's `createAlbedoCapture`; see
+  `docs/dumpster-fire-pipeline.md` § Colour plots), and the
   image-driven layers a plot reads from a render and its depth coverage —
   `silhouetteRuns`, `shadePath` (crosshatch … tsp), `outlineRuns`,
   `textureRuns` and `plotLayer`/`pathOf` for pen layers.

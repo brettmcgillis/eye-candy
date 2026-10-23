@@ -7,6 +7,7 @@ export { default as frameDumpster, anglesFor, subjectBounds } from './framing';
 export { flameVertex, fractal3, perlin3 } from './noise';
 export {
   default as renderDumpsterSvg,
+  needsAlbedo,
   needsDepth,
   needsImage,
   needsSmokeContrast,

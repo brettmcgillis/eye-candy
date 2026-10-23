@@ -183,3 +183,96 @@ export function createNormalCapture(renderer) {
     return normals;
   };
 }
+
+const toSrgb = (v) =>
+  Math.round(
+    255 * (v <= 0.0031308 ? v * 12.92 : 1.055 * v ** (1 / 2.4) - 0.055)
+  );
+
+// Each material's flat colour — base colour × map, unlit, unfogged — built
+// once per source material.
+function flatOf(material, cache) {
+  const source = Array.isArray(material) ? material[0] : material;
+  if (!source) return null;
+  if (!cache.has(source)) {
+    const flat = new THREE.MeshBasicNodeMaterial({
+      alphaTest: source.alphaTest,
+      color: source.color ?? new THREE.Color(1, 1, 1),
+      fog: false,
+      map: source.map ?? null,
+      side: source.side,
+      toneMapped: false,
+      vertexColors: source.vertexColors,
+    });
+    cache.set(source, flat);
+  }
+  return cache.get(source);
+}
+
+// The subject's albedo — every mesh of `only` in its flat material colour,
+// no light, fog or background — as sRGB RGBA, with `covered` where it drew.
+// A plot picks its inks from this, so a shaded or night render keeps the
+// scene's real colours.
+export function createAlbedoCapture(renderer) {
+  const cache = new Map();
+  return async function captureAlbedo(scene, camera, width, height, only) {
+    const list = Array.isArray(only) ? only : [only];
+    const restore = isolate(scene, list);
+    const swapped = [];
+    list.forEach((root) =>
+      root.traverse((object) => {
+        if (!object.isMesh) return;
+        const flat = flatOf(object.material, cache);
+        if (!flat) return;
+        swapped.push([object, object.material]);
+        Object.assign(object, { material: flat });
+      })
+    );
+    const { background, fog } = scene;
+    Object.assign(scene, { background: null, fog: null });
+    const target = new THREE.RenderTarget(width, height, {
+      colorSpace: THREE.NoColorSpace,
+      type: THREE.HalfFloatType,
+    });
+    const previous = renderer.getRenderTarget();
+    const clear = renderer.getClearAlpha();
+    renderer.setClearAlpha(0);
+    renderer.setRenderTarget(target);
+    renderer.render(scene, camera);
+    renderer.setRenderTarget(previous);
+    renderer.setClearAlpha(clear);
+    Object.assign(scene, { background, fog });
+    swapped.forEach(([object, material]) =>
+      Object.assign(object, { material })
+    );
+    restore();
+    const raw = await renderer.readRenderTargetPixelsAsync(
+      target,
+      0,
+      0,
+      width,
+      height
+    );
+    target.dispose();
+    // Four half floats a pixel, rows padded to 256 bytes but the last.
+    const half = raw instanceof Uint16Array;
+    const tight = raw.length === width * height * 4;
+    const stride = tight ? width * 4 : Math.ceil((width * 8) / 256) * 128;
+    const data = new Uint8ClampedArray(width * height * 4);
+    const covered = new Uint8Array(width * height);
+    const value = (v) => (half ? THREE.DataUtils.fromHalfFloat(v) : v);
+    for (let y = 0; y < height; y += 1) {
+      for (let x = 0; x < width; x += 1) {
+        const i = y * stride + x * 4;
+        const o = (y * width + x) * 4;
+        const alpha = value(raw[i + 3]);
+        covered[y * width + x] = alpha > 0.5 ? 1 : 0;
+        for (let c = 0; c < 3; c += 1) {
+          data[o + c] = toSrgb(Math.min(1, Math.max(0, value(raw[i + c]))));
+        }
+        data[o + 3] = 255;
+      }
+    }
+    return { covered, data, height, width };
+  };
+}

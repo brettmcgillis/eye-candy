@@ -36,6 +36,7 @@ import {
   flowLines,
   frameDumpster,
   layoutTrash,
+  needsAlbedo,
   needsDepth,
   needsImage,
   needsSmokeContrast,
@@ -49,6 +50,7 @@ import {
   aimCamera,
   applySmokeGeneration,
   authoredSmoke,
+  createAlbedoCapture,
   createDepthCapture,
   depthProbe,
   fitFog,
@@ -90,6 +92,7 @@ function Director({
 }) {
   const get = useThree((state) => state.get);
   const captureDepth = useMemo(() => createDepthCapture(get().gl), [get]);
+  const captureAlbedo = useMemo(() => createAlbedoCapture(get().gl), [get]);
   const frozenRef = useRef(0);
   const liveRef = useLiveClock();
   const paths = useMemo(
@@ -241,6 +244,15 @@ function Director({
             solidMeshes(solidsRef.current, { sidewalk })
           )
         : null;
+      const albedo = needsAlbedo(options)
+        ? await captureAlbedo(
+            scene,
+            camera,
+            width,
+            height,
+            solidMeshes(solidsRef.current, { sidewalk })
+          )
+        : null;
       let contrast = null;
       if (needsSmokeContrast(options)) {
         showSmoke(effectsRef.current, false);
@@ -251,6 +263,7 @@ function Director({
       const args = plotArgs(options);
       svg = renderDumpsterSvg({
         ...args,
+        albedo,
         camera: view,
         coverage: depth,
         image: needsImage(options) ? image : null,
@@ -287,6 +300,7 @@ function Director({
     else render();
     return { png: await pngBase64(image.data, width, height), svg };
   }, [
+    captureAlbedo,
     captureDepth,
     effectsRef,
     get,

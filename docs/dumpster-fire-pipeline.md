@@ -118,6 +118,30 @@ cut by the solids-only depth pass (`svgOcclusion`):
   point inside a nearer blob's disc and behind its middle is dropped — solids,
   dots and flow lines behind the fire and plume vanish as in the render.
 
+## Colour plots
+
+`svgColors` (1–8) plots in the scene's own inks; `svgColorLayers` picks what
+takes them — `all` (every line, the shading as per-ink region fills, the
+fire and smoke), `lines` (shading stays black) or `sections` (the old
+section-only split). The pieces are plotKit's, for any bench:
+
+- **Albedo, not the render.** `createAlbedoCapture` (renderStage) draws the
+  solids in their flat material colour × map — no light, fog or background
+  — so the inks are the dumpster's green and the brick's red whatever the
+  light or mood. The fire and smoke inks come from the render (what differs
+  from the frame's corner, off the solids).
+- **Palette** (`samplePalette`): ~24 weighted k-means clusters, chroma
+  boosted (`vivid`), merged down by Ward's cost to `svgColors`. Specks fold
+  into their neighbours; large distinct areas keep an ink each. Farthest-
+  first alone gave tiny red pieces an ink and merged the dumpster into the
+  street grey.
+- **Layers** (`inkMap`, `inkAt`, `inkMask`, `composeInks`): one SVG layer
+  per ink (`pen-20+`, `ink N #rrggbb`); runs split by the ink under them,
+  dots take the ink they sit on, shading is drawn once per ink inside that
+  ink's region, and silhouette and halo go to the darkest ink.
+
+The check requires a 6-ink plot to have four or more inks and a green one.
+
 ## The scene
 
 `utils/controls.js` builds the Scene, Dumpster, Trash, Brick Wall and Smoke

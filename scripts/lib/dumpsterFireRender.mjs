@@ -119,6 +119,7 @@ export async function createFireCapturer(
     width,
   });
   const captureDepth = look.createDepthCapture(renderer);
+  const captureAlbedo = look.createAlbedoCapture(renderer);
   const solidsRef = { current: null };
   const effectsRef = { current: null };
   const nativeRandom = Math.random;
@@ -225,6 +226,15 @@ export async function createFireCapturer(
             look.solidMeshes(solids, { sidewalk })
           )
         : null;
+      const albedo = fire.needsAlbedo(options)
+        ? await captureAlbedo(
+            stage.scene,
+            stage.camera,
+            width * pixelRatio,
+            height * pixelRatio,
+            look.solidMeshes(solids, { sidewalk })
+          )
+        : null;
       const image = fire.needsImage(options) ? await frame(clock) : null;
       let contrast = null;
       if (fire.needsSmokeContrast(options)) {
@@ -237,6 +247,7 @@ export async function createFireCapturer(
       const args = fire.plotArgs(options);
       return fire.renderDumpsterSvg({
         ...args,
+        albedo,
         camera: view,
         coverage: depth,
         image,

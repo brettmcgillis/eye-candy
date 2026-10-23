@@ -2,9 +2,14 @@ import { createRng } from '@modules/flora';
 import {
   chainKeyed,
   colorRuns,
+  composeInks,
   createProjector,
   dotPath,
   imagePalette,
+  imageSamples,
+  inkAt,
+  inkMap,
+  inkMask,
   meshEdges,
   nearSilhouette,
   outlineOf,
@@ -12,6 +17,7 @@ import {
   pathOf,
   penPx,
   plotLayer,
+  samplePalette,
   sectionCuts,
   shadePath,
   silhouetteRuns,
@@ -92,6 +98,26 @@ export function smokeContrast(withSmoke, without, threshold = 0.03) {
   return { image: { data, height, width }, mask: { covered, height, width } };
 }
 
+// The plot's inks: the solids' own colours from the albedo pass, plus the
+// fire and smoke as the render shows them (what differs from the frame's
+// corner, off the solids), weighted toward vivid colour so a green dumpster
+// or red brick gets its ink before a fifth grey.
+function scenePalette({ albedo, image, inks }) {
+  const samples = imageSamples({ image: albedo, mask: albedo });
+  const bg = [image.data[0], image.data[1], image.data[2]];
+  const effects = { covered: new Uint8Array(image.width * image.height) };
+  for (let i = 0; i < effects.covered.length; i += 1) {
+    const d = Math.hypot(
+      image.data[i * 4] - bg[0],
+      image.data[i * 4 + 1] - bg[1],
+      image.data[i * 4 + 2] - bg[2]
+    );
+    effects.covered[i] = !albedo.covered[i] && d > 30 ? 1 : 0;
+  }
+  samples.push(...imageSamples({ image, mask: effects, weight: 1.5 }));
+  return samplePalette(samples, inks, { vivid: 1 });
+}
+
 // Strokes for one group of read-back objects: each object's section cuts in
 // its own frame, and every mesh's contours and creases.
 function meshStrokes(objects, { creaseAngle, eye, lines, style }) {
@@ -132,6 +158,7 @@ function meshStrokes(objects, { creaseAngle, eye, lines, style }) {
 // texture contours and smoke shading. Everything is projected through the
 // capture camera and cut where (given `visible`) a nearer solid hides it.
 export default function renderDumpsterSvg({
+  albedo = null,
   camera,
   color = null,
   contours = true,
@@ -198,11 +225,15 @@ export default function renderDumpsterSvg({
     );
   }
 
-  const palette =
-    color && image && coverage
-      ? imagePalette({ image, k: color.inks, mask: coverage })
-      : [];
-  const inkRuns = palette.length
+  let palette = [];
+  if (color && image && albedo) {
+    palette = scenePalette({ albedo, image, inks: color.inks });
+  } else if (color && image && coverage) {
+    palette = imagePalette({ image, k: color.inks, mask: coverage });
+  }
+  const layersInked = palette.length ? (color.layers ?? 'sections') : null;
+  const legacy = layersInked === 'sections';
+  const inkRuns = legacy
     ? colorRuns(sliceRuns, { image, mask: coverage, palette, pixelRatio })
     : null;
   const sectionLayers = inkRuns
@@ -221,6 +252,7 @@ export default function renderDumpsterSvg({
     : '';
 
   let dots = '';
+  const dotList = [];
   if (smoke?.dots?.length && smoke.density > 0) {
     const rng = createRng(`dots:${smoke.seed ?? 0}`);
     const hidden = hiddenBy(false, true);
@@ -232,7 +264,9 @@ export default function renderDumpsterSvg({
         return;
       }
       if (hidden(p)) return;
-      dots += dotPath(round(p.x), round(p.y), pen * 0.5, pen);
+      const d = dotPath(round(p.x), round(p.y), pen * 0.5, pen);
+      dots += d;
+      dotList.push({ d, x: p.x, y: p.y });
     });
   }
   const flowRuns = smoke?.flow?.length ? trace(smoke.flow, false, 6, true) : [];
@@ -245,6 +279,26 @@ export default function renderDumpsterSvg({
     texture && coverage && image
       ? textureRuns({ coverage, image, levels: texture.levels, pixelRatio })
       : [];
+  const shadeIn = (mask) =>
+    shadePath({
+      ...shade,
+      height,
+      image,
+      mask,
+      pen: shade.pen ?? stroke,
+      pixelRatio,
+      width,
+    });
+  const smokeShadeIn = (mask) =>
+    shadePath({
+      ...smokeShade,
+      height,
+      image: smokeShade.contrast.image,
+      mask,
+      pen: smokeShade.pen ?? stroke,
+      pixelRatio,
+      width,
+    });
   const shading = shade
     ? shadePath({
         ...shade,
@@ -271,10 +325,55 @@ export default function renderDumpsterSvg({
 
   const layer = (index, label, d) =>
     d ? plotLayer(index, label, stroke, d) : '';
-  return (
+  const svgOpen =
     `<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" ` +
-    `width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="background-color:${paper}">` +
-    `${!inkRuns && sliceRuns.length ? layer(0, 'sections', pathOf(sliceRuns)) : ''}` +
+    `width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="background-color:${paper}">`;
+
+  if (layersInked && !legacy) {
+    const sceneInks = inkMap({ image, palette });
+    const solidInks = albedo
+      ? inkMap({ image: albedo, mask: albedo, palette })
+      : sceneInks;
+    const solidAt = inkAt(solidInks, pixelRatio);
+    const sceneAt = inkAt(sceneInks, pixelRatio);
+    const onSolid = (x, y) => {
+      const ink = solidAt(x, y);
+      return ink >= 0 ? ink : sceneAt(x, y);
+    };
+    const all = layersInked === 'all';
+    const parts = [
+      { inkAt: onSolid, runs: sliceRuns },
+      { inkAt: onSolid, runs: contourRuns },
+      { inkAt: onSolid, runs: creaseRuns },
+      { inkAt: onSolid, runs: textureLines },
+      { inkAt: sceneAt, runs: flameRuns },
+      { inkAt: sceneAt, runs: flowRuns },
+      { dots: dotList, inkAt: sceneAt },
+      { d: outlineLoops.length ? pathOf(outlineLoops) : '', ink: 0 },
+      { d: halo.length ? pathOf(halo) : '', ink: 0 },
+    ];
+    if (all && shade) {
+      parts.push({
+        shade: (ink) => shadeIn(inkMask(solidInks, ink, coverage)),
+      });
+    }
+    if (all && smokeShade?.contrast) {
+      parts.push({
+        shade: (ink) =>
+          smokeShadeIn(inkMask(sceneInks, ink, smokeShade.contrast.mask)),
+      });
+    }
+    return (
+      `${svgOpen}${composeInks(palette, parts, { stroke })}` +
+      `${!all ? layer(2, 'shading', shading) : ''}` +
+      `${!all ? layer(10, 'smoke shading', smokeShading) : ''}</svg>`
+    );
+  }
+
+  return (
+    `${
+      svgOpen
+    }${!inkRuns && sliceRuns.length ? layer(0, 'sections', pathOf(sliceRuns)) : ''}` +
     `${sectionLayers}` +
     `${outlineLoops.length ? layer(1, 'silhouette', pathOf(outlineLoops)) : ''}` +
     `${layer(2, 'shading', shading)}` +
@@ -304,7 +403,10 @@ const shadeOf = (shading, spacing, options) =>
 // caller adds the camera, read-back scene and smoke, image and depth.
 export function plotArgs(options) {
   return {
-    color: options.svgColors > 0 ? { inks: options.svgColors } : null,
+    color:
+      options.svgColors > 0
+        ? { inks: options.svgColors, layers: options.svgColorLayers }
+        : null,
     contours: options.svgContours,
     creaseAngle: options.svgCreaseAngle,
     edges: options.svgEdges,
@@ -346,6 +448,9 @@ export const needsImage = (options) =>
     options.svgTexture ||
     (options.svgShading && options.svgShading !== 'none')
   );
+
+// Whether a plot needs the solids' albedo pass (a colour plot's inks).
+export const needsAlbedo = (options) => options.svgColors > 0;
 
 // Whether a plot needs a second render with the smoke hidden.
 export const needsSmokeContrast = (options) =>

@@ -11,7 +11,17 @@ export {
   silhouetteRuns,
 } from './contours';
 export { default as frameSphere, framePoints } from './framing';
-export { colorRuns, imagePalette, wiggleRuns } from './color';
+export { composeInks, inkAt, inkMap, inkMask } from './inks';
+export {
+  colorRuns,
+  imagePalette,
+  imageSamples,
+  inkRuns,
+  inkSampler,
+  nearestInk,
+  samplePalette,
+  wiggleRuns,
+} from './color';
 export { regionFill, rowsWalk, spiralWalk } from './fill';
 export { chain, simplify, simplifyLoop, smooth } from './lines';
 export {

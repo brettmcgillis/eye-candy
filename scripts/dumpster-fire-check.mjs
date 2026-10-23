@@ -199,6 +199,23 @@ async function checkRender(kernel) {
       )
     );
 
+    const colourPlot = await capturer.svg(view, {
+      ...options,
+      svgColors: 6,
+      svgShading: 'crosshatch',
+    });
+    const inks = [...colourPlot.matchAll(/ ink \d+ #([0-9a-f]{6})/gu)].map(
+      ([, hex]) => [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16))
+    );
+    check(
+      inks.length >= 4,
+      `a 6-ink plot came out in ${inks.length} inks — the ink layers are not filling.`
+    );
+    check(
+      inks.some(([r, g, b]) => g > r + 15 && g > b),
+      "a 6-ink plot has no green ink — the dumpster's colour is lost (albedo pass or palette merge)."
+    );
+
     const { effects, frame, solids } = capturer.parts;
     // The stage's own frame callbacks re-show meshes each frame, so the
     // check hides them through their materials, which nothing resets.

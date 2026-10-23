@@ -47,6 +47,7 @@ export const SVG_SHADINGS = [
   'tsp',
 ];
 export const SVG_OUTLINES = ['none', 'outline', 'rings', 'glow'];
+export const SVG_COLOR_LAYERS = ['all', 'lines', 'sections'];
 
 // Degrees round the dumpster from straight in front; `hero` is the
 // generation's own rolled camera and `smoke` looks up the plume.
@@ -538,8 +539,19 @@ const RENDER = {
     })
   ),
   svgColors: svgOnly(
-    num('svg', null, 'SVG colours', 0, 0, 8, 1, {
-      help: "Split the sections into the render's own inks: this many colours picked from the pieces (0: one black layer), a layer each",
+    num('svg', 'colour', 'SVG colours', 0, 0, 8, 1, {
+      help: "Plot in the scene's own inks: this many colours picked from the pieces' real (unlit) colours and the fire and smoke, a layer per ink for the Plotterizer to match to pens (0: black line work)",
+    })
+  ),
+  svgColorLayers: svgOnly(
+    choice('svg', 'colour', 'SVG colour layers', SVG_COLOR_LAYERS, 'all', {
+      choiceLabels: {
+        all: 'Lines and fills',
+        lines: 'Lines',
+        sections: 'Sections only',
+      },
+      help: 'What takes the inks — all: every line, the shading and the smoke, each in the ink under it; lines: every line, shading stays black; sections: only the section cuts',
+      when: { svgColors: [1, 2, 3, 4, 5, 6, 7, 8] },
     })
   ),
   fov: standard.fov(40),

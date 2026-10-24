@@ -49,13 +49,14 @@ export function readSolids(root, { sidewalk = false } = {}) {
 
 // The solid meshes for the depth pass (the sidewalk only when it is
 // plotted, so it neither hides the street nor joins the silhouette).
-export function solidMeshes(root, { sidewalk = false } = {}) {
+export function solidMeshes(root, { except = [], sidewalk = false } = {}) {
   const found = [];
   root.traverse((object) => {
     if (!object.isMesh) return;
     let node = object;
     while (node && node !== root) {
       if (node.userData?.plotSidewalk && !sidewalk) return;
+      if (except.includes(node.userData?.plotObject)) return;
       node = node.parent;
     }
     found.push(object);

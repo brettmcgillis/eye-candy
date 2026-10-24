@@ -1,7 +1,7 @@
 import * as flora from '@modules/flora';
 import { createFloraStage } from '@modules/floraRender';
 import * as lights from '@modules/lightingRig';
-import { getPaletteStops } from '@utils/gradientPalette';
+import { penPx } from '@modules/plotKit';
 
 const DEG = Math.PI / 180;
 const kernel = { flora, lights };
@@ -62,20 +62,44 @@ const floraLive = {
         });
       },
       async svg(view, render, visible) {
+        const shaded = render.svgShading !== 'none';
+        const coverage = shaded ? await stage.captureDepth(view) : null;
+        const ornaments = shaded
+          ? await stage.captureDepth(view, { ornamentsOnly: true })
+          : null;
+        const image = shaded
+          ? await capture({
+              ...view,
+              levels: () => ({ growth: 1, bloom: 1, exit: 0 }),
+            })
+          : null;
+        const albedo = await stage.captureAlbedo(view);
         return flora.renderFloraSvg({
+          albedo,
+          inks: render.svgColors,
           background: current.config.backgroundColor,
           camera: view,
           flowers: current.flowers.map((entry, index) => ({
             config: entry.config,
             matrix: stage.matrices()[index],
-            specimen: {
-              ...entry.specimen,
-              paletteStops: getPaletteStops(entry.config.paletteName),
-            },
+            specimen: entry.specimen,
           })),
           growth: 1,
           height: render.height,
+          pen: penPx(render),
+          plot:
+            shaded || render.svgSilhouette
+              ? (trace) =>
+                  flora.floraPlotLayers({
+                    ...trace,
+                    coverage,
+                    image,
+                    options: render,
+                    ornaments,
+                  })
+              : null,
           stroke: render.svgStroke,
+          thin: render.svgThin,
           visible,
           width: render.width,
         });

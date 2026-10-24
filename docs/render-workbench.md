@@ -77,7 +77,8 @@ pixelRatio, samples, shadows, transparent, … })` — browser-safe,
      `rasterize` (a canvas in the page, sharp in Node); a flat SVG bench
      can use `@modules/renderStage/svgStage`.
    - It reads and writes the form (`context.options`, `setOption`): **Use this
-     camera** writes the orbit back as camera keys, sliders and buttons write
+     camera** writes the orbit back as camera keys (and reframes from
+     them on the next load, so the offset is not applied twice), sliders and buttons write
      the generation's options, Space pauses, F frames the subject.
    - Capture renders the frozen frame at the form's size offscreen, plus the
      plot from the same stage, and posts to `/captures` (`liveCapture.js`,

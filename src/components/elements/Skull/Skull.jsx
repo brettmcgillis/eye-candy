@@ -228,4 +228,4 @@ export default function Skull({
   );
 }
 
-useGLTF.preload(modelFile(`Skull.glb `));
+useGLTF.preload(modelFile(`Skull.glb`));

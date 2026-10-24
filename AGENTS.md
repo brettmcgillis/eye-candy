@@ -113,6 +113,13 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   headless CLIs and GhostBusterCLI with its Live tab. Run
   `npm run ghost-buster:check` after changing any of them.
 
+## Required reading before touching All My Thoughts Are So Cumulus / CumulusCLI
+
+- **`docs/cumulus-pipeline.md`** — the shared Cumulus kernel, halo pool,
+  authored WebGL stage, isolated Chrome captures, plotting and Live tab.
+  Run `npm run cumulus:check` after changing any of them; use `-- --render`
+  to capture all eight halos and plots.
+
 ## Required reading before touching BirdsArentRealCLI
 
 - **`docs/birds-arent-real-pipeline.md`** — the GhostBuster arrangement for

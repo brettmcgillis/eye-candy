@@ -15,9 +15,10 @@ import createOptionSchema, {
   standard,
 } from '../optionSchema/index.mjs';
 
-export const TRASH_LAYOUTS = ['authored', 'rolled'];
+export const TRASH_LAYOUTS = ['none', 'authored', 'rolled'];
 export const DUMPSTER_CONTENTS = ['full', 'pile', 'empty'];
 export const SMOKE_SYSTEMS = [
+  'none',
   'mixed',
   'plume',
   'particles',
@@ -48,6 +49,7 @@ export const SVG_SHADINGS = [
 ];
 export const SVG_OUTLINES = ['none', 'outline', 'rings', 'glow'];
 export const SVG_COLOR_LAYERS = ['all', 'lines', 'sections'];
+export const SVG_INK_BY = ['piece', 'surface'];
 
 // Degrees round the dumpster from straight in front; `hero` is the
 // generation's own rolled camera and `smoke` looks up the plume.
@@ -77,7 +79,7 @@ const TRASH = {
   trashLayout: inFacet(
     'trash',
     choice('trash', null, 'Layout', TRASH_LAYOUTS, 'authored', {
-      help: 'authored: the hand-placed litter; rolled: redrawn from the seed with each piece in its authored rest pose',
+      help: 'none: no ground trash; authored: the hand-placed litter; rolled: redrawn from the seed with each piece in its authored rest pose',
     })
   ),
   trashSeed: rolled(
@@ -131,7 +133,7 @@ const TRASH = {
   trashSpread: rolled(
     'trash',
     [0.75, 1.2],
-    num('trash', null, 'Spread', 1, 0.5, 1.4, 0.01, {
+    num('trash', null, 'Spread', 1, 0, 1.4, 0.01, {
       help: 'How far along the wall the litter reaches',
       ...rolledLayout,
     })
@@ -200,18 +202,105 @@ const WALL = {
   ),
 };
 
+const PLUMES = ['mixed', 'plume'];
+const PARTICLE_SYSTEMS = ['mixed', 'particles', 'volumetric', 'layered'];
+
+// A flame system's (the plume's or the fire's) knobs, in a section of its
+// own: every one a multiplier on its authored FireAndSmoke config, never
+// rolled (@modules/dumpsterFire flameSystemConfig).
+function flameKnobs(prefix, owner, when = null) {
+  const knob = (name, label, max, step, help) => ({
+    [`${prefix}${name}`]: inFacet(
+      'smoke',
+      num(prefix, null, `${owner} ${label}`, 1, 0, max, step, {
+        help: `${owner}: ${help} (×; 1 = as authored)`,
+        ...(when && { when }),
+      })
+    ),
+  });
+  return {
+    ...knob(
+      'Particles',
+      'particles',
+      20,
+      0.25,
+      'specks shed per spawn, the ones that fly off ahead of the blobs (0: none)'
+    ),
+    ...knob(
+      'ParticleSpread',
+      'particle spread',
+      10,
+      0.1,
+      'how far those specks drift off the path as they age'
+    ),
+    ...knob(
+      'Travel',
+      'travel',
+      3,
+      0.05,
+      'how far along the path blobs and specks get in their life; above 1 they reach the end early and gather there'
+    ),
+    ...knob(
+      'Speed',
+      'speed',
+      4,
+      0.05,
+      'how fast it runs, so how far a settle gets it'
+    ),
+    ...knob('Blobs', 'blob rate', 4, 0.05, 'how often a blob spawns'),
+    ...knob('BlobSize', 'blob size', 3, 0.05, 'blob radius'),
+    ...knob('Detail', 'blob detail', 3, 0.05, 'how lumpy each blob is'),
+    ...knob('Drift', 'drift', 5, 0.05, 'sideways drift of blobs and specks'),
+    ...knob('Rise', 'rise', 10, 0.1, 'how fast blobs rise off the path'),
+  };
+}
+
+// The particle smoke's knobs, in a section of their own: multipliers on its
+// authored config for the Particle and Volumetric layers alike
+// (particleSystemConfig).
+function particleKnobs(when) {
+  const knob = (name, label, max, help) => ({
+    [`particles${name}`]: inFacet(
+      'smoke',
+      num('particles', null, `Particle smoke ${label}`, 1, 0, max, 0.05, {
+        help: `The particle smoke: ${help} (×; 1 = as authored)`,
+        when,
+      })
+    ),
+  });
+  return {
+    ...knob('Amount', 'amount', 4, 'how many particles'),
+    ...knob('Size', 'size', 4, 'particle size'),
+    ...knob('Flow', 'flow', 4, 'how fast they stream along the path'),
+    ...knob('Turbulence', 'turbulence', 4, 'how much they churn'),
+    ...knob('Spread', 'spread', 4, 'how wide they spawn'),
+    ...knob('Drift', 'drift', 4, 'how far they may wander off the path'),
+    ...knob('Buoyancy', 'buoyancy', 5, 'how hard they rise'),
+    ...knob('Growth', 'growth', 3, 'how much they swell as they age'),
+  };
+}
+
+// Which smoke systems each section's knobs act on, in its title.
+export const SMOKE_SECTION_LABELS = {
+  fire: 'fire — every smoke system',
+  particles:
+    'particle smoke — Particles, Volumetric, Particles + volumetric, Plume + particles',
+  plume: 'plume smoke — Plume, Plume + particles',
+};
+
 const SMOKE = {
   smokeSystem: inFacet(
     'smoke',
     choice('smoke', null, 'System', SMOKE_SYSTEMS, 'mixed', {
       choiceLabels: {
+        none: 'None (no fire or smoke)',
         layered: 'Particles + volumetric',
         mixed: 'Plume + particles',
         particles: 'Particles',
         plume: 'Plume',
         volumetric: 'Volumetric',
       },
-      help: 'plume: blobs growing along the path; particles: the particle stream; volumetric: soft volume puffs; layered: both particle kinds; mixed: plume and particles, as authored',
+      help: 'none: no fire, smoke or fire lights; plume: blobs growing along the path; particles: the particle stream; volumetric: soft volume puffs; layered: both particle kinds; mixed: plume and particles, as authored',
     })
   ),
   smokeSeed: rolled(
@@ -326,6 +415,11 @@ const STAGE = {
   ),
 };
 
+const GROUND = {
+  carpetEnabled: flag('ground', null, 'Carpet', true),
+  sidewalkGroundEnabled: flag('ground', null, 'Concrete sidewalk', true),
+};
+
 const CAMERA = {
   viewFrame: generation(
     inFacet(
@@ -423,6 +517,12 @@ const RENDER = {
       when: { svgStyle: ['slices', 'sections', 'grid'] },
     })
   ),
+  svgLineSpacing: svgOnly(
+    num('svg', null, 'SVG line spacing', 0, 0, 1, 0.005, {
+      help: 'Metres between cuts instead of a count per piece, so the dumpster gets more than a brick or a can (0: use SVG line count)',
+      when: { svgStyle: ['slices', 'sections', 'grid'] },
+    })
+  ),
   svgPaper: svgOnly(
     color('svg', null, 'SVG paper', '#ffffff', {
       help: 'Page colour behind the lines: an SVG background style, never a plotted shape',
@@ -464,14 +564,25 @@ const RENDER = {
       help: 'Share of the smoke particles drawn as stipple dots (0: none), thinned by how faded each is',
     })
   ),
+  svgSmokeStyle: svgOnly(
+    choice('svg', 'smoke', 'SVG smoke style', ['smoke', 'flow'], 'flow', {
+      choiceLabels: {
+        smoke: 'Smoke only',
+        flow: 'Smoke + flow lines',
+      },
+      help: 'Keep the smoke contours, dots and shading, with optional flow lines along its path',
+    })
+  ),
   svgSmokeFlow: svgOnly(
     num('svg', 'smoke', 'SVG smoke flow', 18, 0, 120, 1, {
       help: 'Flow lines wound along each smoke path (0: none)',
+      when: { svgSmokeStyle: ['flow'] },
     })
   ),
   svgSmokeTwist: svgOnly(
     num('svg', 'smoke', 'SVG smoke twist', 0.6, -3, 3, 0.05, {
       help: 'Turns the flow lines wind round the path',
+      when: { svgSmokeStyle: ['flow'] },
     })
   ),
   svgSmokeShading: svgOnly(
@@ -553,6 +664,42 @@ const RENDER = {
       when: { svgColors: [1, 2, 3, 4, 5, 6, 7, 8] },
     })
   ),
+  svgInks: svgOnly({
+    default: '',
+    group: 'colour',
+    help: 'The pens you own, as comma-separated hex colours in pen order: every line snaps to the nearest of them instead of inks sampled from the scene (overrides SVG colours)',
+    label: 'SVG inks',
+    placeholder: 'LIST',
+    section: 'svg',
+    type: 'string',
+  }),
+  svgInkRoles: svgOnly(
+    flag('svg', 'colour', 'SVG ink roles', true, {
+      help: 'With SVG inks: the silhouette and contours go on a last "outlines" layer in the darkest ink, the fire in the yellowest, the plume and smoke in the greyest',
+    })
+  ),
+  svgInkBy: svgOnly(
+    choice('svg', 'colour', 'SVG ink by', SVG_INK_BY, 'piece', {
+      help: "With SVG inks — piece: each piece's cuts and creases take the ink most of it is (a green dumpster, red blocks); surface: each stroke takes the ink under it, grime and all",
+    })
+  ),
+  svgDetail: svgOnly(
+    flag('svg', 'colour', 'SVG detail', false, {
+      help: "With SVG inks: trace where the pieces' unlit colours change ink — stickers, labels, paint — each edge once, in the smaller region's ink",
+    })
+  ),
+  svgDetailSmoothing: svgOnly(
+    num('svg', 'colour', 'SVG detail smoothing', 2, 0, 12, 0.5, {
+      help: 'Output px the detail colours are smoothed over first, so grain and rust specks fold into the paint round them',
+      when: { svgDetail: [true] },
+    })
+  ),
+  svgDetailLength: svgOnly(
+    num('svg', 'colour', 'SVG detail length', 12, 0, 200, 1, {
+      help: 'Shortest detail stroke kept, in output px',
+      when: { svgDetail: [true] },
+    })
+  ),
   fov: standard.fov(40),
   margin: standard.margin(
     0.05,
@@ -584,8 +731,12 @@ export const RENDER_OPTIONS = {
   ...TRASH,
   ...WALL,
   ...SMOKE,
+  ...flameKnobs('plume', 'Plume', { smokeSystem: PLUMES }),
+  ...flameKnobs('fire', 'Fire'),
+  ...particleKnobs({ smokeSystem: PARTICLE_SYSTEMS }),
   ...DUMPSTER,
   ...STAGE,
+  ...GROUND,
   ...CAMERA,
   ...RENDER,
   ...standard.overlayOptions(),
@@ -604,7 +755,7 @@ export const SURFACE_DEFAULTS = {
 const schema = createOptionSchema({
   configKeys: (spec) => spec.scene || spec.config,
   options: RENDER_OPTIONS,
-  sectionLabels: { stage: 'light' },
+  sectionLabels: { stage: 'light', ...SMOKE_SECTION_LABELS },
   surfaceDefaults: SURFACE_DEFAULTS,
   views: VIEWS,
 });

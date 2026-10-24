@@ -35,13 +35,13 @@ export default function useHaloAnimation({
     }
   }, [baseRotationX, wobble]);
 
-  useFrame(({ clock }) => {
+  useFrame(({ clock }, delta) => {
     if (!ref.current) return;
 
     const hasBaseRotationChanged = baseRotationXRef.current !== baseRotationX;
 
     if (animate) {
-      ref.current.rotation.z += (speed / 60) * 0.1;
+      ref.current.rotation.z += speed * 0.1 * delta;
     }
 
     if (!wobble) {

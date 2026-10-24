@@ -67,9 +67,18 @@ async function preloadTree() {
 }
 
 const asked = process.argv.slice(2);
+if (asked.includes('cumulus')) {
+  const checked = spawnSync(
+    process.execPath,
+    [path.join(REPO_ROOT, 'scripts/cumulus-check.mjs'), '--render'],
+    { stdio: 'inherit' }
+  );
+  if (checked.status !== 0 || asked.length === 1)
+    process.exit(checked.status ?? 1);
+}
 const tools = readdirSync(TOOLS).filter(
   (tool) =>
-    existsSync(path.join(TOOLS, tool, 'live.js')) &&
+    (tool === 'cumulus' || existsSync(path.join(TOOLS, tool, 'live.js'))) &&
     (asked.length === 0 || asked.includes(tool))
 );
 

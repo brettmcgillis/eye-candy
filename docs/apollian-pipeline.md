@@ -106,6 +106,9 @@ palette's darkest stops.
   fills the solid (or each band ring) one angle per pen. A stack is drawn as
   displaced planes with hidden lines dropped against nearer planes' grids.
   Packing slices keep exact `<circle>`s wherever nothing hides them.
+- **Live**: orbits the object, or pans and zooms the slice view when
+  Slice is the only view; capture and **Use this camera** write the
+  framing back as `slicePanX`, `slicePanY` and `sliceZoom`.
 - **Video**: `turntable` (camera orbits; in the slice view the plane turns),
   `sweep` (the plane travels; the object view cuts at it), `evolve` (each
   family's own motion: 4D rotation, disc drift, kleinian keyframes, packing

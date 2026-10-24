@@ -66,7 +66,8 @@ export const MAX_WALL_ROWS = 9;
 const RUG_HALF = [5.15, 2.35];
 const RUG_TOP = 0.04;
 
-export function restSurface(x, z) {
+export function restSurface(x, z, carpetEnabled = true) {
+  if (!carpetEnabled) return 0;
   const onRug =
     Math.abs(x - DECOR_RUG.position[0]) <= RUG_HALF[0] &&
     Math.abs(z - DECOR_RUG.position[2]) <= RUG_HALF[1];

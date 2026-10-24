@@ -16,6 +16,8 @@ import {
   SubtractiveBlending,
 } from 'three';
 
+import { createRng } from '@modules/flora';
+
 /* ---------------------------------------------
    Blending resolver (safe for Leva)
 ----------------------------------------------*/
@@ -29,6 +31,7 @@ const BLENDING = {
 
 export default function NeuralNetwork({
   shape = 'ring',
+  seed = 'network',
 
   innerDiameter = 6,
   outerDiameter = 18,
@@ -104,6 +107,7 @@ export default function NeuralNetwork({
   ----------------------------------------------*/
 
   useEffect(() => {
+    const rng = createRng(seed);
     const maxSegments = maxParticleCount * maxParticleCount;
     const widthHalf = Math.max(networkWidth, 0) * 0.5;
     const heightHalf = Math.max(networkHeight, 0) * 0.5;
@@ -117,12 +121,11 @@ export default function NeuralNetwork({
 
     for (let i = 0; i < maxParticleCount; i++) {
       if (normalizedShape === 'ring') {
-        const t = Math.random() * Math.PI * 2;
-        const r = innerR + Math.random() * (outerR - innerR);
-        const y = (Math.random() - 0.5) * height;
+        const t = rng() * Math.PI * 2;
+        const r = innerR + rng() * (outerR - innerR);
+        const y = (rng() - 0.5) * height;
 
-        const speed =
-          (0.15 + Math.random() * 0.25) * (innerR / Math.max(r, 0.0001));
+        const speed = (0.15 + rng() * 0.25) * (innerR / Math.max(r, 0.0001));
 
         particlePositions.current.set(
           [Math.cos(t) * r, y, Math.sin(t) * r],
@@ -134,18 +137,18 @@ export default function NeuralNetwork({
           theta: t,
           radius: r,
           y,
-          angularVelocity: speed * (Math.random() < 0.5 ? -1 : 1),
-          radialVelocity: (Math.random() - 0.5) * 0.002,
-          verticalPhase: Math.random() * Math.PI * 2,
-          verticalSpeed: 0.3 + Math.random() * 0.4,
+          angularVelocity: speed * (rng() < 0.5 ? -1 : 1),
+          radialVelocity: (rng() - 0.5) * 0.002,
+          verticalPhase: rng() * Math.PI * 2,
+          verticalSpeed: 0.3 + rng() * 0.4,
           numConnections: 0,
         });
         continue;
       }
 
       if (normalizedShape === 'sphere') {
-        const theta = Math.random() * Math.PI * 2;
-        const phi = Math.acos(2 * Math.random() - 1);
+        const theta = rng() * Math.PI * 2;
+        const phi = Math.acos(2 * rng() - 1);
         const radius = Math.max(outerR, 0.0001);
 
         const sinPhi = Math.sin(phi);
@@ -160,16 +163,16 @@ export default function NeuralNetwork({
           theta,
           phi,
           radius,
-          thetaVelocity: (Math.random() - 0.5) * 0.6,
-          phiVelocity: (Math.random() - 0.5) * 0.3,
+          thetaVelocity: (rng() - 0.5) * 0.6,
+          phiVelocity: (rng() - 0.5) * 0.3,
           numConnections: 0,
         });
         continue;
       }
 
-      const x = (Math.random() * 2 - 1) * widthHalf;
-      const y = (Math.random() * 2 - 1) * heightHalf;
-      const z = (Math.random() * 2 - 1) * depthHalf;
+      const x = (rng() * 2 - 1) * widthHalf;
+      const y = (rng() * 2 - 1) * heightHalf;
+      const z = (rng() * 2 - 1) * depthHalf;
 
       particlePositions.current.set([x, y, z], i * 3);
 
@@ -178,9 +181,9 @@ export default function NeuralNetwork({
         x,
         y,
         z,
-        vx: (Math.random() - 0.5) * 0.03,
-        vy: (Math.random() - 0.5) * 0.03,
-        vz: (Math.random() - 0.5) * 0.03,
+        vx: (rng() - 0.5) * 0.03,
+        vy: (rng() - 0.5) * 0.03,
+        vz: (rng() - 0.5) * 0.03,
         numConnections: 0,
       });
     }
@@ -216,6 +219,7 @@ export default function NeuralNetwork({
     networkWidth,
     networkHeight,
     networkDepth,
+    seed,
   ]);
 
   /* ---------------------------------------------

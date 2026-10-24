@@ -12,6 +12,7 @@ import createOptionSchema, {
   num,
   render,
   standard,
+  still,
 } from '../optionSchema/index.mjs';
 
 export const PALETTE_NONE = 'None';
@@ -389,15 +390,44 @@ const RENDER = {
     'Write a plottable SVG of fiber centrelines and ornament outlines'
   ),
   plotWidthMm: standard.plotWidthMm(),
-  svgColors: standard.svgColors(),
+  svgColors: standard.svgColors({
+    help: 'Fit the captured surface colors to at most this many plot inks; 0 keeps 24 source inks',
+  }),
   svgOcclusion: standard.svgOcclusion(
     'Drop line work hidden behind nearer geometry (uses a depth pass)'
   ),
   svgStroke: standard.svgStroke({
     default: 1,
-    help: 'Multiplier on the projected tube width; 0 draws hairlines for plotting',
+    help: 'Preview stroke multiplier on the physical pen width; 0 previews hairlines',
     placeholder: 'N',
   }),
+  svgPenMm: standard.svgPenMm(),
+  svgShading: standard.svgShading(
+    'Shade visible ornament surfaces from the render, preserving gaps between fibers',
+    'crosshatch'
+  ),
+  svgShadeSpacing: standard.svgShadeSpacing(3),
+  svgShadeGamma: standard.svgShadeGamma(),
+  svgShadeAngle: standard.svgShadeAngle(),
+  svgSilhouette: still(
+    flag('svg', null, 'SVG silhouette', false, {
+      help: 'Outline each crown’s mass as the camera sees it',
+      scene: false,
+    })
+  ),
+  svgMassRadius: still(
+    num('svg', null, 'SVG mass radius', 8, 2, 40, 1, {
+      help: 'How far apart fibers may sit and still close into one mass for the optional silhouette, output px',
+      placeholder: 'PX',
+      scene: false,
+    })
+  ),
+  svgThin: still(
+    num('svg', null, 'SVG far thinning', 0, 0, 1, 0.05, {
+      help: 'Share of crown fibers dropped at the back of the flower, fading to none at the front',
+      scene: false,
+    })
+  ),
   views: standard.views(VIEWS, 'front'),
 
   keep: standard.keep(['form', 'palette', 'ornaments']),

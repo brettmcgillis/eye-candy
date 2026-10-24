@@ -8,15 +8,12 @@ import Halo from '@elements/Halo/Halo';
 import NeuralNetwork from '@elements/Network/NeuralNetwork';
 import Record from '@elements/Record/Record';
 import SolarSystem from '@elements/SolarSystem/SolarSystem';
+import { HALO_PRESET_ORDER } from '@modules/cumulus';
 import { radians } from '@utils/math';
 
-import useHaloAnimation from '../hooks/useHaloAnimation';
-import { HALO_PRESET_ORDER } from '../presets';
-import {
-  buildNetworkConfig,
-  buildRingsConfig,
-} from '../utils/buildHaloConfigs';
 import CRTStaticRing from './CRTStaticRing';
+import { buildNetworkConfig, buildRingsConfig } from './buildHaloConfigs';
+import useHaloAnimation from './useHaloAnimation';
 
 const HALO_MODEL_ROTATION_BY_TYPE = {
   atomic: [Math.PI / 2, 0, 0],
@@ -186,10 +183,13 @@ const HaloDisplay = memo(function HaloDisplay({ controls, setControls }) {
       <group rotation={modelRotation}>
         {haloType === 'rings' && <Halo {...ringsConfig} />}
         {haloType === 'record' && <Record sideA={controls.recordSideA} />}
-        {haloType === 'network' && <NeuralNetwork {...networkConfig} />}
+        {haloType === 'network' && (
+          <NeuralNetwork seed={controls.haloSeed} {...networkConfig} />
+        )}
         {haloType === 'plate' && <Lb45Plate />}
         {haloType === 'atomic' && (
           <Atom
+            seed={controls.haloSeed}
             atomicNumber={controls.atomicNumber}
             animateElectrons={controls.atomAnimateElectrons}
             shellSpacing={controls.atomShellSpacing}

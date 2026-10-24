@@ -3,6 +3,7 @@ import birdsArentRealPlugin from './birdsArentReal/plugin';
 import blockPartyPlugin from './blockParty/plugin';
 import brutalistPlugin from './brutalist/plugin';
 import cataloggrPlugin from './cataloggr/plugin';
+import cumulusPlugin from './cumulus/plugin';
 import darkroomPlugin from './darkroom/plugin';
 import dumpsterFirePlugin from './dumpsterFire/plugin';
 import exhibitAPlugin from './exhibitA/plugin';
@@ -40,6 +41,7 @@ export default function devServerPlugins() {
     blockPartyPlugin(),
     brutalistPlugin(),
     cataloggrPlugin(),
+    cumulusPlugin(),
     darkroomPlugin(),
     dumpsterFirePlugin(),
     exhibitAPlugin(),

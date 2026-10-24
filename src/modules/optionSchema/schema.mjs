@@ -9,6 +9,7 @@
 //   section      top-level group: `--help` heading, workbench section, Leva folder
 //   group        dotted folder path inside the section, or null
 //   type         number | seed | boolean | enum | string | json | color
+//   vector       a json option holding these numeric axes, e.g. ['x', 'y', 'z']
 //   choiceLabels display names for an enum's choices
 //   facet        the roll stream that may set it; absent = never rolled
 //   roll         { min, max, step } art-directed window for the dice
@@ -56,6 +57,16 @@ function coerce(key, spec, raw, fallback, fail) {
     }
     if (typeof value !== 'object' || Array.isArray(value)) {
       throw fail(`${key} must be a JSON object.`);
+    }
+    if (spec.vector) {
+      const axes = spec.vector.map((axis) => [
+        axis,
+        Number(value[axis] ?? spec.default[axis]),
+      ]);
+      if (axes.some(([, component]) => !Number.isFinite(component))) {
+        throw fail(`${key} needs numeric ${spec.vector.join(', ')}.`);
+      }
+      return Object.fromEntries(axes);
     }
     // A whole preset is a legitimate payload — take the keys this option is
     // about and leave the rest of it alone.

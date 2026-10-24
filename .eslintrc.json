@@ -109,7 +109,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -171,7 +172,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -224,7 +226,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -277,7 +280,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior).",
                 "caseSensitive": true
@@ -331,7 +335,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -384,7 +389,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -437,7 +443,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -490,7 +497,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -547,7 +555,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -600,7 +609,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -653,7 +663,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -706,7 +717,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -768,7 +780,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -830,7 +843,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -892,7 +906,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -954,7 +969,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1011,7 +1027,8 @@
                   "**/subdivision/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1073,7 +1090,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1135,7 +1153,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1197,7 +1216,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1259,7 +1279,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -1312,7 +1333,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1374,7 +1396,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1436,7 +1459,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1498,7 +1522,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1560,7 +1585,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1622,7 +1648,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1684,7 +1711,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1746,7 +1774,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1808,7 +1837,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior).",
                 "caseSensitive": true
@@ -1862,7 +1892,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1925,7 +1956,8 @@
                   "**/subdivision/**",
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
-                  "**/trucheterie3d/**"
+                  "**/trucheterie3d/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1988,7 +2020,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -2041,7 +2074,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -2103,7 +2137,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -2165,7 +2200,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -2227,7 +2263,8 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/trucheterieDesigner/**"
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -2376,6 +2413,69 @@
             "js": "never",
             "jsx": "never",
             "mjs": "always"
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/cumulus/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/birdsArentReal/**",
+                  "**/blockParty/**",
+                  "**/brutalist/**",
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/darkroom/**",
+                  "**/dumpsterFire/**",
+                  "**/exhibitA/**",
+                  "**/flora/**",
+                  "**/fractalAutomata/**",
+                  "**/fungi/**",
+                  "**/ghostBuster/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/hyperCubes/**",
+                  "**/iconography/**",
+                  "**/imperfection/**",
+                  "**/inventory/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
+                  "**/isoMeter/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/networkTest/**",
+                  "**/plotterizer/**",
+                  "**/printShop/**",
+                  "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
+                  "**/rorschach/**",
+                  "**/rugPull/**",
+                  "**/subdivision/**",
+                  "**/subdivisionRelief/**",
+                  "**/trucheterie/**",
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**",
+                  "**/apollian/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": [
+                  "@modules/cumulus/*",
+                  "**/modules/cumulus/*",
+                  "@modules/cumulusRender/*",
+                  "**/modules/cumulusRender/*"
+                ],
+                "message": "Import the Cumulus kernel and renderer through their barrels. See docs/cumulus-pipeline.md."
+              }
+            ]
           }
         ]
       }

@@ -25,6 +25,7 @@ export default function meshPlotSvg({
   lines = [],
   meshes,
   minLength = 3,
+  palette: given = null,
   pixelRatio = 1,
   silhouette = true,
   stroke = 0.6,
@@ -87,16 +88,19 @@ export default function meshPlotSvg({
     `<svg xmlns="http://www.w3.org/2000/svg" xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape" ` +
     `width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">`;
   // Inks under 1% of the subject are its antialiased edges, not colours:
-  // the nearest real ink takes their pixels.
-  const sampled = albedo
-    ? samplePalette(
-        foldClose(imageSamples({ image: albedo, mask: albedo })),
-        inks,
-        { vivid: 1 }
-      )
-    : [];
+  // the nearest real ink takes their pixels. A caller's `palette` (shared
+  // with its shading) replaces the sampled one.
+  const sampled =
+    albedo && !given
+      ? samplePalette(
+          foldClose(imageSamples({ image: albedo, mask: albedo })),
+          inks,
+          { vivid: 1 }
+        )
+      : [];
   const kept = sampled.filter((entry) => entry.mass >= 0.01);
-  const palette = kept.length ? kept : sampled.slice(0, 1);
+  const fallback = kept.length ? kept : sampled.slice(0, 1);
+  const palette = albedo && given ? given : fallback;
   if (palette.length) {
     const at = inkAt(
       inkMap({ image: albedo, mask: albedo, palette }),

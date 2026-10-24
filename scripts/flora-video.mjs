@@ -131,7 +131,7 @@ function flowerShots(kernel, options, roll) {
           `growing ${drawn.bouquet ? `bouquet-${drawn.seed}` : drawn.seed}`,
           async () => buildFlowers(kernel, { ...drawn, options: itemOptions })
         );
-        bounds = capturer.setFlowers(flowers);
+        bounds = capturer.load(flowers);
       },
       async exit({ progress }) {
         if (

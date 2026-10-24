@@ -443,25 +443,52 @@ export function buildFlowers(kernel, { bouquet, configs, options, seed }) {
   }));
 }
 
+export const plotNeedsFrame = (options) => options.svg;
+
 // The vector twin of a capture: the same flowers, projected as centrelines,
-// with what the render hides removed by its depth pass.
-export async function renderSvg(kernel, capturer, { flowers, options, view }) {
-  const depth = options.svgOcclusion ? await capturer.captureDepth(view) : null;
+// with what the render hides removed by its depth pass, plus shading and a
+// silhouette traced from the frame and that pass.
+export async function renderSvg(
+  kernel,
+  capturer,
+  { flowers, frame = null, options, view }
+) {
+  const plotted = options.svgShading !== 'none' || options.svgSilhouette;
+  const depth =
+    options.svgOcclusion || plotted ? await capturer.captureDepth(view) : null;
+  const ornaments =
+    plotted && options.svgShading !== 'none'
+      ? await capturer.captureDepth(view, { ornamentsOnly: true })
+      : null;
+  const albedo = await capturer.captureAlbedo(view);
   return kernel.flora.renderFloraSvg({
+    albedo,
+    inks: options.svgColors,
     background: flowers[0].config.backgroundColor,
     camera: view,
     flowers: flowers.map((entry, index) => ({
       config: entry.config,
       matrix: capturer.matrices()[index],
-      specimen: {
-        ...entry.specimen,
-        paletteStops: kernel.paletteStops(entry.config.paletteName),
-      },
+      specimen: entry.specimen,
     })),
     growth: options.growth,
     height: options.height,
+    plot: plotted
+      ? (trace) =>
+          kernel.flora.floraPlotLayers({
+            ...trace,
+            coverage: depth,
+            image: frame,
+            ornaments,
+            options,
+          })
+      : null,
     stroke: options.svgStroke,
-    visible: depth ? capturer.depthProbe(depth) : null,
+    pen:
+      options.svgPenMm *
+      (options.plotWidthMm ? options.width / options.plotWidthMm : 96 / 25.4),
+    thin: options.svgThin,
+    visible: depth && options.svgOcclusion ? capturer.depthProbe(depth) : null,
     width: options.width,
   });
 }

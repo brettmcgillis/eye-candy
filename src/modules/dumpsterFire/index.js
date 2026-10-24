@@ -24,7 +24,9 @@ export { composeYaw } from './rotation';
 export {
   bendSmokePoints,
   catmullRom,
+  flameSystemConfig,
   flowLines,
+  particleSystemConfig,
   smokeVisibility,
 } from './smoke';
 export { default as layoutTrash, ASSET_SIZE, TRASH_KEYS } from './trash';

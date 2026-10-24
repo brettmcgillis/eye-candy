@@ -83,7 +83,12 @@ const AUTHORED_LOOSE = [
     [PI / 12, 0, -PI / 2],
   ],
   ['front-left-soda-can', 'soda-can', [-3.05, 0.03, 2.7], [1, 1, 1]],
-  ['front-right-soda-can', 'soda-can', [2.75, 0.03, 2.65], [2, -2, 2]],
+  [
+    'front-right-soda-can',
+    'soda-can',
+    [2.75, 0.03, 2.65],
+    [0, -PI / 3, PI / 2],
+  ],
   ['right-side-snickers', 'snickers', [-5.35, 0.03, 1.85], [0, PI / 8, 0]],
   ['left-side-snickers', 'snickers', [4.85, 0.03, 2.15], [0, -PI / 7, 0]],
   ['front-bucket', 'bucket', [0.95, 0.4, 2.35], [0, -PI / 8, 0]],
@@ -298,6 +303,7 @@ function scatter(rng, poses, count, { huddle, spread, taken, prefix, body }) {
 // it rests; a still without physics settles it onto restSurface.
 export default function layoutTrash(config) {
   const contents = contentsOf(config.dumpsterContents);
+  if (config.trashLayout === 'none') return { dynamic: [], fixed: contents };
   if (config.trashLayout !== 'rolled') {
     return {
       dynamic: authoredLoose(),

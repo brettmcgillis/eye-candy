@@ -75,6 +75,41 @@ function checkAuthored({ fire }) {
       JSON.stringify(authoredPath),
     'the default smoke curve no longer leaves the authored path alone.'
   );
+
+  const flame = {
+    detailMax: 8.5,
+    detailMin: 5,
+    driftScale: 1,
+    particleCount: 500,
+    particleRate: 1,
+    particleSpread: 1,
+    pathTravel: 1,
+    riseScale: 0.1,
+    shapeRadiusMax: 13,
+    shapeRadiusMin: 8,
+    spawnIntervalMs: 200,
+    timeScale: 3,
+  };
+  const particles = { flowSpeed: 0.075, particleCount: 1800, volSize: 0.45 };
+  check(
+    JSON.stringify(fire.flameSystemConfig(flame, config, 'plume')) ===
+      JSON.stringify(flame) &&
+      JSON.stringify(fire.particleSystemConfig(particles, config)) ===
+        JSON.stringify(particles),
+    'the default fire, plume and particle knobs no longer leave the authored smoke configs alone.'
+  );
+  const pushed = fire.flameSystemConfig(
+    flame,
+    { ...config, plumeParticles: 6 },
+    'plume'
+  );
+  check(
+    pushed.particleRate === 6 &&
+      pushed.particleCount === 3000 &&
+      fire.flameSystemConfig(flame, { ...config, plumeParticles: 6 }, 'fire')
+        .particleRate === 1,
+    "plumeParticles must raise the plume's particle rate and room, and leave the fire alone."
+  );
 }
 
 function checkRolls({ fire }) {
@@ -203,6 +238,15 @@ async function checkRender(kernel) {
       )
     );
 
+    const smokeOnly = await capturer.svg(view, {
+      ...options,
+      svgSmokeStyle: 'smoke',
+    });
+    check(
+      !smokeOnly.includes('id="pen-9"') && smokeOnly.includes('id="pen-7"'),
+      'the smoke-only style must omit flow lines and keep the flame/plume layer.'
+    );
+
     const colourPlot = await capturer.svg(view, {
       ...options,
       svgColors: 6,
@@ -218,6 +262,39 @@ async function checkRender(kernel) {
     check(
       inks.some(([r, g, b]) => g > r + 15 && g > b),
       "a 6-ink plot has no green ink — the dumpster's colour is lost (albedo pass or palette merge)."
+    );
+
+    const pens = '#1a1a1a,#2e8b57,#8c8c8c,#b5432f,#f2b705,#2a6fbf';
+    const penPlot = await capturer.svg(view, {
+      ...options,
+      svgDetail: true,
+      svgInks: pens,
+      svgLineSpacing: 0.08,
+    });
+    const strokesIn = (hex) =>
+      (
+        penPlot.match(
+          new RegExp(
+            `id="pen-\\d+"[^>]*stroke="${hex}"[^>]*><path d="([^"]*)"`,
+            'gu'
+          )
+        ) ?? []
+      )
+        .join('')
+        .split('M').length - 1;
+    check(
+      penPlot.includes('outlines #1a1a1a'),
+      'a plot in fixed inks must end on its own outlines layer in the darkest pen.'
+    );
+    check(
+      strokesIn('#2e8b57') >= 5 && strokesIn('#b5432f') > 20,
+      `a plot in fixed inks lost its green dumpster or red wall (${strokesIn('#2e8b57')} green, ${strokesIn('#b5432f')} red strokes) — piece inks are not voting.`
+    );
+    check(
+      [...penPlot.matchAll(/ ink \d+ (#[0-9a-f]{6})/gu)].every(([, hex]) =>
+        pens.includes(hex)
+      ),
+      'a plot in fixed inks drew a colour that is not one of its pens.'
     );
 
     const { effects, frame, solids } = capturer.parts;
@@ -268,6 +345,23 @@ async function checkRender(kernel) {
       flames.length > 0 && iou > 0.75,
       `the CPU flame mirror covers the shader's blobs at IoU ${iou.toFixed(2)} (want > 0.75) — noise.js has drifted from FireAndSmokeGPU.`
     );
+    await capturer.load(
+      { ...config, settle: 0, smokeSystem: 'none' },
+      'no-fire'
+    );
+    const noFire = await capturer.svg(view, options);
+    check(
+      !['pen-7', 'pen-8', 'pen-9'].some((pen) =>
+        noFire.includes(`id="${pen}"`)
+      ) && noFire.includes('id="pen-0"'),
+      'the None smoke system must keep solids without fire, smoke dots or flow lines.'
+    );
+    let fireLights = 0;
+    capturer.parts.effects.traverse((object) => {
+      if (object.isLight) fireLights += 1;
+    });
+    check(fireLights === 0, 'the None smoke system left fire lights mounted.');
+
     console.log(
       `  flames: ${flames.length} blobs, mirror vs render IoU ${iou.toFixed(2)}`
     );

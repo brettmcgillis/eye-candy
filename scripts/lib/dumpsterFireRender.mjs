@@ -7,6 +7,7 @@ import {
 } from '../../src/modules/dumpsterFire/renderOptions.mjs';
 import { createParseCli, withRenderer } from './generatorCli.mjs';
 import {
+  advanceFrame,
   createHeadlessRenderer,
   loadThree,
   setClock,
@@ -235,6 +236,24 @@ export async function createFireCapturer(
             look.solidMeshes(solids, { sidewalk })
           )
         : null;
+      // Sticker detail comes from the dumpster and the trash alone: the
+      // wall's mortar, the rug's pattern and the ground litter's scraps are
+      // noise there.
+      // A pass renders once per frame: without a new one this would read
+      // back the depth pass above.
+      if (albedo && options.svgDetail) advanceFrame();
+      const detail =
+        albedo && options.svgDetail
+          ? await captureDepth(
+              stage.scene,
+              stage.camera,
+              width * pixelRatio,
+              height * pixelRatio,
+              look.solidMeshes(solids, {
+                except: ['wall', 'rug', 'litter', 'litter-2'],
+              })
+            )
+          : null;
       const image = fire.needsImage(options) ? await frame(clock) : null;
       let contrast = null;
       if (fire.needsSmokeContrast(options)) {
@@ -250,6 +269,7 @@ export async function createFireCapturer(
         albedo,
         camera: view,
         coverage: depth,
+        detail,
         image,
         scene: {
           flames: look.readFlames(effects),
@@ -263,6 +283,7 @@ export async function createFireCapturer(
               ? fire.flowLines(paths, {
                   count: options.svgSmokeFlow,
                   seed,
+                  style: options.svgSmokeStyle,
                   twist: options.svgSmokeTwist,
                 })
               : [],

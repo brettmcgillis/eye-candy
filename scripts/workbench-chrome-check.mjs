@@ -127,6 +127,7 @@ function checkLabels(slug, kind, sections) {
 // stage in `src/dev/tools/<tool>/live.js`, or an R3F one of its own.
 const TOOL_DIRS = { trucheterie: 'trucheterie' };
 const R3F_LIVE = {
+  cumulus: 'LiveCumulus.jsx',
   'birds-arent-real': 'LiveFlock.jsx',
   'dumpster-fire': 'LiveDumpster.jsx',
   'ghost-buster': 'LiveGhost.jsx',

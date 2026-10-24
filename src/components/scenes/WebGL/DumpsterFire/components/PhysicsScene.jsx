@@ -5,6 +5,8 @@ import { CuboidCollider, Physics, RigidBody } from '@react-three/rapier';
 import {
   DECOR_RUG,
   DECOR_RUG_COLLIDER_POSITION,
+  FLOOR_COLLIDER_HALF_EXTENTS,
+  FLOOR_COLLIDER_POSITION,
   GROUND_Y,
   SCENE_ROOT_POSITION,
   SIDEWALK_TILE_SIZE,
@@ -59,6 +61,7 @@ function SceneComposition({
   const items = useMemo(
     () => buildSceneItems(generation),
     [
+      generation.carpetEnabled,
       generation.dumpsterContents,
       generation.trashBags,
       generation.trashFixed,
@@ -155,18 +158,32 @@ const PhysicsScene = React.memo(function PhysicsScene({
         </RigidBody>
       )}
 
-      <RigidBody
-        type="fixed"
-        colliders={false}
-        position={DECOR_RUG_COLLIDER_POSITION}
-        rotation={DECOR_RUG.rotation}
-      >
-        <CuboidCollider
-          args={DECOR_RUG.colliderHalfExtents}
-          friction={1.6}
-          restitution={0.02}
-        />
-      </RigidBody>
+      {!sidewalkCollider && (
+        <RigidBody type="fixed" colliders={false}>
+          <CuboidCollider
+            args={FLOOR_COLLIDER_HALF_EXTENTS}
+            position={FLOOR_COLLIDER_POSITION}
+            friction={1.4}
+            restitution={0.05}
+            onCollisionEnter={onTrashCollision}
+          />
+        </RigidBody>
+      )}
+
+      {generation.carpetEnabled !== false && (
+        <RigidBody
+          type="fixed"
+          colliders={false}
+          position={DECOR_RUG_COLLIDER_POSITION}
+          rotation={DECOR_RUG.rotation}
+        >
+          <CuboidCollider
+            args={DECOR_RUG.colliderHalfExtents}
+            friction={1.6}
+            restitution={0.02}
+          />
+        </RigidBody>
+      )}
 
       <SceneComposition
         brickWallConfig={brickWallConfig}

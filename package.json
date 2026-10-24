@@ -124,7 +124,10 @@
     "trucheterie3d:generate": "node scripts/trucheterie3d-generate.mjs",
     "trucheterie3d:video": "node scripts/trucheterie3d-video.mjs",
     "workbench-chrome:check": "node scripts/workbench-chrome-check.mjs",
-    "live:check": "node scripts/live-check.mjs"
+    "live:check": "node scripts/live-check.mjs",
+    "cumulus:generate": "node scripts/cumulus-generate.mjs",
+    "cumulus:video": "node scripts/cumulus-video.mjs",
+    "cumulus:check": "node scripts/cumulus-check.mjs"
   },
   "dependencies": {
     "@dgreenheck/ez-tree": "^1.1.0",
@@ -213,7 +216,8 @@
     "unified": "^11.0.5",
     "usb": "^3.2.1",
     "vite": "^7.3.1",
-    "webgpu": "^0.4.0"
+    "webgpu": "^0.4.0",
+    "ws": "^8.20.0"
   },
   "browserslist": {
     "production": [

@@ -14,10 +14,14 @@ export const SCENE_LABEL = 'Dumpster Fire';
 
 const FOLDERS = {
   stage: 'Scene',
+  ground: 'Ground',
   dumpster: 'Dumpster',
   trash: 'Trash',
   wall: 'Brick Wall',
   smoke: 'Smoke',
+  plume: 'Smoke Plume',
+  fire: 'Fire',
+  particles: 'Particle Smoke',
 };
 
 const schemaFolders = createSchemaFolders({
@@ -58,10 +62,12 @@ const ROLL_LABELS = {
 // a key (the wall's position).
 export default function sceneFolders(saved, { extras = {}, onRoll }) {
   const top = Object.fromEntries(
-    Object.keys(FOLDERS).map((section) => [
-      section,
-      { [ROLL_LABELS[section]]: button(() => onRoll([section])) },
-    ])
+    Object.keys(FOLDERS)
+      .filter((section) => ROLL_LABELS[section])
+      .map((section) => [
+        section,
+        { [ROLL_LABELS[section]]: button(() => onRoll([section])) },
+      ])
   );
   return schemaFolders(saved, extras, top);
 }

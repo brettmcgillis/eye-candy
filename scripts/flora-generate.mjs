@@ -7,6 +7,7 @@ import {
   frameView,
   loadKernel,
   parseCli,
+  plotNeedsFrame,
   renderSvg,
   resolveItemOptions,
   rollArgs,
@@ -26,27 +27,36 @@ runStills({
       `growing ${label} (${count} specimen${count === 1 ? '' : 's'})`,
       async () => buildFlowers(kernel, { ...drawn, options: itemOptions })
     );
-    const bounds = capturer.setFlowers(flowers);
+    const bounds = capturer.load(flowers);
     const out = await save(
       label,
       sidecarFor({ ...drawn, options: itemOptions })
     );
     await out.eachView(async (view) => {
       const framing = frameView(kernel, { bounds, options, view });
-      await out.image(view, () =>
-        capturer.capture({
+      let frame = null;
+      const shoot = async () => {
+        frame = await capturer.capture({
           ...framing,
           levels: () => ({
             bloom: options.bloom,
             exit: 0,
             growth: options.growth,
           }),
-        })
-      );
+        });
+        return frame;
+      };
+      await out.image(view, shoot);
       if (options.svg) {
+        if (!frame && plotNeedsFrame(options)) await shoot();
         await out.svg(
           view,
-          await renderSvg(kernel, capturer, { flowers, options, view: framing })
+          await renderSvg(kernel, capturer, {
+            flowers,
+            frame,
+            options,
+            view: framing,
+          })
         );
       }
     });

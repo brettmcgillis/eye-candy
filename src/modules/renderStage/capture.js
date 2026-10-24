@@ -270,6 +270,7 @@ function flatOf(material, cache) {
     // tube) are where it draws.
     if (source.colorNode) flat.colorNode = source.colorNode;
     if (source.positionNode) flat.positionNode = source.positionNode;
+    if (source.maskNode) flat.maskNode = source.maskNode;
     // A ray-marched surface draws itself: its own shading stands in.
     if (source.fragmentNode) {
       flat.fragmentNode = source.fragmentNode;
@@ -286,7 +287,7 @@ function flatOf(material, cache) {
 // scene's real colours.
 export function createAlbedoCapture(renderer) {
   const cache = new Map();
-  return async function captureAlbedo(scene, camera, width, height, only) {
+  const captureAlbedo = async (scene, camera, width, height, only) => {
     const list = Array.isArray(only) ? only : [only];
     const restore = isolate(scene, list);
     const swapped = [];
@@ -346,6 +347,11 @@ export function createAlbedoCapture(renderer) {
     }
     return { covered, data, height, width };
   };
+  captureAlbedo.dispose = () => {
+    cache.forEach((material) => material.dispose());
+    cache.clear();
+  };
+  return captureAlbedo;
 }
 
 // A transparent capture clears to zero alpha and draws no background, so the

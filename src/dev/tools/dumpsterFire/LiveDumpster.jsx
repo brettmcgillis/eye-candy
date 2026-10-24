@@ -33,8 +33,10 @@ import {
   CONFIG_KEYS,
   MOODS,
   SMOKE_SYSTEMS,
+  facets,
   flowLines,
   frameDumpster,
+  keysInFacet,
   layoutTrash,
   needsAlbedo,
   needsDepth,
@@ -42,6 +44,7 @@ import {
   needsSmokeContrast,
   plotArgs,
   renderDumpsterSvg,
+  rollDumpsterConfig,
   smokeContrast,
   subjectBounds,
 } from '@modules/dumpsterFire';
@@ -66,8 +69,11 @@ import {
 } from '@modules/dumpsterFireRender';
 
 const DEG = 180 / Math.PI;
+const LIGHT_KEYS = keysInFacet('stage').filter((key) => key !== 'mood');
+const HOLD_WITHOUT_LIGHTS = facets().filter((facet) => facet !== 'stage');
 
 const SMOKE_LABELS = {
+  none: 'None',
   layered: 'Layered',
   mixed: 'Mixed',
   particles: 'Particles',
@@ -103,6 +109,26 @@ function Director({
   const render = useCallback(() => {
     stepFrozen(get(), frozenRef.current);
   }, [get]);
+
+  const redrawRequest = useRef(null);
+  // OrbitControls dispatches change before caching its pose; never reenter update.
+  const scheduleRender = useCallback(() => {
+    if (redrawRequest.current !== null) return;
+    redrawRequest.current = requestAnimationFrame(() => {
+      redrawRequest.current = null;
+      render();
+    });
+  }, [render]);
+
+  useEffect(
+    () => () => {
+      if (redrawRequest.current !== null) {
+        cancelAnimationFrame(redrawRequest.current);
+        redrawRequest.current = null;
+      }
+    },
+    []
+  );
 
   const keepFog = useCallback(() => {
     const { camera, controls, scene } = get();
@@ -207,98 +233,111 @@ function Director({
         colorSpace: THREE.NoColorSpace,
         samples: 4,
       });
-      await nextFrame();
-      gl.setOutputRenderTarget(target);
-      stepFrozen(state, frozenRef.current);
-      gl.setOutputRenderTarget(null);
-      const pixels = await gl.readRenderTargetPixelsAsync(
-        target,
-        0,
-        0,
-        width,
-        height
-      );
-      target.dispose();
-      return { data: tightRows(pixels, width, height), height, width };
-    };
-    const image = await shoot();
-
-    let svg = null;
-    if (options.svg) {
-      const view = {
-        eye: camera.position.toArray(),
-        far: camera.far,
-        fov: camera.fov,
-        near: camera.near,
-        target: (controls?.target ?? new THREE.Vector3()).toArray(),
-        up: camera.up.toArray(),
-      };
-      const sidewalk = options.svgSidewalk;
-      if (needsDepth(options)) await nextFrame();
-      const depth = needsDepth(options)
-        ? await captureDepth(
-            scene,
-            camera,
-            width,
-            height,
-            solidMeshes(solidsRef.current, { sidewalk })
-          )
-        : null;
-      const albedo = needsAlbedo(options)
-        ? await captureAlbedo(
-            scene,
-            camera,
-            width,
-            height,
-            solidMeshes(solidsRef.current, { sidewalk })
-          )
-        : null;
-      let contrast = null;
-      if (needsSmokeContrast(options)) {
-        showSmoke(effectsRef.current, false);
-        const without = await shoot();
-        showSmoke(effectsRef.current, true);
-        contrast = smokeContrast(image, without);
+      const previous = gl.getRenderTarget();
+      try {
+        await nextFrame();
+        stepFrozen(state, frozenRef.current);
+        gl.setRenderTarget(target);
+        gl.render(scene, camera);
+        const pixels = await gl.readRenderTargetPixelsAsync(
+          target,
+          0,
+          0,
+          width,
+          height
+        );
+        return { data: tightRows(pixels, width, height), height, width };
+      } finally {
+        gl.setRenderTarget(previous);
+        target.dispose();
       }
-      const args = plotArgs(options);
-      svg = renderDumpsterSvg({
-        ...args,
-        albedo,
-        camera: view,
-        coverage: depth,
-        image: needsImage(options) ? image : null,
-        scene: {
-          flames: readFlames(effectsRef.current),
-          solids: readSolids(solidsRef.current, { sidewalk }),
-        },
-        smoke: {
-          density: options.svgSmokeDots,
-          dots:
-            options.svgSmokeDots > 0 ? readSmokeDots(effectsRef.current) : [],
-          flow:
-            options.svgSmokeFlow > 0
-              ? flowLines(trimPaths(paths, measureSmoke(effectsRef.current)), {
-                  count: options.svgSmokeFlow,
-                  seed: 'live',
-                  twist: options.svgSmokeTwist,
-                })
-              : [],
-          pen: args.shade?.pen,
-          seed: 'live',
-        },
-        smokeShade: args.smokeShade && { ...args.smokeShade, contrast },
-        visible: options.svgOcclusion
-          ? depthProbe(depth, options.pixelRatio, 0.02)
-          : null,
-      });
-    }
+    };
+    try {
+      const image = await shoot();
 
-    restoreSize();
-    camera.aspect = size.width / size.height;
-    camera.updateProjectionMatrix();
-    if (wasRunning) resumeClock(state);
-    else render();
-    return { png: await pngBase64(image.data, width, height), svg };
+      let svg = null;
+      if (options.svg) {
+        const view = {
+          eye: camera.position.toArray(),
+          far: camera.far,
+          fov: camera.fov,
+          near: camera.near,
+          target: (controls?.target ?? new THREE.Vector3()).toArray(),
+          up: camera.up.toArray(),
+        };
+        const sidewalk = options.svgSidewalk;
+        if (needsDepth(options)) await nextFrame();
+        const depth = needsDepth(options)
+          ? await captureDepth(
+              scene,
+              camera,
+              width,
+              height,
+              solidMeshes(solidsRef.current, { sidewalk })
+            )
+          : null;
+        const albedo = needsAlbedo(options)
+          ? await captureAlbedo(
+              scene,
+              camera,
+              width,
+              height,
+              solidMeshes(solidsRef.current, { sidewalk })
+            )
+          : null;
+        let contrast = null;
+        if (needsSmokeContrast(options)) {
+          showSmoke(effectsRef.current, false);
+          const without = await shoot();
+          showSmoke(effectsRef.current, true);
+          contrast = smokeContrast(image, without);
+        }
+        const args = plotArgs(options);
+        svg = renderDumpsterSvg({
+          ...args,
+          albedo,
+          camera: view,
+          coverage: depth,
+          image: needsImage(options) ? image : null,
+          scene: {
+            flames: readFlames(effectsRef.current),
+            solids: readSolids(solidsRef.current, { sidewalk }),
+          },
+          smoke: {
+            density: options.svgSmokeDots,
+            dots:
+              options.svgSmokeDots > 0 ? readSmokeDots(effectsRef.current) : [],
+            flow:
+              options.svgSmokeFlow > 0
+                ? flowLines(
+                    trimPaths(paths, measureSmoke(effectsRef.current)),
+                    {
+                      count: options.svgSmokeFlow,
+                      seed: 'live',
+                      style: options.svgSmokeStyle,
+                      twist: options.svgSmokeTwist,
+                    }
+                  )
+                : [],
+            pen: args.shade?.pen,
+            seed: 'live',
+          },
+          smokeShade: args.smokeShade && { ...args.smokeShade, contrast },
+          visible: options.svgOcclusion
+            ? depthProbe(depth, options.pixelRatio, 0.02)
+            : null,
+        });
+      }
+
+      return { png: await pngBase64(image.data, width, height), svg };
+    } finally {
+      showSmoke(effectsRef.current, true);
+      restoreSize();
+      camera.aspect = size.width / size.height;
+      camera.updateProjectionMatrix();
+      if (wasRunning) resumeClock(state);
+      else render();
+    }
   }, [
     captureAlbedo,
     captureDepth,
@@ -321,7 +360,7 @@ function Director({
       makeDefault
       onChange={() => {
         keepFog();
-        if (paused) render();
+        if (paused) scheduleRender();
       }}
     />
   );
@@ -335,6 +374,30 @@ export default function LiveDumpster({ jobsApi, options, setOptions }) {
     () => Object.fromEntries(CONFIG_KEYS.map((key) => [key, options[key]])),
     [options]
   );
+  const previousOptions = useRef(options);
+  useEffect(() => {
+    const previous = previousOptions.current;
+    previousOptions.current = options;
+    if (
+      previous.mood === options.mood ||
+      LIGHT_KEYS.some((key) => previous[key] !== options[key])
+    ) {
+      return;
+    }
+    setOptions((current) => {
+      if (current.mood !== options.mood) return current;
+      const lighting = rollDumpsterConfig('live-lighting', {
+        base: current,
+        keep: HOLD_WITHOUT_LIGHTS,
+        pinned: { mood: current.mood },
+      });
+      return {
+        ...current,
+        ...Object.fromEntries(LIGHT_KEYS.map((key) => [key, lighting[key]])),
+      };
+    });
+  }, [options, setOptions]);
+
   const solidsRef = useRef(null);
   const effectsRef = useRef(null);
   const bridgeRef = useRef({});

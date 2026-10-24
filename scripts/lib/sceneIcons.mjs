@@ -16,6 +16,7 @@ import { REPO_ROOT } from './loadModules.mjs';
 // Every generator that burns the overlay in: its script slug, its scene
 // folder, and the module whose renderOptions.mjs declares the overlay options.
 export const OVERLAY_TOOLS = {
+  cumulus: { module: 'cumulus', scene: 'AllMyThoughtsAreSoCumulus' },
   apollian: { module: 'apollian', scene: 'Apollian' },
   'birds-arent-real': { module: 'birdsArentReal', scene: 'BirdsArentReal' },
   'block-party': { module: 'blockParty', scene: 'BlockParty' },

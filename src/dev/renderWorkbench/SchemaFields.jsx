@@ -166,6 +166,34 @@ export function ColorField({ id, label, onChange, option, value }) {
   );
 }
 
+export function VectorField({ id, label, onChange, option, value }) {
+  const { enabled, spec } = usePin(option);
+  const current = value ?? spec.default;
+  return (
+    <Pinnable label={label} option={option}>
+      <fieldset className="rw-field rw-field--vector" disabled={!enabled}>
+        <legend>{label}</legend>
+        {spec.vector.map((axis) => (
+          <input
+            aria-label={`${label} ${axis.toUpperCase()}`}
+            id={`${id}-${axis}`}
+            key={axis}
+            onChange={(event) =>
+              onChange({
+                ...current,
+                [axis]: Number(event.target.value) || 0,
+              })
+            }
+            step="any"
+            type="number"
+            value={current[axis] ?? ''}
+          />
+        ))}
+      </fieldset>
+    </Pinnable>
+  );
+}
+
 function titleCase(key) {
   const spaced = key.replace(/([a-z0-9])([A-Z])/gu, '$1 $2');
   return spaced.charAt(0).toUpperCase() + spaced.slice(1);
@@ -190,6 +218,7 @@ export function SchemaField({ choices, onChange, option, value }) {
       ]);
     return <ChoiceField choices={list} {...props} />;
   }
+  if (spec.vector) return <VectorField {...props} />;
   if (spec.type === 'boolean') return <ToggleField {...props} />;
   if (spec.type === 'color') return <ColorField {...props} />;
   if (spec.type === 'string' || (spec.type === 'seed' && spec.text)) {

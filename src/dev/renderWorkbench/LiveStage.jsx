@@ -65,6 +65,7 @@ export default function LiveStage({ bench, context, tool }) {
     framed: null,
     layout: null,
     proxy: null,
+    reframe: false,
     renderer: null,
     stage: null,
     view: null,
@@ -186,7 +187,12 @@ export default function LiveStage({ bench, context, tool }) {
       renderer.setAnimationLoop(null);
       controls.dispose();
       live.current.stage?.dispose();
-      Object.assign(live.current, { drawn: null, stage: null });
+      Object.assign(live.current, {
+        drawn: null,
+        framed: null,
+        proxy: null,
+        stage: null,
+      });
       renderer.dispose();
       setReady(false);
     };
@@ -211,8 +217,13 @@ export default function LiveStage({ bench, context, tool }) {
         await stage.settle?.(options);
         if (cancelled) return;
         Object.assign(live.current, { drawn, layout });
-        if (framedSeed.current !== seed || !live.current.framed) {
+        if (
+          framedSeed.current !== seed ||
+          !live.current.framed ||
+          live.current.reframe
+        ) {
           framedSeed.current = seed;
+          live.current.reframe = false;
           frame();
         } else if (pausedRef.current) {
           draw();
@@ -330,6 +341,7 @@ export default function LiveStage({ bench, context, tool }) {
   const useCamera = useCallback(() => {
     const keys = cameraKeys();
     if (Object.keys(keys).length === 0) return;
+    live.current.reframe = true;
     pinAll(keys);
     setStatus('Camera copied to the form.');
   }, [cameraKeys, pinAll]);

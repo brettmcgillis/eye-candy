@@ -22,6 +22,7 @@ import {
   LIGHTING,
   SCENE_ROOT_POSITION,
   SIDEWALK_GROUND,
+  keysInFacet,
   layoutTrash,
   layoutWall,
   restSurface,
@@ -95,7 +96,7 @@ const box = new THREE.Box3();
 
 // A piece the scene drops with physics, set down instead: its lowest vertex
 // on the rug or the ground under it, keeping its pose.
-function TrashPiece({ item }) {
+function TrashPiece({ item, carpetEnabled }) {
   const ref = useRef(null);
   const asset =
     item.body === 'dynamic'
@@ -111,10 +112,10 @@ function TrashPiece({ item }) {
     group.updateWorldMatrix(true, true);
     box.setFromObject(group, true);
     if (box.isEmpty()) return;
-    const ground = SCENE_ROOT_POSITION[1] + restSurface(x, z);
+    const ground = SCENE_ROOT_POSITION[1] + restSurface(x, z, carpetEnabled);
     group.position.y += ground - box.min.y;
     group.updateMatrixWorld(true);
-  }, [item]);
+  }, [item, carpetEnabled]);
 
   return (
     <group
@@ -183,19 +184,14 @@ function Wall({ config }) {
   );
 }
 
+// Every smoke-facet key but the settle, which only the capture reads.
+const SMOKE_KEYS = keysInFacet('smoke').filter((key) => key !== 'settle');
+
 function Smoke({ config, fireLight }) {
+  const smokeKey = SMOKE_KEYS.map((key) => config[key]).join();
   const smoke = useMemo(
     () => applySmokeGeneration(authoredSmoke(), config),
-    [
-      config.smokeJitter,
-      config.smokeLean,
-      config.smokeMirror,
-      config.smokeReach,
-      config.smokeSeed,
-      config.smokeSway,
-      config.smokeSystem,
-      config.smokeWaves,
-    ]
+    [smokeKey]
   );
   const night = config.mood === 'night';
   return (
@@ -318,24 +314,29 @@ export default function DumpsterStage({
       <StudioEnvironment intensity={config.sceneEnvMapIntensity} />
 
       <group ref={solidsRef}>
-        <group userData={{ plotObject: 'sidewalk', plotSidewalk: true }}>
-          <SidewalkGround config={SIDEWALK_GROUND} />
-        </group>
+        {config.sidewalkGroundEnabled !== false && (
+          <group userData={{ plotObject: 'sidewalk', plotSidewalk: true }}>
+            <SidewalkGround config={SIDEWALK_GROUND} />
+          </group>
+        )}
         <group position={SCENE_ROOT_POSITION}>
           <StaticDumpster
             leftLidRotation={config.dumpsterLeftLidRotation}
             rightLidRotation={config.dumpsterRightLidRotation}
           />
-          <group
-            position={DECOR_RUG.position}
-            rotation={DECOR_RUG.rotation}
-            scale={DECOR_RUG.scale}
-            userData={{ plotObject: 'rug' }}
-          >
-            <RugComponent />
-          </group>
+          {config.carpetEnabled !== false && (
+            <group
+              position={DECOR_RUG.position}
+              rotation={DECOR_RUG.rotation}
+              scale={DECOR_RUG.scale}
+              userData={{ plotObject: 'rug' }}
+            >
+              <RugComponent />
+            </group>
+          )}
           {[...trash.fixed, ...trash.dynamic].map((item) => (
             <TrashPiece
+              carpetEnabled={config.carpetEnabled}
               item={item}
               key={item.id ?? `${item.key}-${item.position.join(',')}`}
             />

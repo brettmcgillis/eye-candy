@@ -4,6 +4,8 @@ import {
   SCENE_ROOT_POSITION,
   bendSmokePoints,
   catmullRom,
+  flameSystemConfig,
+  particleSystemConfig,
   smokeVisibility,
 } from '@modules/dumpsterFire';
 
@@ -28,7 +30,8 @@ const bent = (points, config, scale) => {
 };
 
 // The authored fire and smoke with a generation applied: the smoke system
-// picks which smoke shows (and the particle system's type), and every path —
+// picks which smoke shows (and the particle system's type), the plume, fire
+// and particle knobs scale each system's config, and every path —
 // fire, plume and particle stream — is redrawn by one field
 // (@modules/dumpsterFire's bendSmokePoints), so they move together. Takes
 // and returns the scene's smoke state.
@@ -40,12 +43,18 @@ export function applySmokeGeneration(
   return {
     fireAndSmokeInstances: fireAndSmokeInstances.map((instance) => ({
       ...instance,
+      config: flameSystemConfig(
+        instance.config,
+        config,
+        isPlume(instance) ? 'plume' : 'fire'
+      ),
       controlPoints: bent(instance.controlPoints, config, instance.scale),
       visible:
-        (instance.visible ?? true) && (!isPlume(instance) || shown.plume),
+        (instance.visible ?? true) &&
+        (isPlume(instance) ? shown.plume : shown.fire),
     })),
     particleSmokeConfigs: particleSmokeConfigs.map((smoke) => ({
-      ...smoke,
+      ...particleSystemConfig(smoke, config),
       smokeType: shown.particles ?? smoke.smokeType,
       visible: (smoke.visible ?? true) && shown.particles !== null,
     })),

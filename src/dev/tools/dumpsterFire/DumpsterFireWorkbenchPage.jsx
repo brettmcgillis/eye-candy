@@ -21,7 +21,7 @@ const preview = {
         value={
           config.trashLayout === 'rolled'
             ? `${config.trashFixed} + ${config.trashLoose} loose, ${config.trashBags} bags`
-            : 'authored'
+            : config.trashLayout
         }
       />
       <Stat
@@ -63,6 +63,7 @@ export default function DumpsterFireWorkbenchPage() {
       noun={{ many: 'fires', one: 'fire' }}
       preview={preview}
       schema={kernel}
+      sections={{ followWhen: true }}
       title="DumpsterFireCLI"
       tool="dumpsterFire"
     />

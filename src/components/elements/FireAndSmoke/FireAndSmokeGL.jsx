@@ -751,6 +751,7 @@ export default function FireAndSmokeGL({
   worldScale = DEFAULT_FIRE_AND_SMOKE_CONFIG.worldScale,
   poolSize = DEFAULT_FIRE_AND_SMOKE_CONFIG.poolSize,
   particleCount = DEFAULT_FIRE_AND_SMOKE_CONFIG.particleCount,
+  particleRate = DEFAULT_FIRE_AND_SMOKE_CONFIG.particleRate,
   particleSpread = DEFAULT_FIRE_AND_SMOKE_CONFIG.particleSpread,
   particleColor = DEFAULT_FIRE_AND_SMOKE_CONFIG.particleColor,
   particleSize = DEFAULT_FIRE_AND_SMOKE_CONFIG.particleSize,
@@ -1051,7 +1052,16 @@ export default function FireAndSmokeGL({
     if (particleState.spawnElapsed > particleState.spawnInterval) {
       particleState.spawnElapsed = 0;
       particleState.spawnInterval = Math.random() * 300 + 50;
-      for (let index = 0; index < particleState.targetCount; index += 1) {
+      // `particleRate` particles per spawn: its fraction as a chance of one
+      // more, so a whole rate draws no extra randomness.
+      const extra = particleRate % 1;
+      let burst = Math.floor(particleRate);
+      if (extra > 0 && Math.random() < extra) burst += 1;
+      for (
+        let index = 0;
+        burst > 0 && index < particleState.targetCount;
+        index += 1
+      ) {
         if (!particleState.active[index]) {
           const offset = index * 3;
           particleState.active[index] = true;
@@ -1059,7 +1069,7 @@ export default function FireAndSmokeGL({
           particleState.startT[index] = 0;
           clearArrayVec3(particleState.interactionOffsets, offset);
           clearArrayVec3(particleState.interactionVelocities, offset);
-          break;
+          burst -= 1;
         }
       }
     }

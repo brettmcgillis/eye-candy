@@ -1,7 +1,7 @@
 import * as TSL from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import { setBackdrop } from '@modules/renderStage/capture';
+import { createAlbedoCapture, setBackdrop } from '@modules/renderStage/capture';
 
 import FLORA_LIGHTING from './lighting';
 import placeFlower from './placement';
@@ -36,6 +36,7 @@ export function createFloraStage(
   let flowers = [];
   let extent = { radius: 10 };
   let depthPipeline = null;
+  let readAlbedo = null;
 
   function aimCamera({ eye, fov, target }) {
     const distance = Math.hypot(
@@ -161,21 +162,59 @@ export function createFloraStage(
       aimCamera({ eye, fov, target });
       return readFrame(() => post.render());
     },
-    async captureDepth(view) {
+    async captureDepth(view, { ornamentsOnly = false } = {}) {
       aimCamera(view);
-      const frame = await readFrame(() => depthPass().render());
+      const strands = rigs.map(({ rig }) => [
+        rig.strandMesh,
+        rig.strandMesh.visible,
+      ]);
+      let frame;
+      try {
+        if (ornamentsOnly)
+          strands.forEach(([mesh]) => {
+            Object.assign(mesh, { visible: false });
+          });
+        frame = await readFrame(() => depthPass().render());
+      } finally {
+        strands.forEach(([mesh, visible]) => {
+          Object.assign(mesh, { visible });
+        });
+      }
       const depths = new Float32Array(frame.width * frame.height);
+      const covered = new Uint8Array(depths.length);
       for (let index = 0; index < depths.length; index += 1) {
         const unit =
           (frame.data[index * 4] * 256 + frame.data[index * 4 + 1]) / 65535;
         depths[index] = camera.near + unit * (camera.far - camera.near);
+        covered[index] = unit < 1 ? 1 : 0;
       }
-      return { data: depths, height: frame.height, width: frame.width };
+      return {
+        covered,
+        data: depths,
+        tolerance: ((camera.far - camera.near) * 2) / 65535,
+        height: frame.height,
+        width: frame.width,
+      };
+    },
+    async captureAlbedo(view) {
+      aimCamera(view);
+      readAlbedo ??= createAlbedoCapture(renderer);
+      let result;
+      await readFrame(() => {
+        result = readAlbedo(
+          scene,
+          camera,
+          width,
+          height,
+          flowers.map((_, index) => rigs[index].rig.group)
+        );
+      });
+      return result;
     },
     depthProbe(depth) {
       return (x, y, z) => {
-        const px = Math.round(x * pixelRatio);
-        const py = Math.round(y * pixelRatio);
+        const px = Math.floor(x * pixelRatio);
+        const py = Math.floor(y * pixelRatio);
         return (
           px < 0 ||
           py < 0 ||
@@ -194,6 +233,7 @@ export function createFloraStage(
       rigs.forEach(({ rig }) => rig.dispose());
       post.dispose();
       depthPipeline?.dispose();
+      readAlbedo?.dispose();
     },
   };
 }

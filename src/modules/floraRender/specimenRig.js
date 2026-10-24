@@ -51,6 +51,7 @@ export default function createSpecimenRig() {
 
   return {
     group,
+    strandMesh: slots.tube.mesh,
     uniforms,
 
     load(specimen) {

@@ -384,6 +384,34 @@ export default function useSceneControls() {
   const [controls, setControls] = useControls(SCENE_LABEL, () => {
     const generated = sceneFolders(initialPresetSnapshot, {
       extras: {
+        sidewalkGroundEnabled: {
+          after: {
+            sidewalkLength: {
+              label: 'Length',
+              value: initialPresetSnapshot.sidewalkLength,
+              min: 2,
+              max: 30,
+              step: 0.5,
+            },
+            sidewalkRows: {
+              label: 'Rows',
+              value: initialPresetSnapshot.sidewalkRows,
+              min: 1,
+              max: 6,
+              step: 1,
+            },
+            sidewalkRotationDeg: {
+              label: 'Rotation',
+              value: initialPresetSnapshot.sidewalkRotationDeg,
+              options: [0, 90, 180, 270],
+            },
+            sidewalkPosition: {
+              label: 'Position',
+              step: 0.05,
+              value: initialPresetSnapshot.sidewalkPosition,
+            },
+          },
+        },
         brickWallTintColor: {
           after: {
             brickWallPosition: {
@@ -410,39 +438,7 @@ export default function useSceneControls() {
         { collapsed: true }
       ),
       Scene: generated.Scene,
-      Ground: folder(
-        {
-          sidewalkGroundEnabled: {
-            label: 'Sidewalk',
-            value: initialPresetSnapshot.sidewalkGroundEnabled,
-          },
-          sidewalkLength: {
-            label: 'Length',
-            value: initialPresetSnapshot.sidewalkLength,
-            min: 2,
-            max: 30,
-            step: 0.5,
-          },
-          sidewalkRows: {
-            label: 'Rows',
-            value: initialPresetSnapshot.sidewalkRows,
-            min: 1,
-            max: 6,
-            step: 1,
-          },
-          sidewalkRotationDeg: {
-            label: 'Rotation',
-            value: initialPresetSnapshot.sidewalkRotationDeg,
-            options: [0, 90, 180, 270],
-          },
-          sidewalkPosition: {
-            label: 'Position',
-            step: 0.05,
-            value: initialPresetSnapshot.sidewalkPosition,
-          },
-        },
-        { collapsed: true }
-      ),
+      Ground: generated.Ground,
       Physics: folder(
         {
           physicsDebug: {

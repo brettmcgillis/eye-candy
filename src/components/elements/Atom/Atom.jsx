@@ -3,6 +3,8 @@ import React, { useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
+import { createRng } from '@modules/flora';
+
 // Electron shell configuration: max electrons per shell
 
 const SHELLS = [2, 8, 8, 18, 18, 32, 32];
@@ -25,7 +27,8 @@ function getNucleusRadius(totalNucleons, nucleonRadius) {
   return Math.min(estimatedClusterRadius, FIRST_SHELL_RADIUS * 0.5);
 }
 
-function getNucleusPositions(totalNucleons, nucleusRadius) {
+function getNucleusPositions(totalNucleons, nucleusRadius, seed) {
+  const rng = createRng(seed);
   const cellsPerAxis = Math.max(3, Math.ceil(Math.cbrt(totalNucleons)) + 2);
   const step = (nucleusRadius * 2) / (cellsPerAxis - 1);
   const offset = nucleusRadius;
@@ -55,9 +58,9 @@ function getNucleusPositions(totalNucleons, nucleusRadius) {
       let y;
       let z;
       do {
-        x = (Math.random() * 2 - 1) * nucleusRadius;
-        y = (Math.random() * 2 - 1) * nucleusRadius;
-        z = (Math.random() * 2 - 1) * nucleusRadius;
+        x = (rng() * 2 - 1) * nucleusRadius;
+        y = (rng() * 2 - 1) * nucleusRadius;
+        z = (rng() * 2 - 1) * nucleusRadius;
       } while (x * x + y * y + z * z > nucleusRadius * nucleusRadius);
       points.push({ x, y, z, distSq: x * x + y * y + z * z });
     }
@@ -69,6 +72,7 @@ function getNucleusPositions(totalNucleons, nucleusRadius) {
 
 export default function Atom({
   atomicNumber = 8,
+  seed = 'atom',
   protons,
   neutrons,
   electrons,
@@ -95,7 +99,7 @@ export default function Atom({
     const total = protonsFinal + neutronsFinal;
     const nucleonRadius = Math.max(protonRadius, neutronRadius);
     const nucleusRadius = getNucleusRadius(total, nucleonRadius);
-    const positions = getNucleusPositions(total, nucleusRadius);
+    const positions = getNucleusPositions(total, nucleusRadius, seed);
 
     for (let i = 0; i < total; i += 1) {
       const { x, y, z } = positions[i];
@@ -110,7 +114,7 @@ export default function Atom({
       );
     }
     return spheres;
-  }, [protonsFinal, neutronsFinal, protonRadius, neutronRadius]);
+  }, [protonsFinal, neutronsFinal, protonRadius, neutronRadius, seed]);
 
   // Shells and electrons
   const shellConfig = useMemo(

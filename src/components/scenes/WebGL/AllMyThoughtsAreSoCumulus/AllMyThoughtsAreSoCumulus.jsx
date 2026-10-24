@@ -7,9 +7,7 @@ import React, {
 } from 'react';
 
 import {
-  Bounds,
   Environment,
-  Float,
   Line,
   OrbitControls,
   PerspectiveCamera,
@@ -26,13 +24,10 @@ import {
   useOperatorFreeCamera,
   useOperatorInput,
 } from '@modules/cameraRig';
+import { controlsFor } from '@modules/cumulus';
+import { CumulusSubject } from '@modules/cumulusRender';
 import CAMERA_SPLINE_PRESETS from '@presets/spline/cameraSplinePresets';
 
-import CensorPanel from './components/CensorPanel';
-import HaloDisplay from './components/HaloDisplay';
-import SceneCloud from './components/SceneCloud';
-import SceneFemur from './components/SceneFemur';
-import SceneSkull from './components/SceneSkull';
 import useSceneControls from './hooks/useSceneControls';
 
 // ---------------------------------------------------------------------------
@@ -45,6 +40,7 @@ const PORTRAIT_BOUNDS_MARGIN = 0.9;
 
 export default function AllMyThoughtsAreSoCumulus() {
   const { controls: c, setControls, controlsSnapshotRef } = useSceneControls();
+  const subjectControls = useMemo(() => controlsFor(c, false), [c]);
   const cameraRef = useRef(null);
   const controlsRef = useRef(null);
   const [cameraNode, setCameraNode] = useState(null);
@@ -332,92 +328,12 @@ export default function AllMyThoughtsAreSoCumulus() {
         />
       ) : null}
 
-      <Float speed={c.floatSpeed}>
-        <Bounds
-          fit={shouldFitOrbitBounds}
-          clip
-          observe={shouldFitOrbitBounds}
-          margin={boundsMargin}
-        >
-          <HaloDisplay controls={c} setControls={setControls} />
-
-          {c.skullVisible ? (
-            <SceneSkull
-              position={c.skullPosition}
-              rotation={c.skullRotation}
-              scale={c.skullScale}
-              visible={c.skullVisible}
-              showCranium={c.showCranium}
-              showLeftZygomatic={c.showLeftZygomatic}
-              showOccipital={c.showOccipital}
-              showRightLacrimal={c.showRightLacrimal}
-              showRightMaxilla={c.showRightMaxilla}
-              showRightNasal={c.showRightNasal}
-              showRightPalatine={c.showRightPalatine}
-              showRightParietal={c.showRightParietal}
-              showRightTemporal={c.showRightTemporal}
-              showRightZygomatic={c.showRightZygomatic}
-              showSphenoid={c.showSphenoid}
-              showTeeth={c.showTeeth}
-              showVomer={c.showVomer}
-              showEthmoid={c.showEthmoid}
-              showFrontal={c.showFrontal}
-              showInferiorConchae={c.showInferiorConchae}
-              showLeftLacrimal={c.showLeftLacrimal}
-              showLeftMaxilla={c.showLeftMaxilla}
-              showLeftNasal={c.showLeftNasal}
-              showLeftPalatine={c.showLeftPalatine}
-              showLeftParietal={c.showLeftParietal}
-              showLeftTemporal={c.showLeftTemporal}
-              showMandible={c.showMandible}
-              showMandibleBone={c.showMandibleBone}
-              showMandibleTeeth={c.showMandibleTeeth}
-            />
-          ) : null}
-
-          {c.cloudVisible ? (
-            <SceneCloud
-              position={c.cloudPosition}
-              rotation={c.cloudRotation}
-              scale={c.cloudScale}
-              visible={c.cloudVisible}
-              seed={c.cloudSeed}
-              segments={c.cloudSegments}
-              volume={c.cloudVolume}
-              opacity={c.cloudOpacity}
-              fade={c.cloudFade}
-              growth={c.cloudGrowth}
-              speed={c.cloudSpeed}
-              boundsX={c.cloudBoundsX}
-              boundsY={c.cloudBoundsY}
-              boundsZ={c.cloudBoundsZ}
-              color={c.cloudColor}
-            />
-          ) : null}
-
-          {c.femurVisible ? (
-            <SceneFemur
-              position={c.femurPosition}
-              rotation={c.femurRotation}
-              scale={c.femurScale}
-              visible={c.femurVisible}
-            />
-          ) : null}
-        </Bounds>
-
-        {c.censorPanelVisible ? (
-          <CensorPanel
-            visible={c.censorPanelVisible}
-            position={c.censorPanelPosition}
-            rotation={c.censorPanelRotation}
-            scale={c.censorPanelScale}
-            pixelSize={c.censorPixelSize}
-            refraction={c.censorRefraction}
-            clipOffset={c.censorClipOffset}
-          />
-        ) : null}
-      </Float>
-
+      <CumulusSubject
+        controls={subjectControls}
+        setControls={setControls}
+        fitBounds={shouldFitOrbitBounds}
+        margin={boundsMargin}
+      />
       {c.environmentIntensity > 0 ? (
         <Environment
           preset="studio"

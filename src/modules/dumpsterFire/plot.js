@@ -5,9 +5,11 @@ import {
   composeInks,
   createProjector,
   dotPath,
+  fixedPalette,
   imagePalette,
   imageSamples,
   inkAt,
+  inkEdgeRuns,
   inkMap,
   inkMask,
   meshEdges,
@@ -118,35 +120,93 @@ function scenePalette({ albedo, image, inks }) {
   return samplePalette(samples, inks, { vivid: 1 });
 }
 
+// Which of a fixed palette's inks draw the parts that have a colour of
+// their own rather than the surface's under them: the outlines in the
+// darkest, the fire in the yellowest, the smoke in the greyest of the rest.
+function inkRoles(palette) {
+  const indices = palette.map((_, i) => i);
+  const chroma = (i) => Math.hypot(palette[i].lab[1], palette[i].lab[2]);
+  const outline = indices.reduce((a, b) =>
+    palette[b].lab[0] < palette[a].lab[0] ? b : a
+  );
+  const fire = indices.reduce((a, b) =>
+    palette[b].lab[2] > palette[a].lab[2] ? b : a
+  );
+  const rest = indices.filter((i) => i !== outline && i !== fire);
+  const smoke = rest.length
+    ? rest.reduce((a, b) => (chroma(b) < chroma(a) ? b : a))
+    : outline;
+  return { fire, outline, smoke };
+}
+
+// The ink most of a piece's line work lies on (sampled at every point and
+// segment midpoint), or -1 off every ink.
+function pieceInk(runs, inkOf) {
+  const votes = new Map();
+  const vote = (x, y) => {
+    const ink = inkOf(x, y);
+    if (ink >= 0) votes.set(ink, (votes.get(ink) ?? 0) + 1);
+  };
+  runs.forEach((run) =>
+    run.forEach((p, i) => {
+      vote(p.x, p.y);
+      if (i) vote((p.x + run[i - 1].x) / 2, (p.y + run[i - 1].y) / 2);
+    })
+  );
+  let best = -1;
+  votes.forEach((count, ink) => {
+    if (best < 0 || count > votes.get(best)) best = ink;
+  });
+  return best;
+}
+
 // Strokes for one group of read-back objects: each object's section cuts in
-// its own frame, and every mesh's contours and creases.
-function meshStrokes(objects, { creaseAngle, eye, lines, style }) {
+// its own frame, and every mesh's contours and creases. `pieces` holds each
+// mesh's cuts and creases apart, so a dumpster's black lids and green shell
+// can take their own inks.
+function meshStrokes(objects, { creaseAngle, eye, lines, spacing, style }) {
   const contours = [];
   const creases = [];
   const sections = [];
+  const pieces = [];
   objects.forEach((object, o) => {
+    const meshPieces = object.meshes.map(() => ({ creases: [], sections: [] }));
     const faced = object.meshes.map((entry, m) => {
       const mesh = weldMesh(entry);
       const found = meshEdges(mesh, { creaseAngle, eye });
       const tag = (segment) =>
         segment.map(([key, point]) => [`${o}:${m}:${key}`, point]);
       contours.push(...found.contours.map(tag));
-      if (object.creases !== false) creases.push(...found.creases.map(tag));
+      if (object.creases !== false) {
+        meshPieces[m].creases = found.creases.map(tag);
+      }
       return { facing: found.facing, mesh };
     });
-    if (object.sections === false) return;
-    AXES[style]?.forEach((axis) => {
-      sections.push(
-        chainKeyed(
-          sectionCuts(faced, { axis, count: lines, inverse: object.inverse })
-        )
-      );
+    if (object.sections !== false) {
+      AXES[style]?.forEach((axis) => {
+        sectionCuts(faced, {
+          axis,
+          count: lines,
+          inverse: object.inverse,
+          spacing,
+        }).forEach((segment) => {
+          const m = Number(segment[0][0].split(':')[0]);
+          meshPieces[m].sections.push(segment);
+        });
+      });
+    }
+    meshPieces.forEach((piece) => {
+      creases.push(...piece.creases);
+      const cuts = chainKeyed(piece.sections);
+      sections.push(...cuts);
+      pieces.push({ creases: chainKeyed(piece.creases), sections: cuts });
     });
   });
   return {
     contours: chainKeyed(contours),
     creases: chainKeyed(creases),
-    sections: sections.flat(),
+    pieces,
+    sections,
   };
 }
 
@@ -164,11 +224,13 @@ export default function renderDumpsterSvg({
   contours = true,
   coverage = null,
   creaseAngle = 35,
+  detail = null,
   edges = true,
   flames = true,
   height,
   image = null,
   lines = 8,
+  lineSpacing = 0,
   outline = null,
   paper = '#ffffff',
   pixelRatio = 1,
@@ -206,27 +268,54 @@ export default function renderDumpsterSvg({
     });
   const { eye } = camera;
 
-  const solids = meshStrokes(scene.solids, { creaseAngle, eye, lines, style });
-  const sliceRuns = trace(solids.sections, false, 2, true);
+  const solids = meshStrokes(scene.solids, {
+    creaseAngle,
+    eye,
+    lines,
+    spacing: lineSpacing,
+    style,
+  });
+  // Inked by piece, each mesh's cuts and creases are traced apart so the
+  // mesh can take one ink.
+  const pieceRuns = color?.byPiece
+    ? solids.pieces.map((piece) => ({
+        creases: edges ? trace(piece.creases, true, 4, true) : [],
+        slices: trace(piece.sections, false, 2, true),
+      }))
+    : null;
+  const sliceRuns = pieceRuns
+    ? pieceRuns.flatMap((piece) => piece.slices)
+    : trace(solids.sections, false, 2, true);
   const contourRuns = contours ? trace(solids.contours, true, 4, true) : [];
-  const creaseRuns = edges ? trace(solids.creases, true, 4, true) : [];
+  let creaseRuns = [];
+  if (pieceRuns) creaseRuns = pieceRuns.flatMap((piece) => piece.creases);
+  else if (edges) creaseRuns = trace(solids.creases, true, 4, true);
 
-  const flameRuns = [];
-  if (flames && scene.flames.length) {
-    const blobs = meshStrokes(scene.flames, {
+  const blobRuns = (objects) => {
+    if (!objects.length) return [];
+    const blobs = meshStrokes(objects, {
       creaseAngle: 180,
       eye,
       lines: Math.max(3, Math.round(lines / 2)),
       style: style === 'none' ? 'none' : 'slices',
     });
-    flameRuns.push(
+    return [
       ...trace(blobs.contours, false, 3, true),
-      ...trace(blobs.sections, false, 3, true)
-    );
-  }
+      ...trace(blobs.sections, false, 3, true),
+    ];
+  };
+  const fireRuns = flames
+    ? blobRuns(scene.flames.filter((blob) => blob.effect === 'fire'))
+    : [];
+  const plumeRuns = flames
+    ? blobRuns(scene.flames.filter((blob) => blob.effect !== 'fire'))
+    : [];
+  const flameRuns = [...fireRuns, ...plumeRuns];
 
   let palette = [];
-  if (color && image && albedo) {
+  if (color?.fixed?.length && image) {
+    palette = fixedPalette(color.fixed);
+  } else if (color && image && albedo) {
     palette = scenePalette({ albedo, image, inks: color.inks });
   } else if (color && image && coverage) {
     palette = imagePalette({ image, k: color.inks, mask: coverage });
@@ -341,17 +430,48 @@ export default function renderDumpsterSvg({
       return ink >= 0 ? ink : sceneAt(x, y);
     };
     const all = layersInked === 'all';
+    const roles = color.roles ? inkRoles(palette) : null;
+    const smokeAt = roles ? () => roles.smoke : sceneAt;
+    const outlined = roles ? [...outlineLoops, ...contourRuns, ...halo] : [];
     const parts = [
-      { inkAt: onSolid, runs: sliceRuns },
-      { inkAt: onSolid, runs: contourRuns },
-      { inkAt: onSolid, runs: creaseRuns },
+      ...(pieceRuns
+        ? pieceRuns.map((piece) => {
+            const runs = [...piece.slices, ...piece.creases];
+            return { d: pathOf(runs), ink: pieceInk(runs, onSolid) };
+          })
+        : [
+            { inkAt: onSolid, runs: sliceRuns },
+            { inkAt: onSolid, runs: creaseRuns },
+          ]),
+      { inkAt: onSolid, runs: roles ? [] : contourRuns },
       { inkAt: onSolid, runs: textureLines },
-      { inkAt: sceneAt, runs: flameRuns },
-      { inkAt: sceneAt, runs: flowRuns },
-      { dots: dotList, inkAt: sceneAt },
-      { d: outlineLoops.length ? pathOf(outlineLoops) : '', ink: 0 },
-      { d: halo.length ? pathOf(halo) : '', ink: 0 },
+      roles
+        ? { inkAt: () => roles.fire, runs: fireRuns }
+        : { inkAt: sceneAt, runs: flameRuns },
+      roles ? { inkAt: smokeAt, runs: plumeRuns } : {},
+      { inkAt: smokeAt, runs: flowRuns },
+      { dots: dotList, inkAt: smokeAt },
+      roles
+        ? {}
+        : { d: outlineLoops.length ? pathOf(outlineLoops) : '', ink: 0 },
+      roles ? {} : { d: halo.length ? pathOf(halo) : '', ink: 0 },
     ];
+    if (color.detail && albedo) {
+      const within = {
+        covered: albedo.covered.map(
+          (on, i) => on && (!detail || detail.covered[i])
+        ),
+      };
+      Object.entries(
+        inkEdgeRuns({
+          coverage: within,
+          map: solidInks,
+          minLength: color.detail.minLength,
+          pixelRatio,
+          radius: color.detail.radius,
+        })
+      ).forEach(([ink, runs]) => parts.push({ d: pathOf(runs), ink: +ink }));
+    }
     if (all && shade) {
       parts.push({
         shade: (ink) => shadeIn(inkMask(solidInks, ink, coverage)),
@@ -365,6 +485,17 @@ export default function renderDumpsterSvg({
     }
     return (
       `${svgOpen}${composeInks(palette, parts, { stroke })}` +
+      `${
+        outlined.length
+          ? plotLayer(
+              20 + palette.length,
+              'outlines',
+              stroke,
+              pathOf(outlined),
+              palette[roles.outline].color
+            )
+          : ''
+      }` +
       `${!all ? layer(2, 'shading', shading) : ''}` +
       `${!all ? layer(10, 'smoke shading', smokeShading) : ''}</svg>`
     );
@@ -399,19 +530,47 @@ const shadeOf = (shading, spacing, options) =>
       }
     : null;
 
+// The pens a plot snaps to (`svgInks`), or none: inks are then sampled.
+export const inksOf = (options) =>
+  String(options.svgInks ?? '')
+    .split(',')
+    .map((color) => color.trim())
+    .filter(Boolean);
+
+const inked = (options) => options.svgColors > 0 || inksOf(options).length > 0;
+
+function colorOf(options) {
+  const fixed = inksOf(options);
+  if (fixed.length) {
+    return {
+      detail: options.svgDetail
+        ? {
+            minLength: options.svgDetailLength,
+            radius: options.svgDetailSmoothing,
+          }
+        : null,
+      byPiece: options.svgInkBy === 'piece',
+      fixed,
+      layers: options.svgColorLayers,
+      roles: options.svgInkRoles,
+    };
+  }
+  return options.svgColors > 0
+    ? { inks: options.svgColors, layers: options.svgColorLayers }
+    : null;
+}
+
 // The render options a plot reads, as renderDumpsterSvg's arguments; a
 // caller adds the camera, read-back scene and smoke, image and depth.
 export function plotArgs(options) {
   return {
-    color:
-      options.svgColors > 0
-        ? { inks: options.svgColors, layers: options.svgColorLayers }
-        : null,
+    color: colorOf(options),
     contours: options.svgContours,
     creaseAngle: options.svgCreaseAngle,
     edges: options.svgEdges,
     flames: options.svgFlames,
     height: options.height,
+    lineSpacing: options.svgLineSpacing,
     lines: options.svgLines,
     outline: outlineOf(options, null),
     paper: options.svgPaper,
@@ -433,7 +592,7 @@ export function plotArgs(options) {
 // Whether a plot needs the solids-only depth pass.
 export const needsDepth = (options) =>
   Boolean(
-    options.svgColors > 0 ||
+    inked(options) ||
     options.svgOcclusion ||
     options.svgSilhouette ||
     options.svgTexture ||
@@ -444,13 +603,13 @@ export const needsDepth = (options) =>
 // Whether a plot reads the render itself.
 export const needsImage = (options) =>
   Boolean(
-    options.svgColors > 0 ||
+    inked(options) ||
     options.svgTexture ||
     (options.svgShading && options.svgShading !== 'none')
   );
 
 // Whether a plot needs the solids' albedo pass (a colour plot's inks).
-export const needsAlbedo = (options) => options.svgColors > 0;
+export const needsAlbedo = (options) => inked(options);
 
 // Whether a plot needs a second render with the smoke hidden.
 export const needsSmokeContrast = (options) =>

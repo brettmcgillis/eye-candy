@@ -154,6 +154,21 @@ export function samplePalette(input, k, { vivid = 0 } = {}) {
     .sort((a, b) => a.lab[0] - b.lab[0]);
 }
 
+// The pens you own as a palette, in the order given: each `#rrggbb` (or
+// `#rgb`) becomes an ink the plot's colours snap to, rather than inks
+// sampled from the subject.
+export function fixedPalette(colors) {
+  return colors.map((color) => {
+    const text = color.trim().replace(/^#?/u, '');
+    const full =
+      text.length === 3
+        ? [...text].map((c) => c + c).join('')
+        : text.padEnd(6, '0');
+    const rgb = [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16));
+    return { color: hex(rgb), lab: lab(...rgb), mass: 0, share: 0 };
+  });
+}
+
 // rgb → the index of the nearest palette ink in CIELAB.
 export function nearestInk(palette) {
   return (rgb) => {

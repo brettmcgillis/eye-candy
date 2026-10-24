@@ -150,6 +150,18 @@
   font-weight: 650;
 }
 
+.rw-field--vector {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.rw-field--vector legend {
+  grid-column: 1 / -1;
+  padding: 0;
+}
+
 .rw-field--wide {
   grid-column: 1 / -1;
 }

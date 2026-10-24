@@ -7,7 +7,8 @@ const titleCase = (text) => text.charAt(0).toUpperCase() + text.slice(1);
 export default function createSchemaFolders({
   collapseGroups = true,
   controls = {},
-  folders,
+  folders = {},
+  inline = {},
   keys,
   label,
   open = [],
@@ -15,7 +16,12 @@ export default function createSchemaFolders({
 }) {
   const pathOf = (key) => {
     const { group, section } = options[key];
-    return [label, folders[section], ...(group ? group.split('.') : []), key]
+    return [
+      label,
+      inline[section] ?? folders[section],
+      ...(group ? group.split('.') : []),
+      key,
+    ]
       .filter(Boolean)
       .join('.');
   };
@@ -63,7 +69,7 @@ export default function createSchemaFolders({
       )
     );
 
-  function sectionFolder(section, saved, extras, top) {
+  function sectionContents(section, saved, extras, top) {
     const root = { ...top };
     keys
       .filter((key) => options[key].section === section)
@@ -78,16 +84,27 @@ export default function createSchemaFolders({
         level[key] = schemaControl(key, saved);
         Object.assign(level, extras[key]?.after);
       });
-    return folder(toFolders(root), { collapsed: !open.includes(section) });
+    return toFolders(root);
   }
 
   // `extras[key]` places controls (buttons, uploads) before/after a key;
-  // `top[section]` places them at the head of a section's folder.
-  return (saved = {}, extras = {}, top = {}) =>
-    Object.fromEntries(
+  // `top[section]` places them at the head of a section's folder. A section
+  // named in `inline` has no folder of its own: its groups join the parent
+  // folder the scene places the result in (the value names that parent).
+  return (saved = {}, extras = {}, top = {}) => ({
+    ...Object.fromEntries(
       Object.entries(folders).map(([section, name]) => [
         name,
-        sectionFolder(section, saved, extras, top[section]),
+        folder(sectionContents(section, saved, extras, top[section]), {
+          collapsed: !open.includes(section),
+        }),
       ])
-    );
+    ),
+    ...Object.assign(
+      {},
+      ...Object.keys(inline).map((section) =>
+        sectionContents(section, saved, extras, top[section])
+      )
+    ),
+  });
 }

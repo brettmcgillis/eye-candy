@@ -21,6 +21,7 @@ const SceneFemur = memo(function SceneFemur({
 
   return (
     <Femur
+      userData={{ plotAnatomy: true }}
       position={femurPosition}
       rotation={femurRotation}
       scale={scale}

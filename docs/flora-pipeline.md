@@ -294,12 +294,61 @@ a default flower this drops about two thirds of the line work (74.7k paths to
   camera uniforms; a hand-normalised `getViewZNode()` read back a constant.
   One 8-bit channel quantises coarser than a fiber is thick, so depth is split
   across two, and the camera frustum is wrapped around the drawn bounds.
-- **Colour is flat per layer** (stem, crown, accent, tip, ornament), each an
-  SVG group, because the output is pens: the scene's per-vertex blend has no
-  plotter equivalent. With a palette, each layer takes its own stop.
-- Solid ornaments plot as silhouettes (the convex hull of their projected
-  vertices, tumbled by a CPU mirror of the GPU's PCG hash); cards plot as their
-  outline; wireframe ornaments are already fibers.
+- **Colour comes from the actual shaders.** The shared stage captures unlit
+  albedo with each material's `colorNode`, `positionNode` and `maskNode` intact.
+  This includes the specimen's palette window, flip, HSL variation and each
+  ornament's random palette coordinate. `plotColors.js` samples that capture
+  into the requested `svgColors` inks (24 source inks when 0), then colors and
+  splits the original vector strokes from the captured ink map. Hidden or
+  subpixel samples inherit a neighboring ink or the nearest source-category
+  color so thin stems are never discarded for missing raster coverage.
+  One palette is fitted to the entire bouquet, not six inks per flower.
+  Albedo is required even when hatch shading is disabled.
+- Solid ornaments retain visible polyhedron edges, not just their hulls.
+  Sphere and card outlines are clipped along their edges against depth;
+  partial occlusion no longer keeps or discards an entire ornament. The CPU
+  rotation mirrors the installed Three r185 `rotate` matrix (negative angles
+  in Z/Y/X application order). Hearts follow the card shader's implicit mask,
+  including its clipping to the card square, rather than the wire-heart model.
+- Strand visibility is sampled along each segment with its interpolated tube
+  radius and the renderer's minimum-pixel radius. Its tolerance is independent
+  of SVG stroke width. Separate fibers never acquire joining strokes merely
+  because their projected ends are close together.
+- All structural strokes preview the physical `svgPenMm` nib at
+  `plotWidthMm`; `svgStroke` scales that preview, with 0 giving hairlines.
+  Pen width never changes visibility or which details survive.
+
+### Shading, silhouette and thinning
+
+`svgShading` defaults to **crosshatch**, with `svgShadeSpacing` **3 output px**.
+Set it to `none` for structural lines alone. The scene's materials and lighting
+are unchanged; the plot reads their rendered shadows.
+
+- `@modules/flora/ornamentShading.js` shades only solid ornaments and cards.
+  The shared stage captures an ornament-only depth pass with the strand mesh
+  temporarily hidden, restoring visibility in `finally`. Intersecting it with
+  the full scene depth excludes ornament surfaces hidden by stems or other
+  geometry. Wire ornaments and gaps between fibers receive no added shading.
+- The same albedo ink map colors both outlines and hatching; depth coverage
+  clips shading to visible ornament surfaces. Tone comes from the separate,
+  unblurred lit render, stretched
+  within each ink's 2nd–98th percentile with a minimum contrast range, preserving
+  highlights without exaggerating almost-flat lighting. Crosshatching uses at
+  most two directions at the default gamma; spacing cannot fall below twice
+  the physical nib width. Other plotKit shading styles remain available.
+- `svgShadeGamma`, `svgShadeAngle` and `svgPenMm` retain their usual meanings.
+  Headless stills and Live-tab SVG captures use the same shading kernel.
+- **`svgSilhouette`**, off by default, optionally traces the union of blurred
+  crown masses. `svgMassRadius` affects only this stylistic outline, never
+  ornament shading. Small loops shorter than four mass radii are omitted.
+- **`svgThin`** drops crown fibers by depth. A fiber rolls once, so thinning
+  fades rear fibers rather than randomly dashing every segment. Stems are
+  exempt.
+
+SVG-only exports establish the requested growth state before capturing depth,
+including when shading is disabled. Albedo is captured for every SVG; additional ornament depth capture is only
+performed for shaded plots, outside the interactive frame loop. Captured flat
+materials are cached and disposed with the stage.
 
 ### Known divergences
 

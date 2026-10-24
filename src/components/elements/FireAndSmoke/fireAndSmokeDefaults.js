@@ -66,6 +66,7 @@ export const DEFAULT_FIRE_AND_SMOKE_CONFIG = {
   worldScale: 0.01,
   poolSize: 160,
   particleCount: 500,
+  particleRate: 1,
   particleSpread: 1,
   particleSize: 1,
   particleSizeMin: 0.5,

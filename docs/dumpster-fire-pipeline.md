@@ -44,7 +44,8 @@ same CPU noise without depending on the DumpsterFire kernel.
 Every default reproduces the authored scene exactly — the check holds it to
 33 fixed + 20 loose pieces, the 212-block wall and an untouched smoke path.
 
-- **Trash** (`layoutTrash`): `authored` is the scene's hand-placed litter,
+- **Trash** (`layoutTrash`): `none` removes ground trash while leaving
+  `dumpsterContents` independent. `authored` is the scene's hand-placed litter,
   verbatim (including its degrees-as-radians yaws). `rolled` redraws which
   pieces, how many and where from `trashSeed`, each in an authored **rest
   pose** (its height and tilt) turned by a world yaw (`composeYaw`). Pieces
@@ -61,16 +62,42 @@ Every default reproduces the authored scene exactly — the check holds it to
   stands it on the ground.
 - **Smoke** (`smokeVisibility`, `bendSmokePoints`): `smokeSystem` picks the
   plume (FireAndSmoke's growing blobs), the particle system as Particle,
-  Volumetric or Both, or plume + particles as authored. The path is bent in
+  Volumetric or Both, or plume + particles as authored. `none` disables fire,
+  smoke and fire lights together; it is selectable but never randomly rolled.
+  The path is bent in
   its own frame — mirrored, leaned, stretched, swayed and jittered, all
   growing from the dumpster — on both the plume and the particle smoke; the
-  fire is never bent. `applySmokeGeneration` does this to the scene's smoke
-  state; the scene skips it while Edit Mode is on, so handles edit the
+  generated paths launch upward from their emitter, with lateral movement
+  eased in over distance and a buoyant rise beneath it. Mirroring applies
+  to that whole bend, so a leftward plume never starts right then doubles
+  back. Default controls preserve the authored paths exactly. The same field
+  also bends the fire path. `applySmokeGeneration` does this to the scene's
+  smoke state; the scene skips it while Edit Mode is on, so handles edit the
   authored path.
+- **Fire and smoke systems** (`flameSystemConfig`, `particleSystemConfig`):
+  each system's knobs are a section of their own (`plume`, `fire`,
+  `particles`), titled with the smoke systems that use them
+  (`SMOKE_SECTION_LABELS`) in the CLI help, the workbench (which follows
+  `when`, so picking Plume hides the particle smoke) and the scene's Leva
+  folders. `plume*` and `fire*` scale each FireAndSmoke's authored config —
+  `Particles` (particles per spawn, through the element's `particleRate`,
+  with `particleCount` grown to fit), `ParticleSpread`, `Travel`
+  (`pathTravel`: above 1 blobs and particles reach the end early and gather
+  there), `Speed` (`timeScale`, so how far a settle gets), `Blobs` (spawn
+  rate), `BlobSize`, `Detail`, `Drift`, `Rise`. `particles*` scale the
+  particle smoke's Particle and Volumetric layers alike. Every knob is a
+  multiplier defaulting to 1 and is never rolled, so batch names keep their
+  generations; pin them to hold a look across a job. The plume's particles
+  are the specks off its end: `--smokeSystem plume --plumeParticles 8
+--plumeParticleSpread 2 --svgSmokeDots 1` plots ~20× the default.
 - **Stage**: the `stage` roll picks a `mood` and sets the scene's light keys
   from it (paper-white day, or the Dark Mode look); a pinned mood steers it.
   Night also lightens the particle smoke and raises the fire light, as the
   Dark Mode presets do.
+
+The Ground controls `carpetEnabled` and `sidewalkGroundEnabled` independently
+hide the carpet and concrete sidewalk in the scene, Live view and exports.
+Trash settles on the ground when the carpet is hidden.
 
 ## The stage and capture
 
@@ -115,7 +142,9 @@ cut by the solids-only depth pass (`svgOcclusion`):
   the mirror's silhouette to cover the shader's at IoU > 0.75.
 - **Smoke dots** (`readSmokeDots`, pen-8): live particles as stipple, thinned
   by `svgSmokeDots` × their fade. **Flow lines** (`flowLines`, pen-9):
-  streamlines wound along each visible smoke path's tube. **Smoke shading**
+  streamlines wound along each visible smoke path's tube. `svgSmokeStyle`
+  switches between smoke only and smoke with flow lines; `svgSmokeFlow`
+  controls the line count. **Smoke shading**
   (pen-10): plotKit shading of the render with smoke against one without
   (`smokeContrast`), so it reads the same on day and night streets.
 - The blobs are drawn without depth, so they hide line work themselves: a
@@ -145,6 +174,32 @@ section-only split). The pieces are plotKit's, for any bench:
   ink's region, and silhouette and halo go to the darkest ink.
 
 The check requires a 6-ink plot to have four or more inks and a green one.
+
+### Plotting in your own pens
+
+`svgInks` (comma-separated hex, in pen order) replaces the sampled palette
+with the pens you own; leave `svgColors` at 0 so `inkLayers` doesn't re-merge
+them. With it:
+
+- **`svgInkBy piece`** (default): each piece's cuts and creases take the ink
+  most of its albedo snaps to (`pieceInk`), so the dumpster is green and a
+  block is red, grime and all. `surface` keeps the per-stroke ink under it.
+- **`svgInkRoles`**: silhouette, contours and halo leave the inks for a last
+  `outlines` layer in the darkest pen (plot it last); the fire takes the
+  yellowest pen, the plume, stipple and flow lines the greyest of the rest.
+- **`svgDetail`**: plotKit `inkEdgeRuns` traces where the albedo's ink
+  changes — stickers, labels, paint — mode-filtered over
+  `svgDetailSmoothing` px, each boundary once in the ink of the smaller
+  region, strokes under `svgDetailLength` px dropped. It reads only the
+  dumpster and trash: a second depth pass without the wall, rug and ground
+  litter (whose mortar, pattern and scraps are noise), after an
+  `advanceFrame` — a pass renders once per frame, so without it the capture
+  reads back the first depth pass.
+- **`svgLineSpacing`** (metres) spaces cuts by size instead of `svgLines`
+  per piece, so the dumpster gets ~30 cuts and a block a handful.
+
+The check requires a fixed-ink plot to end on its outlines layer, keep a
+green dumpster and red wall, and draw only its own pens.
 
 ## The scene
 

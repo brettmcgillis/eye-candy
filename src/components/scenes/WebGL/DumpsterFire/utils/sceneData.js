@@ -266,11 +266,15 @@ export function buildSceneItems(config) {
           leftLidRotation: -radians(521),
         },
       }),
-      createPropAsset('persian-rug', {
-        position: DECOR_RUG.position,
-        rotation: DECOR_RUG.rotation,
-        scale: DECOR_RUG.scale,
-      }),
+      ...(config.carpetEnabled !== false
+        ? [
+            createPropAsset('persian-rug', {
+              position: DECOR_RUG.position,
+              rotation: DECOR_RUG.rotation,
+              scale: DECOR_RUG.scale,
+            }),
+          ]
+        : []),
       ...fixed.map(({ key, position, rotation }) =>
         createPropAsset(key, { position, rotation })
       ),

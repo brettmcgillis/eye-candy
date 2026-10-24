@@ -40,7 +40,7 @@ function blurredLuma({ data, height, width }, radius) {
 }
 
 // Marching squares at `level`, skipping any cell with a corner off the ghost.
-function maskedSegments(values, covered, width, height, level) {
+export function maskedSegments(values, covered, width, height, level) {
   const segments = [];
   const at = (x, y) => values[y * width + x];
   const on = (x, y) => covered[y * width + x];

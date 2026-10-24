@@ -148,9 +148,10 @@ const transform = (m, [x, y, z]) => [
 ];
 
 // Level cuts through one object's meshes along its own `axis` (1: height,
-// 2: length), `count` planes spread across its extent, drawn on the faces
-// toward the eye only.
-export function sectionCuts(meshes, { axis, count, inverse }) {
+// 2: length), `count` planes spread across its extent — or, given
+// `spacing`, one every `spacing` world units, so a big piece gets more cuts
+// than a small one — drawn on the faces toward the eye only.
+export function sectionCuts(meshes, { axis, count, inverse, spacing = 0 }) {
   const locals = meshes.map(({ mesh }) => {
     const values = new Float64Array(mesh.count);
     for (let i = 0; i < mesh.count; i += 1) {
@@ -167,9 +168,18 @@ export function sectionCuts(meshes, { axis, count, inverse }) {
     })
   );
   if (!(hi > lo)) return [];
+  const perUnit = Math.hypot(
+    inverse[axis],
+    inverse[4 + axis],
+    inverse[8 + axis]
+  );
+  const cuts =
+    spacing > 0
+      ? Math.max(1, Math.round((hi - lo) / (spacing * perUnit)))
+      : count;
   const levels = Array.from(
-    { length: count },
-    (_, k) => lo + ((hi - lo) * (k + 0.5)) / count + 1e-7
+    { length: cuts },
+    (_, k) => lo + ((hi - lo) * (k + 0.5)) / cuts + 1e-7
   );
   const segments = [];
   meshes.forEach(({ facing, mesh }, m) => {

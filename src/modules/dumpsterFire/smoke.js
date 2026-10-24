@@ -12,15 +12,74 @@ const SMOKE_TYPES = {
 
 export function smokeVisibility(system) {
   return {
+    fire: system !== 'none',
     particles: SMOKE_TYPES[system] ?? null,
     plume: system === 'mixed' || system === 'plume',
   };
+}
+
+// A flame system's (the fire's or the plume's, by `prefix`) authored
+// FireAndSmoke config under a generation's knobs, every one a multiplier so
+// 1 leaves it as authored: `Particles` particles per spawn (the cap grows to
+// match), how far they spread off the path, how fast the system runs, how
+// far along the path the blobs and particles get, how often blobs spawn,
+// and their size, surface detail, drift and rise.
+export function flameSystemConfig(authored, config, prefix) {
+  const knob = (name) => config[`${prefix}${name}`] ?? 1;
+  const rate = knob('Particles');
+  return {
+    ...authored,
+    detailMax: authored.detailMax * knob('Detail'),
+    detailMin: authored.detailMin * knob('Detail'),
+    driftScale: authored.driftScale * knob('Drift'),
+    particleCount: Math.round(authored.particleCount * Math.max(1, rate)),
+    particleRate: (authored.particleRate ?? 1) * rate,
+    particleSpread: authored.particleSpread * knob('ParticleSpread'),
+    pathTravel: authored.pathTravel * knob('Travel'),
+    riseScale: authored.riseScale * knob('Rise'),
+    shapeRadiusMax: authored.shapeRadiusMax * knob('BlobSize'),
+    shapeRadiusMin: authored.shapeRadiusMin * knob('BlobSize'),
+    spawnIntervalMs: authored.spawnIntervalMs / knob('Blobs'),
+    timeScale: authored.timeScale * knob('Speed'),
+  };
+}
+
+// The particle smoke system's config keys each `particles*` knob scales,
+// for its Particle and Volumetric layers alike.
+const PARTICLE_KNOBS = {
+  particlesAmount: ['particleCount', 'volParticleCount'],
+  particlesBuoyancy: ['buoyancy', 'volBuoyancy'],
+  particlesDrift: ['maxDrift', 'volMaxDrift'],
+  particlesFlow: ['flowSpeed'],
+  particlesGrowth: ['growth', 'volGrowth'],
+  particlesSize: ['particleSize', 'volSize'],
+  particlesSpread: ['spawnSpread', 'volSpread'],
+  particlesTurbulence: ['turbulence', 'volTurbulence'],
+};
+const COUNTS = new Set(['particleCount', 'volParticleCount']);
+
+// The particle smoke's authored config under a generation's `particles*`
+// multipliers (1 leaves it as authored).
+export function particleSystemConfig(authored, config) {
+  const scaled = { ...authored };
+  Object.entries(PARTICLE_KNOBS).forEach(([knob, keys]) => {
+    const factor = config[knob] ?? 1;
+    keys.forEach((key) => {
+      if (typeof authored[key] !== 'number') return;
+      scaled[key] = COUNTS.has(key)
+        ? Math.round(authored[key] * factor)
+        : authored[key] * factor;
+    });
+  });
+  return scaled;
 }
 
 const DEG = Math.PI / 180;
 
 // How far, in metres, the smoke's sway and jitter take to reach full size.
 const SMOKE_REACH_M = 12;
+// A rising launch keeps wind-driven paths inside the opening below the rim.
+const SMOKE_RISE_M = 2;
 
 function arcDistances(points) {
   const lengths = [0];
@@ -67,7 +126,13 @@ function smokeField(config) {
 // growing from nothing at the dumpster. Every default leaves the authored
 // path exactly as it was.
 export function bendSmokePoints(points, config, scale = 1) {
-  if (points.length < 2) return points.map((p) => [...p]);
+  const deformed =
+    config.smokeMirror ||
+    config.smokeLean !== 0 ||
+    config.smokeReach !== 1 ||
+    config.smokeSway !== 0 ||
+    config.smokeJitter !== 0;
+  if (points.length < 2 || !deformed) return points.map((p) => [...p]);
   const [ox, oy, oz] = points[0];
   const distances = arcDistances(points);
   const field = smokeField(config);
@@ -77,7 +142,8 @@ export function bendSmokePoints(points, config, scale = 1) {
   const reach = config.smokeReach;
   return points.map(([x, y, z], i) => {
     if (i === 0) return [x, y, z];
-    const { across, jitter, through } = field(distances[i] * reach * scale);
+    const distance = distances[i] * reach * scale;
+    const { across, jitter, through } = field(distance);
     let dx = (x - ox) * reach;
     let dy = (y - oy) * reach;
     let dz = (z - oz) * reach;
@@ -88,7 +154,9 @@ export function bendSmokePoints(points, config, scale = 1) {
     dy += (py * across + jitter[1]) / scale;
     dz += (through + jitter[2]) / scale;
     if (config.smokeMirror) dx = -dx;
-    return [ox + dx, oy + dy, oz + dz];
+    const wind = 1 - Math.exp(-((distance / (SMOKE_RISE_M * 2)) ** 2));
+    const lift = SMOKE_RISE_M * (1 - Math.exp(-distance / SMOKE_RISE_M));
+    return [ox + dx * wind, oy + Math.max(dy, lift / scale), oz + dz * wind];
   });
 }
 
@@ -171,7 +239,8 @@ const norm = (a) => {
 // `twist` turns along the path and breathing in and out. A path is
 // `{ curve: t → [x, y, z] (world), radius: t → metres, end }`: the lines
 // stop by `end` (0–1, default 1), where the smoke itself gives out.
-export function flowLines(paths, { count, seed, twist }) {
+export function flowLines(paths, { count, seed, style = 'flow', twist }) {
+  if (style === 'smoke') return [];
   const rng = createRng(`flow:${seed}`);
   const lines = [];
   paths.forEach(({ curve, end = 1, radius }) => {

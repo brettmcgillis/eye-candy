@@ -37,7 +37,7 @@ const SceneCloud = memo(function SceneCloud({
   );
 
   return (
-    <Clouds visible={visible}>
+    <Clouds visible={visible} userData={{ plotCloud: true }}>
       <Cloud
         position={cloudPosition}
         rotation={cloudRotation}

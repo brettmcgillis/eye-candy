@@ -11,7 +11,13 @@ import {
 } from '../src/modules/cumulus/renderOptions.mjs';
 import createBrowser from './lib/cumulusBrowser.mjs';
 import { loadKernel } from './lib/cumulusRender.mjs';
+import schemaControlCoverage from './lib/schemaControlCoverage.mjs';
 import checkWorkbenchPage from './lib/workbenchPage.mjs';
+
+// Scene controls whose schema folders the presets are applied through.
+const CONTROLS = [
+  '/src/components/scenes/WebGL/AllMyThoughtsAreSoCumulus/utils/controls.js',
+];
 
 const failures = [];
 const check = (ok, message) => {
@@ -164,6 +170,7 @@ if (process.argv.includes('--render')) {
     await capturer.dispose();
   }
 }
+failures.push(...(await schemaControlCoverage(CONTROLS)));
 if (failures.length) {
   failures.forEach((message) => console.error(message));
   process.exitCode = 1;

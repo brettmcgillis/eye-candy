@@ -5,7 +5,6 @@ export default {
   aliases: ['CumulusCLI'],
   label: 'CumulusCLI',
   group: 'render-workbenches',
-  description:
-    'Randomize All My Thoughts Are So Cumulus halos, capture stills and video, and plot in color or black ink.',
+  description: 'Generate images and videos using the CumulusCLI.',
   Component: lazy(() => import('./CumulusWorkbenchPage')),
 };

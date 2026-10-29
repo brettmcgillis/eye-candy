@@ -11,6 +11,8 @@ export const HALO_PRESET_ORDER = [
 
 export const PRESETS = {
   'Default Rings': {
+    ambientIntensity: 0,
+    plIntensity: 1.5,
     backgroundColor: '#ffffff',
     haloType: 'rings',
     bloomEnabled: false,
@@ -34,6 +36,8 @@ export const PRESETS = {
     ringsLightblue: '#69d8ff',
   },
   'Gradient Rings': {
+    ambientIntensity: 0,
+    plIntensity: 1.5,
     backgroundColor: '#ffffff',
     haloType: 'rings',
     bloomEnabled: false,
@@ -53,6 +57,8 @@ export const PRESETS = {
     ringsSteps: 8,
   },
   Atomic: {
+    ambientIntensity: 0,
+    plIntensity: 1.5,
     backgroundColor: '#ffffff',
     haloType: 'atomic',
     bloomEnabled: false,
@@ -69,6 +75,8 @@ export const PRESETS = {
     atomShellSpacing: 0.65,
   },
   Network: {
+    ambientIntensity: 0,
+    plIntensity: 1.5,
     backgroundColor: '#ffffff',
     haloType: 'network',
     bloomEnabled: false,
@@ -89,6 +97,8 @@ export const PRESETS = {
     networkTimeScale: 0.4,
   },
   Record: {
+    ambientIntensity: 0,
+    plIntensity: 1.5,
     backgroundColor: '#ffffff',
     haloType: 'record',
     bloomEnabled: false,
@@ -104,6 +114,8 @@ export const PRESETS = {
     speed: 33,
   },
   Plate: {
+    ambientIntensity: 0,
+    plIntensity: 1.5,
     backgroundColor: '#ffffff',
     haloType: 'plate',
     bloomEnabled: false,

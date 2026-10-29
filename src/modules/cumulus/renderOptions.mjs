@@ -844,9 +844,41 @@ export const RENDER_OPTIONS = {
       when: { censorPanelVisible: [true] },
     })
   ),
-  cameraAzimuth: num('camera', null, 'Camera azimuth', -38.5, -180, 180, 0.5),
-  cameraElevation: num('camera', null, 'Camera elevation', 19, -80, 80, 0.5),
-  cameraZoom: num('camera', null, 'Camera zoom', 1, 0.3, 3, 0.01),
+  cameraAzimuth: rolled(
+    'camera',
+    [-60, 30],
+    num('camera', null, 'Camera azimuth', -38.5, -180, 180, 0.5, {
+      help: 'Degrees round the skull from its face (hero only)',
+    })
+  ),
+  cameraElevation: rolled(
+    'camera',
+    [6, 34],
+    num('camera', null, 'Camera elevation', 19, -80, 80, 0.5, {
+      help: 'Degrees above the skull',
+    })
+  ),
+  cameraZoom: rolled(
+    'camera',
+    [0.92, 1.2],
+    num('camera', null, 'Camera zoom', 1, 0.3, 3, 0.01, {
+      help: 'Above 1 crops in; below 1 leaves room round the frame',
+    })
+  ),
+  cameraRoll: rolled(
+    'camera',
+    [-5, 5],
+    num('camera', null, 'Camera roll', 0, -45, 45, 1, {
+      help: 'Degrees the hero frame tilts',
+    })
+  ),
+  cameraShiftY: rolled(
+    'camera',
+    [-0.06, 0.06],
+    num('camera', null, 'Camera shift', 0, -0.5, 0.5, 0.01, {
+      help: 'Moves the subject up (+) or down in the hero frame, in frame heights',
+    })
+  ),
   cameraPanX: num('camera', null, 'Camera target X offset', 0, -20, 20, 0.01),
   cameraPanY: num('camera', null, 'Camera target Y offset', 0, -20, 20, 0.01),
   cameraPanZ: num('camera', null, 'Camera target Z offset', 0, -20, 20, 0.01),
@@ -889,7 +921,7 @@ export const RENDER_OPTIONS = {
   ),
   svgPaperDistance: still(
     num('svg', null, 'SVG paper distance', 20, 0, 60, 1, {
-      help: 'Inks closer than this (CIELAB ΔE) to the paper are dropped; their lines and shading take the nearest remaining ink',
+      help: 'Inks closer than this (CIELAB ΔE) to the paper are darkened until they clear it, so pale parts keep a pen that shows',
     })
   ),
   svgOcclusion: standard.svgOcclusion('Remove lines hidden by nearer surfaces'),

@@ -24,6 +24,7 @@ const CensorPanel = memo(function CensorPanel({
 
   return (
     <group
+      userData={{ plotCensor: true }}
       visible={visible}
       position={panelPosition}
       rotation={panelRotation}

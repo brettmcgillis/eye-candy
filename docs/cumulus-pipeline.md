@@ -42,19 +42,25 @@ capture route. Geometry, motion and plot use that one camera and clock.
 Stills write lossless WebP, SVG and `props.json`; video supports MP4 and WebM,
 including transparent WebM. Montage holds each generation; motion advances
 the halo's authored animation; turntable adds a camera orbit. `frameTime`
-selects the initial instant. Generation seeds reproduce atom packing and
+selects the initial instant. The `camera` facet rolls the hero shot like DumpsterFire's: azimuth
+−60…30°, elevation 6…34°, zoom 0.92…1.2, a ±5° tilt and a small vertical
+shift; front, profile and back keep their fixed azimuths with the rolled
+elevation and zoom. `--keep camera` (or pinning a key) holds it, and Start
+from preset holds it at the default. Generation seeds reproduce atom packing and
 network layout as well as option rolls.
 
 SVG uses read-back geometry contours and creases with depth occlusion,
 network lines and points, and density-controlled shading from the frozen
 render. Ink colors come from an unlit material pass (including texture
-maps); WebGL shader effects retain their shader colors. The skull and femur have a separate dark outline ink so pale bone colors
-remain legible on paper. Black ink only forces monochrome lines and shading.
+maps); WebGL shader effects retain their shader colors. The skull and femur outline in `svgAnatomyInk` so pale bone stays legible;
+with `svgColors` set it snaps to the nearest plot ink, so it never spends a
+pen of a small budget. Rolled ring bands take five colours spread across the
+palette in a shuffled order. Black ink only forces monochrome lines and shading.
 Lines and shading share one palette (`svgColors` inks, 8 when 0) and one
-layer per ink; inks within `svgPaperDistance` (CIELAB ΔE) of `svgPaper` are
-dropped so nothing is drawn in a pen that vanishes on the page, and the
-shading's ink map takes the commonest ink around each pixel so texture
-flecks don't shade as specks. Silhouette, contours, creases (with crease
+layer per ink; an ink within `svgPaperDistance` (CIELAB ΔE) of `svgPaper`
+is darkened until it clears it, so pale bone keeps a bone pen instead of
+going unshaded, and the shading's ink map takes the commonest ink around
+each pixel so texture flecks don't shade as specks. Silhouette, contours, creases (with crease
 angle), texture contours and a min length are switchable for the halo, and
 the scanned bones have their own contour/crease switches, coarser crease
 angle and min length. Network points plot as circles at their rendered size
@@ -65,6 +71,29 @@ and censor refraction have no exact mesh outline; their visible tone is
 represented by image-driven shading. Bloom is captured in raster output;
 a pen plot represents the subject through line work and tone rather than
 reproducing emitted light. Open in Plotterizer handles pen mapping and DXF.
+
+### Shading regions
+
+The capture tags three regions, and each ink shades each region apart:
+
+- **Solids** (halo, bones, panel): tone is the region's own light stretched
+  between its 2nd and 98th percentile (plotKit `stretchTone`, as Flora's
+  ornaments), with 35% of the render's luma kept so a black part still reads
+  darker than bone; the deepest shadow stops at two hatch directions. The
+  mask is eroded by half the shade spacing first, so orbit tubes and ring
+  rims stay clean outlines (`erodeMask`).
+- **Cloud** (`userData.plotCloud`): its drei sprite planes are left out of
+  the mesh line work (they traced straight lines through the puff); the
+  cloud is what a frame without it lacks, hatched softly at 1.5× spacing and
+  at most one direction, inside the lumpy silhouette.
+- **Censor** (`userData.plotCensor`, found by an id pass): the pixelation is
+  plotted as it renders — every boundary between two inks in the block grid
+  as straight axis-aligned strokes in the darker ink (`censor N` layers),
+  and each block hatched along the grid by its own flat luma, so blocks stay
+  single-coloured squares with clear edges.
+
+Spacing never falls below twice the pen width. Embossed lettering on the
+plate is normal-map detail, so only `--svgTexture` picks it up.
 
 ## Headless WebGL
 

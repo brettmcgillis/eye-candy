@@ -71,12 +71,15 @@ export function rollConfig(
         const item = RENDER_OPTIONS[key];
         if (item.roll) {
           const { min, max, step = 0.01 } = item.roll;
-          config[key] = Math.min(
-            max,
-            Math.max(
-              min,
-              Math.round((min + stream() * (max - min)) / step) * step
-            )
+          const places = Math.max(0, -Math.floor(Math.log10(step)));
+          config[key] = Number(
+            Math.min(
+              max,
+              Math.max(
+                min,
+                Math.round((min + stream() * (max - min)) / step) * step
+              )
+            ).toFixed(places)
           );
         }
       });
@@ -95,16 +98,23 @@ export function rollConfig(
         const colors = samplePaletteColors(stops, 7, config.paletteExact).map(
           rgbToHex
         );
+        [, , , , , config.networkPointColor, config.networkLineColor] = colors;
+        // The rings' five bands span the whole palette, dealt out in a
+        // shuffled order: in palette order neighbours were near twins, and
+        // exact sampling of a two-stop palette gave three bands one colour.
+        const bands = samplePaletteColors(stops, 5, false).map(rgbToHex);
+        for (let i = bands.length - 1; i > 0; i -= 1) {
+          const j = Math.floor(stream() * (i + 1));
+          [bands[i], bands[j]] = [bands[j], bands[i]];
+        }
         [
           'ringsSilver',
           'ringsWhite',
           'ringsBlack',
           'ringsBlue',
           'ringsLightblue',
-          'networkPointColor',
-          'networkLineColor',
         ].forEach((key, i) => {
-          config[key] = colors[i];
+          config[key] = bands[i];
         });
       }
       if (facet === 'motion') {
@@ -150,12 +160,12 @@ export function controlsFor(config, bench = true) {
 }
 
 // Every pin that makes a roll reproduce a halo preset, for starting a new
-// variation from it: placement and motion are held at their defaults so only
+// variation from it: placement, motion and camera are held at their defaults so only
 // the preset's own values and the seed vary.
 export function presetPins(name) {
   return {
     ...Object.fromEntries(
-      ['placement', 'motion']
+      ['placement', 'motion', 'camera']
         .flatMap(keysInFacet)
         .map((key) => [key, RENDER_OPTIONS[key].default])
     ),
@@ -194,6 +204,7 @@ export function frameThought({
   azimuthOffset = 0,
 }) {
   const angles = { front: 0, profile: 90, back: 180 };
+  const hero = !(view in angles);
   const frame = bounds.points ? framePoints : frameSphere;
   const viewConfig = frame({
     points: bounds.points,
@@ -203,6 +214,8 @@ export function frameThought({
     fov: options.fov,
     height: options.height,
     margin: options.margin,
+    roll: hero ? (config.cameraRoll ?? 0) : 0,
+    shift: hero ? (config.cameraShiftY ?? 0) : 0,
     width: options.width,
     zoom: config.cameraZoom,
   });

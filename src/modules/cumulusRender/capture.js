@@ -116,29 +116,41 @@ export function plotFrame({
     side: THREE.DoubleSide,
   });
   const bones = [];
+  const clouds = [];
+  const censors = new Set();
   subject.traverseVisible((node) => {
     if (node.userData.plotAnatomy) bones.push(node);
+    if (node.userData.plotCloud) clouds.push(node);
+    if (node.userData.plotCensor)
+      node.traverse((part) => {
+        if (part.isMesh) censors.add(part);
+      });
   });
+  const show = (nodes, visible) =>
+    nodes.forEach((node) => {
+      node.visible = visible;
+    });
   const anatomy = bones.flatMap((node) => readMeshes(node));
-  bones.forEach((node) => {
-    node.visible = false;
-  });
+  show([...bones, ...clouds], false);
   const meshes = readMeshes(subject);
-  bones.forEach((node) => {
-    node.visible = true;
-  });
+  show([...bones, ...clouds], true);
   const lines = worldLines(subject, {
     camera,
     height: options.height,
     nodes: options.svgNodes,
   });
   let image;
+  let solid;
   let albedo;
   let packed;
+  let censorPass = null;
   try {
     scene.background = null;
     renderer.setClearAlpha(0);
     image = readFrame(renderer, scene, camera, width, height);
+    show(clouds, false);
+    solid = readFrame(renderer, scene, camera, width, height);
+    show(clouds, true);
     subject.traverseVisible((node) => {
       if (!node.material) return;
       originals.push([node, node.material]);
@@ -162,11 +174,34 @@ export function plotFrame({
     });
     renderer.toneMapping = THREE.NoToneMapping;
     albedo = readFrame(renderer, scene, camera, width, height);
+    if (censors.size) {
+      // Which pixels the censor itself draws: it white, all else black.
+      const ink = (color) => {
+        const material = new THREE.MeshBasicMaterial({ color });
+        temporary.push(material);
+        return material;
+      };
+      const white = ink('#ffffff');
+      const black = ink('#000000');
+      const strokes = originals
+        .filter(([node]) => !node.isMesh)
+        .map(([node]) => node);
+      show(clouds, false);
+      show(strokes, false);
+      originals.forEach(([node]) => {
+        if (node.isMesh) node.material = censors.has(node) ? white : black;
+      });
+      censorPass = readFrame(renderer, scene, camera, width, height);
+      show(strokes, true);
+      show(clouds, true);
+    }
     originals.forEach(([node]) => {
       if (node.isMesh) node.material = depth;
     });
+    show(clouds, false);
     packed = readFrame(renderer, scene, camera, width, height, false);
   } finally {
+    show(clouds, true);
     originals.forEach(([node, material]) => {
       node.material = material;
     });
@@ -181,6 +216,9 @@ export function plotFrame({
     albedo.covered[i] = albedo.data[i * 4 + 3] > 16 ? 1 : 0;
   const data = new Float32Array(width * height);
   const covered = new Uint8Array(data.length);
+  const solids = new Uint8Array(data.length);
+  const cloud = new Uint8Array(data.length);
+  const censor = new Uint8Array(data.length);
   for (let i = 0; i < data.length; i += 1) {
     const j = i * 4;
     const unit =
@@ -192,6 +230,9 @@ export function plotFrame({
       (camera.near * camera.far) /
       (camera.far - unit * (camera.far - camera.near));
     covered[i] = image.data[j + 3] > 16 ? 1 : 0;
+    solids[i] = solid.data[j + 3] > 16 ? 1 : 0;
+    cloud[i] = covered[i] && !solids[i] ? 1 : 0;
+    censor[i] = censorPass && covered[i] && censorPass.data[j] > 127 ? 1 : 0;
   }
   const visible = options.svgOcclusion
     ? (x, y, z) => {
@@ -204,7 +245,7 @@ export function plotFrame({
             const sy = Math.max(0, Math.min(height - 1, py + dy));
             farthest = Math.max(
               farthest,
-              covered[sy * width + sx] ? data[sy * width + sx] : camera.far
+              solids[sy * width + sx] ? data[sy * width + sx] : camera.far
             );
           }
         return z <= farthest + 0.015;
@@ -217,6 +258,8 @@ export function plotFrame({
     albedo,
     anatomy,
     camera: viewOf(camera, target),
+    censor: censorPass ? { covered: censor, height, width } : null,
+    cloud: { covered: cloud, height, width },
     coverage,
     image,
     lines,

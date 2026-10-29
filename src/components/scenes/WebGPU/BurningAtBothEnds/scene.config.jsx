@@ -8,7 +8,7 @@ function SceneIcon() {
 export default {
   id: 'burningAtBothEnds',
   label: 'Burning At Both Ends',
-  channel: 'webgl',
+  channel: 'webgpu',
   area: 'showcase',
   icon: SceneIcon,
   Component: lazy(() => import('./BurningAtBothEnds')),

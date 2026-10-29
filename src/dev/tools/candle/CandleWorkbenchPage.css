@@ -1,0 +1,36 @@
+.candle-live {
+  display: grid;
+  gap: 10px;
+}
+
+.candle-live__toolbar {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.candle-live__panel {
+  align-items: end;
+  display: grid;
+  gap: 10px;
+  grid-template-columns: minmax(12rem, 18rem) minmax(0, 1fr);
+}
+
+.candle-live__sliders {
+  grid-template-columns: repeat(4, minmax(6rem, 1fr));
+}
+
+.candle-live__toggle {
+  align-items: center;
+  display: inline-flex;
+  font-size: 13px;
+  gap: 6px;
+}
+
+.candle-live__stage {
+  background: #000;
+  border-radius: 8px;
+  margin: 0 auto;
+  overflow: hidden;
+}

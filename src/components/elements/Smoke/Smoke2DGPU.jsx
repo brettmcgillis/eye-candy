@@ -1,6 +1,5 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef } from 'react';
 
-import { Billboard } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 
 import {
@@ -81,6 +80,25 @@ const fbm2 = Fn(([pInput]) => {
   type: 'float',
   inputs: [{ name: 'pInput', type: 'vec2' }],
 });
+
+const parentTurn = new THREE.Quaternion();
+
+// Turns its children to face the camera whatever the parent's rotation —
+// drei's Billboard, without drei, so the smoke mounts on a headless stage.
+function Facing({ children, position }) {
+  const ref = useRef(null);
+  useFrame(({ camera }) => {
+    const group = ref.current;
+    if (!group) return;
+    group.parent.getWorldQuaternion(parentTurn).invert();
+    group.quaternion.copy(parentTurn.multiply(camera.quaternion));
+  });
+  return (
+    <group position={position} ref={ref}>
+      {children}
+    </group>
+  );
+}
 
 export default function Smoke2DGPU({
   position = [0, 0, 0],
@@ -198,16 +216,10 @@ export default function Smoke2DGPU({
   const meshScale = inverted ? [1, -1, 1] : [1, 1, 1];
 
   return (
-    <Billboard
-      position={position}
-      follow
-      lockX={false}
-      lockY={false}
-      lockZ={false}
-    >
+    <Facing position={position}>
       <mesh position={[0, meshY, 0]} scale={meshScale} geometry={geometry}>
         <primitive object={material} attach="material" />
       </mesh>
-    </Billboard>
+    </Facing>
   );
 }

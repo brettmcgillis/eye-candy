@@ -21,7 +21,7 @@ export function fillCapTexture(textures, drawn) {
     return;
   uploaded.set(textures, drawn);
   const data = new Float32Array(drawn.length * 12);
-  drawn.forEach(({ cap }, index) => {
+  drawn.forEach(({ cap, connections }, index) => {
     if (!cap) return;
     const [top, middle, bottom] = cap.connections;
     const angle =
@@ -38,7 +38,7 @@ export function fillCapTexture(textures, drawn) {
         Math.cos(angle),
         Math.sin(angle),
         cap.facing ? 1 : 0,
-        0,
+        Math.floor(connections[0][1] / 6),
       ],
       index * 12
     );

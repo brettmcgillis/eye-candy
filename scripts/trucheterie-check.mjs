@@ -1176,6 +1176,95 @@ function checkTriangleReference(blob, look) {
   });
 }
 
+// Straight two-way cells and per-stretch (irregular) subdivision joins: every
+// visible stroke end meets another stroke, and both survive the codecs.
+function checkTriangleStraightsAndIrregular(blob) {
+  const seeded = blob.designFromSeed({
+    ...blob.sceneDefaults(),
+    blobGridShape: 'triangle',
+    blobSeed: 'reference-1',
+    blobTriangleMinRes: 0,
+  });
+  let straight = seeded;
+  seeded.cells.forEach((_, index) => {
+    if (blob.canStraighten(straight, index))
+      straight = blob.toggleStraight(straight, index);
+  });
+  check(
+    straight !== seeded &&
+      seeded.cells.every(
+        (cell, index) =>
+          cell.mask % 8 !== 7 || !blob.canStraighten(seeded, index)
+      ),
+    'triangle straights: no two-way cell straightens, or a three-way one does.'
+  );
+  check(
+    designKey(blob, blob.decodeDesign(blob.encodeDesign(straight))) ===
+      designKey(blob, straight),
+    'triangle straights: the tb7 code drops a straight cell.'
+  );
+  const index = straight.cells.findIndex((_, i) =>
+    blob.canStraighten(straight, i)
+  );
+  check(
+    designKey(
+      blob,
+      blob.toggleStraight(blob.toggleStraight(straight, index), index)
+    ) === designKey(blob, straight),
+    'triangle straights: toggling a cell twice does not restore it.'
+  );
+  [2, 4, 8].forEach((pitch) => {
+    const field = blob.fieldFromDesign(straight, 8, undefined, pitch);
+    check(
+      field.cells.some((entry) => entry.connections[0][0] === 13) &&
+        unmatchedTriangleCrossings(blob, field, pitch) === 0,
+      `triangle straights @${pitch}: no stripes drawn, or a stroke end is exposed.`
+    );
+  });
+
+  const holed = blob.eraseCell(seeded, Math.floor(seeded.cells.length / 2));
+  let loose = blob.setIrregular(holed, true);
+  check(
+    loose.irregular &&
+      loose.cells.every((cell, i) => cell.mask === holed.cells[i].mask),
+    'triangle irregular: turning it on changes a subdivision design.'
+  );
+  loose.cells.forEach((_, i) =>
+    [0, 1, 2].forEach((side) => {
+      if (!blob.isCornerOpen(loose, i, side))
+        loose = blob.setCorner(loose, i, side, true);
+    })
+  );
+  loose.cells.forEach((cell, i) => {
+    if (cell.size === 1 && i % 7 === 0)
+      loose = blob.setCorner(loose, i, 0, false);
+  });
+  const code = blob.encodeDesign(loose);
+  check(
+    code.startsWith('tb8.') &&
+      designKey(blob, blob.decodeDesign(code)) === designKey(blob, loose),
+    'triangle irregular: the tb8 code loses per-stretch joins.'
+  );
+  const partial = (field) =>
+    field.cells.filter(
+      (entry) => entry.cap && entry.cell.size !== entry.cap.host.size
+    ).length;
+  [2, 4, 8, 13].forEach((pitch) => {
+    const field = blob.fieldFromDesign(loose, 8, undefined, pitch);
+    check(
+      partial(field) > 0 &&
+        unmatchedTriangleCrossings(blob, field, pitch) === 0,
+      `triangle irregular @${pitch}: no partial returns, or a stroke end is exposed.`
+    );
+  });
+  check(
+    partial(
+      blob.fieldFromDesign(blob.setIrregular(loose, false), 8, undefined, 4)
+    ) === 0,
+    'triangle irregular: turning it off leaves a side partly open.'
+  );
+}
+
 function checkTriangles(blob) {
   const base = {
     ...blob.sceneDefaults(),
@@ -1487,6 +1576,7 @@ async function main() {
   checkSymmetry(loaded[BARRELS.blob]);
   checkTriangles(loaded[BARRELS.blob]);
   checkTriangleReference(loaded[BARRELS.blob], loaded[BARRELS.look]);
+  checkTriangleStraightsAndIrregular(loaded[BARRELS.blob]);
   await checkSceneForwardsGenerator(loaded[BARRELS.blob]);
   await checkDesignRotation(loaded[BARRELS.blob]);
   await checkSavedDesigns(loaded[BARRELS.blob]);

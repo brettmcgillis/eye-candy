@@ -71,8 +71,8 @@ const TOOL_OPTIONS = [
   { icon: <FiEye />, label: 'View', value: 'off' },
 ];
 
-// Triangles have no diagonal pairing or straights.
-const SQUARE_ONLY_TOOLS = new Set(['diagonal', 'straight']);
+// A triangle has no diagonal pairing; Order is its only fan choice.
+const SQUARE_ONLY_TOOLS = new Set(['diagonal']);
 const SHAPE_OPTIONS = [
   { label: 'Square', value: 'square' },
   { label: 'Triangle', value: 'triangle' },
@@ -344,22 +344,20 @@ export default function TrucheterieDesignerPage() {
               />
               Auto connect
             </label>
-            {design.layout !== 'subdivide' ? (
-              <label
-                className="rw-field rw-field--checkbox"
-                htmlFor="tdz-irregular"
-              >
-                <input
-                  id="tdz-irregular"
-                  checked={Boolean(design.irregular)}
-                  onChange={(event) =>
-                    replace(setIrregular(design, event.target.checked))
-                  }
-                  type="checkbox"
-                />
-                Irregular connections
-              </label>
-            ) : null}
+            <label
+              className="rw-field rw-field--checkbox"
+              htmlFor="tdz-irregular"
+            >
+              <input
+                id="tdz-irregular"
+                checked={Boolean(design.irregular)}
+                onChange={(event) =>
+                  replace(setIrregular(design, event.target.checked))
+                }
+                type="checkbox"
+              />
+              Irregular connections
+            </label>
           </div>
           <div className="tdz-row">
             <button
@@ -614,7 +612,7 @@ export default function TrucheterieDesignerPage() {
             </p>
             <p className="rw-hint">
               {triangle
-                ? 'Auto paints the triangle under the pointer on a brush-sized grid. Up and Down select an orientation and snap its centre to the micro-grid. Isolated triangles draw rings. Connect toggles an edge on subdivision designs, a corner on packed designs. Order puts the clicked corner fan on top; click it again to swap the other two. Subdivision designs retain the reference fans inside connected groups and use circular returns at exposed edges. Open edges require matching neighbours.'
+                ? 'Auto paints the triangle under the pointer on a brush-sized grid. Up and Down select an orientation and snap its centre to the micro-grid. Isolated triangles draw rings. Connect toggles an edge on subdivision designs, a corner on packed designs. Order puts the clicked corner fan on top; click it again to swap the other two. Straight turns a two-way subdivision cell into lanes parallel to its closed edge. Subdivision designs retain the reference fans inside connected groups and use circular returns at exposed edges. Open edges require matching neighbours; with Irregular on, each stretch two cells share opens on its own and every closed run gets its own return.'
                 : 'Connect toggles the nearest side. Diagonal changes a four-way pairing; Order swaps the two families. Straight applies to opposite sides. Irregular allows partial connections against larger cells.'}
             </p>
           </details>

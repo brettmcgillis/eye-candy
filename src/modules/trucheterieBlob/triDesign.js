@@ -4,8 +4,11 @@ import mulberry32 from './mulberry32';
 import { hashSeed } from './rng';
 import triangleFans from './triFans';
 import {
+  closedRuns,
   normalizeTriangleSides,
+  openNeighbours,
   setTriangleSide,
+  straightSidesAgree,
   triangleSides,
 } from './triSides';
 import {
@@ -15,6 +18,7 @@ import {
   POCKET,
   RINGS,
   TRIANGLE,
+  TRI_STRIPES,
   TRI_STUB,
   TRI_TURN,
   bendEdge,
@@ -32,6 +36,8 @@ import {
   microTriangles,
   pocketEdge,
   ringsEdge,
+  stripeCount,
+  stripesEdge,
 } from './triangle';
 
 // A triangle design's cells are { column, row, size, mask } on the lattice in
@@ -39,11 +45,16 @@ import {
 // fan over the half of each side next to it), 8 says the cell points up, and
 // 64 pins its draw order: bits 16-32 name the corner on top, 128 swaps the
 // other two. Only a cell with all three corners on has an order to choose.
+// A subdivision cell has no corner 3, so a top of 3 marks it straight: with
+// exactly two sides open it draws lanes from one to the other (TRI_STRIPES)
+// instead of fans. The mark is ignored while the cell is not eligible.
 export const UP = 8;
 export const PINNED_ORDER = 64;
 export const SWAPPED_REST = 128;
 const TOP_SHIFT = 4;
 const TOP_BITS = 48;
+export const TRI_STRAIGHT = TOP_BITS;
+export const isTriStraight = (mask) => (mask & TOP_BITS) === TOP_BITS;
 const CORNER_BITS = 7;
 const MAX_CELL = 255;
 const COORD_LIMIT = 32767;
@@ -64,7 +75,7 @@ export const isTriangleDesign = (design) => design?.shape === TRIANGLE;
 
 export const emptyTriDesign = ({ irregular = false, layout } = {}) => ({
   cells: [],
-  ...(irregular && layout !== 'subdivide' ? { irregular: true } : {}),
+  ...(irregular ? { irregular: true } : {}),
   ...(layout === 'subdivide' ? { layout } : {}),
   shape: TRIANGLE,
 });
@@ -124,6 +135,23 @@ export function triConnections(cell, reference = false) {
     [FAN, edgeOf(rest[0])],
     [FAN, edgeOf(rest[1], true)],
   ];
+}
+
+// The corner a straight cell's lanes run about, the one between its two open
+// sides, or -1.
+export function stripesCorner({ mask }) {
+  if (!isTriStraight(mask)) return -1;
+  const open = cornersOn(mask);
+  if (open.length !== 2) return -1;
+  const closed = CORNERS.find((side) => !open.includes(side));
+  return (closed + 2) % 3;
+}
+
+// A single stripe is no lane at all, so a one-crossing cell keeps its fans.
+export function triStraightConnections(cell, pathDiv) {
+  const corner = stripesCorner(cell);
+  if (corner < 0 || stripeCount(cell.size, pathDiv) < 2) return null;
+  return [[TRI_STRIPES, stripesEdge(corner, (cell.mask & UP) !== 0)]];
 }
 
 // Bigger cells are written first, so a cell sitting in a bigger one's empty
@@ -587,7 +615,19 @@ const keepIfClear = (before, after) =>
 // along one closed side share vertex fans, so the whole run opens together.
 export function cornerCascade(design, index, corner, { soft = false } = {}) {
   if (design.layout === 'subdivide') {
-    const group = triangleSides(design.cells).groupOf[index * 3 + corner];
+    const sides = triangleSides(design.cells);
+    if (design.irregular) {
+      const partners = [...new Set(sides.partners[index][corner])].filter(
+        (id) => id >= 0
+      );
+      return partners.length > 0
+        ? [
+            [index, corner],
+            ...partners.map((id) => [Math.floor(id / 3), id % 3]),
+          ]
+        : null;
+    }
+    const group = sides.groupOf[index * 3 + corner];
     return group?.openable
       ? group.members.map((id) => [Math.floor(id / 3), id % 3])
       : null;
@@ -684,32 +724,63 @@ export function triConnectedGroup(design, index) {
   if (index < 0 || index >= design.cells.length) return [];
   if (design.layout === 'subdivide') {
     const { groupOf } = triangleSides(design.cells);
+    const neighbours = (at) =>
+      design.irregular
+        ? openNeighbours(design, at)
+        : cornersOn(design.cells[at].mask).flatMap((side) =>
+            groupOf[at * 3 + side].members.map((id) => Math.floor(id / 3))
+          );
     const seen = new Set([index]);
     const queue = [index];
     for (let k = 0; k < queue.length; k += 1) {
-      const at = queue[k];
-      cornersOn(design.cells[at].mask).forEach((side) =>
-        groupOf[at * 3 + side].members.forEach((id) => {
-          const other = Math.floor(id / 3);
-          if (!seen.has(other)) {
-            seen.add(other);
-            queue.push(other);
-          }
-        })
-      );
+      neighbours(queue[k]).forEach((other) => {
+        if (!seen.has(other)) {
+          seen.add(other);
+          queue.push(other);
+        }
+      });
     }
     return [...seen].sort((a, b) => a - b);
   }
   return connectedFrom(design, facings(design.cells), index);
 }
 
-export const triCellConnections = (design, index) => {
+export const triCellConnections = (design, index, pathDiv = 4) => {
   const cell = design.cells[index];
   if (design.layout !== 'subdivide') return triConnections(cell);
   if (triConnectedGroup(design, index).length <= 2)
     return [[RINGS, ringsEdge((cell.mask & UP) !== 0)]];
-  return triConnections({ ...cell, mask: cell.mask | 7 }, true);
+  return (
+    triStraightConnections(cell, pathDiv) ??
+    triConnections({ ...cell, mask: cell.mask | 7 }, true)
+  );
 };
+
+// Straights are subdivision-only: a two-way cell inside a connected group.
+
+export const canStraightenTri = (design, index) =>
+  design.layout === 'subdivide' &&
+  index >= 0 &&
+  cornersOn(design.cells[index].mask).length === 2 &&
+  straightSidesAgree(
+    closedRuns(design)[index],
+    design.cells[index].mask,
+    design.cells[index].size
+  ) &&
+  triConnectedGroup(design, index).length > 2;
+
+export function toggleTriStraight(design, index) {
+  if (!canStraightenTri(design, index)) return design;
+  const cells = [...design.cells];
+  const { mask } = cells[index];
+  cells[index] = {
+    ...cells[index],
+    mask: isTriStraight(mask)
+      ? mask & ~TOP_BITS
+      : mask | TRI_STRAIGHT | PINNED_ORDER,
+  };
+  return { ...design, cells };
+}
 
 function pinTriCell(cell) {
   if (cell.mask & PINNED_ORDER) return cell;
@@ -726,7 +797,8 @@ export const pinTriChoices = (design) => ({
 
 export const canReorder = (design, index) =>
   design.layout === 'subdivide'
-    ? triConnectedGroup(design, index).length > 2
+    ? triConnectedGroup(design, index).length > 2 &&
+      stripesCorner(design.cells[index]) < 0
     : cornersOn(design.cells[index].mask).length === 3;
 
 // Puts a corner on top; asked again for the corner already on top, swaps the other two.
@@ -950,7 +1022,9 @@ function mirrorTriCell(cell, axis, edgeConnectors = false) {
     mask:
       corners |
       (placed.up ? UP : 0) |
-      orderBits(mappedTop, mappedRest[0] !== order[rest[0]]),
+      (isTriStraight(cell.mask)
+        ? TRI_STRAIGHT | PINNED_ORDER
+        : orderBits(mappedTop, mappedRest[0] !== order[rest[0]])),
     row: placed.row,
     size: cell.size,
   };
@@ -989,7 +1063,10 @@ function balanceOnTriAxis(cell, axis, edgeConnectors = false) {
       false
     );
   }
-  return { ...cell, mask: corners | (cell.mask & UP) | PINNED_ORDER };
+  return {
+    ...cell,
+    mask: corners | (cell.mask & (UP | TOP_BITS)) | PINNED_ORDER,
+  };
 }
 
 export function symmetricTriDesign(design, axis, { hideLoose } = {}) {
@@ -1107,7 +1184,9 @@ export function fieldFromTriDesign(
       resolved,
       triNetworks(resolved),
       pathDiv,
-      (cell) => triConnections({ ...cell, mask: cell.mask | 7 }, true)
+      (cell, straightOk) =>
+        (straightOk && triStraightConnections(cell, pathDiv)) ||
+        triConnections({ ...cell, mask: cell.mask | 7 }, true)
     );
     return {
       ...assembleTriField(drawn, frame, canvasSize),

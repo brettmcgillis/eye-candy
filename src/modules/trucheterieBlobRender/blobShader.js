@@ -19,7 +19,7 @@ import { arcFamily, sectorMask, strokeMask } from './blobArcs';
 import { debugCellsMask, debugConnectorsMask } from './blobDebug';
 import capColor from './capShader';
 import { growthMask, revealDepth } from './growth';
-import { triangleDistance } from './triangleArcs';
+import { isReturn, triangleDistance } from './triangleArcs';
 
 export default function buildBlobColorNode({
   cellSizeU,
@@ -107,7 +107,7 @@ export default function buildBlobColorNode({
           .mul(secondGrown)
       )
         .mul(showStrokesU)
-        .mul(select(conn0.x.greaterThanEqual(9), returnInk, 1));
+        .mul(select(isReturn(conn0.x), returnInk, 1));
 
       // The union of both families' sectors is the blob silhouette — the area
       // "inside the curves" that the lane fill covers. Clamped to the cell's

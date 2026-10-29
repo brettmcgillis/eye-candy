@@ -5,6 +5,7 @@ import { familySector } from './laneChannels';
 import mulberry32 from './mulberry32';
 import { hashSeed } from './rng';
 import {
+  canStraightenTri,
   designFromTriField,
   duplicateTriCells,
   emptyTriDesign,
@@ -17,6 +18,7 @@ import {
   pinTriChoices,
   placeTriCell,
   symmetricTriDesign,
+  toggleTriStraight,
   triCellConnections,
   triConnectedGroup,
   triDesignBounds,
@@ -46,6 +48,7 @@ const TRIANGLE_PREFIX = 'tb4.';
 const TRIANGLE_IRREGULAR_PREFIX = 'tb5.';
 const TRIANGLE_SUBDIVISION_PREFIX = 'tb6.';
 const TRIANGLE_EDGE_PREFIX = 'tb7.';
+const TRIANGLE_EDGE_IRREGULAR_PREFIX = 'tb8.';
 const IRREGULAR_CHANCE = 0.6;
 
 const opposite = (side) => (side + 2) % 4;
@@ -211,7 +214,6 @@ export function normalizeDesign(design) {
 
 // Turning irregular connections off closes every side that relied on them.
 export function setIrregular(design, on) {
-  if (design.layout === 'subdivide') return design;
   const rest = { ...design };
   delete rest.irregular;
   return normalizeDesign(on ? { ...rest, irregular: true } : rest);
@@ -548,9 +550,12 @@ export function flipDiagonal(design, index) {
 }
 
 export const canStraighten = (design, index) =>
-  straightAxis(design.cells[index].mask) !== null;
+  isTriangleDesign(design)
+    ? canStraightenTri(design, index)
+    : straightAxis(design.cells[index].mask) !== null;
 
 export function toggleStraight(design, index) {
+  if (isTriangleDesign(design)) return toggleTriStraight(design, index);
   if (index < 0 || !canStraighten(design, index)) return design;
   const cells = [...design.cells];
   cells[index] = { ...cells[index], mask: cells[index].mask ^ STRAIGHT };
@@ -891,7 +896,6 @@ export function designToJson(design, extra = {}) {
 }
 
 function triDesignFromRows(rows, irregular, layout, connectors) {
-  if (layout === 'subdivide' && irregular) return null;
   const cells = [];
   for (let i = 0; i < rows.length; i += 1) {
     if (!Array.isArray(rows[i])) return null;
@@ -975,8 +979,11 @@ export function encodeDesign(design) {
   const prefix = design.irregular
     ? (triangle && TRIANGLE_IRREGULAR_PREFIX) || IRREGULAR_PREFIX
     : (triangle && TRIANGLE_PREFIX) || CODE_PREFIX;
+  const subdivisionPrefix = design.irregular
+    ? TRIANGLE_EDGE_IRREGULAR_PREFIX
+    : TRIANGLE_EDGE_PREFIX;
   const encodedPrefix =
-    triangle && design.layout === 'subdivide' ? TRIANGLE_EDGE_PREFIX : prefix;
+    triangle && design.layout === 'subdivide' ? subdivisionPrefix : prefix;
   return `${encodedPrefix}${toBase64Url(bytes)}`;
 }
 
@@ -990,6 +997,7 @@ function cellsFromCode(code) {
     TRIANGLE_IRREGULAR_PREFIX,
     TRIANGLE_SUBDIVISION_PREFIX,
     TRIANGLE_EDGE_PREFIX,
+    TRIANGLE_EDGE_IRREGULAR_PREFIX,
   ];
   if (!known.some((prefix) => code.startsWith(prefix))) return null;
   const bytes = fromBase64Url(code.slice(CODE_PREFIX.length));
@@ -1020,10 +1028,16 @@ export function decodeDesign(code) {
     return null;
   }
   if (!cells) return null;
-  if (code.startsWith(TRIANGLE_EDGE_PREFIX)) {
+  if (
+    code.startsWith(TRIANGLE_EDGE_PREFIX) ||
+    code.startsWith(TRIANGLE_EDGE_IRREGULAR_PREFIX)
+  ) {
     return designFromJson({
       cells,
       connectors: 'edges',
+      ...(code.startsWith(TRIANGLE_EDGE_IRREGULAR_PREFIX)
+        ? { irregular: true }
+        : {}),
       layout: 'subdivide',
       shape: TRIANGLE,
     });

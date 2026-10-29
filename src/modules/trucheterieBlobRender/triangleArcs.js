@@ -5,7 +5,9 @@ import { If, atan, clamp, cos, max, round, select, sin, vec2 } from 'three/tsl';
 // the cell's bounding box, y down. Type 4 is a fan of 60° arcs about a
 // corner at (k + 1/2) / pathDiv; type 5 is rings about the centroid. The
 // irregular families a bigger cell draws are type 6, a pocket of semicircles
-// about a point on a side, and type 7, a bend: a fan reaching m.
+// about a point on a side, and type 7, a bend: a fan reaching m. Type 13 is
+// a straight two-way cell: lines across the corner's wedge, parallel to the
+// closed side, at the fan's crossings.
 const H = Math.sqrt(3) / 2;
 const SIXTH = Math.PI / 6;
 const TAN_SIXTH = Math.tan(SIXTH);
@@ -24,6 +26,10 @@ function rotate(v, angle) {
 }
 
 export const triangleUp = (edge) => edge.div(3).floor().mod(2);
+
+// The nested returns and turns (types 9 and 10); the boundary return (12)
+// has its own shader.
+export const isReturn = (type) => type.equal(9).or(type.equal(10));
 
 export function triangleCorner(corner, isUp, size) {
   const halfW = size.mul(0.5);
@@ -95,6 +101,46 @@ function fanFamily(q, type, edge, size, pathDivU) {
     lanes: bands,
     rMax: bands.sub(0.5).div(pathDivU),
     sweep: angle.abs().div(SIXTH).clamp(0, 1),
+  };
+}
+
+function stripesFamily(q, edge, size, pathDivU) {
+  const corner = edge.mod(3).round();
+  const up = triangleUp(edge);
+  const pivot = triangleCorner(corner, up.greaterThan(0.5), size);
+  const middle = corner
+    .mul((2 * Math.PI) / 3)
+    .add(up.mul(Math.PI / 3))
+    .add(SIXTH);
+  const rel = rotate(q.sub(pivot), middle.negate());
+  const inside = rel.y.abs().lessThanEqual(rel.x.mul(TAN_SIXTH));
+  const ray = vec2(
+    Math.cos(SIXTH),
+    select(rel.y.greaterThanEqual(0), 1, -1).mul(Math.sin(SIXTH))
+  );
+  const clamped = select(inside, rel, ray.mul(max(rel.dot(ray), 0)));
+  const capOffset = rel.sub(clamped).length();
+  // Distance from the corner along a side, the fan's radius here.
+  const d = clamped.x.div(H);
+  const count = size.mul(pathDivU).round();
+  const hollow = edge.div(6).floor().mod(2).greaterThan(0.5);
+  const lanes = count.add(select(hollow, 0, 1));
+  const k = clamp(round(d.mul(pathDivU).sub(0.5)), 0, count.sub(1));
+  const band = clamped.x.sub(k.add(0.5).div(pathDivU).mul(H)).abs();
+  const across = clamped.y
+    .div(clamped.x.mul(TAN_SIXTH).max(1e-6))
+    .mul(0.5)
+    .add(0.5)
+    .clamp(0, 1);
+  return {
+    along: across,
+    aaField: clamped.x.add(capOffset),
+    d,
+    dBand: vec2(band, capOffset).length(),
+    lane: clamp(d.mul(pathDivU).add(0.5).floor(), 0, lanes.sub(1)),
+    lanes,
+    rMax: select(hollow, count.sub(0.5).div(pathDivU), size),
+    sweep: across.mul(2).sub(1).abs(),
   };
 }
 
@@ -256,19 +302,25 @@ export function triangleFamily(q, type, edge, size, pathDivU) {
   const fan = fanFamily(q, type, edge, size, pathDivU);
   const rings = ringsFamily(q, edge, size, pathDivU);
   const pocket = pocketFamily(q, edge, size, pathDivU);
+  const stripes = stripesFamily(q, edge, size, pathDivU);
   const isFan = type.equal(4).or(type.equal(7));
   const isPocket = type.equal(6);
+  const isStripes = type.equal(13);
   const result = Object.fromEntries(
     Object.keys(fan).map((key) => [
       key,
       select(
         isFan,
         fan[key],
-        select(isPocket, pocket[key], rings[key])
+        select(
+          isPocket,
+          pocket[key],
+          select(isStripes, stripes[key], rings[key])
+        )
       ).toVar(),
     ])
   );
-  If(type.greaterThanEqual(9), () => {
+  If(isReturn(type), () => {
     const returns = returnFamily(q, type, edge, size, pathDivU);
     Object.keys(result).forEach((key) => result[key].assign(returns[key]));
   });

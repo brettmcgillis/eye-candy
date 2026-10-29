@@ -74,29 +74,40 @@ export function clipCircle(arc, circle, inside = false) {
   );
 }
 
-export function clipLine(line, circle) {
+// A segment cut by a circle or, given `contains`, by a shape like clipShape's;
+// the pieces outside it are kept.
+export function clipLine(line, cover) {
   const dx = line.to[0] - line.from[0];
   const dy = line.to[1] - line.from[1];
-  const x = line.from[0] - circle.x;
-  const y = line.from[1] - circle.y;
   const a = dx * dx + dy * dy;
-  const b = 2 * (x * dx + y * dy);
-  const c = x * x + y * y - circle.rMax ** 2;
-  const det = b * b - 4 * a * c;
   const cuts = [0, 1];
-  if (det >= 0)
-    [(-b - Math.sqrt(det)) / (2 * a), (-b + Math.sqrt(det)) / (2 * a)].forEach(
-      (t) => {
-        if (t > 0 && t < 1) cuts.push(t);
-      }
-    );
+  const keep = (t) => t > 0 && t < 1 && cuts.push(t);
+  const x = line.from[0] - cover.x;
+  const y = line.from[1] - cover.y;
+  const b = 2 * (x * dx + y * dy);
+  const det = b * b - 4 * a * (x * x + y * y - cover.rMax ** 2);
+  if (det >= 0) {
+    keep((-b - Math.sqrt(det)) / (2 * a));
+    keep((-b + Math.sqrt(det)) / (2 * a));
+  }
+  (cover.contains ? cover.lines : []).forEach(([pivot, normal]) => {
+    const rate = dx * normal[0] + dy * normal[1];
+    if (Math.abs(rate) > EPS)
+      keep(
+        -(
+          (line.from[0] - pivot[0]) * normal[0] +
+          (line.from[1] - pivot[1]) * normal[1]
+        ) / rate
+      );
+  });
   cuts.sort((s, t) => s - t);
   const at = (t) => [line.from[0] + dx * t, line.from[1] + dy * t];
+  const outside = cover.contains
+    ? (px, py) => !cover.contains(px, py)
+    : (px, py) => Math.hypot(px - cover.x, py - cover.y) >= cover.rMax - EPS;
   return cuts.slice(1).flatMap((end, i) => {
     const start = cuts[i];
-    const [px, py] = at((start + end) / 2);
-    return end - start > EPS &&
-      Math.hypot(px - circle.x, py - circle.y) >= circle.rMax - EPS
+    return end - start > EPS && outside(...at((start + end) / 2))
       ? [{ ...line, from: at(start), to: at(end) }]
       : [];
   });

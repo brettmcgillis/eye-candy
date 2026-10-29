@@ -219,7 +219,13 @@ designs retain their corner connectors.
   against real cells (its side group closed with it) gets a return that
   overlaps the neighbour's own; that one keeps the whole disc and full
   outline, which is the seam between them (`cap.facing`; `capShapes` in
-  `triContours.js` is the CPU cover shape, the cap texture's `z` the GPU's). The first half-pitch about a fan's corner is filled
+  `triContours.js` is the CPU cover shape, the cap texture's `z` the GPU's).
+  `triFans` draws the void-facing returns first and the facing ones last:
+  a void return's host repaint is bounded by straight host edges, and
+  drawn after a facing return's sliver it cut that return's rings with no
+  outline. Narrow holes, where two void returns face each other across a
+  gap smaller than the bigger one's radius, can still leave a pen end
+  where one bulges into the other's host. The first half-pitch about a fan's corner is filled
   with lane 0, so lane ends and vertex dots are coloured, not background.
   An odd central crossing joins the first return as a T.
   The smallest one-crossing tile uses its closed incircle. An isolated
@@ -338,7 +344,43 @@ designs retain their corner connectors.
   with Irregular on, Connect falls back to opening the whole run when the
   ordinary cascade cannot open, and closing a bigger cell's corner leaves
   the runs that can draw open as pockets and bends.
-- **Not on triangles:** straights, the debug overlay, and Trucheterie3D
+- **Straights** (2026-10-29, subdivision only). A subdivision cell has no
+  corner 3, so mask top bits 16|32 both set (`TRI_STRAIGHT`) mark it
+  straight. With exactly two sides open, whole (`straightSidesAgree`), it
+  draws type 13 (`TRI_STRIPES`) instead of three fans: lines parallel to
+  the closed side, crossing both open sides at (k + ½)/pathDiv from the
+  corner between them, which is where every neighbour's fan crosses, so it
+  needs no return. Lane j spans [j − ½, j + ½] pitches from that corner as
+  a fan's does, so `fanIntervals` joins it; lanes are distances along a
+  side (`familySpan` 1, a stripe's length is its distance). Edge
+  `corner + 3·up + 6·hollow`: a closed side facing the void is hollow and
+  its last stripe is the outline; facing a cell, the last half lane fills
+  to the edge. GPU, SVG and the stroke contours draw true lines
+  (`stripePoint`), no far-centre arcs. A three-way T-junction has no
+  triangle form (a stub's semicircle pokes through the open sides in a
+  60° corner), and a one-crossing cell keeps its fans. Designer tool:
+  Straight (`canStraighten` / `toggleStraight` dispatch to
+  `canStraightenTri` / `toggleTriStraight`). Order is refused on a
+  straight cell; mirrors keep the mark.
+- **Subdivision irregular** (2026-10-29, `irregular` on a subdivision
+  design, `tb8.` codes). Packed irregular needs pockets and bends; a
+  subdivision cell does not, because its crossings already land on a
+  bigger neighbour's fans. What stops a partial join is the all-or-nothing
+  side group, so irregular here opens and closes each **stretch** two
+  sides share on its own (`triSides.js`: `partners`, `closedRuns`,
+  `openNeighbours`). A stretch's state is the bit of the side it covers
+  whole (the smaller cell's), or both sides' when each covers the other or
+  neither does; a side holding no stretch shows whether any is open.
+  Connect on a side sets the owners of every stretch along it. Each
+  maximal closed run of a side gets its own boundary return, sized to the
+  run (edge `side + 3·up + 6·m`, `cap.from`, the cap texture's `w`), so
+  with irregular off a closed side is one run and nothing changes.
+  Turning irregular off re-closes the groups. Limit: at one lane per unit a
+  one-unit closed run has a single crossing and no return, so the host's
+  lane ends in a pen cap there.
+- **Designer cell size** goes to 32 (`MAX_BRUSH`): seeded triangle fields
+  reach 2⁵ at Start Resolution 5. The editable margin follows the brush.
+- **Not on triangles:** the debug overlay, and Trucheterie3D
   (`buildField` throws for a triangle grid).
 - **Shader:** `triangleArcs.js` (fan and ring fields, the triangle
   footprint, nested returns and turns). The return warp is evaluated only

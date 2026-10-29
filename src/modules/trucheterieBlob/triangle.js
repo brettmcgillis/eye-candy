@@ -217,6 +217,32 @@ export function pocketRadii(m, pathDiv) {
 export const TRI_STUB = 9;
 export const TRI_TURN = 10;
 
+// A straight two-way cell (type 13): lanes parallel to its closed side, from
+// one open side to the other, crossing both at (k + 1/2) / pathDiv from the
+// corner they share. Lane j spans [j - 1/2, j + 1/2] pitches from that
+// corner, as a fan's does, so the joins are the fan's. The edge is
+// corner + 3·up + 6·hollow: a hollow cell's closed side faces nothing, so
+// its last stripe is the outline and the half lane past it stays empty.
+export const TRI_STRIPES = 13;
+export const stripesEdge = (corner, up, hollow = false) =>
+  corner + (up ? 3 : 0) + (hollow ? 6 : 0);
+export const stripesHollow = (edge) => Math.floor(edge / 6) % 2 === 1;
+export const stripeCount = (size, pathDiv) => Math.round(size * pathDiv);
+
+// A point `r` along the corner's sides (in side length) and `along` 0..1
+// across, from the side towards corner + 1 to the side towards corner + 2.
+export function stripePoint(cell, corner, r, along) {
+  const points = cornerPoints(cell);
+  const [cx, cy] = points[corner];
+  const a = points[(corner + 1) % 3];
+  const b = points[(corner + 2) % 3];
+  const t = r / cell.size;
+  return [
+    cx + ((a[0] - cx) * (1 - along) + (b[0] - cx) * along) * t,
+    cy + ((a[1] - cy) * (1 - along) + (b[1] - cy) * along) * t,
+  ];
+}
+
 export function returnRadii(type, size, pathDiv) {
   const n = Math.round(size * pathDiv);
   if (type === TRI_TURN)

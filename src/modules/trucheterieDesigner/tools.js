@@ -83,7 +83,7 @@ function pivotsAfter(design, index, tool) {
     });
 }
 
-export const MAX_BRUSH = 12;
+export const MAX_BRUSH = 32;
 export const isStrokeTool = (tool) => tool === 'paint' || tool === 'erase';
 
 export function brushOrigin(x, y, size) {
@@ -191,6 +191,14 @@ function trianglePreview(
     };
   }
   if (tool === 'order') return orderPreview(design, x, y);
+  if (tool === 'straight') {
+    return {
+      kind: 'cell',
+      marks: [],
+      ok: canStraighten(design, index),
+      polys: [cellPolygon(design, index)],
+    };
+  }
   if (tool === 'connect') {
     const { corner } = pickCorner(design, x, y, { connector: true });
     const open = isCornerOpen(design, index, corner);
@@ -230,6 +238,8 @@ function applyTriangleTool(
   }
   if (tool === 'erase') return eraseCell(design, cellUnder(design, x, y));
   if (!first) return design;
+  if (tool === 'straight')
+    return toggleStraight(design, cellUnder(design, x, y));
   const picked = pickCorner(design, x, y, { connector: tool === 'connect' });
   if (!picked) return design;
   if (tool === 'order') return raiseCorner(design, picked.index, picked.corner);

@@ -107,7 +107,10 @@ export default function capColor(q, u, delay) {
   const a = textureLoad(tex.caps, ivec2(0, index));
   const b = textureLoad(tex.caps, ivec2(1, index));
   const axes = textureLoad(tex.caps, ivec2(2, index));
-  const n = a.x.mul(pitch).round();
+  // The closed run this return spans; the whole side unless irregular
+  // connections leave part of it open.
+  const n = axes.w.mul(pitch).round();
+  const drawn = select(n.greaterThanEqual(2), 1, 0);
   const odd = n.mod(2).greaterThan(0.5);
   const phase = select(odd, 1, 0.5);
   const count = n.mul(0.5).floor().max(1);
@@ -173,6 +176,7 @@ export default function capColor(q, u, delay) {
     growthMask({ ...returns, lane: count.sub(1) }, growthU, delay)
   );
   const outside = select(outward.greaterThanEqual(0), 1, 0);
+  // See capShapes in @modules/trucheterieBlob.
   const toHost = triangleDistance(hq, a.x, a.y);
   const inHost = smoothstep(toHost.fwidth(), 0, toHost).max(axes.z);
   const rim = outerInk.mul(outside.max(axes.z));
@@ -194,5 +198,5 @@ export default function capColor(q, u, delay) {
       mix(hostGrown.mul(inHost), growthMask(returns, growthU, delay), outside)
     )
     .max(rim.mul(showStrokesU));
-  return vec4(mix(fill, strokeColorU, ink), alpha);
+  return vec4(mix(fill, strokeColorU, ink), alpha.mul(drawn));
 }

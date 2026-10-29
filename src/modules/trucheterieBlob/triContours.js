@@ -6,7 +6,13 @@ import {
   occluderSector,
 } from './laneChannels';
 import { boundaryRadii, boundarySize } from './triFans';
-import { cornerPoints, fanStart } from './triangle';
+import {
+  TRI_STRIPES,
+  cornerPoints,
+  fanStart,
+  stripeCount,
+  stripePoint,
+} from './triangle';
 
 export function capFrame(entry, pitch) {
   const [type, edge] = entry.connections[0];
@@ -28,7 +34,8 @@ function hostLines(host) {
   const cy = (points[0][1] + points[1][1] + points[2][1]) / 3;
   return points.map((a, i) => {
     const b = points[(i + 1) % 3];
-    const n = [a[1] - b[1], b[0] - a[0]];
+    const length = Math.hypot(b[0] - a[0], b[1] - a[1]);
+    const n = [(a[1] - b[1]) / length, (b[0] - a[0]) / length];
     const flip = (cx - a[0]) * n[0] + (cy - a[1]) * n[1] < 0 ? -1 : 1;
     return [a, [n[0] * flip, n[1] * flip]];
   });
@@ -38,21 +45,21 @@ const inside = (lines, x, y) =>
   lines.every(([p, n]) => (x - p[0]) * n[0] + (y - p[1]) * n[1] >= -1e-9);
 
 // A return facing a real cell overlaps that cell's own return, so it covers
-// its whole disc and its outline seals the seam. One facing the void covers
+// its whole disc, repaints its host's fans on the inward half and its outline
+// seals the seam; triangleFans draws these last. One facing the void covers
 // its outward half and, inward, only its own host: the half-disc bulges past
 // the host's other sides into its neighbours.
 export function capShapes(entry, pitch) {
   const frame = capFrame(entry, pitch);
   const side = [[frame.x, frame.y], frame.normal];
-  const lines = entry.cap.facing
-    ? [side]
-    : [side, ...hostLines(entry.cap.host)];
+  const { facing } = entry.cap;
+  const lines = facing ? [side] : [side, ...hostLines(entry.cap.host)];
   const inDisc = (x, y) =>
     Math.hypot(x - frame.x, y - frame.y) <= frame.rMax + 1e-9;
   const outward = (x, y) =>
     (x - frame.x) * frame.normal[0] + (y - frame.y) * frame.normal[1] <= 0;
   const inHost = (x, y) =>
-    entry.cap.facing ? !outward(x, y) : inside(lines.slice(1), x, y);
+    facing ? !outward(x, y) : inside(lines.slice(1), x, y);
   const base = { x: frame.x, y: frame.y, rMax: frame.rMax, lines };
   return {
     frame,
@@ -71,7 +78,10 @@ export function triangleSegments(field, pitch) {
   const append = (arcs, covers) =>
     arcs.flatMap((arc) =>
       covers.reduce(
-        (pieces, cover) => pieces.flatMap((piece) => clip(piece, cover)),
+        (pieces, cover) =>
+          pieces.flatMap((piece) =>
+            piece.line ? clipLine(piece, cover) : clip(piece, cover)
+          ),
         [arc]
       )
     );
@@ -148,17 +158,16 @@ export function triangleSegments(field, pitch) {
         );
         higher.push(sector);
       });
-      if (Math.round(cap.host.size * pitch) % 2 && frame.radii.length) {
+      if (Math.round(entry.cell.size * pitch) % 2 && frame.radii.length) {
         const end = [
           frame.x - frame.normal[0] / pitch,
           frame.y - frame.normal[1] / pitch,
         ];
         // Stems end on the first return circle, so the central odd port forms a T.
         segments.push(
-          ...later.reduce(
-            (pieces, cover) =>
-              pieces.flatMap((piece) => clipLine(piece, cover)),
-            [{ line: true, from: [frame.x, frame.y], to: end, owner: index }]
+          ...append(
+            [{ line: true, from: [frame.x, frame.y], to: end, owner: index }],
+            later
           )
         );
       }
@@ -166,6 +175,30 @@ export function triangleSegments(field, pitch) {
     }
     const own = [];
     connections.forEach(([type, edge], slot) => {
+      if (type === TRI_STRIPES) {
+        const covers = [
+          ...(entry.occluders ?? []).map((cover) =>
+            occluderSector(cover, pitch)
+          ),
+          ...later,
+        ];
+        const lines = Array.from(
+          { length: stripeCount(cell.size, pitch) },
+          (_, lane) => {
+            const r = (lane + 0.5) / pitch;
+            return {
+              line: true,
+              from: stripePoint(cell, edge % 3, r, 0),
+              to: stripePoint(cell, edge % 3, r, 1),
+              owner: index,
+              slot,
+              lane,
+            };
+          }
+        );
+        segments.push(...append(lines, covers));
+        return;
+      }
       const sector = familySector(cell, type, edge, pitch);
       const wedge =
         type === 5

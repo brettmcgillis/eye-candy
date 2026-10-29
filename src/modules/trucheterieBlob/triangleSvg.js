@@ -6,7 +6,7 @@ import {
   laneRadii,
 } from './laneChannels';
 import { capFrame, triangleSegments } from './triContours';
-import { cornerPoints } from './triangle';
+import { TRI_STRIPES, cornerPoints, stripePoint } from './triangle';
 
 const TAU = Math.PI * 2;
 const round = (n) => Number(n.toFixed(6));
@@ -91,15 +91,27 @@ export default function triangleSvg(
         const u0 = breaks[i - 1];
         const u1 = breaks[i];
         const color = hex(laneColor(row, slot, lane, (u0 + u1) / 2));
-        const d = sectorPath(
-          [sector.x, sector.y],
-          inner,
-          outer,
-          wedge.start + wedge.span * u0,
-          wedge.span * (u1 - u0),
-          toCanvas,
-          field.cellSize
-        );
+        const d =
+          type === TRI_STRIPES
+            ? `M ${[
+                [inner, u0],
+                [outer, u0],
+                [outer, u1],
+                [inner, u1],
+              ]
+                .map(([r, u]) =>
+                  point(toCanvas(...stripePoint(cell, edge % 3, r, u)))
+                )
+                .join(' L ')} Z`
+            : sectorPath(
+                [sector.x, sector.y],
+                inner,
+                outer,
+                wedge.start + wedge.span * u0,
+                wedge.span * (u1 - u0),
+                toCanvas,
+                field.cellSize
+              );
         fills.push(
           `<path d="${d}" fill="${color}" stroke="${color}" stroke-width="${(w / width) * 0.1}"${clip}/>`
         );
@@ -135,19 +147,18 @@ export default function triangleSvg(
             frame.y + t[1] * reach * a + n[1] * reach * b
           )
         );
-      const outward = halfPlane(-1);
-      // See capShapes: only a return facing the void stays out of the
-      // neighbours its inward half-disc bulges into.
-      const host = `<polygon points="${(cap.facing
-        ? halfPlane(1)
-        : cornerPoints(cap.host).map((p) => toCanvas(...p))
-      )
-        .map(point)
-        .join(' ')}"/>`;
+      // See capShapes: a return facing the void repaints only its own host.
+      const polygon = (points) =>
+        `<polygon points="${points.map(point).join(' ')}"/>`;
+      const host = polygon(
+        cap.facing
+          ? halfPlane(1)
+          : cornerPoints(cap.host).map((p) => toCanvas(...p))
+      );
       defs.push(
         `<clipPath id="cap-${index}"><circle cx="${center[0]}" cy="${center[1]}" r="${r}"/></clipPath>`,
         `<clipPath id="host-${index}">${host}</clipPath>`,
-        `<clipPath id="cover-${index}"><polygon points="${outward.map(point).join(' ')}"/>${host}</clipPath>`
+        `<clipPath id="cover-${index}">${polygon(halfPlane(-1))}${host}</clipPath>`
       );
       fills.push(
         `<g clip-path="url(#cap-${index})"><g clip-path="url(#cover-${index})">`
@@ -157,16 +168,17 @@ export default function triangleSvg(
         span: TAU,
       });
       fills.push(`</g><g clip-path="url(#host-${index})">`);
-      [...cap.connections.entries()].reverse().forEach(([slot, [, edge]]) => {
-        const row = slot === 2 ? cap.bottomIndex : cap.topIndex;
-        paint(
-          cap.host,
-          cap.connections[slot][0],
-          edge,
-          row,
-          slot === 1 ? 1 : 0
+      [...cap.connections.entries()]
+        .reverse()
+        .forEach(([slot, [type, edge]]) =>
+          paint(
+            cap.host,
+            type,
+            edge,
+            slot === 2 ? cap.bottomIndex : cap.topIndex,
+            slot === 1 ? 1 : 0
+          )
         );
-      });
       fills.push('</g></g>');
     });
   const paths = showStrokes

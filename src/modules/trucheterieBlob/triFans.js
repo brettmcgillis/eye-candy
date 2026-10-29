@@ -1,5 +1,12 @@
-import { triangleSides } from './triSides';
-import { H, TRIANGLE, cellCenter, cornerPoints, ringsEdge } from './triangle';
+import { closedRuns, straightSidesAgree } from './triSides';
+import {
+  H,
+  TRIANGLE,
+  TRI_STRIPES,
+  cellCenter,
+  cornerPoints,
+  ringsEdge,
+} from './triangle';
 
 export const BOUNDARY_RETURN = 12;
 
@@ -37,6 +44,7 @@ function pairCell(a, b) {
 }
 
 export default function triangleFans(design, groups, pitch, connectionsFor) {
+  const runs = closedRuns(design);
   const drawn = [];
   const hosts = [];
   const geometry = (source) => ({
@@ -73,7 +81,26 @@ export default function triangleFans(design, groups, pitch, connectionsFor) {
         });
         return;
       }
-      const connections = connectionsFor(source);
+      const connections = connectionsFor(
+        source,
+        straightSidesAgree(runs[index], source.mask, source.size)
+      );
+      if (connections.length === 1) {
+        const [type, edge] = connections[0];
+        const closed = (edge + 1) % 3;
+        drawn.push({
+          cell,
+          connections:
+            type === TRI_STRIPES && !runs[index][closed][0].facing
+              ? [[type, edge + 6]]
+              : connections,
+          group: index,
+          channelGroup: network,
+          occluders: [],
+          sources: [index],
+        });
+        return;
+      }
       const [top, middle, bottom] = connections;
       const bottomIndex = drawn.length;
       drawn.push({
@@ -103,42 +130,52 @@ export default function triangleFans(design, groups, pitch, connectionsFor) {
       });
     });
   });
-  const { groupOf } = triangleSides(design.cells);
+  // A return per closed run of a side: the whole side unless irregular
+  // connections leave some of it open. Those facing a cell go last, so their
+  // full outlines close over the void-facing ones they overlap.
+  const caps = [];
   hosts.forEach((host) => {
     const points = cornerPoints(host.cell);
-    [0, 1, 2].forEach((side) => {
-      if (Math.floor(host.source.mask / 2 ** side) % 2) return;
-      const a = points[side];
-      const b = points[(side + 1) % 3];
-      const x = (a[0] + b[0]) / 2;
-      const y = (a[1] + b[1]) / 2;
-      const { size } = host.cell;
-      const edge = side + (host.cell.up ? 3 : 0) + 6 * size;
-      const cell = {
-        column: x - size / 2,
-        row: y - size / 2,
-        size,
-        connectors: [false, false, false, false],
-      };
-      const [hx, hy] = cellCenter(host.cell);
-      drawn.push({
-        cell,
-        connections: [[BOUNDARY_RETURN, edge]],
-        group: host.index,
-        channelGroup: host.network,
-        occluders: [],
-        cap: {
-          host: host.cell,
-          topIndex: host.topIndex,
-          bottomIndex: host.bottomIndex,
-          connections: host.connections,
-          offset: [x - hx, y - hy],
-          side,
-          facing: groupOf[host.index * 3 + side].members.length > 1,
-        },
-      });
-    });
+    [0, 1, 2].forEach((side) =>
+      runs[host.index][side].forEach(({ from, to, facing }) => {
+        const a = points[side];
+        const b = points[(side + 1) % 3];
+        const t = (from + to) / 2 / host.cell.size;
+        const x = a[0] + (b[0] - a[0]) * t;
+        const y = a[1] + (b[1] - a[1]) * t;
+        const size = to - from;
+        const edge = side + (host.cell.up ? 3 : 0) + 6 * size;
+        const cell = {
+          column: x - size / 2,
+          row: y - size / 2,
+          size,
+          connectors: [false, false, false, false],
+        };
+        const [hx, hy] = cellCenter(host.cell);
+        caps.push({
+          cell,
+          connections: [[BOUNDARY_RETURN, edge]],
+          group: host.index,
+          channelGroup: host.network,
+          occluders: [],
+          cap: {
+            host: host.cell,
+            topIndex: host.topIndex,
+            bottomIndex: host.bottomIndex,
+            connections: host.connections,
+            offset: [x - hx, y - hy],
+            side,
+            from,
+            facing,
+          },
+        });
+      })
+    );
   });
+  drawn.push(
+    ...caps.filter(({ cap }) => !cap.facing),
+    ...caps.filter(({ cap }) => cap.facing)
+  );
   return drawn.map((entry, index) => ({
     ...entry,
     renderOccluders: drawn

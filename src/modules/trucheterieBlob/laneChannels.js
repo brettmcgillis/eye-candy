@@ -18,6 +18,7 @@ import {
   FAN_SPAN,
   POCKET,
   RINGS,
+  TRI_STRIPES,
   TRI_STUB,
   TRI_TURN,
   cellBox,
@@ -36,6 +37,8 @@ import {
   pocketRadii,
   returnRadii,
   ringPitch,
+  stripeCount,
+  stripesHollow,
 } from './triangle';
 
 // A pocket's centre on its host's side, in micro-cell units.
@@ -125,6 +128,8 @@ export function laneCount(type, size, pathDiv, edge = 0) {
     return Math.max(1, boundaryRadii(boundarySize(edge), pathDiv).length);
   if (type === TRI_STUB || type === TRI_TURN)
     return Math.max(1, returnRadii(type, size, pathDiv).length);
+  if (type === TRI_STRIPES)
+    return stripeCount(size, pathDiv) + (stripesHollow(edge) ? 0 : 1);
   if (type === FAN) {
     const { long, reference } = decodeEdge(edge);
     return fanBands(size, pathDiv, long, reference);
@@ -149,7 +154,7 @@ export function familySector(cell, type, edge, pathDiv = null) {
     const radii = pathDiv ? boundaryRadii(boundarySize(edge), pathDiv) : [];
     return { x, y, rMax: pathDiv ? (radii.at(-1) ?? 0) : size / 2 };
   }
-  if (type === TRI_TURN) {
+  if (type === TRI_TURN || type === TRI_STRIPES) {
     const [x, y] = cornerPoints(cell)[edge % 3];
     return { rMax: size, x, y };
   }
@@ -223,6 +228,17 @@ export function laneRadii(type, size, pathDiv, edge = 0) {
     if (radii.length === 0) return [[0, size * 0.2]];
     return radii.map((r, j) => [j > 0 ? radii[j - 1] : 0, r]);
   }
+  // Distances from the corner along a side, not radii: a stripe's length
+  // equals its distance, so familySpan is 1.
+  if (type === TRI_STRIPES) {
+    return Array.from(
+      { length: laneCount(type, size, pathDiv, edge) },
+      (_, j) => [
+        Math.max(0, fanRadius(j - 1, pathDiv)),
+        Math.min(size, fanRadius(j, pathDiv)),
+      ]
+    );
+  }
   if (type === POCKET) {
     const bounds = [0, ...pocketRadii(decodeIrregular(edge).m, pathDiv)];
     return bounds.slice(1).map((r, j) => [bounds[j], r]);
@@ -262,6 +278,7 @@ export function familySpan(cell, type, edge) {
   if (type === BOUNDARY_RETURN) return Math.PI;
   if (type === TRI_STUB) return Math.PI;
   if (type === TRI_TURN) return FAN_SPAN;
+  if (type === TRI_STRIPES) return 1;
   if (type === FAN || type === BEND) return FAN_SPAN;
   if (type === POCKET) return Math.PI;
   if (type === RINGS) return Math.PI * 2;
@@ -291,10 +308,34 @@ export function isWeaveCell(connections) {
   );
 }
 
+// Across a stripe, 0 on the side towards corner + 1 and 1 on the other:
+// linear in the pixel's offset, as triangleArcs.js's stripes `along` is.
+export function stripeParam(cell, corner, px, py) {
+  const points = cornerPoints(cell);
+  const [cx, cy] = points[corner];
+  const a = points[(corner + 1) % 3];
+  const b = points[(corner + 2) % 3];
+  const mx = (a[0] + b[0]) / 2 - cx;
+  const my = (a[1] + b[1]) / 2 - cy;
+  const height = Math.hypot(mx, my);
+  const dx = px - cx;
+  const dy = py - cy;
+  const depth = (dx * mx + dy * my) / height;
+  if (depth < 1e-9) return 0.5;
+  const tx = b[0] - a[0];
+  const ty = b[1] - a[1];
+  const across = (dx * tx + dy * ty) / Math.hypot(tx, ty);
+  return Math.min(
+    1,
+    Math.max(0, 0.5 + across / (2 * depth * Math.tan(Math.PI / 6)))
+  );
+}
+
 // How far round its family's wedge a grid point sits, 0..1 — the same
 // parameter blobArcs.js's `along` gives a pixel: measured in the family's
 // canonical frame, from the wedge's first edge towards its second.
 export function wedgeParam(cell, type, edge, px, py) {
+  if (type === TRI_STRIPES) return stripeParam(cell, edge % 3, px, py);
   if (
     type === BOUNDARY_RETURN ||
     type === FAN ||
@@ -431,6 +472,32 @@ function pocketIntervals(cell, edge, pathDiv, visible) {
   return out;
 }
 
+// A return over the stretch [start, start + m) of a side, in units from its
+// corner: its lanes meet the side on both sides of the stretch's middle.
+function stubIntervals(cell, side, start, m, pathDiv, visible = () => true) {
+  const points = cellCorners(cell);
+  const from = points[side];
+  const to = points[(side + 1) % 3];
+  const { along, line, name, sign } = latticeLine(from, to);
+  const [ax, ay] = latticePoint(...from);
+  const [bx, by] = latticePoint(...to);
+  const bounds = laneRadii(TRI_STUB, m, pathDiv);
+  const out = [];
+  for (let j = 0; j <= m * pathDiv; j += 1) {
+    const t = (start + j / pathDiv) / cell.size;
+    const point = [ax + (bx - ax) * t, ay + (by - ay) * t];
+    const r = Math.abs(j / pathDiv - m / 2);
+    const lane = bounds.findIndex(([, outer]) => r < outer - 1e-8);
+    if (lane >= 0 && visible(point))
+      out.push({
+        key: `${name}:${line}:${along(...from) * pathDiv + sign * (start * pathDiv + j) - 0.5}`,
+        lane,
+        point,
+      });
+  }
+  return out;
+}
+
 function laneIntervals(cell, type, edge, pathDiv, occluders) {
   const { column, row, size } = cell;
   const span = size * pathDiv;
@@ -443,31 +510,16 @@ function laneIntervals(cell, type, edge, pathDiv, occluders) {
       (occluder) =>
         Math.hypot(x - occluder.x, y - occluder.y) > occluder.rMax + 1e-6
     );
-  if (type === FAN || type === BEND || type === TRI_TURN) {
+  if (
+    type === FAN ||
+    type === BEND ||
+    type === TRI_TURN ||
+    type === TRI_STRIPES
+  ) {
     return fanIntervals(cell, type, edge, pathDiv, clear);
   }
-  if (type === TRI_STUB) {
-    const points = cellCorners(cell);
-    const from = points[edge % 3];
-    const to = points[((edge % 3) + 1) % 3];
-    const { along, line, name, sign } = latticeLine(from, to);
-    const [ax, ay] = latticePoint(...from);
-    const [bx, by] = latticePoint(...to);
-    const bounds = laneRadii(type, size, pathDiv, edge);
-    for (let j = 0; j <= size * pathDiv; j += 1) {
-      const t = j / (size * pathDiv);
-      const point = [ax + (bx - ax) * t, ay + (by - ay) * t];
-      const r = Math.abs(j / pathDiv - size / 2);
-      const lane = bounds.findIndex(([, outer]) => r < outer - 1e-8);
-      if (lane >= 0 && clear(point))
-        out.push({
-          key: `${name}:${line}:${along(...from) * pathDiv + sign * j - 0.5}`,
-          lane,
-          point,
-        });
-    }
-    return out;
-  }
+  if (type === TRI_STUB)
+    return stubIntervals(cell, edge % 3, 0, size, pathDiv, clear);
   if (type === POCKET) return pocketIntervals(cell, edge, pathDiv, clear);
 
   const visible = (vertical, line, start) => {
@@ -655,7 +707,13 @@ export default function buildLaneChannels(
           ((radii[j][0] + radii[j][1]) / 2) * familySpan(cell, type, edge);
       }
       const joins = entry.cap
-        ? laneIntervals(entry.cap.host, TRI_STUB, edge % 6, pathDiv, [])
+        ? stubIntervals(
+            entry.cap.host,
+            entry.cap.side,
+            entry.cap.from ?? 0,
+            boundarySize(edge),
+            pathDiv
+          )
         : laneIntervals(
             cell,
             type,

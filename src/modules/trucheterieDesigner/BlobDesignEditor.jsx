@@ -17,7 +17,6 @@ import {
   toFieldFrame,
 } from './overlay';
 import {
-  MAX_BRUSH,
   applyTool,
   dragStep,
   groupAt,
@@ -81,11 +80,11 @@ function BlobDesignEditor({
   // The editable area always reaches a full brush past the design, and grows with it.
   const area = useMemo(
     () => ({
-      column: column - MAX_BRUSH,
-      row: row - MAX_BRUSH,
-      size: frameSize + MAX_BRUSH * 2,
+      column: column - brush,
+      row: row - brush,
+      size: frameSize + brush * 2,
     }),
-    [column, frameSize, row]
+    [brush, column, frameSize, row]
   );
 
   if (!strokeRef.current) designRef.current = design;

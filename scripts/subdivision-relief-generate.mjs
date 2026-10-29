@@ -10,7 +10,6 @@ import {
   loadKernel,
   parseCli,
   pieceAt,
-  plotSvg,
   rollArgs,
   sidecarOf,
   withCapturer,
@@ -18,37 +17,28 @@ import {
 
 runStills({
   doneLabel: 'rendered pieces',
-  // An SVG-only batch needs no GPU at all.
-  gpu: ({ formats }) => formats.length > 0,
-  async item({ capturer, formats, index, kernel, options, roll, save, step }) {
+  async item({ capturer, index, kernel, options, roll, save, step }) {
     const { relief } = kernel;
     const drawn = await step(`laying out piece ${index + 1}`, () =>
       pieceAt(kernel, { index, options, roll })
     );
     const out = await save(drawn.name, sidecarOf(drawn, options));
-    if (formats.length > 0) {
-      capturer.load(drawn);
-      const grown = {
-        grow: drawn.piece.maxDepth + 1,
-        motion: relief.motionAt(drawn.config, 0),
-      };
-      await out.eachView((view) =>
-        out.image(view, () =>
-          capturer.capture(
-            relief.frameView({
-              config: drawn.config,
-              options,
-              piece: drawn.piece,
-              view,
-            }),
-            grown
-          )
-        )
-      );
-    }
-    if (options.svg) {
-      await out.file('plan.svg', plotSvg(kernel, drawn, options));
-    }
+    capturer.load(drawn);
+    const grown = {
+      grow: drawn.piece.maxDepth + 1,
+      motion: relief.motionAt(drawn.config, 0),
+    };
+    await out.eachView(async (view) => {
+      const framing = relief.frameView({
+        config: drawn.config,
+        options,
+        piece: drawn.piece,
+        view,
+      });
+      await out.image(view, () => capturer.capture(framing, grown));
+      if (options.svg)
+        await out.svg(view, await capturer.svg(framing, options));
+    });
   },
   kernelLabel: 'SubdivisionRelief',
   loadKernel,

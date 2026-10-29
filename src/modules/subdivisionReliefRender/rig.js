@@ -7,7 +7,12 @@ import {
   waveOrigin,
 } from '@modules/subdivisionRelief';
 
-import createCellGeometry, { slidesIn, writeCells } from './cellBuffers';
+import createCellGeometry, {
+  plotCells,
+  sheetIn,
+  slidesIn,
+  writeCells,
+} from './cellBuffers';
 import createCellMaterial from './cellMaterial';
 
 const MIN_CAPACITY = 1024;
@@ -24,6 +29,7 @@ function createMotionUniforms() {
     noisePhase: uniform(0),
     noiseScale: uniform(1),
     roughness: uniform(0.5),
+    slab: uniform(0),
     waveAmount: uniform(0),
     waveLength: uniform(1),
     waveOrigin: uniform(new THREE.Vector2()),
@@ -48,7 +54,7 @@ export default function createReliefRig() {
 
   let slide = false;
   let material = createCellMaterial({ grow, motion, slide });
-  let geometry = createCellGeometry(MIN_CAPACITY, 'quad');
+  let geometry = createCellGeometry(MIN_CAPACITY, 'quad', false);
   const cells = new THREE.Mesh(geometry, material);
   cells.castShadow = true;
   cells.receiveShadow = true;
@@ -66,32 +72,44 @@ export default function createReliefRig() {
   // Grown by doubling and never shrunk, so a webcam piece rewrites buffers
   // instead of allocating them. The old geometry is freed before the next
   // frame draws, or three leaks the buffers its render object still holds.
-  function ensureGeometry(count, lattice) {
+  function ensureGeometry(count, lattice, sheet) {
     let { capacity } = geometry.userData;
     while (capacity < count) capacity *= 2;
     if (
       lattice === geometry.userData.lattice &&
+      sheet === geometry.userData.sheet &&
       capacity === geometry.userData.capacity
     ) {
-      return;
+      return false;
     }
     const old = geometry;
-    geometry = createCellGeometry(capacity, lattice);
+    geometry = createCellGeometry(capacity, lattice, sheet);
     cells.geometry = geometry;
     old.dispose();
+    return true;
   }
 
   return {
+    cells,
     group,
 
     apply(next) {
       config = next;
+      const rebuilt =
+        piece &&
+        ensureGeometry(piece.nodes.length, next.lattice, sheetIn(next));
+      if (rebuilt) writeCells(geometry, piece, next);
       if (slidesIn(next) !== slide) {
         slide = slidesIn(next);
         const old = material;
         material = createCellMaterial({ grow, motion, slide });
         cells.material = material;
         old.dispose();
+      }
+      const side = sheetIn(next) ? THREE.DoubleSide : THREE.FrontSide;
+      if (material.side !== side) {
+        material.side = side;
+        material.needsUpdate = true;
       }
       plateMaterial.color.set(next.plateColor);
       plateMaterial.roughness = next.roughness;
@@ -102,6 +120,7 @@ export default function createReliefRig() {
       motion.noiseAmount.value = next.motionNoiseAmount;
       motion.noiseScale.value = next.motionNoiseScale;
       motion.roughness.value = next.roughness;
+      motion.slab.value = next.cellForm === 'slab' ? next.slabThickness : 0;
       motion.waveAmount.value = next.motionWaveAmount;
       motion.waveLength.value = next.motionWaveLength;
       placeWave();
@@ -110,7 +129,7 @@ export default function createReliefRig() {
     // What buildReliefPiece returned, laid out with the last applied config.
     setPiece(next) {
       piece = next;
-      ensureGeometry(piece.nodes.length, config.lattice);
+      ensureGeometry(piece.nodes.length, config.lattice, sheetIn(config));
       writeCells(geometry, piece, config);
       motion.maxDepth.value = piece.maxDepth;
       plate.scale.set(
@@ -119,6 +138,25 @@ export default function createReliefRig() {
         1
       );
       placeWave();
+    },
+
+    // The cells' world-space meshes for a plot (`faces`: tops only), as the
+    // shader places them at `grow` with the motion off.
+    // `drawn` is what the plot outlines (`faces`: each top alone); `solid`
+    // is every prism whole, what hides lines.
+    plotMeshes({ faces, grow: levels }) {
+      const placed = {
+        base: motion.base.value,
+        gap: motion.gap.value,
+        grow: levels,
+        slab: motion.slab.value,
+        slide,
+      };
+      const solid = plotCells(geometry, { ...placed, faces: false });
+      return {
+        drawn: faces ? plotCells(geometry, { ...placed, faces }) : solid,
+        solid,
+      };
     },
 
     // In levels: 0 is the root grid, maxDepth + 1 the fully split piece.

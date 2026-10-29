@@ -78,7 +78,12 @@ export default function createCellMaterial({ grow, motion, slide = false }) {
     mix(parentColor.w, color.w, t).add(offset).mul(sink),
     motion.base
   );
-  const z = select(shown, positionGeometry.z.mul(top), 0);
+  const bottom = select(
+    motion.slab.greaterThan(0),
+    max(top.sub(motion.slab), 0),
+    float(0)
+  );
+  const z = select(shown, mix(bottom, top, positionGeometry.z), 0);
 
   material.positionNode = vec3(placed, z);
   material.colorNode = varying(

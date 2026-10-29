@@ -16,7 +16,7 @@ the same commit, and run `npm run subdivision:check` and
                                    cell material; the scene's camera and lighting
         │                              │                                    │
   WebGPU/SubdivisionRelief scene   scripts/lib/subdivisionReliefRender.mjs   darkroom/techniques/relief
-  (R3F, CameraRig, LightingRig,      ├─ subdivision-relief-generate.mjs   stills per view + plan SVG
+  (R3F, CameraRig, LightingRig,      ├─ subdivision-relief-generate.mjs   stills + plot SVG per view
    Leva generated)                   └─ subdivision-relief-video.mjs      growth / motion / sway
                                         │
      src/dev/server/subdivisionRelief → src/dev/tools/subdivisionRelief (SubdivisionReliefCLI)
@@ -60,8 +60,25 @@ world units (`WORLD_SCALE`), so the canvas is the layout as in Subdivision.
   (the grown piece in noise and wave motion), `sway` (the camera swings
   ±`orbit` degrees, `turns` times). A moving camera is fitted once across its
   whole swing, so the zoom holds.
-- **Plot SVG** (`plan.svg`): Subdivision's plot of the same piece — a
-  plotter draws the plan, not a perspective.
+- **Cell form** (`cellForm`, scene and CLI alike; default `prism`): `prism`
+  stands each cell from the plate to its height; `plane` is only its top, a
+  sheet floating at that height (the geometry is the shape's top triangles,
+  so the plot's faces match); `slab` is a prism `slabThickness` thick whose
+  top sits at the height — towers, floating platforms and sheets from one
+  height function. The cell shader's `slab` uniform lifts the bottom; the
+  plot mirror (`plotCells`) takes the same value.
+- **Plot SVG** (`<view>.svg`, one per view beside its still): the grown
+  prisms through that view's camera as hidden-line line work
+  (`svgOcclusion`), inked from each cell's own colour. Hidden lines are cut
+  exactly against the whole prisms (`plotKit/hiddenLines`, `meshPlotSvg`'s
+  `occluders`), not probed off a depth buffer, so corners stay square and
+  edges straight; there is no pixel-traced silhouette. In a perspective view
+  a prism's walls fan toward the vanishing point by nature; use
+  `--projection orthographic` for a front view of exact right angles. `svgStyle` `edges`
+  outlines every prism; `faces` draws only each prism's top. `plotCells` in
+  `subdivisionReliefRender/cellBuffers.js` is the CPU mirror of the cell
+  shader's placement, at full grow with the noise/wave motion off. The flat
+  hatched plot is SubdivisionCLI's.
 - **Darkroom**: `techniques/relief`.
 - Source images share Subdivision's upload pool
   (`public/images/subdivision-sources/`, `sourceImageRoutes` in

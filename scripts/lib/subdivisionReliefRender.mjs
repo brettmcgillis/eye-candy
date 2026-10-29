@@ -11,7 +11,7 @@ import {
   sidecarFor,
   withRenderer,
 } from './generatorCli.mjs';
-import { createHeadlessRenderer } from './headlessWebgpu.mjs';
+import { advanceFrame, createHeadlessRenderer } from './headlessWebgpu.mjs';
 import { loadImage } from './sourceImage.mjs';
 
 // Barrels only — see docs/subdivision-relief-pipeline.md.
@@ -45,9 +45,6 @@ export const rollArgs = (kernel, args) => kernel.look.rollArgs(args);
 export const pieceAt = (kernel, args) =>
   kernel.look.pieceAt({ ...args, loadImage });
 
-export const plotSvg = (kernel, drawn, options) =>
-  kernel.look.plotSvg(drawn, options);
-
 export function sidecarOf({ config, name, piece }, options) {
   return {
     ...sidecarFor({ config, name, options }),
@@ -69,6 +66,7 @@ export async function createReliefCapturer(kernel, options) {
   });
   const stage = kernel.look.createReliefStage({
     ...options,
+    advance: advanceFrame,
     readFrame: headless.readFrame,
     renderer: headless.renderer,
   });

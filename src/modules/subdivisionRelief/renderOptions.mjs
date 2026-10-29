@@ -12,6 +12,7 @@ import createOptionSchema, {
 } from '../optionSchema/index.mjs';
 import {
   FIELDS,
+  PLOT_KEYS,
   RENDER_OPTIONS as PIECE_OPTIONS,
 } from '../subdivision/renderOptions.mjs';
 
@@ -25,12 +26,13 @@ export {
   PALETTE_NONE,
   SOURCE_IMAGE_MAX,
   SYMMETRIES,
-  plotOptionsFrom,
 } from '../subdivision/renderOptions.mjs';
 
 export const VIEWS = ['front', 'hero', 'left', 'right', 'high', 'low'];
 export const VIDEO_MODES = ['growth', 'motion', 'sway'];
 export const PROJECTIONS = ['perspective', 'orthographic'];
+export const SVG_STYLES = ['edges', 'faces'];
+export const CELL_FORMS = ['prism', 'plane', 'slab'];
 export const WAVE_ORIGINS = ['centre', 'focal'];
 export const FACETS = ['structure', 'field', 'palette', 'relief'];
 
@@ -45,8 +47,14 @@ export const VIEW_ANGLES = {
   low: [-10, -40],
 };
 
-// The flat look's outline band; here the gap between prisms does its job.
-const DROPPED = new Set(['outlineColor', 'outlineStrength', 'outlineWidth']);
+// The flat look's outline band and hatching: here the gap between prisms does
+// the first, and the plot draws prism edges through the camera, not hatching.
+const DROPPED = new Set([
+  'outlineColor',
+  'outlineStrength',
+  'outlineWidth',
+  ...PLOT_KEYS,
+]);
 const LOOP_KEYS = new Set([
   'growStyle',
   'growSeconds',
@@ -89,6 +97,7 @@ const REPLACED = {
   hold: {
     ...PIECE_OPTIONS.hold,
     help: 'Seconds a grown piece holds (growth), or each clip runs (motion, sway)',
+    section: 'loop',
   },
   keep: standard.keep(FACETS),
   mode: standard.mode(
@@ -123,6 +132,13 @@ const RELIEF = {
   }),
   baseHeight: num('relief', null, 'Base', 0.08, 0.01, 2, 0.01, {
     help: 'Height every cell stands at before the drivers add theirs',
+  }),
+  cellForm: choice('relief', null, 'Cell form', CELL_FORMS, 'prism', {
+    help: 'prism: each cell stands from the plate to its height; plane: only its top, a sheet floating at that height; slab: a short prism (see slab thickness) floating at that height',
+  }),
+  slabThickness: num('relief', null, 'Slab thickness', 0.06, 0.005, 1, 0.005, {
+    help: 'How thick a slab is, in world units; a slab never reaches below the plate',
+    when: { cellForm: ['slab'] },
   }),
   cellGap: relief('Gap', 0.03, 0, 0.3, 0.005, [0.01, 0.06], {
     help: 'Gap between neighbouring prisms, as a fraction of each cell',
@@ -203,8 +219,24 @@ const CAMERAS = {
   reliefSeed: standard.rollSeed('relief', 'seed'),
 };
 
+const SVG = {
+  svg: standard.svg(
+    'Write a plottable SVG per view: the prisms as hidden-line line work (see --svgStyle)'
+  ),
+  svgOcclusion: standard.svgOcclusion('Drop lines hidden behind nearer cells'),
+  svgStroke: standard.svgStroke(),
+  svgStyle: {
+    ...choice('svg', null, 'SVG lines', SVG_STYLES, 'edges', {
+      help: 'edges: every prism, outlined; faces: only each prism’s top',
+    }),
+    scene: false,
+    scope: 'still',
+  },
+};
+
 export const RENDER_OPTIONS = {
   ...PIECE,
+  ...SVG,
   ...RELIEF,
   ...MOTION,
   ...CAMERAS,
@@ -221,11 +253,6 @@ const schema = createOptionSchema({
   options: RENDER_OPTIONS,
   sectionLabels: { palette: 'palette & look' },
   surfaceDefaults: SURFACE_DEFAULTS,
-  validate(kind, options, fail) {
-    if (options.hatchMax < options.hatchMin) {
-      throw fail('hatchMax must be at least hatchMin.');
-    }
-  },
   views: VIEWS,
 });
 

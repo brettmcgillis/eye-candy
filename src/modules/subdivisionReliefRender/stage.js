@@ -6,7 +6,8 @@ import {
   createSceneLights,
 } from '@modules/lightingRig';
 import { setBackdrop } from '@modules/renderStage/capture';
-import { randomSeed, renderPlotSvg, seedFor } from '@modules/subdivision';
+import createMeshPlotter from '@modules/renderStage/meshPlotter';
+import { randomSeed, seedFor } from '@modules/subdivision';
 import {
   PLATE_MARGIN,
   SCENE_KEYS,
@@ -15,8 +16,6 @@ import {
   buildReliefPiece,
   configFrom,
   motionAt,
-  pieceSettings,
-  plotOptionsFrom,
   rollReliefConfig,
   sceneNamed,
 } from '@modules/subdivisionRelief';
@@ -76,18 +75,11 @@ export async function pieceAt({ index, loadImage, options, roll }) {
   return { config, name: seed, piece };
 }
 
-export function plotSvg({ config, piece }, options) {
-  return renderPlotSvg(
-    piece,
-    { ...pieceSettings(config), ...plotOptionsFrom(options) },
-    { widthMm: options.plotWidthMm }
-  );
-}
-
 // The relief stage the CLI renders headlessly and the Live tab renders on a
 // canvas, mirroring the scene: ACES tone mapping and soft shadows. A CLI
 // frame passes its grow and motion; Live runs the motion on its own clock.
 export function createReliefStage({
+  advance = null,
   height,
   readFrame,
   renderer,
@@ -106,6 +98,7 @@ export function createReliefStage({
     perspective: new THREE.PerspectiveCamera(30, width / height, 0.1, 100),
   };
   const rig = createReliefRig();
+  const meshPlot = createMeshPlotter(renderer, { advance });
   const lightGroup = createSceneLights(
     buildSceneLightingRuntimeConfig({
       controls: {},
@@ -203,9 +196,27 @@ export function createReliefStage({
       return readFrame(() => pipelineFor(view.projection).render());
     },
 
-    // The plot is the piece's plan, whatever the camera.
+    // The grown cells as hidden-line line work through the view's camera:
+    // each prism's edges, or `svgStyle: faces` for its top alone. The motion
+    // is held off, since the plot's cells are placed without it.
     svg(view, options) {
-      return plotSvg(current, options);
+      aim(view);
+      const grow = current.piece.maxDepth + 1;
+      rig.setGrow(grow);
+      rig.setMotion({ mix: 0, noisePhase: 0, wavePhase: 0 });
+      const { drawn, solid } = rig.plotMeshes({
+        faces: options.svgStyle === 'faces',
+        grow,
+      });
+      return meshPlot({
+        camera: cameras[view.projection],
+        meshes: drawn,
+        occluders: options.svgOcclusion ? solid : [],
+        options,
+        scene,
+        subject: rig.cells,
+        view,
+      });
     },
 
     dispose() {

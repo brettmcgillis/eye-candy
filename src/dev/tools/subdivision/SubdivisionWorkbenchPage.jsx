@@ -8,8 +8,8 @@ import SourceImageField from '@dev/renderWorkbench/SourceImageField';
 import * as kernel from '@modules/subdivision';
 import { PALETTE_NAMES } from '@utils/gradientPalette';
 
-import subdivisionLive from '../live';
 import './SubdivisionWorkbenchPage.css';
+import subdivisionLive from './live';
 
 const PALETTE_CHOICES = [kernel.PALETTE_NONE, ...PALETTE_NAMES].map((name) => [
   name,

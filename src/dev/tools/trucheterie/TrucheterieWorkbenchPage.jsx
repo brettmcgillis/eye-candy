@@ -23,6 +23,7 @@ import {
   configFrom,
   defaultsFor,
   facets,
+  gridShapeOf,
   keysInFacet,
   optionsFromConfig,
   sectionsFor,
@@ -89,6 +90,28 @@ const HANDLED = new Set([
   'webp',
   'width',
 ]);
+const PACKING_KEYS = new Set([
+  'blobGridSize',
+  'blobSizeFunction',
+  'blobDistribution',
+  'blobConnectivity',
+  'blobOneFill',
+  'blobHoles',
+  'blobMeatballs',
+  'blobSymmetry',
+  'blobIrregular',
+  'blobStraights',
+]);
+
+function visibleOption(key, options) {
+  const triangle = gridShapeOf(options) === 'triangle';
+  const reference = triangle && options.blobTriangleLayout !== 'packed';
+  if (key === 'blobTriangleLayout') return triangle && !options.blobDesign;
+  if (key.startsWith('blobTriangle')) return reference && !options.blobDesign;
+  if (PACKING_KEYS.has(key)) return !reference && !options.blobDesign;
+  return true;
+}
+
 const RENDER_KEYS = new Set(
   Object.keys(RENDER_OPTIONS).filter((key) => !RENDER_OPTIONS[key].scene)
 );
@@ -315,20 +338,22 @@ export default function TrucheterieWorkbenchPage() {
                 >
                   <summary>{section.label}</summary>
                   <div className="rw-field-grid">
-                    {section.keys.map((key) => (
-                      <SchemaField
-                        choices={
-                          {
-                            blobDesign: designs.choices,
-                            blobPalette: PALETTE_CHOICES,
-                          }[key]
-                        }
-                        key={key}
-                        onChange={(value) => setOption(key, value)}
-                        option={key}
-                        value={options[key]}
-                      />
-                    ))}
+                    {section.keys
+                      .filter((key) => visibleOption(key, options))
+                      .map((key) => (
+                        <SchemaField
+                          choices={
+                            {
+                              blobDesign: designs.choices,
+                              blobPalette: PALETTE_CHOICES,
+                            }[key]
+                          }
+                          key={key}
+                          onChange={(value) => setOption(key, value)}
+                          option={key}
+                          value={options[key]}
+                        />
+                      ))}
                   </div>
                 </details>
               ))}

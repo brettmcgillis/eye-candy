@@ -113,7 +113,11 @@ function laneOptions(config, phase = 0) {
 export function renderSvg(kernel, field, config, options) {
   const { look } = kernel;
   const lanes = look.resolveLaneColors(field.cells, laneOptions(config));
-  const { penHalfWidth } = look.penGeometry(field.gridSize);
+  const { penHalfWidth } = look.penGeometry(
+    field.gridSize,
+    config.blobPathsPerUnit,
+    field.layout === 'subdivide'
+  );
   return kernel.blob.renderBlobSvg(field, {
     background:
       options.svgFill && !options.transparent

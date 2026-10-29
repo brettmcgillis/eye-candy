@@ -9,6 +9,8 @@ import {
   vec2,
 } from 'three/tsl';
 
+import { triangleFamily } from './triangleArcs';
+
 // The reference's Cell.draw(), expressed as a distance field instead of
 // polylines. Every length here is in MICRO-CELL units (one grid square = 1),
 // which is what makes neighbouring cells line up: band radii land on the
@@ -132,7 +134,7 @@ export function arcFamily(q, type, edge, size, pathDivU) {
   const straightAlong = lengthwise.div(size).clamp(0, 1);
   const pick = (straight, arc) => select(isStraight, straight, arc);
 
-  return {
+  const square = {
     along: pick(straightAlong, along),
     // Both terms are smooth, unlike dBand — see strokeMask.
     aaField: pick(across.add(straightCap), d.add(capOffset)),
@@ -145,9 +147,20 @@ export function arcFamily(q, type, edge, size, pathDivU) {
     // How many lanes this family has, so a caller can normalize `lane` into
     // a 0..1 reveal order for growth — see blobShader.js's `growthU`.
     lanes: pick(bands, lanes),
+    rMin: size.mul(0),
     rMax: pick(size, rMax),
     sweep: pick(straightAlong.sub(0.5).abs().mul(2), sweep),
   };
+
+  // Types 4 and 5 belong to triangle cells (./triangleArcs.js).
+  const triangle = triangleFamily(q, type, edge, size, pathDivU);
+  const isTriangle = type.greaterThanEqual(4);
+  return Object.fromEntries(
+    Object.keys(square).map((key) => [
+      key,
+      select(isTriangle, triangle[key], square[key]),
+    ])
+  );
 }
 
 // Constant-width pen. `smoothField` must be the un-folded field `distance`

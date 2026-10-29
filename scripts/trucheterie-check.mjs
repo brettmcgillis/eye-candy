@@ -480,7 +480,7 @@ function checkSymmetry(blob) {
       on.length < 400 * blob.SYMMETRY_CHANCE * 1.6 &&
       on.every(
         ({ blobSymmetry, planeRotation }) =>
-          (planeRotation === 45) ===
+          (planeRotation === 45 || planeRotation === 30) ===
           (blobSymmetry === 'diagonal' || blobSymmetry === 'antidiagonal')
       ),
     `symmetry: ${on.length}/400 rolls are symmetric, or an axis ignores the rotation.`
@@ -489,7 +489,7 @@ function checkSymmetry(blob) {
     rolls.indexOf(on.find((c) => c.planeRotation === 0)) >= 0
       ? `sym-${rolls.indexOf(on.find((c) => c.planeRotation === 0))}`
       : 'sym-0',
-    { pinned: { planeRotation: 45 } }
+    { pinned: { blobGridShape: 'square', planeRotation: 45 } }
   );
   const off = blob.rollBlobConfig(`sym-${rolls.indexOf(on[0])}`, {
     pinned: { blobSymmetry: 'none' },
@@ -778,6 +778,631 @@ function checkStraights(blob) {
   );
 }
 
+function strokeContains(a, p) {
+  if (a.line) {
+    const dx = a.to[0] - a.from[0];
+    const dy = a.to[1] - a.from[1];
+    const d = dx * dx + dy * dy;
+    const t = ((p[0] - a.from[0]) * dx + (p[1] - a.from[1]) * dy) / d;
+    return (
+      t >= -1e-6 &&
+      t <= 1 + 1e-6 &&
+      Math.abs((p[0] - a.from[0]) * dy - (p[1] - a.from[1]) * dx) <
+        1e-5 * Math.sqrt(d)
+    );
+  }
+  if (Math.abs(Math.hypot(p[0] - a.x, p[1] - a.y) - a.radius) > 1e-5)
+    return false;
+  const t =
+    (((Math.atan2(p[1] - a.y, p[0] - a.x) - a.start) % (2 * Math.PI)) +
+      2 * Math.PI) %
+    (2 * Math.PI);
+  return t < a.span + 1e-5 || t > Math.PI * 2 - 1e-5;
+}
+function unmatchedStrokeEndpoints(arcs) {
+  const bin = 0.5;
+  const buckets = new Map();
+  const pt = (a, t) =>
+    a.line
+      ? [
+          a.from[0] + (a.to[0] - a.from[0]) * t,
+          a.from[1] + (a.to[1] - a.from[1]) * t,
+        ]
+      : [
+          a.x + a.radius * Math.cos(a.start + a.span * t),
+          a.y + a.radius * Math.sin(a.start + a.span * t),
+        ];
+  arcs.forEach((a, i) => {
+    const n = Math.max(
+      1,
+      Math.ceil(
+        ((a.line
+          ? Math.hypot(a.to[0] - a.from[0], a.to[1] - a.from[1])
+          : a.radius * a.span) /
+          bin) *
+          3
+      )
+    );
+    for (let k = 0; k <= n; k += 1) {
+      const [x, y] = pt(a, k / n);
+      const key = `${Math.floor(x / bin)},${Math.floor(y / bin)}`;
+      if (!buckets.has(key)) buckets.set(key, new Set());
+      buckets.get(key).add(i);
+    }
+  });
+  const bad = [];
+  arcs.forEach((a, i) => {
+    if (!a.line && a.span > Math.PI * 2 - 1e-5) return;
+    [0, 1].forEach((t) => {
+      const p = pt(a, t);
+      const cx = Math.floor(p[0] / bin);
+      const cy = Math.floor(p[1] / bin);
+      const ids = new Set(
+        [-1, 0, 1].flatMap((dx) =>
+          [-1, 0, 1].flatMap((dy) => [
+            ...(buckets.get(`${cx + dx},${cy + dy}`) ?? []),
+          ])
+        )
+      );
+      if (![...ids].some((j) => j !== i && strokeContains(arcs[j], p)))
+        bad.push({ i, p, arc: a });
+    });
+  });
+  return bad;
+}
+
+// Every arc crossing a triangle's side where nothing drawn above it covers
+// it, keyed by position: each must be drawn by cells on both sides of the
+// line. Above a cell's own families sit its pockets and bends, last on top.
+function unmatchedTriangleCrossings(blob, field, pathDiv) {
+  if (field.layout === 'subdivide')
+    return unmatchedStrokeEndpoints(blob.triangleSegments(field, pathDiv))
+      .length;
+  const byPoint = new Map();
+  const groups = new Map();
+  field.cells.forEach((entry) => {
+    if (!groups.has(entry.group)) groups.set(entry.group, []);
+    groups.get(entry.group).push(entry);
+  });
+  const add = (x, y, who) => {
+    // Keep exact half-grid ties together after trigonometric roundoff.
+    const key = `${Math.round(x * 1e4 + 1e-7)},${Math.round(y * 1e4 + 1e-7)}`;
+    if (!byPoint.has(key)) byPoint.set(key, new Set());
+    byPoint.get(key).add(who);
+  };
+  groups.forEach((entries) => {
+    const { cell } = entries[0];
+    if (entries[0].cap) {
+      const [type, edge] = entries[0].connections[0];
+      const { rMax, x, y } = blob.familySector(cell, type, edge, pathDiv);
+      const { start, span } = blob.fanFrame(cell, edge, type);
+      [start, start + span].forEach((angle) =>
+        add(
+          x + Math.cos(angle) * rMax,
+          y + Math.sin(angle) * rMax,
+          `cap:${entries[0].group}`
+        )
+      );
+      return;
+    }
+    const own = [
+      ...entries
+        .filter((e) => !e.under && !e.virtual)
+        .flatMap((e) => e.connections),
+      ...entries.filter((e) => e.under).flatMap((e) => e.connections),
+    ];
+    const extras = entries
+      .filter((e) => e.virtual)
+      .flatMap((e) => e.connections)
+      .reverse();
+    const stack = [...extras, ...own];
+    const who = `${cell.column},${cell.row},${cell.up}`;
+    const points = blob.cornerPoints(cell);
+    stack.forEach(([type, edge], slot) => {
+      const hidden = (x, y) =>
+        stack.slice(0, slot).some(([t, e]) => {
+          const o = blob.familySector(cell, t, e, pathDiv);
+          return Math.hypot(x - o.x, y - o.y) < o.rMax - 1e-9;
+        });
+      const corner = edge % 3;
+      const [px, py] = points[corner];
+      if (type === 4 || type === 7 || type === 10) {
+        const bands = blob.laneCount(type, cell.size, pathDiv, edge);
+        [1, 2].forEach((step) => {
+          const [qx, qy] = points[(corner + step) % 3];
+          for (let k = 0; k < bands; k += 1) {
+            const d = (k + 0.5) / pathDiv / cell.size;
+            const x = px + (qx - px) * d;
+            const y = py + (qy - py) * d;
+            if (!hidden(x, y)) add(x, y, `${who}:${slot}`);
+          }
+        });
+      }
+      if (type === 9) {
+        const a = points[corner];
+        const b = points[(corner + 1) % 3];
+        const mid = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+        const radii = blob.returnRadii(type, cell.size, pathDiv);
+        radii.forEach((r) =>
+          [-1, 1].forEach((sign) =>
+            add(
+              mid[0] + ((b[0] - a[0]) / cell.size) * r * sign,
+              mid[1] + ((b[1] - a[1]) / cell.size) * r * sign,
+              `${who}:${slot}`
+            )
+          )
+        );
+        if (Math.round(cell.size * pathDiv) % 2 === 1)
+          add(...mid, `${who}:${slot}`);
+      }
+      if (type === 6) {
+        const { x: cx, y: cy } = blob.familySector(cell, type, edge, pathDiv);
+        const [qx, qy] = points[(corner + 1) % 3];
+        const ux = (qx - px) / cell.size;
+        const uy = (qy - py) / cell.size;
+        const m = Math.floor(Math.floor(edge / 6) / 512);
+        // An odd stretch's middle crossing ends at the pocket's centre.
+        if ((m * pathDiv) % 2 === 1) add(cx, cy, `${who}:${slot}`);
+        blob.laneRadii(type, cell.size, pathDiv, edge).forEach(([, r]) =>
+          [1, -1].forEach((sign) => {
+            const x = cx + ux * r * sign;
+            const y = cy + uy * r * sign;
+            if (!hidden(x, y)) add(x, y, `${who}:${slot}`);
+          })
+        );
+      }
+    });
+  });
+  return [...byPoint.values()].filter((cells) => cells.size < 2).length;
+}
+
+// A size-4 ring cell inside a disc of size-1 triangles, every corner on.
+function enclosedDesign(blob) {
+  const host = blob.placeCell(
+    blob.emptyDesign({ irregular: true, shape: 'triangle' }),
+    0,
+    0,
+    4,
+    { connect: false, up: false }
+  );
+  const centroid = (cell) => {
+    const points = blob.cornerPoints({ ...cell, shape: 'triangle' });
+    return [0, 1].map(
+      (axis) => points.reduce((sum, p) => sum + p[axis], 0) / 3
+    );
+  };
+  const smalls = [];
+  for (let b = -6; b <= 9; b += 1) {
+    for (let a = -9; a <= 9; a += 1) {
+      smalls.push({ column: a, row: b, size: 1, up: false });
+      smalls.push({ column: a, row: b, size: 1, up: true });
+    }
+  }
+  const cells = smalls
+    .filter((cell) => {
+      const [x, y] = centroid(cell);
+      return (
+        blob.triIndexAt(host, x, y) < 0 && Math.hypot(x - 2, y - 1.5) < 6.5
+      );
+    })
+    .map(({ column, row, up }) => ({
+      column,
+      mask: (up ? 8 : 0) + 7,
+      row,
+      size: 1,
+    }));
+  return blob.normalizeDesign({ ...host, cells: [...host.cells, ...cells] });
+}
+
+function checkTriangleReference(blob, look) {
+  [4, 160].forEach((extent) =>
+    [1, 2, 4, 10, 20].forEach((density) => {
+      const { penHalfWidth } = look.penGeometry(extent, density, true);
+      check(
+        penHalfWidth <= look.penGeometry(extent).penHalfWidth &&
+          penHalfWidth * 2 * density <= 0.25,
+        'triangle reference: outlines are heavier than square cells or fill the lanes.'
+      );
+    })
+  );
+  [1, 2, 3, 6, 12].forEach((size) => {
+    [false, true].forEach((up) => {
+      const cell = { column: 0, row: 0, size, up };
+      const points = blob.cornerPoints(cell);
+      const [x, y] = [0, 1].map(
+        (axis) => points.reduce((sum, p) => sum + p[axis], 0) / 3
+      );
+      const picked = blob.brushCell(x, y, size);
+      check(
+        picked.up === up && picked.column === 0 && picked.row === 0,
+        `triangle paint: size ${size} ${up ? 'up' : 'down'} centroid picks the wrong triangle.`
+      );
+    });
+  });
+  const isolated = blob.placeCell(
+    blob.emptyDesign({ shape: 'triangle', layout: 'subdivide' }),
+    0,
+    0,
+    6
+  );
+  const paired = blob.placeCell(isolated, 0, 0, 6, { up: true });
+  const closure = {
+    ...blob.sceneDefaults(),
+    blobGridShape: 'triangle',
+    blobSeed: 'reference-1',
+  };
+  [1, 3, 6].forEach((size) => {
+    let chain = blob.emptyDesign({ shape: 'triangle', layout: 'subdivide' });
+    [
+      [0, 0, false],
+      [0, 0, true],
+      [0, size, false],
+      [0, size, true],
+      [-size, size, true],
+    ].forEach(([column, row, up], step) => {
+      chain = blob.placeCell(chain, column, row, size, { up });
+      if (step === 1) {
+        const pairField = blob.fieldFromDesign(chain, 8);
+        check(
+          pairField.count === 1 &&
+            pairField.cells[0].connections[0][0] === 5 &&
+            pairField.cells[0].sources.length === 2,
+          'triangle pair: the two editable triangles no longer form one circular motif.'
+        );
+      }
+    });
+    for (let pitch = 1; pitch <= 20; pitch += 1) {
+      const field = blob.fieldFromDesign(chain, 8, undefined, pitch);
+      check(
+        unmatchedTriangleCrossings(blob, field, pitch) === 0,
+        `triangle fans: size ${size} density ${pitch} leaves an exposed stroke end.`
+      );
+      if (size * pitch > 1) {
+        const fans = field.cells
+          .filter((entry) => !entry.cap)
+          .flatMap((entry) => entry.connections);
+        check(
+          fans.length === chain.cells.length * 3 &&
+            fans.every(([type]) => type === 4),
+          `triangle fans: adding tiles at density ${pitch} replaces the three reference fans.`
+        );
+      }
+      check(
+        designKey(blob, blob.designFromField(field)) ===
+          designKey(blob, blob.pinChoices(chain)),
+        'triangle fans: boundary returns lose editable source tiles.'
+      );
+    }
+  });
+  const dense = blob.fieldFromConfig({ ...closure, blobPathsPerUnit: 4 });
+  check(
+    unmatchedTriangleCrossings(blob, dense, 4) === 0,
+    'triangle fans: the dense reference has exposed endpoints.'
+  );
+  dense.cells
+    .filter((entry) => !entry.cap)
+    .forEach(({ cell, connections }) =>
+      connections.forEach(([type, edge]) => {
+        if (type !== 4) return;
+        const long = Math.floor(edge / 6) % 2 === 1;
+        const expected =
+          (long && cell.size > 1 ? cell.size * 3 : cell.size * 2) + 1;
+        check(
+          blob.laneCount(type, cell.size, 4, edge) === expected,
+          'triangle reference: a corner fan differs from the original inclusive arc count.'
+        );
+      })
+    );
+  const edgeCode = blob.encodeDesign(paired);
+  const migrated = blob.decodeDesign(edgeCode.replace('tb7.', 'tb6.'));
+  check(
+    migrated &&
+      designKey(blob, blob.normalizeDesign(migrated)) ===
+        designKey(blob, migrated),
+    'triangle migration: a legacy subdivision design leaves an unmatched edge.'
+  );
+
+  const leaves = blob.designFromSeed({ ...closure, blobTriangleMinRes: 0 });
+  const middle = Math.floor(leaves.cells.length / 2);
+  const edits = [
+    leaves,
+    blob.eraseCell(leaves, middle),
+    blob.setCorner(leaves, middle, 0, false),
+  ];
+  edits.forEach((design, index) =>
+    [1, 2, 3, 8, 20].forEach((pitch) => {
+      const field = blob.fieldFromDesign(design, 8, undefined, pitch);
+      check(
+        field.cells.every((entry) =>
+          entry.connections.every(([type]) => type !== 8)
+        ) && unmatchedTriangleCrossings(blob, field, pitch) === 0,
+        `triangle closure: edit ${index} at ${pitch} leaves a lane open.`
+      );
+    })
+  );
+  DESIGN_SEEDS.forEach((seed) => {
+    const config = {
+      ...blob.sceneDefaults(),
+      blobGridShape: 'triangle',
+      blobSeed: seed,
+      blobPathsPerUnit: 4,
+    };
+    const field = blob.fieldFromConfig(config);
+    const design = blob.designFromField(field);
+    check(
+      design.layout === 'subdivide' &&
+        designKey(blob, blob.normalizeDesign(design)) ===
+          designKey(blob, design) &&
+        design.cells.reduce(
+          (sum, cell) => sum + blob.cornersOn(cell.mask).length,
+          0
+        ) >
+          design.cells.length * 1.5,
+      `triangle reference ${seed}: subdivision has unmatched edges or loses most of its connections.`
+    );
+    check(
+      design.cells.reduce((sum, cell) => sum + cell.size ** 2, 0) ===
+        24 * 16 ** 2 && blob.inkClashes(design) === 0,
+      `triangle reference ${seed}: four-way subdivision loses area or overlaps cells.`
+    );
+    const code = blob.encodeDesign(design);
+    const decoded = blob.decodeDesign(code);
+    check(
+      code.startsWith('tb7.') &&
+        decoded &&
+        designKey(blob, decoded) === designKey(blob, design),
+      `triangle reference ${seed}: tb7 loses the subdivision model or fan ordering.`
+    );
+    const rebuilt = blob.fieldFromDesign(decoded, 8);
+    check(
+      rebuilt.count === field.count &&
+        rebuilt.conn0.every((v, i) => v === field.conn0[i]) &&
+        rebuilt.conn1.every((v, i) => v === field.conn1[i]),
+      `triangle reference ${seed}: design/CLI fan geometry drifts from the seeded field.`
+    );
+    field.cells
+      .filter((entry) => !entry.under && !entry.cap)
+      .forEach(({ cell, connections }) => {
+        connections.forEach(([type, edge]) => {
+          if (type !== 4) return;
+          const reach = Math.floor(edge / 6) % 2 === 1 ? 0.75 : 0.5;
+          check(
+            blob.laneCount(type, cell.size, 4, edge) ===
+              cell.size * 4 * reach + 1,
+            `triangle reference ${seed}: the reference's outer fan band is missing.`
+          );
+        });
+      });
+  });
+}
+
+function checkTriangles(blob) {
+  const base = {
+    ...blob.sceneDefaults(),
+    blobGridShape: 'triangle',
+    blobTriangleLayout: 'packed',
+  };
+  DESIGN_SEEDS.forEach((seed) => {
+    [3, 6].forEach((pathDiv) => {
+      const field = blob.fieldFromConfig({
+        ...base,
+        blobConnectivity: 0.8,
+        blobHoles: 0.2,
+        blobOneFill: 0.8,
+        blobSeed: seed,
+      });
+      check(
+        field.shape === 'triangle' && field.count > 0,
+        `triangles ${seed}: a triangle grid shape draws no triangle field.`
+      );
+      const unmatched = unmatchedTriangleCrossings(blob, field, pathDiv);
+      check(
+        unmatched === 0,
+        `triangles ${seed} @${pathDiv}: ${unmatched} arcs meet a side with nothing across it.`
+      );
+      const design = blob.designFromField(field);
+      check(
+        designKey(blob, blob.normalizeDesign(design)) ===
+          designKey(blob, design),
+        `triangles ${seed}: a seeded field breaks the corner rule normalizeDesign enforces.`
+      );
+      const again = blob.fieldFromDesign(
+        blob.decodeDesign(blob.encodeDesign(design)),
+        8
+      );
+      check(
+        again.count === field.count &&
+          again.conn0.every((v, i) => v === field.conn0[i]) &&
+          again.conn1.every((v, i) => v === field.conn1[i]),
+        `triangles ${seed}: a seeded field does not survive designFromField and the tb4 code.`
+      );
+      const json = blob.designFromJson(blob.designToJson(design));
+      check(
+        json && designKey(blob, json) === designKey(blob, design),
+        `triangles ${seed}: a design does not survive designToJson/designFromJson.`
+      );
+    });
+  });
+
+  ['vertical', 'horizontal', 'diagonal', 'antidiagonal'].forEach((axis) => {
+    const field = blob.fieldFromConfig({
+      ...base,
+      blobOneFill: 0.8,
+      blobSeed: 'mirror',
+      blobSymmetry: axis,
+    });
+    const design = blob.designFromField(field);
+    const corners = (cell) =>
+      blob.cellCorners(blob.triangleGeometry(cell)).map(([a, b]) => [a, b]);
+    const map = {
+      antidiagonal: ([a, b]) => [b, a],
+      diagonal: ([a, b]) => [-b, -a],
+      horizontal: ([a, b]) => [a + b, -b],
+      vertical: ([a, b]) => [-a - b, b],
+    }[axis];
+    const footprint = (cell, mapped) => {
+      const points = corners(cell)
+        .map(mapped ? map : (p) => p)
+        .map(([a, b]) => `${a},${b}`)
+        .sort();
+      return `${points.join('|')}:${blob.cornersOn(cell.mask).length}`;
+    };
+    const cells = new Set(design.cells.map((cell) => footprint(cell, false)));
+    const mirrored = design.cells.every((cell) =>
+      cells.has(footprint(cell, true))
+    );
+    check(
+      mirrored && unmatchedTriangleCrossings(blob, field, 5) === 0,
+      `triangles: a ${axis} symmetric field is not its own mirror, or its arcs dangle.`
+    );
+  });
+
+  const ring = [
+    [0, 0, false],
+    [-1, 0, true],
+    [-1, 0, false],
+    [-1, -1, true],
+    [0, -1, false],
+    [0, -1, true],
+  ];
+  let hexagon = blob.emptyDesign({ shape: 'triangle' });
+  ring.forEach(([column, row, up]) => {
+    hexagon = blob.placeCell(hexagon, column, row, 1, { up });
+  });
+  const vertexOpen = hexagon.cells.map((cell) =>
+    blob.cornersOn(cell.mask).length === 1
+      ? blob
+          .cellCorners(blob.triangleGeometry(cell))
+          [blob.cornersOn(cell.mask)[0]].join()
+      : null
+  );
+  check(
+    hexagon.cells.length === 6 && vertexOpen.every((key) => key === '0,0'),
+    'triangles: six triangles round a vertex do not open exactly the fan about it.'
+  );
+  check(
+    blob.placeCell(hexagon, 0, 0, 1, { up: false }) === hexagon,
+    'triangles: placeCell accepts a triangle over an existing one.'
+  );
+  const erased = blob.eraseCell(hexagon, 0);
+  check(
+    erased.cells.every((cell) => blob.cornersOn(cell.mask).length === 0),
+    'triangles: erasing one of a vertex’s triangles leaves the others’ fans open.'
+  );
+
+  let big = blob.emptyDesign({ shape: 'triangle' });
+  [
+    [0, 0, 2, false],
+    [0, 0, 2, true],
+    [-2, 0, 2, true],
+    [-2, 0, 2, false],
+    [-2, -2, 2, true],
+    [0, -2, 2, false],
+    [0, -2, 2, true],
+  ].forEach(([column, row, size, up]) => {
+    big = blob.placeCell(big, column, row, size, { up });
+  });
+  const threeWay = big.cells.findIndex(
+    (cell) => blob.cornersOn(cell.mask).length === 3
+  );
+  check(
+    threeWay < 0 || blob.canReorder(big, threeWay),
+    'triangles: a three-way cell has no draw order to choose.'
+  );
+  const hexIndex = hexagon.cells.findIndex(
+    (cell) => blob.cornersOn(cell.mask).length > 0
+  );
+  check(
+    !blob.canReorder(hexagon, hexIndex) &&
+      blob.raiseCorner(hexagon, hexIndex, 0) === hexagon,
+    'triangles: raiseCorner reorders a cell without three open corners.'
+  );
+
+  let cornerHost = blob.placeCell(
+    blob.emptyDesign({ shape: 'triangle' }),
+    0,
+    0,
+    6,
+    { connect: false, up: false }
+  );
+  const corner = blob.placeCell(cornerHost, 0, 0, 1, {
+    connect: false,
+    up: false,
+  });
+  cornerHost = blob.placeCell(cornerHost, 2, 2, 1, {
+    connect: false,
+    up: false,
+  });
+  check(
+    corner.cells.length === 2 &&
+      blob.inkClashes(corner) === 0 &&
+      blob.triIndexAt(corner, 0.5, 0.2) === 1 &&
+      cornerHost.cells.length === 1,
+    'triangles: a small cell is refused in a cornerHost cell’s empty corner, does not own it, or is let in where the cornerHosts reach.'
+  );
+  check(
+    blob.designFromJson(
+      blob.designToJson({
+        ...cornerHost,
+        cells: [...cornerHost.cells, { column: 2, mask: 0, row: 2, size: 1 }],
+      })
+    ) === null,
+    'triangles: designFromJson accepts a cell overlapping a bigger one’s arcs.'
+  );
+
+  const enclosed = enclosedDesign(blob);
+  const enclosedField = blob.fieldFromDesign(enclosed, 8);
+  const families = new Set(
+    enclosedField.cells
+      .filter((entry) => entry.virtual)
+      .flatMap((entry) => entry.connections.map(([type]) => type))
+  );
+  check(
+    families.has(6) && families.has(7),
+    'triangles: a ring cell closed inside small triangles draws no pockets and bends with irregular connections on.'
+  );
+  [3, 4, 5].forEach((pathDiv) => {
+    const unmatched = unmatchedTriangleCrossings(blob, enclosedField, pathDiv);
+    check(
+      unmatched === 0,
+      `triangles irregular @${pathDiv}: ${unmatched} arcs meet a side with nothing across it.`
+    );
+  });
+  const enclosedCode = blob.encodeDesign(enclosed);
+  check(
+    enclosedCode.startsWith('tb5.') &&
+      designKey(blob, blob.decodeDesign(enclosedCode)) ===
+        designKey(blob, enclosed) &&
+      blob
+        .fieldFromDesign(blob.setIrregular(enclosed, false), 8)
+        .cells.every((entry) => !entry.virtual),
+    'triangles: an irregular design does not survive its tb5 code, or turning irregular off keeps its pockets.'
+  );
+
+  const rolls = Array.from({ length: 400 }, (_, i) =>
+    blob.rollBlobConfig(`tri-${i}`)
+  );
+  const triangles = rolls.filter((c) => c.blobGridShape === 'triangle');
+  check(
+    triangles.length > 400 * blob.TRIANGLE_ROLL_CHANCE * 0.5 &&
+      triangles.length < 400 * blob.TRIANGLE_ROLL_CHANCE * 1.6 &&
+      triangles.every(
+        (c) =>
+          !c.blobIrregular &&
+          c.blobStraights === 0 &&
+          [0, 30].includes(c.planeRotation)
+      ),
+    `triangles: ${triangles.length}/400 rolls are triangles, or a triangle roll keeps straights, irregular sides or a 45° turn.`
+  );
+  check(
+    blob.gridShapeOf({ blobDesign: blob.encodeDesign(hexagon) }) ===
+      'triangle' &&
+      blob.gridShapeOf({ blobDesign: '', blobGridShape: 'triangle' }) ===
+        'triangle',
+    'triangles: gridShapeOf misreads a triangle design or blobGridShape.'
+  );
+}
+
 async function checkDesignRotation(blob) {
   const dir = await mkdtemp(path.join(os.tmpdir(), 'trucheterie-check-'));
   try {
@@ -860,6 +1485,8 @@ async function main() {
   checkIrregular(loaded[BARRELS.blob]);
   checkStraights(loaded[BARRELS.blob]);
   checkSymmetry(loaded[BARRELS.blob]);
+  checkTriangles(loaded[BARRELS.blob]);
+  checkTriangleReference(loaded[BARRELS.blob], loaded[BARRELS.look]);
   await checkSceneForwardsGenerator(loaded[BARRELS.blob]);
   await checkDesignRotation(loaded[BARRELS.blob]);
   await checkSavedDesigns(loaded[BARRELS.blob]);

@@ -33,8 +33,11 @@ export const ATTRIBUTES = [
   ['instanceMeta', connectorsAndDelay, 2],
 ];
 
-export function penGeometry(gridSize) {
-  const penHalfWidth = (REFERENCE_PEN / 2 / REFERENCE_CANVAS) * gridSize;
+export function penGeometry(gridSize, pathDiv = 1, reference = false) {
+  const original = (REFERENCE_PEN / 2 / REFERENCE_CANVAS) * gridSize;
+  const penHalfWidth = reference
+    ? Math.min(original, 0.125 / pathDiv)
+    : original;
   return { penHalfWidth, quadMargin: penHalfWidth * MARGIN_PENS };
 }
 
@@ -79,7 +82,11 @@ export function syncBlobUniforms(
   uniforms,
   { blobCanvasSize, config, field, laneInfo }
 ) {
-  const { penHalfWidth, quadMargin } = penGeometry(field.gridSize);
+  const { penHalfWidth, quadMargin } = penGeometry(
+    field.gridSize,
+    config.blobPathsPerUnit,
+    field.layout === 'subdivide'
+  );
   uniforms.strokeColorU.value.set(config.strokeColor);
   uniforms.maxLanesU.value = laneInfo.maxLanes;
   uniforms.spectrumU.value = laneInfo.spectrum ? 1 : 0;
@@ -101,6 +108,16 @@ export function syncBlobUniforms(
 // InstancedMesh, reusing buffers where the instance count is unchanged.
 /* eslint-disable no-param-reassign */
 export function applyFieldToMesh(mesh, field, quadMargin) {
+  // Past 1024 instances three moves the matrices from a uniform into a
+  // vertex buffer, a ninth with the five instance attributes above, and the
+  // pipeline fails (a triangle field reaches that easily). A storage
+  // attribute is neither; it must be in place before the first render.
+  if (!mesh.instanceMatrix.isStorageInstancedBufferAttribute) {
+    mesh.instanceMatrix = new THREE.StorageInstancedBufferAttribute(
+      new Float32Array(mesh.instanceMatrix.array),
+      16
+    );
+  }
   ATTRIBUTES.forEach(([name, read, itemSize]) => {
     const data = read(field);
     const existing = mesh.geometry.getAttribute(name);

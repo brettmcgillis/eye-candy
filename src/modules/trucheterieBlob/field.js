@@ -29,7 +29,7 @@ const DELAY_JITTER = 0.12;
 // from the field's centroid, loosened by a fixed per-cell jitter so the
 // front reads as organic rather than a ring. Plain arithmetic, not the
 // seeded stream — nothing here may shift the reference's random draws.
-function growthDelays(centers, count) {
+export function growthDelays(centers, count, groups = null) {
   let sumX = 0;
   let sumY = 0;
   for (let i = 0; i < count; i++) {
@@ -45,7 +45,8 @@ function growthDelays(centers, count) {
     farthest = Math.max(farthest, reach[i]);
   }
   return reach.map((r, i) => {
-    const hash = Math.sin(i * 12.9898 + 78.233) * 43758.5453;
+    const hash =
+      Math.sin((groups ? groups[i] : i) * 12.9898 + 78.233) * 43758.5453;
     const jitter = hash - Math.floor(hash);
     return (1 - DELAY_JITTER) * (r / farthest) + DELAY_JITTER * jitter;
   });

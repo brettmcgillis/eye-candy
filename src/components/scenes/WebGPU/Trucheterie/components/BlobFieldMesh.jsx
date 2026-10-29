@@ -32,6 +32,12 @@ function BlobFieldMesh({ config }) {
     blobConnectivity,
     blobDesign,
     blobDistribution,
+    blobGridShape,
+    blobTriangleLayout,
+    blobTriangleSplitProbability,
+    blobTriangleStartRes,
+    blobTriangleMinRes,
+    blobTriangleBigTileSize,
     blobGridSize,
     blobHoles,
     blobIrregular,
@@ -59,9 +65,16 @@ function BlobFieldMesh({ config }) {
     () =>
       fieldFromConfig({
         blobCanvasSize,
+        blobPathsPerUnit,
         blobConnectivity,
         blobDesign,
         blobDistribution,
+        blobGridShape,
+        blobTriangleLayout,
+        blobTriangleSplitProbability,
+        blobTriangleStartRes,
+        blobTriangleMinRes,
+        blobTriangleBigTileSize,
         blobGridSize,
         blobHoles,
         blobIrregular,
@@ -74,9 +87,16 @@ function BlobFieldMesh({ config }) {
       }),
     [
       blobCanvasSize,
+      blobPathsPerUnit,
       blobConnectivity,
       blobDesign,
       blobDistribution,
+      blobGridShape,
+      blobTriangleLayout,
+      blobTriangleSplitProbability,
+      blobTriangleStartRes,
+      blobTriangleMinRes,
+      blobTriangleBigTileSize,
       blobGridSize,
       blobHoles,
       blobIrregular,
@@ -143,9 +163,13 @@ function BlobFieldMesh({ config }) {
   useLayoutEffect(() => {
     const mesh = meshRef.current;
     if (!mesh) return;
-    const { quadMargin } = penGeometry(field.gridSize);
+    const { quadMargin } = penGeometry(
+      field.gridSize,
+      blobPathsPerUnit,
+      field.layout === 'subdivide'
+    );
     applyFieldToMesh(mesh, field, quadMargin);
-  }, [field]);
+  }, [blobPathsPerUnit, field]);
 
   return (
     <instancedMesh

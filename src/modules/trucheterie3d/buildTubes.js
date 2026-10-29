@@ -1,4 +1,4 @@
-import { fieldFromConfig } from '@modules/trucheterieBlob';
+import { fieldFromConfig, gridShapeOf } from '@modules/trucheterieBlob';
 
 import buildChains from './chains';
 import liftCrossings from './crossings';
@@ -352,7 +352,13 @@ export default function buildTubes(field, config) {
   };
 }
 
-// The 2D blob field a scene-keyed config describes.
+// The 2D blob field a scene-keyed config describes. The tubes are built
+// from square cells only; triangle grids are 2D-only for now.
 export function buildField(config) {
-  return fieldFromConfig(config);
+  if (gridShapeOf(config) === 'triangle') {
+    throw new Error(
+      'Trucheterie3D draws square grids only; this design is a triangle grid.'
+    );
+  }
+  return fieldFromConfig({ ...config, blobGridShape: 'square' });
 }

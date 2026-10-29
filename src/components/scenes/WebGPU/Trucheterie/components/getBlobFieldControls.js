@@ -1,5 +1,6 @@
 import { button } from 'leva';
 
+import { RENDER_OPTIONS } from '@modules/trucheterieBlob';
 import {
   LANE_MODES,
   PALETTE_NAMES,
@@ -13,6 +14,22 @@ const hasPalette = (get) =>
   get(`${BLOB_PATH}.blobPalette`) !== PALETTE_NONE;
 const isMonochrome = (get) => get(`${BLOB_PATH}.blobMonochrome`) === true;
 const isSeeded = (get) => !get(`${BLOB_PATH}.blobDesign`);
+const isTriangleSeeded = (get) =>
+  isSeeded(get) && get(`${BLOB_PATH}.blobGridShape`) === 'triangle';
+const isPackedSeeded = (get) =>
+  isSeeded(get) &&
+  (!isTriangleSeeded(get) ||
+    get(`${BLOB_PATH}.blobTriangleLayout`) === 'packed');
+const isReferenceSeeded = (get) =>
+  isTriangleSeeded(get) && get(`${BLOB_PATH}.blobTriangleLayout`) !== 'packed';
+const TRIANGLE_KEYS = [
+  'blobTriangleSplitProbability',
+  'blobTriangleStartRes',
+  'blobTriangleMinRes',
+  'blobTriangleBigTileSize',
+];
+const isSquareSeeded = (get) =>
+  isSeeded(get) && get(`${BLOB_PATH}.blobGridShape`) !== 'triangle';
 
 // The blob field's parameters, mirroring the TurtleToy reference's own
 // control block one for one (todo.md, "IRREGULAR / BLOB FIELD EXAMPLE") —
@@ -33,7 +50,39 @@ export default function getBlobFieldControls(snapshot, setControlsRef) {
       label: 'Seed',
       value: saved.blobSeed ?? 'Change me, empty seed means random',
     },
+    blobGridShape: {
+      label: 'Grid Shape',
+      options: { Square: 'square', Triangle: 'triangle' },
+      render: isSeeded,
+      value: saved.blobGridShape ?? 'square',
+    },
+    blobTriangleLayout: {
+      label: 'Triangle Layout',
+      options: {
+        'Reference subdivision': 'subdivide',
+        'Packed cells': 'packed',
+      },
+      render: isTriangleSeeded,
+      value: saved.blobTriangleLayout ?? 'subdivide',
+    },
+    ...Object.fromEntries(
+      TRIANGLE_KEYS.map((key) => {
+        const spec = RENDER_OPTIONS[key];
+        return [
+          key,
+          {
+            label: spec.label,
+            min: spec.min,
+            max: spec.max,
+            step: spec.step,
+            render: isReferenceSeeded,
+            value: saved[key] ?? spec.default,
+          },
+        ];
+      })
+    ),
     blobGridSize: {
+      render: isPackedSeeded,
       label: 'Grid Size',
       max: 50,
       min: 10,
@@ -55,12 +104,12 @@ export default function getBlobFieldControls(snapshot, setControlsRef) {
       value: saved.blobPathsPerUnit ?? 6,
     },
     blobSizeFunction: {
-      render: isSeeded,
+      render: isPackedSeeded,
       label: 'Size Function',
       value: saved.blobSizeFunction ?? '1+(gridSize/9)*Math.random()',
     },
     blobDistribution: {
-      render: isSeeded,
+      render: isPackedSeeded,
       label: 'Distribution Count',
       max: 1,
       min: 0,
@@ -68,7 +117,7 @@ export default function getBlobFieldControls(snapshot, setControlsRef) {
       value: saved.blobDistribution ?? 0.1,
     },
     blobConnectivity: {
-      render: isSeeded,
+      render: isPackedSeeded,
       label: 'Connectivity',
       max: 1,
       min: 0,
@@ -76,7 +125,7 @@ export default function getBlobFieldControls(snapshot, setControlsRef) {
       value: saved.blobConnectivity ?? 0.95,
     },
     blobOneFill: {
-      render: isSeeded,
+      render: isPackedSeeded,
       label: 'One Fill',
       max: 1,
       min: 0,
@@ -84,7 +133,7 @@ export default function getBlobFieldControls(snapshot, setControlsRef) {
       value: saved.blobOneFill ?? 0.25,
     },
     blobHoles: {
-      render: isSeeded,
+      render: isPackedSeeded,
       label: 'Holes',
       max: 1,
       min: 0,
@@ -92,7 +141,7 @@ export default function getBlobFieldControls(snapshot, setControlsRef) {
       value: saved.blobHoles ?? 0,
     },
     blobMeatballs: {
-      render: isSeeded,
+      render: isPackedSeeded,
       label: 'Meatballs',
       options: {
         'Not if not connected': 0,
@@ -102,7 +151,7 @@ export default function getBlobFieldControls(snapshot, setControlsRef) {
       value: saved.blobMeatballs ?? 2,
     },
     blobSymmetry: {
-      render: isSeeded,
+      render: isPackedSeeded,
       label: 'Symmetry',
       options: {
         None: 'none',
@@ -114,12 +163,12 @@ export default function getBlobFieldControls(snapshot, setControlsRef) {
       value: saved.blobSymmetry ?? 'none',
     },
     blobIrregular: {
-      render: isSeeded,
+      render: isSquareSeeded,
       label: 'Irregular Connections',
       value: saved.blobIrregular ?? false,
     },
     blobStraights: {
-      render: isSeeded,
+      render: isSquareSeeded,
       label: 'Straights',
       max: 1,
       min: 0,

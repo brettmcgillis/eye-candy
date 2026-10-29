@@ -78,8 +78,8 @@ function checkShape({ cells, rotation }) {
   }
 }
 
-const formatDesign = ({ cells, irregular, name, rotation = 0 }) =>
-  `{\n  "name": ${JSON.stringify(name)},\n  "rotation": ${rotation},${irregular ? '\n  "irregular": true,' : ''}\n  "cells": [\n${cells
+const formatDesign = ({ cells, irregular, name, rotation = 0, shape }) =>
+  `{\n  "name": ${JSON.stringify(name)},\n  "rotation": ${rotation},${shape === 'triangle' ? '\n  "shape": "triangle",' : ''}${irregular ? '\n  "irregular": true,' : ''}\n  "cells": [\n${cells
     .map((cell) => `    ${JSON.stringify(cell)}`)
     .join(',\n')}\n  ]\n}\n`;
 
@@ -110,6 +110,7 @@ async function listDesigns(root) {
         cells: json.cells?.length ?? 0,
         extent: extentOf(json.cells ?? []),
         name,
+        shape: json.shape === 'triangle' ? 'triangle' : 'square',
         updated: info.mtime.toISOString(),
       };
     })

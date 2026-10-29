@@ -4,6 +4,26 @@ import { resolveConnections } from './grid';
 import { familySector } from './laneChannels';
 import mulberry32 from './mulberry32';
 import { hashSeed } from './rng';
+import {
+  designFromTriField,
+  duplicateTriCells,
+  emptyTriDesign,
+  eraseTriCell,
+  fieldFromTriDesign,
+  inRange as inTriRange,
+  isTriangleDesign,
+  moveTriCells,
+  normalizeTriDesign,
+  pinTriChoices,
+  placeTriCell,
+  symmetricTriDesign,
+  triCellConnections,
+  triConnectedGroup,
+  triDesignBounds,
+  triDesignFrame,
+  triInkClashes,
+} from './triDesign';
+import { TRIANGLE } from './triangle';
 
 // Mask bits 0-3 are the field's connectorMask sides (top, right, bottom, left);
 // 64 pins the cell's choices: 16 pairs a four-way cell's other diagonal, 32 swaps its draw order.
@@ -22,6 +42,10 @@ const INK_MARGIN = 0.5;
 const CODE_PREFIX = 'tb2.';
 const IRREGULAR_PREFIX = 'tb3.';
 const LEGACY_PREFIX = 'tb1.';
+const TRIANGLE_PREFIX = 'tb4.';
+const TRIANGLE_IRREGULAR_PREFIX = 'tb5.';
+const TRIANGLE_SUBDIVISION_PREFIX = 'tb6.';
+const TRIANGLE_EDGE_PREFIX = 'tb7.';
 const IRREGULAR_CHANCE = 0.6;
 
 const opposite = (side) => (side + 2) % 4;
@@ -29,12 +53,18 @@ const hasSide = (mask, side) => (mask & (1 << side)) !== 0;
 const withSide = (mask, side, on) =>
   on ? mask | (1 << side) : mask & ~(1 << side);
 
-export function emptyDesign({ irregular = false } = {}) {
+export function emptyDesign({ irregular = false, layout, shape } = {}) {
+  if (shape === TRIANGLE) return emptyTriDesign({ irregular, layout });
   return irregular ? { cells: [], irregular: true } : { cells: [] };
 }
 
-export function designBounds({ cells }) {
+export function designBounds(design) {
+  const { cells } = design;
   if (cells.length === 0) return null;
+  if (isTriangleDesign(design)) {
+    const { x0, x1, y0, y1 } = triDesignBounds(design);
+    return { column: x0, height: y1 - y0, row: y0, width: x1 - x0 };
+  }
   let column = Infinity;
   let row = Infinity;
   let right = -Infinity;
@@ -50,6 +80,7 @@ export function designBounds({ cells }) {
 
 // The square the field is drawn in: the design's extent plus a margin, centred.
 export function designFrame(design) {
+  if (isTriangleDesign(design)) return triDesignFrame(design);
   const bounds = designBounds(design);
   if (!bounds) {
     return {
@@ -174,11 +205,13 @@ function normalizeCells(design, cells) {
 }
 
 export function normalizeDesign(design) {
+  if (isTriangleDesign(design)) return normalizeTriDesign(design);
   return normalizeCells(design, design.cells);
 }
 
 // Turning irregular connections off closes every side that relied on them.
 export function setIrregular(design, on) {
+  if (design.layout === 'subdivide') return design;
   const rest = { ...design };
   delete rest.irregular;
   return normalizeDesign(on ? { ...rest, irregular: true } : rest);
@@ -324,6 +357,7 @@ function inksAny(cell, [c0, r0, c1, r1], extras = []) {
 
 // Cells may overlap only where the bigger one's arcs never reach (both, for equal sizes).
 export function inkClashes(design) {
+  if (isTriangleDesign(design)) return triInkClashes(design);
   const { cells } = design;
   const extras = irregularFamilies(design);
   let clashes = 0;
@@ -413,7 +447,16 @@ const inRange = (column, row, size) =>
   );
 
 // Sides open one at a time, each kept only if it adds no clash, so a big cell can be placed around a small one.
-export function placeCell(design, column, row, size, { connect = true } = {}) {
+export function placeCell(
+  design,
+  column,
+  row,
+  size,
+  { connect = true, up = false } = {}
+) {
+  if (isTriangleDesign(design)) {
+    return placeTriCell(design, { column, row, size, up }, { connect });
+  }
   if (!inRange(column, row, size)) return design;
   let next = normalizeDesign({
     ...design,
@@ -440,6 +483,7 @@ export function canPlace(design, column, row, size, options) {
 }
 
 export function eraseCell(design, index) {
+  if (isTriangleDesign(design)) return eraseTriCell(design, index);
   if (index < 0 || index >= design.cells.length) return design;
   return keepIfClear(
     design,
@@ -476,10 +520,12 @@ function pinCell(cell) {
 }
 
 export function pinChoices(design) {
+  if (isTriangleDesign(design)) return pinTriChoices(design);
   return { ...design, cells: design.cells.map(pinCell) };
 }
 
 export function cellConnections(design, index) {
+  if (isTriangleDesign(design)) return triCellConnections(design, index);
   return connectionsFor(design.cells[index]);
 }
 
@@ -518,6 +564,7 @@ export function swapOrder(design, index) {
 
 // The cells reachable from one through open sides: what the Move tool drags.
 export function connectedGroup(design, index) {
+  if (isTriangleDesign(design)) return triConnectedGroup(design, index);
   if (index < 0 || index >= design.cells.length) return [];
   const owner = occupancy(design);
   const seen = new Set([index]);
@@ -549,7 +596,11 @@ function landIntact(design, cells) {
 }
 
 // Copies are pinned, since unpinned choices hash their position; the copies are appended, so existing indices hold.
+// On a triangle design (dx, dy) is a lattice translation.
 export function duplicateCells(design, indices, dx, dy) {
+  if (isTriangleDesign(design)) {
+    return duplicateTriCells(design, indices, dx, dy);
+  }
   if (dx === 0 && dy === 0) return design;
   const copies = indices.map((index) => {
     const cell = pinCell(design.cells[index]);
@@ -560,6 +611,7 @@ export function duplicateCells(design, indices, dx, dy) {
 
 // Moved cells are pinned, since unpinned choices hash their position; a move that would change any side is refused.
 export function moveCells(design, indices, dx, dy) {
+  if (isTriangleDesign(design)) return moveTriCells(design, indices, dx, dy);
   if (dx === 0 && dy === 0) return design;
   const moving = new Set(indices);
   const cells = design.cells.map((cell, index) =>
@@ -579,19 +631,22 @@ export const SYMMETRY_AXES = [
 ];
 
 // Square on, the axes run down the grid's centre; turned onto its diagonal, corner to corner.
-export function symmetryAxis(rotation, flip) {
-  const turn = (((rotation ?? 0) % 90) + 90) % 90;
-  const diagonal = Math.abs(turn - 45) < 22.5;
+// A triangle field repeats every 60°, and turned 30° its diagonals stand upright.
+export function symmetryAxis(rotation, flip, shape) {
+  const period = shape === TRIANGLE ? 60 : 90;
+  const turn = (((rotation ?? 0) % period) + period) % period;
+  const diagonal = Math.abs(turn - period / 2) < period / 4;
   if (diagonal) return flip ? 'antidiagonal' : 'diagonal';
   return flip ? 'horizontal' : 'vertical';
 }
 
 // Keeps an axis's parity but moves it to the family the rotation calls for.
-export function alignSymmetry(axis, rotation) {
+export function alignSymmetry(axis, rotation, shape) {
   if (!axis || axis === 'none') return 'none';
   return symmetryAxis(
     rotation,
-    axis === 'horizontal' || axis === 'antidiagonal'
+    axis === 'horizontal' || axis === 'antidiagonal',
+    shape
   );
 }
 
@@ -673,6 +728,9 @@ function balanceOnAxis(cell, axis) {
 
 // One half of a seeded field mirrored onto the other; cells straddling the axis are dropped unless centred on it.
 export function symmetricDesign(design, gridSize, axis, { hideLoose } = {}) {
+  if (isTriangleDesign(design)) {
+    return symmetricTriDesign(design, axis, { hideLoose });
+  }
   const mirror = MIRRORS[axis];
   if (!mirror) return design;
   let half = pinChoices(design).cells.filter((cell) =>
@@ -742,8 +800,12 @@ export function openStraights(design, chance, seed) {
 export function fieldFromDesign(
   design,
   canvasSize,
-  frame = designFrame(design)
+  frame = designFrame(design),
+  pathDiv = 4
 ) {
+  if (isTriangleDesign(design)) {
+    return fieldFromTriDesign(design, canvasSize, frame, pathDiv);
+  }
   const local = ({ column, row, size }) => ({
     column: column - frame.column,
     row: row - frame.row,
@@ -796,6 +858,7 @@ export function fieldFromDesign(
 
 // Pins every cell's choices, so the design draws exactly as the field did.
 export function designFromField(field) {
+  if (field.shape === TRIANGLE) return designFromTriField(field);
   const real = field.cells.filter((entry) => !entry.virtual);
   return {
     irregular: real.length < field.cells.length,
@@ -813,6 +876,10 @@ export function designFromField(field) {
 export function designToJson(design, extra = {}) {
   return {
     ...extra,
+    ...(isTriangleDesign(design) ? { shape: TRIANGLE } : {}),
+    ...(design.layout === 'subdivide'
+      ? { connectors: 'edges', layout: 'subdivide' }
+      : {}),
     ...(design.irregular ? { irregular: true } : {}),
     cells: design.cells.map(({ column, mask, row, size }) => [
       column,
@@ -823,9 +890,47 @@ export function designToJson(design, extra = {}) {
   };
 }
 
+function triDesignFromRows(rows, irregular, layout, connectors) {
+  if (layout === 'subdivide' && irregular) return null;
+  const cells = [];
+  for (let i = 0; i < rows.length; i += 1) {
+    if (!Array.isArray(rows[i])) return null;
+    const [column, row, size, mask] = rows[i].map(Number);
+    if (!inTriRange(column, row, size) || !Number.isInteger(mask)) return null;
+    let flags = mask & MASK_BITS;
+    if (layout === 'subdivide' && connectors !== 'edges') {
+      const sides = [0, 1, 2].reduce(
+        (bits, side) =>
+          bits |
+          (mask & (1 << side) || mask & (1 << ((side + 1) % 3))
+            ? 1 << side
+            : 0),
+        0
+      );
+      flags = (flags & ~7) | sides;
+    }
+    cells.push({ column, mask: flags, row, size });
+  }
+  const design = normalizeTriDesign({
+    cells,
+    ...(layout === 'subdivide' ? { layout } : {}),
+    ...(irregular ? { irregular: true } : {}),
+    shape: TRIANGLE,
+  });
+  return triInkClashes(design) === 0 ? design : null;
+}
+
 // Older files and codes carry a gridSize; the grid is unbounded now, so it is ignored.
 export function designFromJson(json) {
   if (!json || !Array.isArray(json.cells)) return null;
+  if (json.shape === TRIANGLE) {
+    return triDesignFromRows(
+      json.cells,
+      Boolean(json.irregular),
+      json.layout,
+      json.connectors
+    );
+  }
   const cells = [];
   for (let i = 0; i < json.cells.length; i += 1) {
     if (!Array.isArray(json.cells[i])) return null;
@@ -866,13 +971,26 @@ export function encodeDesign(design) {
     view.setUint8(i * 6 + 4, size);
     view.setUint8(i * 6 + 5, mask);
   });
-  const prefix = design.irregular ? IRREGULAR_PREFIX : CODE_PREFIX;
-  return `${prefix}${toBase64Url(bytes)}`;
+  const triangle = isTriangleDesign(design);
+  const prefix = design.irregular
+    ? (triangle && TRIANGLE_IRREGULAR_PREFIX) || IRREGULAR_PREFIX
+    : (triangle && TRIANGLE_PREFIX) || CODE_PREFIX;
+  const encodedPrefix =
+    triangle && design.layout === 'subdivide' ? TRIANGLE_EDGE_PREFIX : prefix;
+  return `${encodedPrefix}${toBase64Url(bytes)}`;
 }
 
 function cellsFromCode(code) {
   const legacy = code.startsWith(LEGACY_PREFIX);
-  const known = [CODE_PREFIX, IRREGULAR_PREFIX, LEGACY_PREFIX];
+  const known = [
+    CODE_PREFIX,
+    IRREGULAR_PREFIX,
+    LEGACY_PREFIX,
+    TRIANGLE_PREFIX,
+    TRIANGLE_IRREGULAR_PREFIX,
+    TRIANGLE_SUBDIVISION_PREFIX,
+    TRIANGLE_EDGE_PREFIX,
+  ];
   if (!known.some((prefix) => code.startsWith(prefix))) return null;
   const bytes = fromBase64Url(code.slice(CODE_PREFIX.length));
   if (legacy) {
@@ -902,6 +1020,23 @@ export function decodeDesign(code) {
     return null;
   }
   if (!cells) return null;
+  if (code.startsWith(TRIANGLE_EDGE_PREFIX)) {
+    return designFromJson({
+      cells,
+      connectors: 'edges',
+      layout: 'subdivide',
+      shape: TRIANGLE,
+    });
+  }
+  if (code.startsWith(TRIANGLE_SUBDIVISION_PREFIX)) {
+    return designFromJson({ cells, layout: 'subdivide', shape: TRIANGLE });
+  }
+  if (code.startsWith(TRIANGLE_PREFIX)) {
+    return designFromJson({ cells, shape: TRIANGLE });
+  }
+  if (code.startsWith(TRIANGLE_IRREGULAR_PREFIX)) {
+    return designFromJson({ cells, irregular: true, shape: TRIANGLE });
+  }
   return designFromJson({
     cells,
     irregular: code.startsWith(IRREGULAR_PREFIX),
@@ -909,3 +1044,13 @@ export function decodeDesign(code) {
 }
 
 export const isDesignCode = (code) => decodeDesign(code) !== null;
+
+// The grid a config draws on: a design's own shape, else blobGridShape.
+export function gridShapeOf(config) {
+  if (config.blobDesign) {
+    return isTriangleDesign(decodeDesign(config.blobDesign))
+      ? TRIANGLE
+      : 'square';
+  }
+  return config.blobGridShape === TRIANGLE ? TRIANGLE : 'square';
+}

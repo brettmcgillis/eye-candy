@@ -7,6 +7,8 @@ export {
   applyTool,
   isStrokeTool,
   brushOrigin,
+  dragStep,
+  halfSides,
   groupAt,
   isDragTool,
   moveGroup,

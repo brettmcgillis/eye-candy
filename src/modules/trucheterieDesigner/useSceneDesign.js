@@ -27,14 +27,30 @@ export default function useSceneDesign({ controls, setControls }) {
 
   const actions = {
     clear: () =>
-      design && replace(emptyDesign({ irregular: design.irregular })),
+      design &&
+      replace(
+        emptyDesign({
+          irregular: design.irregular,
+          layout: design.layout,
+          shape: design.shape,
+        })
+      ),
     fromSeed: () => {
       const seeded = designFromSeed(controls);
       replace(seeded, {
         designTool: designTool === 'off' ? 'paint' : designTool,
       });
     },
-    newBlank: () => replace(emptyDesign(), { designTool: 'paint' }),
+    newBlank: () =>
+      replace(
+        emptyDesign({
+          layout: controls.blobTriangleLayout,
+          shape: controls.blobGridShape,
+        }),
+        {
+          designTool: 'paint',
+        }
+      ),
     redo: history.redo,
     toSeed: () => replace(null, { designTool: 'off' }),
     undo: history.undo,

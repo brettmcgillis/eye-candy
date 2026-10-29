@@ -19,6 +19,7 @@ import {
 import {
   MAX_BRUSH,
   applyTool,
+  dragStep,
   groupAt,
   isDragTool,
   isStrokeTool,
@@ -57,6 +58,7 @@ function BlobDesignEditor({
   design,
   onChange,
   onStrokeStart,
+  orientation = 'auto',
   tool,
 }) {
   const get = useThree((state) => state.get);
@@ -89,7 +91,14 @@ function BlobDesignEditor({
   if (!strokeRef.current) designRef.current = design;
 
   const optionsRef = useRef(null);
-  optionsRef.current = { autoConnect, brush, onChange, onStrokeStart, tool };
+  optionsRef.current = {
+    autoConnect,
+    brush,
+    onChange,
+    onStrokeStart,
+    orientation,
+    tool,
+  };
   const areaRef = useRef(null);
   areaRef.current = { area, unframe };
 
@@ -130,6 +139,7 @@ function BlobDesignEditor({
           ? previewFor(designRef.current, optionsRef.current.tool, ...point, {
               autoConnect: optionsRef.current.autoConnect,
               brush: optionsRef.current.brush,
+              orientation: optionsRef.current.orientation,
             })
           : null;
       setPreview((current) =>
@@ -143,6 +153,7 @@ function BlobDesignEditor({
       const next = applyTool(before, optionsRef.current.tool, ...point, {
         autoConnect: connect,
         brush: size,
+        orientation: optionsRef.current.orientation,
         first,
       });
       if (next === before) return;
@@ -170,8 +181,11 @@ function BlobDesignEditor({
 
     const dragTo = (point) => {
       const { move } = strokeRef.current;
-      const dx = Math.round(point[0] - move.origin[0]);
-      const dy = Math.round(point[1] - move.origin[1]);
+      const [dx, dy] = dragStep(
+        move.base,
+        point[0] - move.origin[0],
+        point[1] - move.origin[1]
+      );
       if (dx === move.offset[0] && dy === move.offset[1]) return;
       move.offset = [dx, dy];
       const result = moveGroup(move.base, move.group, dx, dy, {
@@ -273,8 +287,8 @@ function BlobDesignEditor({
     [hitSize]
   );
   const gridGeometry = useDisposable(
-    () => gridLinesGeometry(area, frame),
-    [area, frame]
+    () => gridLinesGeometry(area, frame, { shape: design.shape }),
+    [area, design.shape, frame]
   );
   const outlineGeometry = useDisposable(
     () => outlinesGeometry(design, frame, OUTLINE_WIDTH),

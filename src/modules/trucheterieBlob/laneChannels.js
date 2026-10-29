@@ -8,10 +8,46 @@
 // the arcs connect at all), so each lane covers a whole number of 1/pathDiv
 // intervals along that edge. Two lanes sharing an interval are one channel.
 // All coordinates below are in those 1/pathDiv units, absolute to the grid.
-
 // Corner a type-2 family turns about, as [dCol, dRow] in cell-size multiples
 // of the cell's own (column, row) origin. Index is the connection's edge, and
 // a type-2 family spans sides `edge` and `(edge + 3) % 4`.
+import { BOUNDARY_RETURN, boundaryRadii, boundarySize } from './triFans';
+import {
+  BEND,
+  FAN,
+  FAN_SPAN,
+  POCKET,
+  RINGS,
+  TRI_STUB,
+  TRI_TURN,
+  cellBox,
+  cellCenter,
+  cellCorners,
+  centroid,
+  cornerPoints,
+  decodeEdge,
+  decodeIrregular,
+  fanBands,
+  fanRadius,
+  fanStart,
+  inradius,
+  isTriangleCell,
+  latticePoint,
+  pocketRadii,
+  returnRadii,
+  ringPitch,
+} from './triangle';
+
+// A pocket's centre on its host's side, in micro-cell units.
+function pocketCenter(cell, edge) {
+  const { corner, offset2 } = decodeIrregular(edge);
+  const points = cornerPoints(cell);
+  const [px, py] = points[corner];
+  const [qx, qy] = points[(corner + 1) % 3];
+  const t = offset2 / 2 / cell.size;
+  return [px + (qx - px) * t, py + (qy - py) * t];
+}
+
 const CORNER_OFFSET = [
   [0, 0],
   [1, 0],
@@ -70,16 +106,90 @@ export function straightFrame({ column, row, size }, edge) {
   };
 }
 
-export function laneCount(type, size, pathDiv) {
+// A cell's centre and footprint in the coordinates its families are placed
+// in: grid units for a square cell, the lattice's micro-cell units for a
+// triangle one.
+export function cellCenterOf(cell) {
+  if (isTriangleCell(cell)) return cellCenter(cell);
+  return [cell.column + cell.size / 2, cell.row + cell.size / 2];
+}
+
+export function cellBoxOf(cell) {
+  if (isTriangleCell(cell)) return cellBox(cell);
+  const { column, row, size } = cell;
+  return { x0: column, x1: column + size, y0: row, y1: row + size };
+}
+
+export function laneCount(type, size, pathDiv, edge = 0) {
+  if (type === BOUNDARY_RETURN)
+    return Math.max(1, boundaryRadii(boundarySize(edge), pathDiv).length);
+  if (type === TRI_STUB || type === TRI_TURN)
+    return Math.max(1, returnRadii(type, size, pathDiv).length);
+  if (type === FAN) {
+    const { long, reference } = decodeEdge(edge);
+    return fanBands(size, pathDiv, long, reference);
+  }
+  if (type === BEND) return decodeIrregular(edge).reach * pathDiv;
+  if (type === POCKET) {
+    return pocketRadii(decodeIrregular(edge).m, pathDiv).length;
+  }
+  if (type === RINGS) return ringPitch(size, pathDiv).bands;
   const span = size * pathDiv;
   if (type === 2 || type === 3) return span;
   return Math.floor(span / 2) + (span % 2 === 1 ? 1 : 0);
 }
 
 // A family's centre and reach, in micro-cell units — the same sector the
-// shader occludes with.
-export function familySector(cell, type, edge) {
+// shader occludes with. A triangle family's reach depends on the lane
+// pitch; without `pathDiv` it is the most it can be, for bounds.
+export function familySector(cell, type, edge, pathDiv = null) {
   const { column, row, size } = cell;
+  if (type === BOUNDARY_RETURN) {
+    const [x, y] = cellCenterOf(cell);
+    const radii = pathDiv ? boundaryRadii(boundarySize(edge), pathDiv) : [];
+    return { x, y, rMax: pathDiv ? (radii.at(-1) ?? 0) : size / 2 };
+  }
+  if (type === TRI_TURN) {
+    const [x, y] = cornerPoints(cell)[edge % 3];
+    return { rMax: size, x, y };
+  }
+  if (type === TRI_STUB) {
+    const points = cornerPoints(cell);
+    const a = points[edge % 3];
+    const b = points[((edge % 3) + 1) % 3];
+    return { rMax: size, x: (a[0] + b[0]) / 2, y: (a[1] + b[1]) / 2 };
+  }
+  if (type === FAN) {
+    const { corner, long, reference } = decodeEdge(edge);
+    const [x, y] = cornerPoints(cell)[corner];
+    const rMax = pathDiv
+      ? fanRadius(fanBands(size, pathDiv, long, reference) - 1, pathDiv)
+      : size * (long ? 0.75 : 0.5);
+    return {
+      rMax,
+      x,
+      y,
+    };
+  }
+  if (type === BEND) {
+    const { corner, reach } = decodeIrregular(edge);
+    const [x, y] = cornerPoints(cell)[corner];
+    const rMax = pathDiv ? fanRadius(reach * pathDiv - 1, pathDiv) : reach;
+    return { rMax, x, y };
+  }
+  if (type === POCKET) {
+    const { m } = decodeIrregular(edge);
+    const [x, y] = pocketCenter(cell, edge);
+    if (!pathDiv) return { rMax: m / 2, x, y };
+    const radii = pocketRadii(m, pathDiv);
+    return { rMax: radii.length > 0 ? radii[radii.length - 1] : 0, x, y };
+  }
+  if (type === RINGS) {
+    const [x, y] = centroid(cell);
+    if (!pathDiv) return { rMax: inradius(size), x, y };
+    const { bands, pitch } = ringPitch(size, pathDiv);
+    return { rMax: bands * pitch, x, y };
+  }
   if (type === 0) {
     return { rMax: size / 2, x: column + size / 2, y: row + size / 2 };
   }
@@ -103,7 +213,39 @@ export function familySector(cell, type, edge) {
 
 // A lane's inner and outer radius, in micro-cell units — the annulus between
 // two of the family's arcs, matching blobArcs.js's lane indexing.
-export function laneRadii(type, size, pathDiv) {
+export function laneRadii(type, size, pathDiv, edge = 0) {
+  if (type === BOUNDARY_RETURN) {
+    const radii = boundaryRadii(boundarySize(edge), pathDiv);
+    return radii.map((r, i) => [i ? radii[i - 1] : 0, r]);
+  }
+  if (type === TRI_STUB || type === TRI_TURN) {
+    const radii = returnRadii(type, size, pathDiv);
+    if (radii.length === 0) return [[0, size * 0.2]];
+    return radii.map((r, j) => [j > 0 ? radii[j - 1] : 0, r]);
+  }
+  if (type === POCKET) {
+    const bounds = [0, ...pocketRadii(decodeIrregular(edge).m, pathDiv)];
+    return bounds.slice(1).map((r, j) => [bounds[j], r]);
+  }
+  if (type === FAN || type === BEND) {
+    const hollow = type === FAN && decodeEdge(edge).reference;
+    return Array.from(
+      { length: laneCount(type, size, pathDiv, edge) },
+      (_, j) => [
+        j === 0 && hollow
+          ? fanRadius(0, pathDiv)
+          : Math.max(0, fanRadius(j - 1, pathDiv)),
+        fanRadius(j, pathDiv),
+      ]
+    );
+  }
+  if (type === RINGS) {
+    const { bands, pitch } = ringPitch(size, pathDiv);
+    return Array.from({ length: bands }, (_, j) => [
+      j * pitch,
+      (j + 1) * pitch,
+    ]);
+  }
   const bands = Math.round(size * pathDiv);
   const base = type === 3 ? straightFrame({ size }, 0).reach : 0;
   if (type === 2 || type === 3) {
@@ -122,8 +264,27 @@ export function laneRadii(type, size, pathDiv) {
 
 const WEDGE_ANGLE = [Math.PI * 2, Math.PI, Math.PI / 2];
 
-export const familySpan = (cell, type, edge) =>
-  type === 3 ? straightFrame(cell, edge).span : WEDGE_ANGLE[type];
+export function familySpan(cell, type, edge) {
+  if (type === BOUNDARY_RETURN) return Math.PI;
+  if (type === TRI_STUB) return Math.PI;
+  if (type === TRI_TURN) return FAN_SPAN;
+  if (type === FAN || type === BEND) return FAN_SPAN;
+  if (type === POCKET) return Math.PI;
+  if (type === RINGS) return Math.PI * 2;
+  return type === 3 ? straightFrame(cell, edge).span : WEDGE_ANGLE[type];
+}
+
+// Where a fan's wedge starts (towards the next corner clockwise), y down.
+// A pocket opens from its side's direction round through the cell's inside.
+export const fanFrame = (cell, edge, type = FAN) => {
+  const { corner, up } = decodeEdge(edge);
+  if (type === BOUNDARY_RETURN)
+    return { span: Math.PI, start: fanStart(corner, up) + Math.PI };
+  return {
+    span: type === POCKET || type === TRI_STUB ? Math.PI : FAN_SPAN,
+    start: fanStart(corner, cell.up),
+  };
+};
 
 // Two corner families on opposite corners: each owns two sides outright, so
 // the second can pass under the first instead of stopping against it.
@@ -140,6 +301,24 @@ export function isWeaveCell(connections) {
 // parameter blobArcs.js's `along` gives a pixel: measured in the family's
 // canonical frame, from the wedge's first edge towards its second.
 export function wedgeParam(cell, type, edge, px, py) {
+  if (
+    type === BOUNDARY_RETURN ||
+    type === FAN ||
+    type === BEND ||
+    type === POCKET ||
+    type === TRI_STUB ||
+    type === TRI_TURN
+  ) {
+    const { x, y } = familySector(cell, type, edge);
+    const { span, start } = fanFrame(cell, edge, type);
+    let angle = Math.atan2(py - y, px - x) - start;
+    angle -= Math.round((angle - span / 2) / (Math.PI * 2)) * Math.PI * 2;
+    return Math.min(1, Math.max(0, angle / span));
+  }
+  if (type === RINGS) {
+    const { x, y } = familySector(cell, type, edge);
+    return (Math.atan2(py - y, px - x) + Math.PI) / (Math.PI * 2);
+  }
   if (type === 3) {
     const { span, start, x, y } = straightFrame(cell, edge);
     const u = (Math.atan2(py - y, px - x) - start) / span;
@@ -171,13 +350,131 @@ function intervalPoint(vertical, line, start, pathDiv) {
 // this check fuses nearly every lane in the pattern into one channel — a
 // 3-connector cell's second family is hidden along the whole shared side, so
 // registering it there bridges two otherwise separate channel systems.
+// A triangle side's lattice line: which of the three directions it runs in,
+// the coordinate constant along it, and the one that advances.
+function latticeLine([pa, pb], [qa, qb]) {
+  if (pb === qb)
+    return { along: (a) => a, line: pb, name: 'T0', sign: Math.sign(qa - pa) };
+  if (pa === qa)
+    return {
+      along: (a, b) => b,
+      line: pa,
+      name: 'T1',
+      sign: Math.sign(qb - pb),
+    };
+  return {
+    along: (a, b) => b,
+    line: pa + pb,
+    name: 'T2',
+    sign: Math.sign(qb - pb),
+  };
+}
+
+function fanIntervals(cell, type, edge, pathDiv, visible) {
+  const { corner } = decodeEdge(edge);
+  const corners = cellCorners(cell);
+  const pivot = corners[corner];
+  const [px, py] = latticePoint(...pivot);
+  const count = laneCount(type, cell.size, pathDiv, edge);
+  const out = [];
+  [1, 2].forEach((step) => {
+    const other = corners[(corner + step) % 3];
+    const { along, line, name, sign } = latticeLine(pivot, other);
+    const [qx, qy] = latticePoint(...other);
+    const ux = (qx - px) / cell.size;
+    const uy = (qy - py) / cell.size;
+    const from = along(...pivot) * pathDiv;
+    // Lane j spans [j - 1/2, j + 1/2] pitches from the pivot; lane 0 is the
+    // sliver round the pivot itself, shared by every fan about it.
+    for (let j = 0; j < count; j += 1) {
+      const d = j / pathDiv;
+      const point = [px + ux * d, py + uy * d];
+      if (visible(point)) {
+        out.push({
+          key: `${name}:${line}:${sign > 0 ? from + j - 0.5 : from - j - 0.5}`,
+          lane: j,
+          point,
+        });
+      }
+    }
+  });
+  return out;
+}
+
+// A pocket's lanes along its host's side: the inner half-disc spans the
+// middle, every other lane meets the side on both sides of it. Interval
+// keys are lower ends in pitches along the line, as the fans' are.
+function pocketIntervals(cell, edge, pathDiv, visible) {
+  const { corner, m, offset2 } = decodeIrregular(edge);
+  const corners = cellCorners(cell);
+  const from = corners[corner];
+  const to = corners[(corner + 1) % 3];
+  const { along, line, name, sign } = latticeLine(from, to);
+  const [px, py] = latticePoint(...from);
+  const [qx, qy] = latticePoint(...to);
+  const ux = ((qx - px) / cell.size) * sign;
+  const uy = ((qy - py) / cell.size) * sign;
+  const middle = along(...from) * pathDiv + (sign * offset2 * pathDiv) / 2;
+  const [cx, cy] = pocketCenter(cell, edge);
+  const bounds = [0, ...pocketRadii(m, pathDiv)].map((r) => r * pathDiv);
+  const out = [];
+  const push = (lo, lane) => {
+    const offset = (lo + 0.5 - middle) / pathDiv;
+    const point = [cx + ux * offset, cy + uy * offset];
+    if (visible(point)) out.push({ key: `${name}:${line}:${lo}`, lane, point });
+  };
+  bounds.slice(1).forEach((outer, lane) => {
+    const inner = bounds[lane];
+    if (lane === 0) {
+      for (let lo = middle - outer; lo < middle + outer - 1e-9; lo += 1) {
+        push(lo, 0);
+      }
+      return;
+    }
+    push(middle + inner, lane);
+    push(middle - outer, lane);
+  });
+  return out;
+}
+
 function laneIntervals(cell, type, edge, pathDiv, occluders) {
   const { column, row, size } = cell;
   const span = size * pathDiv;
   const count = laneCount(type, size, pathDiv);
   const out = [];
 
-  if (type === 0) return out;
+  if (type === 0 || type === RINGS) return out;
+  const clear = ([x, y]) =>
+    occluders.every(
+      (occluder) =>
+        Math.hypot(x - occluder.x, y - occluder.y) > occluder.rMax + 1e-6
+    );
+  if (type === FAN || type === BEND || type === TRI_TURN) {
+    return fanIntervals(cell, type, edge, pathDiv, clear);
+  }
+  if (type === TRI_STUB) {
+    const points = cellCorners(cell);
+    const from = points[edge % 3];
+    const to = points[((edge % 3) + 1) % 3];
+    const { along, line, name, sign } = latticeLine(from, to);
+    const [ax, ay] = latticePoint(...from);
+    const [bx, by] = latticePoint(...to);
+    const bounds = laneRadii(type, size, pathDiv, edge);
+    for (let j = 0; j <= size * pathDiv; j += 1) {
+      const t = j / (size * pathDiv);
+      const point = [ax + (bx - ax) * t, ay + (by - ay) * t];
+      const r = Math.abs(j / pathDiv - size / 2);
+      const lane = bounds.findIndex(([, outer]) => r < outer - 1e-8);
+      if (lane >= 0 && clear(point))
+        out.push({
+          key: `${name}:${line}:${along(...from) * pathDiv + sign * j - 0.5}`,
+          lane,
+          point,
+        });
+    }
+    return out;
+  }
+  if (type === POCKET) return pocketIntervals(cell, edge, pathDiv, clear);
 
   const visible = (vertical, line, start) => {
     const along = (start + 0.5) / pathDiv;
@@ -238,6 +535,13 @@ function laneIntervals(cell, type, edge, pathDiv, occluders) {
   }
   return out;
 }
+
+// An entry's occluders are sectors, or (on a triangle cell) the families
+// painted over it, whose reach depends on the lane pitch.
+export const occluderSector = (entry, pathDiv) =>
+  entry.type === undefined
+    ? entry
+    : familySector(entry.cell, entry.type, entry.edge, pathDiv);
 
 function makeUnionFind(n) {
   const parent = new Int32Array(n);
@@ -318,9 +622,10 @@ export default function buildLaneChannels(
   { weave = false } = {}
 ) {
   const maxLanes = drawn.reduce(
-    (acc, { cell, connections }) =>
-      connections.reduce(
-        (inner, [type]) => Math.max(inner, laneCount(type, cell.size, pathDiv)),
+    (acc, entry) =>
+      entry.connections.reduce(
+        (inner, [type, edge]) =>
+          Math.max(inner, laneCount(type, entry.cell.size, pathDiv, edge)),
         acc
       ),
     1
@@ -337,14 +642,16 @@ export default function buildLaneChannels(
   const lengthOf = new Float32Array(total);
   const links = new Int32Array(total * 2).fill(-1);
 
-  drawn.forEach(({ cell, connections, occluders = [] }, cellIndex) => {
+  drawn.forEach((entry, cellIndex) => {
+    const { cell, connections, occluders: listed = [] } = entry;
+    const occluders = listed.map((cover) => occluderSector(cover, pathDiv));
     const occluder =
       connections.length > 1 && !(weave && isWeaveCell(connections))
-        ? familySector(cell, connections[0][0], connections[0][1])
+        ? familySector(cell, connections[0][0], connections[0][1], pathDiv)
         : null;
     connections.forEach(([type, edge], slot) => {
-      const count = laneCount(type, cell.size, pathDiv);
-      const radii = laneRadii(type, cell.size, pathDiv);
+      const radii = laneRadii(type, cell.size, pathDiv, edge);
+      const count = radii.length;
       for (let j = 0; j < count; j += 1) {
         const id = cellIndex * slotStride + slot * maxLanes + j;
         used[id] = 1;
@@ -353,15 +660,21 @@ export default function buildLaneChannels(
         lengthOf[id] =
           ((radii[j][0] + radii[j][1]) / 2) * familySpan(cell, type, edge);
       }
-      const joins = laneIntervals(
-        cell,
-        type,
-        edge,
-        pathDiv,
-        slot === 1 && occluder ? [occluder, ...occluders] : occluders
-      );
-      const { x, y } = familySector(cell, type, edge);
-      joins.forEach(({ key, lane, point }) => {
+      const joins = entry.cap
+        ? laneIntervals(entry.cap.host, TRI_STUB, edge % 6, pathDiv, [])
+        : laneIntervals(
+            cell,
+            type,
+            edge,
+            pathDiv,
+            slot === 1 && occluder ? [occluder, ...occluders] : occluders
+          );
+      const { x, y } = familySector(cell, type, edge, pathDiv);
+      joins.forEach(({ key: rawKey, lane, point }) => {
+        const key =
+          entry.channelGroup == null
+            ? rawKey
+            : `${entry.channelGroup}:${rawKey}`;
         const id = cellIndex * slotStride + slot * maxLanes + lane;
         // Which end of the lane this join sits at. An odd stub's innermost
         // lane meets its edge at the family centre itself, where the angle

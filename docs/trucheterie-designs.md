@@ -171,6 +171,190 @@ Run `npm run trucheterie:check` after changing anything below, and
   parity (vertical ↔ diagonal, horizontal ↔ antidiagonal). Pin
   `--blobSymmetry none` to keep it off, or an axis to force one.
 
+## Triangle grids
+
+Built 2026-10-26. A field is square or triangle, never both: seeded fields
+pick it with `blobGridShape` (`square`, `triangle`; a structure facet, rolled
+to triangle at `TRIANGLE_ROLL_CHANCE`, 0.25, as the last structure draw), and
+a design carries its own (`shape: "triangle"` in JSON, `tb4.` / `tb5.`
+for packed designs, `tb7.` for subdivision with edge connectors; `tb6.` is migrated).
+`gridShapeOf(config)` says which a config draws. The user's call: triangles
+follow the square rule that curves continue through neighbours or turn back.
+Subdivision designs use **edge connectors**, like squares. Legacy packed
+designs retain their corner connectors.
+
+- **Reference subdivision is the default** (`blobTriangleLayout: "subdivide"`).
+  `triSubdivision.js` ports Jurgen's [More Multi-Scale Truchet Tiles](https://turtletoy.net/turtle/fa14c628d4)
+  (CC BY-NC-SA 4.0): the alternating root triangles and four-child split,
+  with probability `splitProbability ** (1 + startRes - generation)`, the
+  generation-dependent sizes, and random corner order. The four source
+  knobs are `blobTriangleSplitProbability` (0.7), `blobTriangleStartRes` (4),
+  `blobTriangleMinRes` (1) and `blobTriangleBigTileSize` (80). The source's
+  constant world-space pitch is 4 paths per micro-cell; Paths Per Unit
+  remains the shared density control (unpinned reference rolls use 4).
+  Reference pen weight follows the square grid, capped at one quarter of
+  the lane pitch so dense fields retain visible colour between outlines. We draw the complete patch with the
+  app's framing, rather than Turtletoy's fixed 200-unit canvas crop.
+- **Closed lane topology** (2026-10-27). The source permits clipping at the
+  patch boundary; this scene does not. `triSides.js` groups reciprocal edges
+  over their complete lattice-unit spans. An edge opens only when every
+  facing neighbour opens with it. A missing neighbour closes that edge,
+  without closing the triangle's other edges or flooding through corner
+  groups. Small cells against a larger side share that side's group.
+- A subdivision leaf's three mask bits name its **sides**, clockwise from
+  corner 0 to corner 1. The user's call (2026-10-28) is the reference's
+  corner fans inside the patch, with the square scene's closed-boundary
+  rule. `triFans.js` keeps all three ordered fans for connected groups of
+  three or more tiles: top and bottom reach three quarters of a side, the
+  middle half, with the reference's half-side minimum leaf and inclusive
+  outer arc. It does not replace these with a combined path or warp circles.
+- **Boundary returns.** Each exposed side gets a nested semicircular return
+  (type 12), at the same `1 / Paths Per Unit` pitch. Its diameter meets the
+  reference's half-pitch edge crossings. The return's inward half copies
+  its host's original fans; only the outside bends back. The circular outer
+  outline closes intersections with neighbouring returns. The first
+  half-pitch corner wedge stays clear, as in the reference, so no terminal
+  dots are needed. An odd central crossing joins the first return as a T.
+  The smallest one-crossing tile uses its closed incircle. An isolated
+  triangle and a two-triangle component retain their closed circular motifs.
+- `laneChannels.js` joins the return bands to the host fans and keeps closed
+  networks separate. Cycle, Depth, Random and lane-following Spectrum use
+  the same lookup in all consumers. `capShader.js` copies the host's three
+  fan families without changing their circle distances. `capTextures.js`
+  retains the GPU lookup objects but recreates their storage when the field
+  changes; this fixes the native WebGPU failure when painting a third tile.
+  The look still uses the existing instanced renderer and has no global
+  per-pixel search over the field. Metadata uploads are cached per field.
+- `triContours.js` and `circleClip.js` clip circular arcs analytically for
+  SVG and the verifier; `triangleSvg.js` shares the field and lane lookup.
+  Pen-only SVG contains native arc and line geometry with occluded strokes
+  removed. The check verifies actual visible stroke endpoints against other
+  outlines, including T-junctions, densities 1–20, holes and connector edits.
+  The native WebGPU capture also exercises adding 1–4 tiles on one renderer.
+  Designs and codecs retain every source tile; preview framing includes the
+  extra space needed by boundary returns.
+- **Subdivision designs** carry `layout: "subdivide"`,
+  `connectors: "edges"` in JSON and `tb7.` codes. Old `tb6.` / unmarked
+  subdivision JSON corner flags migrate to their incident edges and then
+  normalize. Existing `tb4.` / `tb5.` packed designs retain their original
+  model. Connect targets the nearest side of a subdivision cell; opening
+  or closing it updates the whole reciprocal group. Order is available on
+  three-way cells. Move, duplicate, codecs, the scene, workbench and SVG
+  all use the same normalized field.
+- **Packed cells** (`blobTriangleLayout: "packed"`) retains the original
+  arbitrary-size blob packing and strict corner groups, described below.
+  Its missing boundary neighbours can close large mixed-size groups even
+  at full fill/connectivity; raising fill alone does not reproduce the
+  reference. Square-specific packing controls are hidden for reference
+  subdivision, and the four subdivision controls are hidden for squares.
+
+- **Why corners.** A 60° corner has no room for a stub's semicircle (0.5 of a
+  side needed, 0.43 available) or a corner turn reaching the full side (1
+  needed, 0.87 available), so an arc crossing a side near corner A can only
+  turn about A and leave through A's other side.
+- **Lattice** (`triangle.js`): point (a, b) sits at a·(1, 0) + b·(½, √3/2),
+  micro-cell units, y down. A cell is `{ column: a, row: b, size, mask }`;
+  mask bit 8 (`UP`) points it up. Down cells have corners (a, b), (a+n, b),
+  (a, b+n); up cells (a+n, b), (a+n, b+n), (a, b+n). Corners run clockwise
+  on screen. Any integer size tiles.
+- **Mask** (`triDesign.js`): bits 0–2 are corners; 64 pins the order, bits
+  16–32 name the corner on top and 128 swaps the other two. Unpinned orders
+  hash the cell's position, as square choices do.
+- **Families.** An open corner draws a fan (type 4) of 60° arcs over the half
+  of each side next to it. Arcs sit at (k + ½)/pathDiv, so no arc ever
+  crosses a side at a lattice point, where a smaller neighbour's corner may
+  be; on whole multiples, a big cell's arc ended dead on a small cell's
+  corner. One or two open corners reach half a side; with all three open
+  the top and bottom fans reach ¾ (the reference turtle's look) and the
+  first drawn covers the rest. No open corner draws rings about the centroid
+  (type 5). The fan edge packs corner + 3·up + 6·long.
+- **The corner rule.** A corner opens only if both its half-sides are faced,
+  all along, by neighbours' open halves (probed every half-unit). Faced
+  halves form groups that open and close together: same-size triangles make
+  one group per vertex (a full disc), and a bigger cell's half-side joins
+  every small vertex along it, so groups thread through mixed sizes.
+  `normalizeTriDesign` closes any group with a closed or unfaced member;
+  `cornerCascade` is what Connect opens.
+- **Three-way cells are two field entries**: the bottom fan alone (`under`,
+  drawn first, with the top and middle fans as `occluders`) and then the top
+  and middle fans, so the shader stays at two families. Entries share a
+  `group`, which keys their growth delay. Occluders on triangle entries are
+  `{ cell, type, edge }`, resolved with the lane pitch (`occluderSector`).
+- **Packed seeded fields** (`triField.js`): the square recipe on the lattice, about the
+  origin in a gridSize square: rays from the centre, gaps filled nearest
+  first with size-1 triangles (`blobOneFill`), holes, then whole corner
+  groups closed, **picked evenly** (a random corner nearly always lands in
+  the biggest group), closing only groups that fit within the remaining
+  `1 − connectivity` budget. An indivisible group may leave connectivity
+  above the target; it must never overshoot and collapse a larger network.
+  Prune keeps the biggest network. Gaps close every corner round them, so
+  triangles want a higher One Fill than squares (default 0.25 leaves ~38% of
+  cells as rings; the Triangles preset uses 0.9). Triangle structure rolls
+  use One Fill 0.85–1, Connectivity 0.9–1 and Holes 0–0.06 on their own
+  deterministic stream; pins and held structure still win. Square roll ranges
+  and seeds are unchanged. These ranges reduce the fragmentation of the
+  connected field into isolated rings.
+- **Symmetry** axes run through the lattice origin: vertical and horizontal,
+  and diagonal / antidiagonal are the lines that stand upright and level once
+  the field turns 30° (triangle rolls turn 0° or 30°; `symmetryAxis` takes
+  the shape). A cell on the axis with all three corners open drops the one
+  on the axis.
+- **Empty corners** (2026-10-26): a cell may overlap a bigger one where
+  none of the bigger one's families reach (its disc at the finest pitch plus
+  `INK_MARGIN`, 0.5; both cells' for equal sizes): a closed corner's region,
+  or a ring cell's three corners. `triOccupancy` writes bigger cells first, so
+  the cell sitting in the corner owns it. Probes skip a stretch of a side a
+  smaller cell sits on top of (the inside probe must find the cell itself),
+  so the bigger cell's half there faces nothing and stays closed, and the
+  neighbours across meet the corner cell instead. `triInkClashes` counts
+  breaks; placing, connecting, erasing, ordering, moving and loading all
+  refuse an edit that leaves one, as on squares.
+- **Irregular connections** (designs only, the `irregular` flag; `tb5.`
+  codes): a smaller cell's whole side lying along one bigger cell's side may
+  stay open where the bigger cell's halves along it are closed. The bigger
+  cell draws a **pocket** (type 6, semicircles about that side's midpoint,
+  needing `m/2 + 0.25` of room to its other sides) or, where such sides from
+  both of its sides meet at one of its corners with the same length, a
+  **bend** (type 7, a fan about that corner reaching m). Joins are hard
+  except across a side that draws; whether it draws is judged against each
+  group closed on its own (`drawnSides`), or the small corner would close
+  with the bigger cell's half before it could. Extras are `virtual` field
+  entries after every real one, with `occluders` as on squares.
+- **Why irregular is rare on triangles:** a small vertex on the bigger
+  cell's side shares its fan with the next small cell along it, so pockets
+  come as a run along the whole side, and a run can only end at the bigger
+  cell's 60° corners, where a pocket has no room, in a bend that needs the
+  next side in the same state. In practice the bigger cell must be closed
+  and ringed by smaller cells all round. Seeded fields never are (none in 40
+  fields at full fill), so seeded triangle fields ignore `blobIrregular`
+  (rolls clear it, the Leva toggle hides), unlike squares. In the designer,
+  with Irregular on, Connect falls back to opening the whole run when the
+  ordinary cascade cannot open, and closing a bigger cell's corner leaves
+  the runs that can draw open as pockets and bends.
+- **Not on triangles:** straights, the debug overlay, and Trucheterie3D
+  (`buildField` throws for a triangle grid).
+- **Shader:** `triangleArcs.js` (fan and ring fields, the triangle
+  footprint, nested returns and turns). The return warp is evaluated only
+  inside its triangle. Ordinary fans may overhang with pure ink, so their
+  antialiased rim cannot tint a neighbour with this cell's fill. Past 1024 instances the instance matrices move to a
+  storage attribute (`applyFieldToMesh`), or three adds a ninth vertex buffer
+  and the pipeline fails; triangle fields reach that easily.
+- **Designer:** Auto Paint uses the triangle containing the pointer on a
+  brush-sized lattice, so both orientations work at every brush size. Up /
+  Down choose an orientation explicitly and snap its centre to the micro-grid.
+  Picking the first containing candidate biases larger brushes down; choosing
+  by centroid alone is also ambiguous when size is divisible by three, when
+  opposite triangles can have identical centroids.
+  On subdivision designs Connect toggles the nearest edge group.
+  On packed designs it toggles the nearest corner group; Order raises the clicked
+  corner, or swaps the other two when it is already on top; Move and
+  Duplicate step by lattice translations (`dragStep`). TrucheterieDesigner
+  switches the active grid immediately, keeping a separate in-memory draft
+  for each shape (including its name, saved state, rotation and anchor).
+  The selector follows undo/redo and opened designs. Triangle seeds use
+  reference subdivision, and triangle grids turn in 30° steps. `trucheterie:check` covers it (`checkTriangles`), including a
+  crossing test that every visible fan arc meets one across its side.
+
 ## Keys
 
 - `blobDesign` (both schemas, a generator and tube key, never rolled). Empty
@@ -229,6 +413,10 @@ Run `npm run trucheterie:check` after changing anything below, and
   `src/modules/trucheterieBlob/designs/<name>.json` through the dev-server
   plugin. Once saved, it links to both workbenches with `?design=<name>`
   preselected, and shows the CLI command.
+- Opening or seeding a design frames the camera to fit its extent. Painting,
+  palette edits and other controls never refit or rescale the view.
+- Shape and tools sit together at the top. Editing instructions live in a
+  collapsed Editing help disclosure at the bottom of the control panel.
 - Its Preview section exposes the scene's lane palette and modes, exact
   versus blended colors, shuffle seed and shuffle action, monochrome and
   its color, stroke color, silhouette fill (Tile Background), and Scene

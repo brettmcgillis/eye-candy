@@ -40,7 +40,11 @@ function laneOptions(config) {
 
 function fieldSvg(field, config, options) {
   const lanes = look.resolveLaneColors(field.cells, laneOptions(config));
-  const { penHalfWidth } = look.penGeometry(field.gridSize);
+  const { penHalfWidth } = look.penGeometry(
+    field.gridSize,
+    config.blobPathsPerUnit,
+    field.layout === 'subdivide'
+  );
   return blob.renderBlobSvg(field, {
     background:
       options.svgFill && !options.transparent

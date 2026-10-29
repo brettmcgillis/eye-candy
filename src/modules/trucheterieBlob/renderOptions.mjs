@@ -16,6 +16,7 @@ export const PALETTE_NONE = 'None';
 export const LANE_MODES = ['Cycle', 'Depth', 'Random', 'Spectrum'];
 export const MEATBALLS = { HIDE_LOOSE: 0, KEEP_ALL: 2, PRUNE_LOOSE: 1 };
 // Mirrors design.js's SYMMETRY_AXES; this file stays dependency-free.
+export const GRID_SHAPES = ['square', 'triangle'];
 export const SYMMETRY = [
   'none',
   'vertical',
@@ -58,6 +59,70 @@ const GENERATOR = {
     section: 'field',
     type: 'string',
   },
+  blobGridShape: {
+    choices: GRID_SHAPES,
+    default: 'square',
+    facet: 'structure',
+    generator: true,
+    help: 'Square or equilateral triangle cells. Subdivision triangles use closed edge connections; packed triangles use corner connections. A design carries its own shape',
+    label: 'Grid Shape',
+    scene: true,
+    scope: 'shared',
+    section: 'field',
+    type: 'enum',
+  },
+  blobTriangleLayout: {
+    choices: ['subdivide', 'packed'],
+    default: 'subdivide',
+    facet: 'structure',
+    generator: true,
+    help: "Subdivision uses Jurgen's four-way split and three ordered corner fans, with circular returns at exposed boundaries. Packed keeps the earlier blob packing",
+    label: 'Triangle Layout',
+    scene: true,
+    scope: 'shared',
+    section: 'field',
+    type: 'enum',
+  },
+  blobTriangleSplitProbability: gen(
+    'field',
+    'Split Probability',
+    0.7,
+    0,
+    1,
+    0.05,
+    'structure',
+    [0.4, 0.9]
+  ),
+  blobTriangleStartRes: gen(
+    'field',
+    'Start Resolution',
+    4,
+    0,
+    5,
+    1,
+    'structure',
+    [3, 5]
+  ),
+  blobTriangleMinRes: gen(
+    'field',
+    'Minimum Resolution',
+    1,
+    0,
+    5,
+    1,
+    'structure',
+    [0, 2]
+  ),
+  blobTriangleBigTileSize: gen(
+    'field',
+    'Big Tile Size',
+    80,
+    10,
+    200,
+    10,
+    'structure',
+    [50, 110]
+  ),
   blobGridSize: gen('field', 'Grid Size', 25, 10, 50, 1, 'structure', [15, 35]),
   blobCanvasSize: num('field', null, 'Canvas Size', 8, 1, 20, 0.1, {
     generator: true,
@@ -127,7 +192,7 @@ const GENERATOR = {
     default: 'none',
     facet: 'structure',
     generator: true,
-    help: 'Mirror one half of the seeded field onto the other: vertical/horizontal down the grid centre, diagonal/antidiagonal corner to corner. Rolled on rarely, along the axis the rolled rotation calls for; pin none to keep it off',
+    help: 'Mirror one half of the seeded field onto the other: vertical/horizontal down the grid centre, diagonal/antidiagonal corner to corner (on triangles, the lattice lines that stand upright and level once turned 30°). Rolled on rarely, along the axis the rolled rotation calls for; pin none to keep it off',
     label: 'Symmetry',
     scene: true,
     scope: 'shared',
@@ -137,12 +202,12 @@ const GENERATOR = {
   blobIrregular: flag('field', null, 'Irregular Connections', false, {
     facet: 'structure',
     generator: true,
-    help: 'Let a small cell connect to part of a bigger cell\u2019s closed side: its lines finish in a pocket inside the bigger cell, or bend through to an open side at a corner. Rolled on sometimes; pin false to keep it off',
+    help: 'Let a small cell connect to part of a bigger cell\u2019s closed side: its lines finish in a pocket inside the bigger cell, or bend through to an open side at a corner. Seeded square grids only (triangle designs set it in the designer). Rolled on sometimes; pin false to keep it off',
   }),
   blobStraights: num('field', null, 'Straights', 0, 0, 1, 0.05, {
     facet: 'structure',
     generator: true,
-    help: 'Chance each cell open on two opposite sides (plus at most one more) draws straight lanes instead of curves; a third open side makes a T-junction. Rolled on sometimes; pin 0 to keep it off',
+    help: 'Chance each cell open on two opposite sides (plus at most one more) draws straight lanes instead of curves; a third open side makes a T-junction. Square grids only. Rolled on sometimes; pin 0 to keep it off',
   }),
 };
 

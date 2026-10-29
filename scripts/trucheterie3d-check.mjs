@@ -18,7 +18,13 @@ import {
 } from '../src/modules/trucheterie3d/renderOptions.mjs';
 import { createHeadlessRenderer, loadThree } from './lib/headlessWebgpu.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import schemaControlCoverage from './lib/schemaControlCoverage.mjs';
 import checkWorkbenchPage from './lib/workbenchPage.mjs';
+
+// Scene controls whose schema folders the presets are applied through.
+const CONTROLS = [
+  '/src/components/scenes/WebGPU/Trucheterie3D/utils/controls.js',
+];
 
 const KERNEL_DIR = path.join(REPO_ROOT, 'src', 'modules', 'trucheterie3d');
 const PRESETS =
@@ -718,6 +724,7 @@ async function main() {
   await checkRender(barrels, THREE);
   await checkMembraneSolve(barrels);
 
+  failures.push(...(await schemaControlCoverage(CONTROLS)));
   if (failures.length > 0) {
     console.error(`trucheterie3d:check failed (${failures.length}):\n`);
     failures.forEach((message) => console.error(`  ✗ ${message}`));

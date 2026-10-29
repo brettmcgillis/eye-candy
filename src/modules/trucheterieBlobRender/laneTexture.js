@@ -1,8 +1,9 @@
 import * as THREE from 'three/webgpu';
 
-import { buildLaneChannels } from '@modules/trucheterieBlob';
+import { buildLaneChannels, laneCount } from '@modules/trucheterieBlob';
 import { hexToRgb } from '@utils/gradientPalette';
 
+import { createCapTexture, fillCapTexture } from './capTextures';
 import {
   channelColors,
   hashSeed,
@@ -34,6 +35,7 @@ function lookupTexture(data, type, colorSpace) {
 //   stops  — one row, the palette's stops, for Spectrum mode to blend.
 export function createLaneTextures() {
   return {
+    caps: createCapTexture(),
     along: lookupTexture(
       new Float32Array(4),
       THREE.FloatType,
@@ -84,7 +86,15 @@ export function resolveLaneColors(
     return {
       channelCount: 0,
       flat: hexToRgb(monochrome ? monoColor : fallback),
-      maxLanes: 1,
+      maxLanes: drawn.reduce(
+        (largest, { cell, connections }) =>
+          connections.reduce(
+            (n, [type, edge]) =>
+              Math.max(n, laneCount(type, cell.size, pathDiv, edge)),
+            largest
+          ),
+        1
+      ),
     };
   }
 
@@ -175,12 +185,21 @@ function setImage(texture, image) {
 // rebuild — and rebuilding the material recreates the InstancedMesh (it is
 // one of its `args`), dropping the instance matrices with it.
 export default function fillLaneTextures(textures, drawn, options) {
+  fillCapTexture(textures, drawn);
   const lanes = resolveLaneColors(drawn, options);
   if (lanes.flat) {
     setImage(textures.colors, {
-      data: new Uint8Array([...lanes.flat, 255]),
-      height: 1,
-      width: 1,
+      data: (() => {
+        const rgba = [...lanes.flat, 255];
+        const table = new Uint8Array(
+          Math.max(1, drawn.length) * lanes.maxLanes * 8
+        );
+        for (let offset = 0; offset < table.length; offset += 4)
+          table.set(rgba, offset);
+        return table;
+      })(),
+      height: Math.max(1, drawn.length),
+      width: lanes.maxLanes * 2,
     });
   } else {
     setImage(textures.colors, {

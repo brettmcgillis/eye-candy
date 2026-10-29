@@ -22,6 +22,7 @@ export {
   encodeDesign,
   eraseCell,
   fieldFromDesign,
+  gridShapeOf,
   inkClashes,
   irregularFamilies,
   flipDiagonal,
@@ -48,6 +49,10 @@ export {
 } from './design';
 export {
   default as buildLaneChannels,
+  cellBoxOf,
+  cellCenterOf,
+  fanFrame,
+  occluderSector,
   familySector,
   familySpan,
   isWeaveCell,
@@ -63,9 +68,40 @@ export {
   IRREGULAR_ROLL_CHANCE,
   STRAIGHTS_ROLL_CHANCE,
   SYMMETRY_CHANCE,
+  TRIANGLE_ROLL_CHANCE,
   default as rollBlobConfig,
   rollStraights,
   rollableKeys,
 } from './rollConfig';
 export { default as mulberry32 } from './mulberry32';
 export * from './renderOptions.mjs';
+export {
+  canReorder,
+  cornerCascade,
+  cornersOn,
+  geometryOf as triangleGeometry,
+  isCornerOpen,
+  isTriangleDesign,
+  latticeOffset,
+  pickCorner,
+  raiseCorner,
+  setCorner,
+  toggleCorner,
+  triIndexAt,
+} from './triDesign';
+export {
+  H as TRIANGLE_HEIGHT,
+  TRIANGLE,
+  brushCell,
+  cellCorners,
+  cornerPoints,
+  returnPoint,
+  returnRadii,
+  isTriangleCell,
+  latticePoint,
+  microAt,
+  toLattice,
+} from './triangle';
+
+export { boundaryRadii } from './triFans';
+export { triangleSegments } from './triContours';

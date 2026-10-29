@@ -1,30 +1,30 @@
-import { familySector } from './laneChannels';
+import { cellBoxOf, cellCenterOf, familySector } from './laneChannels';
 
 const EMPTY_BOUNDS = { max: [1, 1], min: [-1, -1] };
 
 // Every family only ever draws inside its own cell — a stub's half-disc and a
-// corner's quarter-disc both sit within the square — so what it contributes
-// is its disc's box clipped to the cell. The unclipped disc overshoots a
-// stub's reach by half a cell outward and undershoots nothing, which is what
-// pulled every framed field off-centre.
+// corner's quarter-disc both sit within the square, and a triangle's fans
+// within the triangle — so what it contributes is its disc's box clipped to
+// the cell's. The unclipped disc overshoots a stub's reach by half a cell
+// outward and undershoots nothing, which is what pulled every framed field
+// off-centre.
 function forEachFamilyBox(field, visit) {
   field.cells.forEach(({ cell, connections }, i) => {
     const centerX = field.centers[i * 2 + 0];
     const centerY = field.centers[i * 2 + 1];
-    const gridX = cell.column + cell.size / 2;
-    const gridY = cell.row + cell.size / 2;
+    const [gridX, gridY] = cellCenterOf(cell);
+    const box = cellBoxOf(cell);
     const toCanvas = (gx, gy) => [
       centerX + (gx - gridX) * field.cellSize,
       centerY + (gy - gridY) * field.cellSize,
     ];
     connections.forEach(([type, edge]) => {
-      const { rMax, x, y } = familySector(cell, type, edge);
+      const sector = familySector(cell, type, edge, field.pathsPerUnit ?? null);
+      const { x, y } = sector;
+      const { rMax } = sector;
       visit(
-        toCanvas(Math.max(x - rMax, cell.column), Math.max(y - rMax, cell.row)),
-        toCanvas(
-          Math.min(x + rMax, cell.column + cell.size),
-          Math.min(y + rMax, cell.row + cell.size)
-        )
+        toCanvas(Math.max(x - rMax, box.x0), Math.max(y - rMax, box.y0)),
+        toCanvas(Math.min(x + rMax, box.x1), Math.min(y + rMax, box.y1))
       );
     });
   });

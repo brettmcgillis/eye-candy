@@ -1,62 +1,36 @@
-import React, { useMemo } from 'react';
+import React, { memo, useEffect, useMemo } from 'react';
 
 import { useGLTF, useTexture } from '@react-three/drei';
 
-import { RepeatWrapping } from 'three';
-
 import { modelFile, textureFile } from '@utils/appUtils';
 
+import { createFrame } from './frame';
+
 const WATERCOLOR_URL = textureFile('watercolor.png');
-
-export default function PaperFrame(props) {
-  const { nodes, materials } = useGLTF(modelFile(`FoldedFrame.glb`));
-  const {
-    frameColor,
-    frameRoughness = 0.5,
-    frameWatercolor = false,
-    ...groupProps
-  } = props;
-
-  const watercolorTexture = useTexture(WATERCOLOR_URL);
-
-  const frameMaterial = useMemo(() => {
-    const material = materials['Material.002']?.clone();
-    if (material && frameColor) {
-      material.color.set(frameColor);
-    }
-    if (material) {
-      material.roughness = frameRoughness;
-      if (frameWatercolor) {
-        watercolorTexture.wrapS = RepeatWrapping;
-        watercolorTexture.wrapT = RepeatWrapping;
-        watercolorTexture.repeat.set(3, 3);
-        material.roughnessMap = watercolorTexture;
-      } else {
-        material.roughnessMap = null;
-      }
-      material.needsUpdate = true;
-    }
-    return material || materials['Material.002'];
-  }, [
-    materials,
-    frameColor,
-    frameRoughness,
-    frameWatercolor,
-    watercolorTexture,
-  ]);
-
+function PaperFrame({
+  frameColor,
+  frameRoughness = 0.5,
+  frameWatercolor = false,
+  ...groupProps
+}) {
+  const gltf = useGLTF(modelFile('FoldedFrame.glb'));
+  const texture = useTexture(WATERCOLOR_URL);
+  const mesh = useMemo(
+    () =>
+      createFrame(
+        gltf,
+        { frameColor, frameRoughness, frameWatercolor },
+        texture
+      ),
+    [gltf, frameColor, frameRoughness, frameWatercolor, texture]
+  );
+  useEffect(() => () => mesh.material.dispose(), [mesh]);
   return (
-    <group {...groupProps} dispose={null}>
-      <mesh
-        castShadow
-        receiveShadow
-        geometry={nodes.Frame.geometry}
-        material={frameMaterial}
-        rotation={[Math.PI / 2, 0, 0]}
-      />
+    <group {...groupProps}>
+      <primitive object={mesh} dispose={null} />
     </group>
   );
 }
-
-useGLTF.preload(modelFile(`FoldedFrame.glb`));
+export default memo(PaperFrame);
+useGLTF.preload(modelFile('FoldedFrame.glb'));
 useTexture.preload(WATERCOLOR_URL);

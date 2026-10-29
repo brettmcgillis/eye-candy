@@ -1,4 +1,4 @@
-import { sq } from '../utils/squareData';
+import { sq } from './squareData';
 
 const frameData1 = {
   settings: {

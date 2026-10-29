@@ -1,8 +1,4 @@
-import frameData1 from './frameData1';
-import frameData2 from './frameData2';
-import frameData3 from './frameData3';
-import gptFrames from './gpt_data';
-import sonnetFrames from './sonnet_data';
+import { AUTHORED_FRAMES } from '@modules/paperCuts';
 
 const FRAME_SAFE_HALF_EXTENT = 3.5;
 
@@ -35,19 +31,10 @@ function normalizeFrameFit(frame) {
   };
 }
 
-const FRAMES = [
-  { name: '1', frame: normalizeFrameFit(frameData1) },
-  { name: '2', frame: normalizeFrameFit(frameData2) },
-  { name: '3', frame: normalizeFrameFit(frameData3) },
-  ...gptFrames.map((frameEntry) => ({
-    ...frameEntry,
-    frame: normalizeFrameFit(frameEntry.frame),
-  })),
-  ...sonnetFrames.map((frameEntry) => ({
-    ...frameEntry,
-    frame: normalizeFrameFit(frameEntry.frame),
-  })),
-];
+const FRAMES = AUTHORED_FRAMES.map(({ name, frame }) => ({
+  name,
+  frame: normalizeFrameFit(frame),
+}));
 
 export function getFrames() {
   return FRAMES;

@@ -60,7 +60,9 @@ export default function buildPanel(config, { image = null } = {}) {
       };
       panel.tiles.push(tile);
       if (!face.opening) {
-        panel.solids.push({ leaf, poly: outline });
+        cutByFrames(outline, frames).forEach((poly) => {
+          if (signedArea(poly) > 1e-2) panel.solids.push({ leaf, poly });
+        });
         return;
       }
       const clipped = clipPolygon(face.opening, innerPoly);

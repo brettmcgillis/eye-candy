@@ -85,6 +85,7 @@ function plotBody(panel, config, stops, stroke) {
     rectPath([0, 0, panel.width, panel.height]),
     rectPath(panel.inner),
     ...frameRings(panel),
+    ...panel.solids.map((s) => path(s.poly)),
   ].join('');
   const width = stroke > 0 ? stroke : 0.1;
   const hairline = stroke > 0 ? '' : ' vector-effect="non-scaling-stroke"';

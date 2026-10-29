@@ -126,7 +126,7 @@ CLI decodes `--sourceImage` with sharp.
 
 `--views flat,front,angle,raking`: `flat` is the SVG fill art rasterised by
 sharp, the others headless WebGPU renders of the rig. `--svg` writes
-`panel.svg` in `--svgStyle`: `fill`, `plot` (opening outlines, one group per
+`flat.svg` (grouped with `flat.webp` in the gallery) in `--svgStyle`: `fill`, `plot` (opening outlines, one group per
 palette stop — pens), or `pieces` (every strip outline by tier — a cut list).
 
 ## Definition of done

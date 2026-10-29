@@ -26,9 +26,12 @@ runStills({
       panelAt(kernel, { index, options, roll })
     );
     const out = await save(drawn.seed, sidecarFor({ ...drawn, options }));
+    // The SVG is the flat art; it takes the name of the still it sits beside,
+    // so the gallery shows one item with both formats.
+    const svgName = `${views.includes('flat') ? 'flat' : (views[0] ?? 'flat')}.svg`;
     if (options.svg) {
       await out.file(
-        'panel.svg',
+        svgName,
         renderFlatSvg(kernel, { ...drawn, options }, options.svgStyle)
       );
     }

@@ -8,13 +8,28 @@ import {
   rollIsoLinesReliefConfig,
   segmentMode,
 } from '@modules/isoLinesRelief';
-import { planSvg } from '@modules/isoLinesRender';
 import { buildScenePostRuntimeConfig, createPostChain } from '@modules/postRig';
 import { setBackdrop } from '@modules/renderStage/capture';
+import createMeshPlotter from '@modules/renderStage/meshPlotter';
 import { PALETTE_NAMES, getPaletteStops } from '@utils/gradientPalette';
 
+import plotParts from './plot';
 import ISO_LINES_RELIEF_POST from './post';
 import createReliefRig from './rig';
+
+// The sheet steps at grid resolution along a steep rim, so the plot spans
+// the steps (output px) and drops the mesh-edge debris where a chain meets
+// the outline.
+const PLOT_TUNING = {
+  contourTolerance: 2,
+  minLength: 14,
+  outlineTolerance: 1.5,
+};
+
+// With exact occlusion the outline is drawn from the meshes' own edges, and
+// the sheet's occluding contours (which follow its cells) are straightened
+// to the stroke they trace (output px).
+const EXACT_TUNING = { contourTolerance: 1.6, silhouette: false };
 
 export function rollArgs({ options, typed }) {
   const scene = new Set(SCENE_KEYS);
@@ -72,11 +87,10 @@ export const buildPiece = ({ config, image }, options, { time, withLines }) =>
     withLines,
   });
 
-export { planSvg };
-
 // The relief stage the CLI renders headlessly and the Live tab renders on a
 // canvas, mirroring the scene: soft shadows and flat tone mapping.
 export function createReliefStage({
+  advance = null,
   height,
   readFrame,
   renderer,
@@ -95,6 +109,7 @@ export function createReliefStage({
     perspective: new THREE.PerspectiveCamera(30, width / height, 0.1, 100),
   };
   const rig = createReliefRig();
+  const meshPlot = createMeshPlotter(renderer, { advance });
   const passOptions = samples > 0 ? { samples } : {};
   const pipelines = {};
   let current = null;
@@ -177,8 +192,25 @@ export function createReliefStage({
       return readFrame(() => pipelineFor(view.projection).render());
     },
 
+    // The piece as hidden-line line work through the view's camera: each
+    // level's contour standing at its height, plus the walls, skirts and
+    // smooth sheet the style draws, at rest.
     svg(view, options) {
-      return planSvg(current, shown, options);
+      aim(view);
+      rig.setBuild(shown);
+      rig.setTime(shown.time);
+      rig.setMotion({});
+      const { lines, meshes, occluders } = plotParts(current.config, shown);
+      return meshPlot({
+        camera: cameras[view.projection],
+        lines,
+        meshes,
+        options,
+        plot: occluders ? { ...EXACT_TUNING, occluders } : PLOT_TUNING,
+        scene,
+        subject: rig.plotSubject(),
+        view,
+      });
     },
 
     dispose() {

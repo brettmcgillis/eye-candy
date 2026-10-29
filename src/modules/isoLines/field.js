@@ -124,13 +124,21 @@ export default function createField(config, { aspect, image = null }) {
   const ws = config.warpScale;
   const contrast = config.fieldContrast;
 
+  const foldU = config.symmetry === 'horizontal' || config.symmetry === 'quad';
+  const foldV = config.symmetry === 'vertical' || config.symmetry === 'quad';
+  const fold = (u, v) => [
+    foldU ? aspect / 2 - Math.abs(u - aspect / 2) : u,
+    foldV ? 0.5 - Math.abs(v - 0.5) : v,
+  ];
+
   // The field frozen at time t, as (u, v) → 0..1.
   function at(t) {
     const z = t * config.noiseSpeed + oz;
     const noise = weights[0] > 0 ? referencePlane(z) : null;
     const warpU = warp > 0 ? referencePlane(z) : null;
     const warpV = warp > 0 ? referencePlane(z + 4.4) : null;
-    return (u0, v0) => {
+    return (uIn, vIn) => {
+      const [u0, v0] = fold(uIn, vIn);
       let u = u0;
       let v = v0;
       if (warp > 0) {
@@ -152,7 +160,9 @@ export default function createField(config, { aspect, image = null }) {
 
   return {
     at,
-    color: prepared ? (u, v) => prepared.color(...toImage(u, v)) : null,
+    color: prepared
+      ? (u, v) => prepared.color(...toImage(...fold(u, v)))
+      : null,
     value: (u, v, t) => at(t)(u, v),
   };
 }

@@ -18,7 +18,11 @@ import {
 } from '../src/modules/isoLines/renderOptions.mjs';
 import { createHeadlessRenderer, loadThree } from './lib/headlessWebgpu.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import schemaControlCoverage from './lib/schemaControlCoverage.mjs';
 import checkWorkbenchPage from './lib/workbenchPage.mjs';
+
+// Scene controls whose schema folders the presets are applied through.
+const CONTROLS = ['/src/components/scenes/WebGPU/IsoLines/utils/controls.js'];
 
 const KERNEL_DIR = path.join(REPO_ROOT, 'src', 'modules', 'isoLines');
 const PRESETS = '/src/components/scenes/WebGPU/IsoLines/presets/presets.js';
@@ -414,6 +418,7 @@ async function main() {
   await checkHeadlessCalls(barrels);
   await checkRender(barrels, THREE);
 
+  failures.push(...(await schemaControlCoverage(CONTROLS)));
   if (failures.length > 0) {
     console.error(`iso-lines:check failed (${failures.length}):\n`);
     failures.forEach((message) => console.error(`  ✗ ${message}`));

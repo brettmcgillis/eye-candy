@@ -16,7 +16,7 @@ run `npm run iso-lines:check` and `npm run iso-lines-relief:check`.
                                lights (over isoLinesRender's createShading)
         │                              │                                       │
   WebGPU/IsoLinesRelief scene   scripts/lib/isoLinesReliefRender.mjs   darkroom/techniques/isoLinesRelief
-  (R3F, CameraRig, Leva           ├─ iso-lines-relief-generate.mjs   stills per view + plan SVG
+  (R3F, CameraRig, Leva           ├─ iso-lines-relief-generate.mjs   stills + plot SVG per view
    generated, worker)             └─ iso-lines-relief-video.mjs      flow / build / rise / turntable
                                         │
           src/dev/server/isoLinesRelief → src/dev/tools/isoLinesRelief (IsoLinesReliefCLI)
@@ -72,8 +72,14 @@ terraceSharpness)`: 0 is the field itself, and toward 1 each band flattens
 - **Stills**: one per `views` (`top`, `hero`, `front`, `side`, `low`),
   fitted to the piece's bounding box.
 - **Video**: `flow`, `build`, `rise`, `turntable`.
-- **Plot SVG** (`plan.svg`): the contours in plan, as IsoLines draws them — a
-  plotter draws a map, not a perspective.
+- **Plot SVG** (`<view>.svg`, one per view beside its still): the piece
+  through that view's camera as hidden-line line work (`svgOcclusion`), inked
+  from the render's colours. Each level's contour stands at its height; the
+  style adds what the scene draws — terrace walls and outer skirts (solid),
+  the displaced sheet (smooth), the contours lifted by `lineHeight` (lines),
+  the aged slices (time). `plotParts` in `isoLinesReliefRender/plot.js` is the
+  CPU mirror of the shaders' heights, at rest (rise and build off). The flat
+  plan plot is IsoLinesCLI's.
 - **Darkroom**: `techniques/isoLinesRelief`.
 
 ## Definition of done

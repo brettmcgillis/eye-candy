@@ -56,6 +56,10 @@ export default function createLayer({
   allocate(0);
 
   return {
+    get mesh() {
+      return mesh;
+    },
+
     // `data` holds `count` instances of `stride` floats, packed.
     set(data, count) {
       allocate(count);

@@ -9,7 +9,7 @@ import {
   loadKernelModules,
   withRenderer,
 } from './generatorCli.mjs';
-import { createHeadlessRenderer } from './headlessWebgpu.mjs';
+import { advanceFrame, createHeadlessRenderer } from './headlessWebgpu.mjs';
 import { loadImage } from './sourceImage.mjs';
 
 // Barrels only — see docs/iso-lines-relief-pipeline.md.
@@ -42,6 +42,7 @@ export async function createReliefCapturer(kernel, options) {
   });
   const stage = kernel.look.createReliefStage({
     ...options,
+    advance: advanceFrame,
     readFrame: headless.readFrame,
     renderer: headless.renderer,
   });

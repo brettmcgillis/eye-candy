@@ -242,6 +242,20 @@ export default function createReliefRig() {
       }
     },
 
+    // Every mesh the shaders currently draw the piece with (the ground
+    // aside), for a plot's depth and albedo passes.
+    plotSubject() {
+      return [
+        layers,
+        skirts,
+        surface,
+        walls.mesh,
+        boxes.mesh,
+        head.mesh,
+        ...[...slices.values()].map((layer) => layer.mesh),
+      ].filter((mesh) => mesh.visible);
+    },
+
     // build: heights capped at `cutoff` (0..1 of the field); rise: relief
     // and lighting scaled together.
     setMotion({ cutoff = 1, rise = 1 }) {

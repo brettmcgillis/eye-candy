@@ -56,6 +56,11 @@ real.
 0 solos one. One domain warp runs over all of them, then `fieldContrast`
 stretches the result about 0.5 and it is clamped to 0..1.
 
+`symmetry` (`none`, `horizontal` 2-way left/right, `vertical` 2-way top/bottom,
+`quad` 4-way) folds the sample point about the frame centre before the warp, so
+every driver and the image colour mirror exactly. Contours meet the axis at a
+crease; it is part of the look.
+
 - **noise**: `referenceNoise`, flowing along z with time.
 - **shape**: Subdivision's procedural fields (fbm, ridged, rings, stripes,
   blobs, radial), each with a slow motion of its own.
@@ -102,7 +107,7 @@ coalesce into the next build.
 
 - **Stills**: `flat.png` / `.webp`.
 - **Video**: the field flowing for `hold` seconds.
-- **Plot SVG** (`plan.svg`): the contours chained, one Inkscape layer per
+- **Plot SVG** (`flat.svg`): the contours chained, one Inkscape layer per
   pen; levels share `svgPens` low to high, each in its levels' mean colour.
   No background rect.
 - **Darkroom**: `techniques/isoLines` — the picture as the field (generators

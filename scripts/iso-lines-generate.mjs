@@ -38,7 +38,7 @@ runStills({
       )
     );
     if (options.svg) {
-      await out.file('plan.svg', look.planSvg(drawn, build, options));
+      await out.file('flat.svg', look.planSvg(drawn, build, options));
     }
   },
   kernelLabel: 'IsoLines',

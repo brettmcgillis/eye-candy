@@ -168,6 +168,21 @@ const STYLE = {
   },
 };
 
+// The relief plots the piece through each view's camera, hidden lines removed
+// and inked from the render's colours; the flat plot's pens and minimum
+// length are IsoLines'.
+const { svgMinLength, svgPens, ...SHARED } = sharedRender({
+  facets: FACETS,
+  name: 'iso-lines-relief',
+});
+
+const SVG = {
+  svg: standard.svg(
+    'Write a plottable SVG per view: each level’s contour at its height, with the walls and surface the style draws, hidden lines removed'
+  ),
+  svgOcclusion: standard.svgOcclusion('Drop lines hidden behind nearer terraces'),
+};
+
 export const RENDER_OPTIONS = {
   ...CONTOURS,
   ...STYLE,
@@ -177,7 +192,8 @@ export const RENDER_OPTIONS = {
   ...FORM,
   ...MOTION,
   ...RIG,
-  ...sharedRender({ facets: FACETS, name: 'iso-lines-relief' }),
+  ...SHARED,
+  ...SVG,
   ...CAMERAS,
   ...standard.overlayOptions(),
 };

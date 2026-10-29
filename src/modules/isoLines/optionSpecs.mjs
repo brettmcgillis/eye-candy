@@ -26,6 +26,7 @@ export const SHAPE_KINDS = [
   'blobs',
   'radial',
 ];
+export const SYMMETRIES = ['none', 'horizontal', 'vertical', 'quad'];
 export const COLOR_MODES = ['cosine', 'palette', 'ramp'];
 export const MAX_RESOLUTION = 480;
 
@@ -125,6 +126,12 @@ export const FIELD = {
     'field',
     [0.8, 3],
     num('field', 'Warp', 'Scale', 1.5, 0.1, 8, 0.05)
+  ),
+  symmetry: inFacet(
+    'field',
+    choice('field', null, 'Symmetry', SYMMETRIES, 'none', {
+      help: 'Mirrors the field about the frame centre: horizontal is 2-way left/right, vertical is 2-way top/bottom, quad is 4-way. Every driver and the image fold',
+    })
   ),
   fieldContrast: rolled(
     'field',

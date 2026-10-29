@@ -15,19 +15,7 @@ import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 runStills({
   doneLabel: 'rendered pieces',
-  // An SVG-only batch needs no GPU at all.
-  gpu: ({ formats }) => formats.length > 0,
-  async item({
-    batch,
-    capturer,
-    formats,
-    index,
-    kernel,
-    options,
-    roll,
-    save,
-    step,
-  }) {
+  async item({ batch, capturer, index, kernel, options, roll, save, step }) {
     const { look, relief } = kernel;
     const aspect = options.width / options.height;
     const drawn = await pieceAt(kernel, { batch, index, roll });
@@ -45,20 +33,14 @@ runStills({
         segments: build.segments?.count ?? 0,
       },
     });
-    capturer?.load(drawn, options.pixelRatio);
-    if (formats.length > 0) {
-      await out.eachView((view) =>
-        out.image(view, () =>
-          capturer.capture(
-            relief.frameView({ aspect, config, options, view }),
-            build
-          )
-        )
-      );
-    }
-    if (options.svg) {
-      await out.file('plan.svg', look.planSvg(drawn, build, options));
-    }
+    capturer.load(drawn, options.pixelRatio);
+    capturer.show(build);
+    await out.eachView(async (view) => {
+      const framing = relief.frameView({ aspect, config, options, view });
+      await out.image(view, () => capturer.capture(framing, build));
+      if (options.svg)
+        await out.svg(view, await capturer.svg(framing, options));
+    });
   },
   kernelLabel: 'IsoLinesRelief',
   loadKernel,

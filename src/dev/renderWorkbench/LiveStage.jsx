@@ -114,11 +114,20 @@ export default function LiveStage({ bench, context, tool }) {
   const frame = useCallback(() => {
     const { controls, drawn, layout } = live.current;
     if (!drawn || !controls) return;
-    const framed = bench.frame({ drawn, layout, options });
+    const framed = bench.frame({
+      drawn,
+      layout: live.current.stage?.getBounds?.() ?? layout,
+      options,
+    });
     const ortho = framed.projection === 'orthographic';
     const proxy = ortho
       ? new THREE.OrthographicCamera(-1, 1, 1, -1)
-      : new THREE.PerspectiveCamera(framed.fov);
+      : new THREE.PerspectiveCamera(
+          framed.fov,
+          options.width / options.height,
+          framed.near,
+          framed.far
+        );
     proxy.position.set(...framed.eye);
     proxy.up.set(...(framed.up ?? [0, 1, 0]));
     proxy.lookAt(...framed.target);
@@ -134,6 +143,7 @@ export default function LiveStage({ bench, context, tool }) {
   useEffect(() => {
     const canvas = canvasRef.current;
     let disposed = false;
+    let disconnectPointer = null;
     const renderer = new THREE.WebGPURenderer({ antialias: true, canvas });
     const controls = new OrbitControls(new THREE.PerspectiveCamera(), canvas);
     controls.enableDamping = false;
@@ -168,6 +178,14 @@ export default function LiveStage({ bench, context, tool }) {
         return;
       }
       Object.assign(live.current, { controls, renderer, stage });
+      disconnectPointer = stage.connectPointer?.({
+        canvas,
+        controls,
+        getCamera: () => live.current.proxy,
+        redraw: () => {
+          if (pausedRef.current) draw();
+        },
+      });
       observer.observe(canvas);
       resize();
       let last = performance.now();
@@ -185,6 +203,7 @@ export default function LiveStage({ bench, context, tool }) {
       disposed = true;
       observer.disconnect();
       renderer.setAnimationLoop(null);
+      disconnectPointer?.();
       controls.dispose();
       live.current.stage?.dispose();
       Object.assign(live.current, {
@@ -317,7 +336,11 @@ export default function LiveStage({ bench, context, tool }) {
       const shot = await shoot();
       const name = `live-${bench.name(drawn)}-${Date.now().toString(36)}`;
       await postJson(`/dev-api/${tool}/captures`, {
-        config: { ...bench.configOf(drawn), ...cameraKeys() },
+        config: {
+          ...bench.configOf(drawn),
+          ...live.current.stage.exportConfig?.(),
+          ...cameraKeys(),
+        },
         name,
         options,
         png: await pngBase64(
@@ -348,7 +371,7 @@ export default function LiveStage({ bench, context, tool }) {
 
   const keep = useCallback(() => {
     if (!bench.keep || !live.current.drawn) return;
-    pinAll(bench.keep(live.current.drawn));
+    pinAll(bench.keep(live.current.drawn, live.current.stage));
     setStatus('Generation pinned in the form.');
   }, [bench, pinAll]);
 

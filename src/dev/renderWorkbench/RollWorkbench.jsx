@@ -76,7 +76,9 @@ export default function RollWorkbench({
   const renderKeys = useMemo(
     () =>
       new Set(
-        Object.keys(RENDER_OPTIONS).filter((key) => !RENDER_OPTIONS[key].scene)
+        Object.keys(RENDER_OPTIONS).filter(
+          (key) => !RENDER_OPTIONS[key].scene && !RENDER_OPTIONS[key].cliOnly
+        )
       ),
     [RENDER_OPTIONS]
   );
@@ -156,6 +158,7 @@ export default function RollWorkbench({
     setOutcome(null);
     try {
       const chosen = pins.chosen(options);
+      delete chosen.capture;
       await submit({
         kind,
         options: prepareOptions ? prepareOptions(chosen, options) : chosen,

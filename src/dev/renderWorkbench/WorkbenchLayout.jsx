@@ -1,12 +1,14 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { FiImage, FiSliders } from 'react-icons/fi';
+
+import useQueryTab from './useQueryTab';
 
 // Desktop shows both panels side by side; below the CSS breakpoint only one
 // of `controls`/`results` is visible at a time, chosen by this tab bar, so
 // mobile no longer has to scroll past every render setting to reach the
 // gallery. The bar itself is hidden by CSS above the breakpoint.
 export default function WorkbenchLayout({ controls, results }) {
-  const [tab, setTab] = useState('controls');
+  const [tab, setTab] = useQueryTab('panel', 'controls', ['controls', 'results']);
 
   return (
     <div className="rw-layout" data-active-tab={tab}>

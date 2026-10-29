@@ -4,6 +4,7 @@ import { FiImage, FiList, FiSave } from 'react-icons/fi';
 import AssetGallery from './AssetGallery';
 import JobStatus from './JobStatus';
 import { countMediaItems } from './assetGroups';
+import useQueryTab from './useQueryTab';
 
 const ACTIVE = ['queued', 'running', 'cancelling'];
 
@@ -32,7 +33,7 @@ export default function ResultsPanel({
     savedCollections,
     tool,
   } = jobsApi;
-  const [tab, setTab] = useState(defaultTab);
+  const [tab, setTab] = useQueryTab('tab', defaultTab);
   const [deletingId, setDeletingId] = useState(null);
   const [pendingDeleteId, setPendingDeleteId] = useState(null);
 

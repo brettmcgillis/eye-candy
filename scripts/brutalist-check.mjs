@@ -20,7 +20,14 @@ import {
 import { loadKernel } from './lib/brutalistRender.mjs';
 import { createHeadlessRenderer } from './lib/headlessWebgpu.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import schemaControlCoverage from './lib/schemaControlCoverage.mjs';
 import checkWorkbenchPage from './lib/workbenchPage.mjs';
+
+// Scene controls whose schema folders the presets are applied through.
+const CONTROLS = [
+  '/src/components/scenes/WebGPU/Brutalist/utils/controls.js',
+  '/src/components/scenes/WebGPU/BrutalistMaquette/utils/controls.js',
+];
 
 const KERNEL_DIR = path.join(REPO_ROOT, 'src', 'modules', 'brutalist');
 const PRESETS = {
@@ -340,6 +347,7 @@ async function main() {
   await checkHeadlessCalls(barrels);
   await checkRender(kernel);
 
+  failures.push(...(await schemaControlCoverage(CONTROLS)));
   if (failures.length > 0) {
     console.error(`brutalist:check failed (${failures.length}):\n`);
     failures.forEach((message) => console.error(`  ✗ ${message}`));

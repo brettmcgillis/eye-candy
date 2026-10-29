@@ -98,6 +98,8 @@ export const renderRecord = (options) => ({
   ...options,
   base: undefined,
   bouquet: undefined,
+  capture: undefined,
+  out: undefined,
   palettes: undefined,
 });
 
@@ -300,7 +302,10 @@ export function runStills(spec) {
 
     // `--capture` finishes a Live-tab frame instead of rendering: no kernel,
     // no renderer, one generation.
-    const capture = options.capture ? await readCapture(options.capture) : null;
+    const capture =
+      options.capture && options.count === 1
+        ? await readCapture(options.capture)
+        : null;
     const kernel = capture
       ? null
       : await runStage(

@@ -23,7 +23,13 @@ import {
   rollArgs,
 } from './lib/ghostBusterRender.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import schemaControlCoverage from './lib/schemaControlCoverage.mjs';
 import checkWorkbenchPage from './lib/workbenchPage.mjs';
+
+// Scene controls whose schema folders the presets are applied through.
+const CONTROLS = [
+  '/src/components/scenes/WebGPU/GhostBuster/hooks/useSceneControls.js',
+];
 
 const KERNEL_DIR = path.join(REPO_ROOT, 'src', 'modules', 'ghostBuster');
 const PAGE = path.join(
@@ -838,6 +844,7 @@ async function main() {
   await checkStormRender(kernel);
   await checkBurnRender(kernel);
 
+  failures.push(...(await schemaControlCoverage(CONTROLS)));
   if (failures.length > 0) {
     console.error(`ghost-buster:check failed (${failures.length}):\n`);
     failures.forEach((message) => console.error(`  ✗ ${message}`));

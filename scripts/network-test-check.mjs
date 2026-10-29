@@ -21,7 +21,13 @@ import {
 } from '../src/modules/networkTest/renderOptions.mjs';
 import { createHeadlessRenderer, loadThree } from './lib/headlessWebgpu.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import schemaControlCoverage from './lib/schemaControlCoverage.mjs';
 import checkWorkbenchPage from './lib/workbenchPage.mjs';
+
+// Scene controls whose schema folders the presets are applied through.
+const CONTROLS = [
+  '/src/components/scenes/WebGPU/NetworkTest/utils/controls.js',
+];
 
 const KERNEL_DIR = path.join(REPO_ROOT, 'src', 'modules', 'networkTest');
 const PRESETS = '/src/components/scenes/WebGPU/NetworkTest/presets/presets.js';
@@ -512,6 +518,7 @@ async function main() {
   await checkHeadlessCalls(barrels);
   await checkRender(barrels, THREE);
 
+  failures.push(...(await schemaControlCoverage(CONTROLS)));
   if (failures.length > 0) {
     console.error(`network-test:check failed (${failures.length}):\n`);
     failures.forEach((message) => console.error(`  ✗ ${message}`));

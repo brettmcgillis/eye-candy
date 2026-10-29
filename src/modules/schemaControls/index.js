@@ -2,6 +2,12 @@ import { folder } from 'leva';
 
 const titleCase = (text) => text.charAt(0).toUpperCase() + text.slice(1);
 
+// Every factory built, with the keys it has no folder for. Leva's setControls
+// throws on a key with no control in the store, so a key whose section has no
+// folder breaks each preset change that sets it; a scene's check script reads
+// this (scripts/lib/schemaControlCoverage.mjs) to fail on it.
+export const schemaFoldersRegistry = [];
+
 // Leva folders generated from an @modules/optionSchema table, so a scene's
 // ranges, defaults, labels and visibility cannot drift from its CLI's.
 export default function createSchemaFolders({
@@ -14,6 +20,14 @@ export default function createSchemaFolders({
   open = [],
   options,
 }) {
+  schemaFoldersRegistry.push({
+    label,
+    uncovered: keys.filter(
+      (key) =>
+        !(options[key].section in folders || options[key].section in inline)
+    ),
+  });
+
   const pathOf = (key) => {
     const { group, section } = options[key];
     return [

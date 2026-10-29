@@ -14,7 +14,11 @@ import {
   SCENE_KEYS,
 } from '../src/modules/blockParty/renderOptions.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import schemaControlCoverage from './lib/schemaControlCoverage.mjs';
 import checkWorkbenchPage from './lib/workbenchPage.mjs';
+
+// Scene controls whose schema folders the presets are applied through.
+const CONTROLS = ['/src/components/scenes/WebGPU/BlockParty/utils/controls.js'];
 
 const KERNEL_DIR = path.join(REPO_ROOT, 'src', 'modules', 'blockParty');
 const PRESETS = '/src/components/scenes/WebGPU/BlockParty/presets/presets.js';
@@ -268,6 +272,7 @@ async function main() {
   checkKernelBehaviour(barrels);
   await checkHeadlessCalls(barrels);
 
+  failures.push(...(await schemaControlCoverage(CONTROLS)));
   if (failures.length > 0) {
     console.error(`block-party:check failed (${failures.length}):\n`);
     failures.forEach((message) => console.error(`  ✗ ${message}`));

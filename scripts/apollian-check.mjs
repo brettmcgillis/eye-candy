@@ -19,7 +19,11 @@ import {
 } from '../src/modules/apollian/renderOptions.mjs';
 import { createHeadlessRenderer, loadThree } from './lib/headlessWebgpu.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import schemaControlCoverage from './lib/schemaControlCoverage.mjs';
 import checkWorkbenchPage from './lib/workbenchPage.mjs';
+
+// Scene controls whose schema folders the presets are applied through.
+const CONTROLS = ['/src/components/scenes/WebGPU/Apollian/utils/controls.js'];
 
 const KERNEL_DIR = path.join(REPO_ROOT, 'src', 'modules', 'apollian');
 const PRESETS = '/src/components/scenes/WebGPU/Apollian/presets/presets.js';
@@ -412,6 +416,7 @@ async function main() {
   await checkHeadlessCalls(barrels);
   await checkRender(barrels, THREE, TSL);
 
+  failures.push(...(await schemaControlCoverage(CONTROLS)));
   if (failures.length > 0) {
     console.error(`apollian:check failed (${failures.length}):\n`);
     failures.forEach((message) => console.error(`  ✗ ${message}`));

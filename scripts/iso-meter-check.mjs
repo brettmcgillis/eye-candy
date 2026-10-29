@@ -14,7 +14,11 @@ import {
   SCENE_KEYS,
 } from '../src/modules/isoMeter/renderOptions.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import schemaControlCoverage from './lib/schemaControlCoverage.mjs';
 import checkWorkbenchPage from './lib/workbenchPage.mjs';
+
+// Scene controls whose schema folders the presets are applied through.
+const CONTROLS = ['/src/components/scenes/WebGPU/IsoMeter/utils/controls.js'];
 
 const KERNEL_DIR = path.join(REPO_ROOT, 'src', 'modules', 'isoMeter');
 const ENTRY = '/src/modules/isoMeter/index.js';
@@ -449,6 +453,7 @@ async function main() {
   checkWinterkammer(kernel);
   checkVoxels(kernel);
 
+  failures.push(...(await schemaControlCoverage(CONTROLS)));
   if (failures.length > 0) {
     console.error(`iso-meter:check failed:\n  ${failures.join('\n  ')}`);
     process.exit(1);

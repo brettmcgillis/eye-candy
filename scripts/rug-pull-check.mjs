@@ -17,6 +17,10 @@ import {
 } from '../src/modules/rugPull/renderOptions.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
 import { createRugCapturer, drape, loadKernel } from './lib/rugPullRender.mjs';
+import schemaControlCoverage from './lib/schemaControlCoverage.mjs';
+
+// Scene controls whose schema folders the presets are applied through.
+const CONTROLS = ['/src/components/scenes/WebGPU/RugPull/utils/controls.js'];
 
 const KERNEL_DIR = path.join(REPO_ROOT, 'src', 'modules', 'rugPull');
 const PRESETS = '/src/components/scenes/WebGPU/RugPull/presets/presets.js';
@@ -220,6 +224,7 @@ async function main() {
     'rugPullRender lost createRugRig.'
   );
 
+  failures.push(...(await schemaControlCoverage(CONTROLS)));
   if (failures.length) {
     console.error(`rug-pull:check failed (${failures.length}):`);
     failures.forEach((message) => console.error(`  - ${message}`));

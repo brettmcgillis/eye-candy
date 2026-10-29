@@ -14,6 +14,7 @@ import sharp from 'sharp';
 
 import { createHeadlessRenderer, loadThree } from './lib/headlessWebgpu.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import { installGltfLoader, installTextureLoader } from './lib/r3fHeadless.mjs';
 
 const TOOLS = path.join(REPO_ROOT, 'src/dev/tools');
 const SIZE = 160;
@@ -101,8 +102,11 @@ if (tools.length > 1) {
   process.exit(0);
 }
 
-await loadThree();
-await preloadTree();
+const { THREE } = await loadThree();
+if (tools.includes('brutalist')) await preloadTree();
+installTextureLoader(THREE);
+const { GLTFLoader } = await import('three/addons/loaders/GLTFLoader.js');
+installGltfLoader(GLTFLoader);
 
 async function runOnce(bench, options) {
   const headless = await createHeadlessRenderer({ height: SIZE, width: SIZE });

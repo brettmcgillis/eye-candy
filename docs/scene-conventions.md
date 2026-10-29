@@ -219,6 +219,19 @@ Inside a scene folder, keep imports relative (`./components/Foo`,
   is what prevents drift between presets and controls and the runtime
   control-set failures (`setControls` silently no-op'ing on unmatched keys) that
   drift causes.
+- **A schema-driven scene's check script (`npm run <scene>:check`) must prove
+  presets apply, not just that they are well-formed.** Leva's `setControls`
+  _throws_ on a key with no control in the store, so one option-schema
+  section missing from the `createSchemaFolders` `folders`/`inline` map (e.g.
+  a `style` section with no `Style` folder) makes every preset change that
+  sets one of its keys fail — the dropdown snaps back and the rest of the
+  preset is dropped — while `PRESETS` itself still looks perfect. Every such
+  check must therefore (a) lint each preset's keys, ranges and choices against
+  the option schema and (b) call `schemaControlCoverage([...controls modules])`
+  from `scripts/lib/schemaControlCoverage.mjs` and push its messages onto
+  `failures` (it reads what `createSchemaFolders` recorded in
+  `schemaFoldersRegistry`; see `scripts/candle-check.mjs`). A new
+  schema-driven scene is not done until its check script does both.
 - Provide a `presets/` control with `options: Object.keys(PRESETS)` plus a `reset`
   `button()` that reapplies the selected preset via `setControls`.
 - Provide a dev-only `copy` button (guarded by `localEnv()` from

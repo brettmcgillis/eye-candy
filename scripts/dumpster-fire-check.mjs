@@ -16,7 +16,13 @@ import {
 } from '../src/modules/dumpsterFire/renderOptions.mjs';
 import { createFireCapturer, loadKernel } from './lib/dumpsterFireRender.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import schemaControlCoverage from './lib/schemaControlCoverage.mjs';
 import checkWorkbenchPage from './lib/workbenchPage.mjs';
+
+// Scene controls whose schema folders the presets are applied through.
+const CONTROLS = [
+  '/src/components/scenes/WebGL/DumpsterFire/utils/controls.js',
+];
 
 const KERNEL_DIR = path.join(REPO_ROOT, 'src', 'modules', 'dumpsterFire');
 const TOOL_DIR = path.join(REPO_ROOT, 'src/dev/tools/dumpsterFire');
@@ -387,6 +393,7 @@ async function main() {
   checkRolls(kernel);
   await checkRender(kernel);
 
+  failures.push(...(await schemaControlCoverage(CONTROLS)));
   if (failures.length > 0) {
     console.error(`dumpster-fire:check failed (${failures.length}):\n`);
     failures.forEach((message) => console.error(`  ✗ ${message}`));

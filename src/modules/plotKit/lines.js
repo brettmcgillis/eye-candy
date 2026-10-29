@@ -81,20 +81,48 @@ export function simplifyLoop(points, tolerance) {
   ];
 }
 
-// One round of Chaikin corner cutting, keeping a closed loop closed.
+// A turn sharper than this between two strokes this long is a real corner,
+// not a pixel staircase, and keeps its point.
+const CORNER_COS = Math.cos((40 * Math.PI) / 180);
+const CORNER_LENGTH = 12;
+
+// One round of Chaikin corner cutting, keeping a closed loop closed and
+// real corners (a box's edges) sharp.
 export function smooth(points) {
   if (points.length < 3) return points;
   const closed =
     points[0][0] === points[points.length - 1][0] &&
     points[0][1] === points[points.length - 1][1];
-  const out = closed ? [] : [points[0]];
-  for (let i = 0; i < points.length - 1; i += 1) {
-    const [ax, ay] = points[i];
-    const [bx, by] = points[i + 1];
-    out.push([ax * 0.75 + bx * 0.25, ay * 0.75 + by * 0.25]);
-    out.push([ax * 0.25 + bx * 0.75, ay * 0.25 + by * 0.75]);
-  }
+  const ring = closed ? points.slice(0, -1) : points;
+  const n = ring.length;
+  const out = [];
+  ring.forEach((cur, i) => {
+    if (!closed && (i === 0 || i === n - 1)) {
+      out.push(cur);
+      return;
+    }
+    const prev = ring[(i + n - 1) % n];
+    const next = ring[(i + 1) % n];
+    const inX = cur[0] - prev[0];
+    const inY = cur[1] - prev[1];
+    const outX = next[0] - cur[0];
+    const outY = next[1] - cur[1];
+    const lengthIn = Math.hypot(inX, inY);
+    const lengthOut = Math.hypot(outX, outY);
+    const cos = (inX * outX + inY * outY) / (lengthIn * lengthOut || 1);
+    if (
+      cos < CORNER_COS &&
+      lengthIn >= CORNER_LENGTH &&
+      lengthOut >= CORNER_LENGTH
+    ) {
+      out.push(cur);
+      return;
+    }
+    out.push(
+      [cur[0] - inX * 0.25, cur[1] - inY * 0.25],
+      [cur[0] + outX * 0.25, cur[1] + outY * 0.25]
+    );
+  });
   if (closed) out.push(out[0]);
-  else out.push(points[points.length - 1]);
   return out;
 }

@@ -1,10 +1,21 @@
 import { imageSamples } from './color';
 import { nearSilhouette, pathOf, plotLayer, silhouetteRuns } from './contours';
+import withoutNear from './dedupe';
+import createHiddenLines from './hiddenLines';
 import { composeInks, inkAt, inkMap } from './inks';
+import { simplifyLoop, smooth } from './lines';
 import { chainKeyed, meshEdges, traceRuns, weldMesh } from './mesh';
-import { foldClose, samplePalette } from './palette.mjs';
+import { foldClose, nearestInk, samplePalette } from './palette.mjs';
 import createProjector from './projector';
 import textureRuns from './texture';
+
+// How far (render px) a stroke on the rim looks for the subject's ink.
+const RIM_REACH = 4;
+
+// A mesh edge this close (px) to a stroke of the subject's own is its
+// duplicate, and a piece of one shorter than EDGE_MIN is a speck.
+const EDGE_REACH = 2;
+const EDGE_MIN = 5;
 
 // Any posed subject as hidden-line line work: every read-back mesh's
 // occluding contours and creases and any `lines` of its own, projected through the capture camera and
@@ -13,10 +24,14 @@ import textureRuns from './texture';
 // take its own colours — `inks` of them, a layer each — else they are drawn
 // black in contours / creases / silhouette layers. What a bench with no
 // line work of its own plots (ExhibitA, FractalAutomata, Trucheterie3D).
+// Given `occluders` (world triangle meshes, the subject's solid form), lines
+// are cut exactly against them rather than probed through `visible`, so a
+// corner stays a corner; a mesh entry's `color` (sRGB 0–255) inks its lines.
 export default function meshPlotSvg({
   albedo = null,
   camera,
   contours = true,
+  contourTolerance = 0.2,
   coverage = null,
   creaseAngle = 35,
   edges = true,
@@ -25,6 +40,8 @@ export default function meshPlotSvg({
   lines = [],
   meshes,
   minLength = 3,
+  occluders = null,
+  outlineTolerance,
   palette: given = null,
   pixelRatio = 1,
   silhouette = true,
@@ -37,18 +54,51 @@ export default function meshPlotSvg({
   const onOutline =
     silhouette && coverage ? nearSilhouette(coverage, pixelRatio) : null;
   const found = { contours: [], creases: [] };
+  const colors = new Map();
+  const hiddenLines = occluders
+    ? createHiddenLines({
+        camera,
+        height,
+        minLength: Math.min(minLength, 0.8),
+        occluders,
+        project,
+        width,
+      })
+    : null;
+  const exactOf = (segments, entry, tolerance = 0) =>
+    hiddenLines(chainKeyed(segments)).map((exact) => {
+      const run = tolerance
+        ? smooth(
+            simplifyLoop(
+              exact.map((p) => [p.x, p.y]),
+              tolerance
+            )
+          ).map(([x, y]) => ({ x, y }))
+        : exact;
+      colors.set(run, entry.color);
+      return run;
+    });
+  const mine = { contours: [], creases: [] };
   meshes.forEach((entry, m) => {
     const edgesOf = meshEdges(weldMesh(entry), {
-      creaseAngle,
+      boundaries: entry.boundaries,
+      creaseAngle: entry.creaseAngle ?? creaseAngle,
       eye: camera.eye,
+      smooth: entry.smooth,
     });
     const tag = (segment) =>
       segment.map(([key, point]) => [`${m}:${key}`, point]);
     // Not push(...): a dense mesh has more edges than the call stack has room.
     edgesOf.contours.forEach((segment) => found.contours.push(tag(segment)));
     edgesOf.creases.forEach((segment) => found.creases.push(tag(segment)));
+    if (occluders) {
+      mine.contours.push(
+        ...exactOf(edgesOf.contours.map(tag), entry, contourTolerance)
+      );
+      mine.creases.push(...exactOf(edgesOf.creases.map(tag), entry));
+    }
   });
-  const trace = (segments) =>
+  const trace = (segments, tolerance) =>
     traceRuns(chainKeyed(segments), {
       height,
       hidden: (p) =>
@@ -56,22 +106,47 @@ export default function meshPlotSvg({
         (onOutline && onOutline(p.x, p.y)),
       minLength,
       project,
+      tolerance,
       width,
     });
-  const contourRuns = contours ? trace(found.contours) : [];
-  const creaseRuns = edges ? trace(found.creases) : [];
+  const pick = (kind, enabled) => {
+    if (!enabled) return [];
+    return occluders
+      ? mine[kind]
+      : trace(found[kind], kind === 'contours' ? contourTolerance : undefined);
+  };
   // A subject's own strokes (world polylines, already on its surface).
-  const lineRuns = lines.length
-    ? traceRuns(lines, {
-        height,
-        hidden: (p) => visible && !visible(p.x, p.y, p.depth),
-        minLength,
-        project,
-        width,
-      })
-    : [];
+  const probed = () =>
+    lines.length
+      ? traceRuns(lines, {
+          height,
+          hidden: (p) => visible && !visible(p.x, p.y, p.depth),
+          minLength,
+          project,
+          width,
+        })
+      : [];
+  const lineRuns = hiddenLines ? hiddenLines(lines) : probed();
+  // A mesh edge already drawn by a stroke of the subject's own (a rim, a
+  // contour standing at its level) is not drawn again beside it.
+  const distinct = (runs) =>
+    hiddenLines
+      ? withoutNear(runs, lineRuns, {
+          minLength: EDGE_MIN,
+          onKeep: (piece, run) => colors.set(piece, colors.get(run)),
+          reach: EDGE_REACH,
+        })
+      : runs;
+  const contourRuns = distinct(pick('contours', contours));
+  const creaseRuns = distinct(pick('creases', edges));
   const outline =
-    silhouette && coverage ? silhouetteRuns(coverage, pixelRatio) : [];
+    silhouette && coverage
+      ? silhouetteRuns(
+          coverage,
+          pixelRatio,
+          outlineTolerance && outlineTolerance * pixelRatio
+        )
+      : [];
   // Brightness contours of the render inside the subject, for a surface
   // with no mesh to read (a ray-marched field).
   const textureLines =
@@ -102,16 +177,44 @@ export default function meshPlotSvg({
   const fallback = kept.length ? kept : sampled.slice(0, 1);
   const palette = albedo && given ? given : fallback;
   if (palette.length) {
-    const at = inkAt(
+    const inside = inkAt(
       inkMap({ image: albedo, mask: albedo, palette }),
       pixelRatio
     );
+    // A stroke along the subject's rim lands a pixel outside its coverage:
+    // it takes the ink of the nearest pixel within reach rather than none.
+    const at = (x, y) => {
+      let ink = inside(x, y);
+      for (let reach = 1; ink < 0 && reach <= RIM_REACH; reach += 1) {
+        const r = reach / pixelRatio;
+        for (let k = 0; ink < 0 && k < 8; k += 1) {
+          const a = (k * Math.PI) / 4;
+          ink = inside(x + Math.cos(a) * r, y + Math.sin(a) * r);
+        }
+      }
+      return ink;
+    };
+    const nearest = nearestInk(palette);
+    const inked = (runs) => {
+      if (!occluders) return [{ inkAt: at, runs }];
+      const groups = new Map();
+      runs.forEach((run) => {
+        const color = colors.get(run);
+        const ink = color ? nearest(color) : at(run[0].x, run[0].y);
+        if (!groups.has(ink)) groups.set(ink, []);
+        groups.get(ink).push(run);
+      });
+      return [...groups].map(([ink, list]) => ({
+        inkAt: () => ink,
+        runs: list,
+      }));
+    };
     // The silhouette sits just off the subject, so it takes the darkest ink.
     return `${open}${composeInks(
       palette,
       [
-        { inkAt: at, runs: contourRuns },
-        { inkAt: at, runs: creaseRuns },
+        ...inked(contourRuns),
+        ...inked(creaseRuns),
         { inkAt: at, runs: lineRuns },
         { inkAt: at, runs: textureLines },
         { d: outline.length ? pathOf(outline) : '', ink: 0 },

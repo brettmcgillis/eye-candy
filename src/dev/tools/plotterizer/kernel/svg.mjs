@@ -426,7 +426,14 @@ export function parseSvg(svg) {
   const toPage = [unitMm, 0, 0, unitMm, -minX * unitMm, -minY * unitMm];
   const page = [widthMm, heightMm];
   const layers = new Map();
-  const stack = [{ attrs: {}, layer: null, matrix: toPage, skip: false }];
+  const stack = [
+    {
+      attrs: { stroke: rootAttrs.stroke, fill: rootAttrs.fill },
+      layer: null,
+      matrix: toPage,
+      skip: false,
+    },
+  ];
   const body = svg
     .slice(match.index + match[0].length)
     .replace(/<!--[\s\S]*?-->/gu, '');
@@ -467,11 +474,20 @@ export function parseSvg(svg) {
     const node = { attrs, layer, matrix, skip };
 
     if (SHAPES.has(tag) && !skip && plotted(attrs)) {
-      const id = String(layer ?? attrs.stroke ?? 'layer');
-      if (!layers.has(id)) {
-        layers.set(id, { id, runs: [], stroke: attrs.stroke });
+      const stroke = attrs.stroke ?? '#000000';
+      const base = String(layer ?? stroke);
+      const key = JSON.stringify([base, stroke]);
+      if (!layers.has(key)) {
+        const used = new Set([...layers.values()].map((entry) => entry.id));
+        let id = base;
+        let suffix = 2;
+        while (used.has(id)) {
+          id = `${base} (${stroke}) ${suffix}`;
+          suffix += 1;
+        }
+        layers.set(key, { id, runs: [], stroke });
       }
-      const target = layers.get(id);
+      const target = layers.get(key);
       const scale = Math.sqrt(
         Math.abs(matrix[0] * matrix[3] - matrix[1] * matrix[2])
       );

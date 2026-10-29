@@ -67,6 +67,22 @@
   font-size: 0.72rem;
 }
 
+.pz-layer-colour {
+  display: flex;
+  grid-column: 1 / -1;
+  gap: 0.5rem;
+}
+
+.pz-layer-colour input {
+  width: 2.5rem;
+  height: 2rem;
+}
+
+.pz-layer-colour select {
+  flex: 1;
+  min-width: 0;
+}
+
 .pz-layers select {
   grid-column: 1 / -1;
   height: 2rem;

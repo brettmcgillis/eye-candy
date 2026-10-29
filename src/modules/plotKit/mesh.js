@@ -105,14 +105,72 @@ function edgeFaces({ count, tris }) {
   return edges;
 }
 
+// The occluding contour of a smooth surface read from its vertex normals:
+// where the normal turns edge-on to the eye, interpolated across each
+// triangle, so a steep rise gives a crest rather than a staircase of the
+// mesh's own edges.
+function smoothContours({ tris, world }, normals, eye) {
+  const vertexNormals = new Float64Array(world.length);
+  for (let t = 0; t < tris.length; t += 3) {
+    for (let k = 0; k < 3; k += 1) {
+      for (let c = 0; c < 3; c += 1) {
+        vertexNormals[tris[t + k] * 3 + c] += normals[t + c];
+      }
+    }
+  }
+  const dots = new Float64Array(world.length / 3);
+  for (let i = 0; i < dots.length; i += 1) {
+    const length =
+      Math.hypot(
+        vertexNormals[i * 3],
+        vertexNormals[i * 3 + 1],
+        vertexNormals[i * 3 + 2]
+      ) || 1;
+    dots[i] =
+      (vertexNormals[i * 3] * (eye[0] - world[i * 3]) +
+        vertexNormals[i * 3 + 1] * (eye[1] - world[i * 3 + 1]) +
+        vertexNormals[i * 3 + 2] * (eye[2] - world[i * 3 + 2])) /
+      length;
+  }
+  const crossing = (a, b) => {
+    const [lo, hi] = a < b ? [a, b] : [b, a];
+    const s = dots[lo] / (dots[lo] - dots[hi]);
+    const p = pointOf(world, lo);
+    const q = pointOf(world, hi);
+    return [
+      `x${lo}:${hi}`,
+      [
+        p[0] + (q[0] - p[0]) * s,
+        p[1] + (q[1] - p[1]) * s,
+        p[2] + (q[2] - p[2]) * s,
+      ],
+    ];
+  };
+  const segments = [];
+  for (let t = 0; t < tris.length; t += 3) {
+    const hits = [];
+    for (let e = 0; e < 3; e += 1) {
+      const a = tris[t + e];
+      const b = tris[t + ((e + 1) % 3)];
+      if (dots[a] > 0 !== dots[b] > 0) hits.push(crossing(a, b));
+    }
+    if (hits.length === 2) segments.push(hits);
+  }
+  return segments;
+}
+
 // Contours (one face toward the eye, one away) and creases (two faces bent
 // past `creaseAngle`, at least one visible, or an open boundary), as
-// segments between welded vertices keyed for chaining.
-export function meshEdges(mesh, { creaseAngle, eye }) {
+// segments between welded vertices keyed for chaining. A `smooth` surface
+// takes its contours from vertex normals instead of mesh edges.
+export function meshEdges(
+  mesh,
+  { boundaries = true, creaseAngle, eye, smooth = false }
+) {
   const normals = faceNormals(mesh);
   const facing = facings(mesh, normals, eye);
   const creaseCos = Math.cos(creaseAngle * DEG);
-  const contours = [];
+  const contours = smooth ? smoothContours(mesh, normals, eye) : [];
   const creases = [];
   edgeFaces(mesh).forEach((faces, key) => {
     const a = Math.floor(key / mesh.count);
@@ -122,13 +180,13 @@ export function meshEdges(mesh, { creaseAngle, eye }) {
       [`v${b}`, pointOf(mesh.world, b)],
     ];
     if (faces.length === 1) {
-      if (facing[faces[0]] > 0) creases.push(segment);
+      if (boundaries && facing[faces[0]] > 0) creases.push(segment);
       return;
     }
     if (faces.length !== 2) return;
     const [f0, f1] = faces;
     if (facing[f0] !== facing[f1]) {
-      contours.push(segment);
+      if (!smooth) contours.push(segment);
       return;
     }
     if (facing[f0] < 0) return;
@@ -266,7 +324,7 @@ const strokeLength = (run) =>
 // edge-like strokes, sits on the silhouette the outline layer draws.
 export function traceRuns(
   lines,
-  { height, hidden, minLength, project, width }
+  { height, hidden, minLength, project, tolerance = 0.2, width }
 ) {
   const runs = [];
   lines.forEach((line) => {
@@ -275,7 +333,7 @@ export function traceRuns(
       if (run.length > 1) {
         const simple = simplifyLoop(
           run.map((p) => [p.x, p.y]),
-          0.2
+          tolerance
         ).map(([x, y]) => ({ x, y }));
         if (strokeLength(simple) >= minLength) runs.push(simple);
       }

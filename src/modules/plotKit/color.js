@@ -58,6 +58,8 @@ export function inkSampler({ image, mask = null, palette, pixelRatio = 1 }) {
   };
 }
 
+const VOTE_REACH = 6;
+
 // Each run split by the ink `inkAt(x, y)` gives under it (-1: none, the run
 // keeps its current ink), smoothed so a stroke doesn't flicker between inks
 // over a few pixels: { [ink index]: runs }.
@@ -69,8 +71,8 @@ export function inkRuns(runs, inkAt) {
       if (label < 0) return label;
       const votes = new Map();
       for (
-        let j = Math.max(0, i - 3);
-        j <= Math.min(raw.length - 1, i + 3);
+        let j = Math.max(0, i - VOTE_REACH);
+        j <= Math.min(raw.length - 1, i + VOTE_REACH);
         j += 1
       ) {
         if (raw[j] >= 0) votes.set(raw[j], (votes.get(raw[j]) ?? 0) + 1);

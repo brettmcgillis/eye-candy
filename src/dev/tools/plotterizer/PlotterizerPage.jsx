@@ -27,9 +27,7 @@ import {
   fetchSource,
   listJobs,
   listSources,
-  loadPens,
   saveJob,
-  savePens,
   slugOf,
   sourceUrl,
 } from './api';
@@ -45,13 +43,12 @@ import SourcePicker, {
 import { duration, metres, percent } from './format';
 import usePlotterWorker from './hooks/usePlotterWorker';
 import { aciColor, passColors } from './kernel/dxf.mjs';
-import { defaultKnockout, fitPens, nearestPen } from './kernel/job.mjs';
-import { DEFAULT_PENS, PAPERS, PAPER_COLORS } from './kernel/presets.mjs';
+import { defaultKnockout } from './kernel/job.mjs';
+import { PAPERS, PAPER_COLORS } from './kernel/presets.mjs';
 import { rerender } from './rerender';
 
 const CROWDED_WARNING = 0.05;
 const BUILD_DEBOUNCE_MS = 250;
-const PENS_SAVE_DEBOUNCE_MS = 600;
 
 const RESIZE_TOLERANCE = 0.02;
 
@@ -90,8 +87,7 @@ export default function PlotterizerPage() {
   const [layers, setLayers] = useState([]);
   const [sourceSize, setSourceSize] = useState(null);
   const [rerendering, setRerendering] = useState(false);
-  const [pens, setPens] = useState(DEFAULT_PENS);
-  const [pensLoaded, setPensLoaded] = useState(false);
+  const [pens, setPens] = useState([]);
   const [paperId, setPaperId] = useState(PAPERS[0].id);
   const [portrait, setPortrait] = useState(false);
   const [paperColor, setPaperColor] = useState(PAPER_COLORS[0].color);
@@ -102,7 +98,6 @@ export default function PlotterizerPage() {
   const [minLengthMm, setMinLengthMm] = useState(0);
   const [registration, setRegistration] = useState(false);
   const [knockout, setKnockout] = useState(null);
-  const [penBudget, setPenBudget] = useState(3);
   const [jobName, setJobName] = useState('');
   const [jobs, setJobs] = useState([]);
   const [summary, setSummary] = useState(null);
@@ -213,14 +208,7 @@ export default function PlotterizerPage() {
       setPortrait(saved.paper.heightMm > saved.paper.widthMm);
       setPaperColor(saved.paper.color);
     }
-    if (saved.pens) {
-      setPens((current) => [
-        ...current.filter(
-          (pen) => !saved.pens.some((other) => other.id === pen.id)
-        ),
-        ...saved.pens,
-      ]);
-    }
+    setPens(saved.pens ?? []);
   };
 
   const loadSvg = async (svg, nextSource, { keep = false, saved } = {}) => {
@@ -231,23 +219,57 @@ export default function PlotterizerPage() {
       setLayers(result.layers);
       setSourceSize({ heightMm: result.heightMm, widthMm: result.widthMm });
       setSource(nextSource);
-      const penFor = (layer) => nearestPen(layer.stroke, pens, paperColor);
+      const context = document.createElement('canvas').getContext('2d');
+      const byStroke = new Map();
+      const imported = result.layers.map((layer, index) => {
+        const stroke = layer.stroke ?? '#000000';
+        if (!byStroke.has(stroke)) {
+          context.clearRect(0, 0, 1, 1);
+          context.fillStyle = '#000000';
+          context.fillStyle = stroke;
+          context.fillRect(0, 0, 1, 1);
+          const color = `#${[...context.getImageData(0, 0, 1, 1).data]
+            .slice(0, 3)
+            .map((v) => v.toString(16).padStart(2, '0'))
+            .join('')}`;
+          byStroke.set(stroke, color);
+        }
+        return {
+          color: byStroke.get(stroke),
+          id: `layer-${layer.id}`,
+          name: `Line ${index + 1}`,
+          nibMm: 0.3,
+        };
+      });
+      const nextAssign = Object.fromEntries(
+        result.layers.map((layer, index) => [layer.id, imported[index].id])
+      );
       if (saved) {
         setJobName(saved.name);
         applySettings(saved.settings);
       } else if (keep) {
+        setPens((current) => [
+          ...current,
+          ...imported.filter(
+            (line) => !current.some((entry) => entry.id === line.id)
+          ),
+        ]);
         setAssign((current) =>
           Object.fromEntries(
-            result.layers.map((l) => [l.id, current[l.id] ?? penFor(l)])
+            result.layers.map((layer) => [
+              layer.id,
+              current[layer.id] ?? nextAssign[layer.id],
+            ])
           )
         );
       } else {
         setJobName(defaultName(nextSource));
-        setAssign(
-          Object.fromEntries(result.layers.map((l) => [l.id, penFor(l)]))
-        );
+        setPens(imported);
+        setAssign(nextAssign);
+        setKnockout([]);
         setOrder([]);
       }
+      setReadOnly(false);
       setStatus('');
     } catch (nextError) {
       setError(nextError.message);
@@ -292,10 +314,6 @@ export default function PlotterizerPage() {
   useEffect(() => {
     refreshSources();
     refreshJobs();
-    loadPens()
-      .then(setPens)
-      .catch(() => {})
-      .finally(() => setPensLoaded(true));
     const params = new URLSearchParams(window.location.search);
     if (params.get('svg')) {
       openSource({
@@ -308,15 +326,6 @@ export default function PlotterizerPage() {
       openJob({ slug: params.get('job') });
     }
   }, []);
-
-  useEffect(() => {
-    if (!pensLoaded) return undefined;
-    const timer = setTimeout(
-      () => savePens(pens).catch((nextError) => setError(nextError.message)),
-      PENS_SAVE_DEBOUNCE_MS
-    );
-    return () => clearTimeout(timer);
-  }, [pens, pensLoaded]);
 
   useEffect(() => {
     if (!layers.length || readOnly) return undefined;
@@ -345,6 +354,7 @@ export default function PlotterizerPage() {
     setStatus('Saving…');
     setError('');
     try {
+      show(await send({ settings, type: 'build' }), false);
       const { json } = await send({
         meta: { name, settings, source },
         type: 'serialize',
@@ -408,6 +418,31 @@ export default function PlotterizerPage() {
     setOrder(ids);
   };
 
+  const setLayerColor = (layer, color) => {
+    if (!color) {
+      setAssign((current) => ({ ...current, [layer.id]: '' }));
+      return;
+    }
+    const id = `layer-${layer.id}`;
+    setPens((current) => {
+      const previous = current.find((pen) => pen.id === assign[layer.id]);
+      const own = current.find((pen) => pen.id === id);
+      const line = {
+        ...previous,
+        ...own,
+        color,
+        id,
+        name: own?.name ?? layer.id,
+        nibMm: own?.nibMm ?? previous?.nibMm ?? 0.3,
+      };
+      return [...current.filter((pen) => pen.id !== id), line];
+    });
+    setAssign((current) => ({ ...current, [layer.id]: id }));
+  };
+
+  const lineColours = [
+    ...new Map(pens.map((pen) => [pen.color, pen])).values(),
+  ];
   const inUse = useMemo(() => new Set(Object.values(assign)), [assign]);
   const totals = summary?.passes.reduce(
     (sum, pass) => ({
@@ -575,36 +610,11 @@ export default function PlotterizerPage() {
       </fieldset>
 
       <fieldset className="rw-fieldset rw-control-section">
-        <legend>Layers → pens</legend>
-        {layers.length > 1 ? (
-          <div className="pz-row pz-budget">
-            <label htmlFor="pz-budget">
-              Fit to
-              <select
-                id="pz-budget"
-                onChange={(event) => setPenBudget(Number(event.target.value))}
-                value={penBudget}
-              >
-                {[1, 2, 3, 4, 5, 6].map((n) => (
-                  <option key={n} value={n}>
-                    {n}
-                  </option>
-                ))}
-              </select>
-              pens
-            </label>
-            <button
-              className="dev-button"
-              onClick={() =>
-                setAssign(fitPens(layers, pens, penBudget, paperColor))
-              }
-              title="Choose the pens from your list that best match the layers' colours, weighted by ink, and map every layer to the nearest"
-              type="button"
-            >
-              Assign
-            </button>
-          </div>
-        ) : null}
+        <legend>Layer colours</legend>
+        <p className="dev-muted">
+          SVG colours are kept on import. Choose an existing line colour or any
+          custom colour. Matching colours share one output pass.
+        </p>
         {layers.length ? (
           <ul className="pz-layers">
             {layers.map((layer) => (
@@ -627,23 +637,37 @@ export default function PlotterizerPage() {
                     </span>
                   ) : null}
                 </span>
-                <select
-                  aria-label={`Pen for ${layer.id}`}
-                  onChange={(event) =>
-                    setAssign((current) => ({
-                      ...current,
-                      [layer.id]: event.target.value,
-                    }))
-                  }
-                  value={assign[layer.id] ?? ''}
-                >
-                  <option value="">— skip —</option>
-                  {pens.map((pen) => (
-                    <option key={pen.id} value={pen.id}>
-                      {pen.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="pz-layer-colour">
+                  <input
+                    aria-label={`Colour for ${layer.id}`}
+                    type="color"
+                    disabled={!assign[layer.id]}
+                    value={
+                      pens.find((pen) => pen.id === assign[layer.id])?.color ??
+                      '#000000'
+                    }
+                    onChange={(event) =>
+                      setLayerColor(layer, event.target.value)
+                    }
+                  />
+                  <select
+                    aria-label={`Line colour for ${layer.id}`}
+                    onChange={(event) =>
+                      setLayerColor(layer, event.target.value)
+                    }
+                    value={
+                      pens.find((pen) => pen.id === assign[layer.id])?.color ??
+                      ''
+                    }
+                  >
+                    <option value="">— skip —</option>
+                    {lineColours.map((pen) => (
+                      <option key={pen.color} value={pen.color}>
+                        {pen.name} · {pen.color}
+                      </option>
+                    ))}
+                  </select>
+                </div>
               </li>
             ))}
           </ul>
@@ -657,7 +681,7 @@ export default function PlotterizerPage() {
       </fieldset>
 
       <details className="rw-control-section rw-advanced">
-        <summary>Pens ({pens.length})</summary>
+        <summary>Line settings ({pens.length})</summary>
         <PensEditor inUse={inUse} onChange={setPens} pens={pens} />
       </details>
 
@@ -702,7 +726,7 @@ export default function PlotterizerPage() {
         </label>
         <button
           className="dev-button dev-button--primary rw-submit"
-          disabled={!summary || readOnly}
+          disabled={!summary || readOnly || summary.passes.length > 255}
           type="submit"
         >
           <FiSave /> Save job + DXFs
@@ -765,12 +789,17 @@ export default function PlotterizerPage() {
         </span>
       </div>
       <PlotPreview dataRef={dataRef} options={view} version={version} />
+      {summary?.passes.length > 255 ? (
+        <p className="pz-warning">
+          DXF supports 255 distinct line colours. Merge colours before saving.
+        </p>
+      ) : null}
       {summary ? (
         <table className="pz-passes">
           <thead>
             <tr>
               <th>Pass</th>
-              <th>Pen</th>
+              <th>Line colour</th>
               <th title="The Line Color row this pass gets in Silhouette Studio">
                 In Studio
               </th>
@@ -810,7 +839,9 @@ export default function PlotterizerPage() {
                     style={{ background: aciColor(studioColors[i]) }}
                     title={`ACI ${studioColors[i]}`}
                   />
-                  <span className="dev-muted">ACI {studioColors[i]}</span>
+                  <span className="dev-muted">
+                    {studioColors[i] ? `ACI ${studioColors[i]}` : '—'}
+                  </span>
                 </td>
                 <td>{pass.stats.lifts.toLocaleString()}</td>
                 <td>{metres(pass.stats.inkMm)}</td>

@@ -40,7 +40,9 @@ export { default as createProjector } from './projector';
 export {
   createTone,
   dot as dotPath,
+  erodeMask,
   default as shadePath,
   penPx,
+  stretchTone,
 } from './shading';
 export { default as textureRuns } from './texture';

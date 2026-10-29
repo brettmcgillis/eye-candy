@@ -440,6 +440,82 @@ function tsp(darkness, { height, spacing, tone, width }) {
 
 const SHADERS = { crosshatch, halftone, scribble, squiggle, stipple, tsp };
 
+// A region's own light, stretched between its 2nd and 98th percentile luma
+// (never over less than `minSpan`) onto `floor`..white: every surface shades
+// its form whatever its colour, and the deepest shadow stops at `1 - floor`
+// darkness, so a black part reads as two hatch directions, not a solid mesh.
+// `keep` blends the render's own luma back in, so a dark part still reads
+// darker than a pale one (1: luma alone, for flat blocks of colour).
+export function stretchTone({
+  floor = 0.42,
+  image,
+  keep = 0,
+  minSpan = 0.15,
+  region,
+}) {
+  const size = image.width * image.height;
+  const luma = (i) =>
+    (0.2126 * image.data[i * 4] +
+      0.7152 * image.data[i * 4 + 1] +
+      0.0722 * image.data[i * 4 + 2]) /
+    255;
+  const values = [];
+  for (let i = 0; i < size; i += 1) if (region.covered[i]) values.push(luma(i));
+  if (!values.length) return null;
+  values.sort((a, b) => a - b);
+  const high = values[Math.floor(values.length * 0.98)];
+  const span = Math.max(
+    high - values[Math.floor(values.length * 0.02)],
+    minSpan
+  );
+  const data = new Uint8ClampedArray(size * 4);
+  for (let i = 0; i < size; i += 1) {
+    if (region.covered[i]) {
+      const stretched = Math.max(
+        0,
+        Math.min(1, (luma(i) - high + span) / span)
+      );
+      const light = keep * luma(i) + (1 - keep) * stretched;
+      const value = (floor + (1 - floor) * light) * 255;
+      data[i * 4] = value;
+      data[i * 4 + 1] = value;
+      data[i * 4 + 2] = value;
+      data[i * 4 + 3] = 255;
+    }
+  }
+  return { data, height: image.height, width: image.width };
+}
+
+// A mask shrunk by `radius` px (a square window), so parts thinner than
+// twice that — an orbit tube, a ring's rim — take no shading between their
+// outlines.
+export function erodeMask(mask, radius) {
+  const { covered, height, width } = mask;
+  if (radius < 1) return mask;
+  const pass = (source, along) => {
+    const out = new Uint8Array(source.length);
+    const [n, lines] = along ? [width, height] : [height, width];
+    const at = along
+      ? (line, k) => line * width + k
+      : (line, k) => k * width + line;
+    for (let line = 0; line < lines; line += 1) {
+      let gap = -Infinity;
+      const last = new Int32Array(n);
+      for (let k = 0; k < n; k += 1) {
+        if (!source[at(line, k)]) gap = k;
+        last[k] = gap;
+      }
+      gap = Infinity;
+      for (let k = n - 1; k >= 0; k -= 1) {
+        if (!source[at(line, k)]) gap = k;
+        out[at(line, k)] = k - last[k] > radius && gap - k > radius ? 1 : 0;
+      }
+    }
+    return out;
+  };
+  return { covered: pass(pass(covered, true), false), height, width };
+}
+
 // `svgPenMm` in output px; an unsized plot is 96 px to the inch.
 export const penPx = ({ plotWidthMm, svgPenMm, width }) =>
   svgPenMm ? svgPenMm * (plotWidthMm ? width / plotWidthMm : 96 / 25.4) : null;

@@ -185,7 +185,11 @@ each section to its Leva folder name in display order; `controls` overrides a
 key's input (palette names live outside the dependency-free schema); `extras`
 puts buttons before/after a key and `top` at the head of a section. `when`
 visibility and `choiceLabels` come from the specs. A scene's
-`utils/controls.js` is that call plus its roll function and buttons.
+`utils/controls.js` is that call plus its roll function and buttons. Every
+section of `keys` must be in `folders` (or `inline`): Leva throws on a preset
+key with no control, so the scene's `<scene>:check` calls
+`schemaControlCoverage` (`scripts/lib/schemaControlCoverage.mjs`), which reads
+the factory's `schemaFoldersRegistry`.
 
 ## 3. Workbench page — `src/dev/renderWorkbench/RollWorkbench`
 
@@ -269,6 +273,9 @@ what it draws.
   - `plotWidthMm` sets the SVG's physical `width`/`height` in mm, leaving the
     `viewBox` alone. An SVG that already carries a physical size (Kumiko's
     panel, Subdivision's `widthMm`) keeps it, so those tools skip the option.
+  - Sidecars omit job-owned `capture` and `out` paths. Loading a generation
+    into the form never restores CLI-only options; a multi-item batch always
+    renders generations, even if an older job retained a Live capture path.
   - The gallery shows the newest 24 collections (120 items) and pages the
     rest (**Show more**): mounting ~500 at once froze the dev page. Cards for
     SVG-only generations show the cached thumbnail, not the SVG.

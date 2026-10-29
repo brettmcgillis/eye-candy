@@ -12,6 +12,32 @@ export const ACI = [
   [9, [192, 192, 192]],
 ];
 
+for (let hue = 0; hue < 24; hue += 1) {
+  const sector = hue / 4;
+  const x = 1 - Math.abs((sector % 2) - 1);
+  const channels = [
+    [1, x, 0],
+    [x, 1, 0],
+    [0, 1, x],
+    [0, x, 1],
+    [x, 0, 1],
+    [1, 0, x],
+  ][Math.floor(sector)];
+  [255, 165, 127, 76, 38].forEach((value, shade) => {
+    [false, true].forEach((tinted, tint) => {
+      ACI.push([
+        10 + hue * 10 + shade * 2 + tint,
+        channels.map((channel) =>
+          Math.floor(value * (tinted ? (channel + 1) / 2 : channel))
+        ),
+      ]);
+    });
+  });
+}
+[51, 80, 105, 130, 190, 255].forEach((value, i) =>
+  ACI.push([250 + i, [value, value, value]])
+);
+
 export const aciColor = (aci) =>
   `#${(ACI.find(([n]) => n === aci)?.[1] ?? [0, 0, 0])
     .map((v) => v.toString(16).padStart(2, '0'))
@@ -26,20 +52,6 @@ export function hexRgb(value) {
     match[1].length === 3 ? [...match[1]].map((c) => c + c).join('') : match[1];
   return [0, 2, 4].map((i) => parseInt(hex.slice(i, i + 2), 16));
 }
-
-const CHROMATIC = [
-  [1, 0],
-  [2, 60],
-  [3, 120],
-  [4, 180],
-  [5, 240],
-  [6, 300],
-];
-const ACHROMATIC = [
-  [7, 0],
-  [8, 128],
-  [9, 192],
-];
 
 function hsl([r, g, b]) {
   const max = Math.max(r, g, b);
@@ -57,24 +69,20 @@ function hsl([r, g, b]) {
   };
 }
 
-// ACI colours a pen could show as in Studio, best first: by hue for a
-// coloured pen (RGB distance calls a mid green gray), by lightness for a
-// black, gray or white one.
 const aciRanked = (color) => {
-  const { hue, lightness, saturation } = hsl(hexRgb(color) ?? [0, 0, 0]);
-  const byHue = [...CHROMATIC]
-    .sort((a, b) => {
-      const da = Math.min(Math.abs(a[1] - hue), 360 - Math.abs(a[1] - hue));
-      const db = Math.min(Math.abs(b[1] - hue), 360 - Math.abs(b[1] - hue));
-      return da - db;
-    })
+  const target = hsl(hexRgb(color) ?? [0, 0, 0]);
+  const distance = (rgb) => {
+    const candidate = hsl(rgb);
+    const hueGap = Math.abs(candidate.hue - target.hue);
+    return (
+      Math.min(hueGap, 360 - hueGap) * target.saturation +
+      Math.abs(candidate.lightness - target.lightness) / 2 +
+      Math.abs(candidate.saturation - target.saturation) * 80
+    );
+  };
+  return [...ACI]
+    .sort(([, a], [, b]) => distance(a) - distance(b))
     .map(([n]) => n);
-  const byLightness = [...ACHROMATIC]
-    .sort((a, b) => Math.abs(a[1] - lightness) - Math.abs(b[1] - lightness))
-    .map(([n]) => n);
-  return saturation < 0.2 || lightness < 40
-    ? [...byLightness, ...byHue]
-    : [...byHue, ...byLightness];
 };
 
 // Studio groups a DXF's lines by entity colour, so every pass needs its own:
@@ -82,8 +90,7 @@ const aciRanked = (color) => {
 export function passColors(colors) {
   const taken = new Set();
   return colors.map((color) => {
-    const aci =
-      aciRanked(color).find((n) => !taken.has(n)) ?? 10 + taken.size * 10;
+    const aci = aciRanked(color).find((n) => !taken.has(n));
     taken.add(aci);
     return aci;
   });

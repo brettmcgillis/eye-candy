@@ -11,6 +11,10 @@ const slug = (text) =>
 // Studio's Line Color tab lists one row per pen, plus a file per pass.
 export function jobDxfs(job) {
   const passes = jobPasses(job);
+  if (passes.length > 255)
+    throw new Error(
+      'DXF supports at most 255 distinct line colours. Merge colours before exporting.'
+    );
   const colors = passColors(passes.map((pass) => pass.pen.color));
   const page = { heightMm: job.paper.heightMm, widthMm: job.paper.widthMm };
   const named = passes.map((pass, i) => ({

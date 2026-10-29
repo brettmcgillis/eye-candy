@@ -5,7 +5,7 @@ const newPen = (pens) => {
   const ids = new Set(pens.map((pen) => pen.id));
   let n = pens.length + 1;
   while (ids.has(`pen-${n}`)) n += 1;
-  return { color: '#444444', id: `pen-${n}`, name: `Pen ${n}`, nibMm: 0.3 };
+  return { color: '#444444', id: `pen-${n}`, name: `Line ${n}`, nibMm: 0.3 };
 };
 
 export default function PensEditor({ inUse, onChange, pens }) {
@@ -23,7 +23,7 @@ export default function PensEditor({ inUse, onChange, pens }) {
             value={pen.color}
           />
           <input
-            aria-label="Pen name"
+            aria-label="Line name"
             onChange={(event) => update(pen.id, { name: event.target.value })}
             value={pen.name}
           />
@@ -43,7 +43,7 @@ export default function PensEditor({ inUse, onChange, pens }) {
             className="dev-button"
             disabled={inUse.has(pen.id)}
             onClick={() => onChange(pens.filter((p) => p.id !== pen.id))}
-            title={inUse.has(pen.id) ? 'A layer uses this pen' : 'Remove'}
+            title={inUse.has(pen.id) ? 'A layer uses this line' : 'Remove'}
             type="button"
           >
             <FiTrash2 />
@@ -55,7 +55,7 @@ export default function PensEditor({ inUse, onChange, pens }) {
         onClick={() => onChange([...pens, newPen(pens)])}
         type="button"
       >
-        <FiPlus /> Add pen
+        <FiPlus /> Add line colour
       </button>
     </div>
   );

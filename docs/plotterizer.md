@@ -73,14 +73,16 @@ last; the user can reorder them.
 
 ## Pens, colour and knock-out
 
-- A layer's default pen is the pen nearest its stroke colour (CIELAB);
-  black or uncoloured layers take the first pen. Benches that colour their
-  layers (the ghost's fills, the flock's inks, Rorschach's palette) arrive
-  mapped.
-- **Fit to N pens** chooses the N pens from the list that draw the layers
-  closest to their own colours, weighing each layer by its ink (every
-  combination is tried), and maps each layer to the nearest of them.
-- A pen within ΔE 20 of the paper (white gel on white) is never picked.
+- Import preserves SVG stroke colours. A named SVG group containing multiple
+  stroke colours is split into separate editable layers.
+- **Layer colours** offers a colour picker and existing line colours for each
+  layer, plus skip. Colours and nib widths belong to this plot; importing
+  never reads or writes a pen inventory. **Line settings** edits names and nibs.
+- Layers assigned the same colour share one pass, including when separate
+  line entries have matching colours. A merged pass uses the widest assigned
+  nib for spacing and crowding.
+- New imports start with knock-out disabled so colour preservation does not
+  silently remove strokes. It can be enabled per pass with **Cuts lighter**.
 - Knock-out: a pass marked **Cuts lighter** (by default the near-black
   pens) cuts every earlier, lighter pass back by its nib, so fills stop
   short of the outline and eyeliner instead of running under them. Shades of
@@ -95,7 +97,7 @@ last; the user can reorder them.
 paper, placement, settings, source and the ordered passes as rounded mm
 polylines — self-contained, so the basement runner needs nothing else),
 `summary.json` (the list view), `plot.svg` (passes in their pen colours on
-the paper) and the DXFs. The pen list lives in `output/plotterizer/pens.json`.
+the paper) and the DXFs. Line settings are stored inside the job; no maintained pen list is needed.
 
 ## DXF
 
@@ -103,7 +105,8 @@ R12 in mm, y up, one layer per pass. Silhouette Studio ignores layer-table
 colour and groups the Send panel's Line Color tab by **entity** colour, so
 every POLYLINE / SEQEND / CIRCLE carries its pass's ACI colour. A pass takes
 the nearest ACI colour (by hue for a coloured pen, by lightness for a black,
-gray or white one) that no earlier pass took; the passes table's "In Studio"
+gray or white one) that no earlier pass took, using the full 255-colour ACI
+palette; the passes table's "In Studio"
 column shows which row is which. Closed all-arc subpaths round within
 0.05 mm become `CIRCLE`s. One DXF holds every pass; one per pass is written
 too.

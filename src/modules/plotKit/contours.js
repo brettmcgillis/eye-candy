@@ -87,10 +87,11 @@ export const plotLayer = (index, label, stroke, d, color = '#000000') =>
   `fill="none" stroke="${color}" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round">` +
   `<path d="${d}"/></g>`;
 
-// The subject's outline as smoothed loops in output pixels.
-export function silhouetteRuns(coverage, pixelRatio) {
+// The subject's outline as smoothed loops in output pixels; `tolerance` (mask
+// pixels) is how far the staircase may stray from the stroke that replaces it.
+export function silhouetteRuns(coverage, pixelRatio, tolerance = 0.6) {
   return chain(maskSegments(coverage)).map((loop) =>
-    smooth(simplifyLoop(loop, 0.6)).map(([x, y]) => ({
+    smooth(simplifyLoop(loop, tolerance)).map(([x, y]) => ({
       x: x / pixelRatio,
       y: y / pixelRatio,
     }))

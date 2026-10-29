@@ -148,12 +148,29 @@ export function buildJob(source, settings) {
   const cutters = new Set(settings.knockout ?? defaultKnockout(pens));
   const place = placement(source, settings);
   const page = [paper.widthMm, paper.heightMm];
-  const drafts = passOrder(pens, assign, settings.order).map((pen) => {
-    const layers = source.layers.filter((layer) => assign[layer.id] === pen.id);
+  const grouped = new Map();
+  passOrder(pens, assign, settings.order).forEach((pen) => {
+    const color = hexRgb(pen.color)?.join(',') ?? pen.color.toLowerCase();
+    const group = grouped.get(color);
+    if (group) {
+      group.ids.add(pen.id);
+      group.pen.nibMm = Math.max(group.pen.nibMm, pen.nibMm);
+      group.cuts ||= cutters.has(pen.id);
+    } else {
+      grouped.set(color, {
+        cuts: cutters.has(pen.id),
+        ids: new Set([pen.id]),
+        pen: { ...pen },
+      });
+    }
+  });
+  const drafts = [...grouped.values()].map(({ cuts, ids, pen }) => {
+    const layers = source.layers.filter((layer) => ids.has(assign[layer.id]));
     const perLayer = layers.map((layer) =>
       transformRuns(layer.runs, place.scale, place.offset)
     );
     return {
+      cuts,
       layers,
       pen,
       perLayer,
@@ -167,7 +184,7 @@ export function buildJob(source, settings) {
   // Light passes run first, so each is cut back from the cutting passes
   // after it.
   for (let i = drafts.length - 2; i >= 0; i -= 1) {
-    const later = drafts.slice(i + 1).filter(({ pen }) => cutters.has(pen.id));
+    const later = drafts.slice(i + 1).filter(({ cuts }) => cuts);
     if (later.length) {
       const gapMm = Math.max(...later.map(({ pen }) => pen.nibMm));
       const mask = inkMask(

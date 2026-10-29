@@ -11,6 +11,7 @@ import {
   round,
   select,
   sin,
+  smoothstep,
   textureLoad,
   vec2,
   vec4,
@@ -18,7 +19,7 @@ import {
 
 import { sectorMask, strokeMask } from './blobArcs';
 import { growthMask } from './growth';
-import { triangleCorner, triangleUp } from './triangleArcs';
+import { triangleCorner, triangleDistance, triangleUp } from './triangleArcs';
 
 function fullFan(q, edge, size, pitch) {
   const corner = edge.mod(3).round();
@@ -172,7 +173,12 @@ export default function capColor(q, u, delay) {
     growthMask({ ...returns, lane: count.sub(1) }, growthU, delay)
   );
   const outside = select(outward.greaterThanEqual(0), 1, 0);
-  const ink = mix(hostInk, returnInk, outside).max(outerInk).mul(showStrokesU);
+  const toHost = triangleDistance(hq, a.x, a.y);
+  const inHost = smoothstep(toHost.fwidth(), 0, toHost).max(axes.z);
+  const rim = outerInk.mul(outside.max(axes.z));
+  const ink = mix(hostInk.mul(inHost), returnInk, outside)
+    .max(rim)
+    .mul(showStrokesU);
   const fill = mix(hostColor, laneColor(returns, index, 0, u), outside);
   const hostGrown = mix(
     growthMask(top, growthU, delay),
@@ -184,7 +190,9 @@ export default function capColor(q, u, delay) {
     outsideTop
   );
   const alpha = sectorMask(d, rMax)
-    .mul(mix(hostGrown, growthMask(returns, growthU, delay), outside))
-    .max(outerInk.mul(showStrokesU));
+    .mul(
+      mix(hostGrown.mul(inHost), growthMask(returns, growthU, delay), outside)
+    )
+    .max(rim.mul(showStrokesU));
   return vec4(mix(fill, strokeColorU, ink), alpha);
 }

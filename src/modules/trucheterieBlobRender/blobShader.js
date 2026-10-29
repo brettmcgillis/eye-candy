@@ -125,13 +125,8 @@ export default function buildBlobColorNode({
       const isTriangle = conn0.x.greaterThanEqual(4).and(conn0.x.notEqual(8));
       const inCell = select(select(isTriangle, inTriangle, inSquare), 1, 0);
       const inBlob = max(
-        sectorMask(first.d, first.rMax)
-          .mul(select(first.d.greaterThanEqual(first.rMin), 1, 0))
-          .mul(firstGrown),
-        sectorMask(second.d, second.rMax)
-          .mul(select(second.d.greaterThanEqual(second.rMin), 1, 0))
-          .mul(hasSecond)
-          .mul(secondGrown)
+        sectorMask(first.d, first.rMax).mul(firstGrown),
+        sectorMask(second.d, second.rMax).mul(hasSecond).mul(secondGrown)
       ).mul(inCell);
 
       // Lane fill. The winning family is the one whose sector owns this pixel —

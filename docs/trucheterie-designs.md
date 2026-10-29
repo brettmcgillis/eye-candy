@@ -211,10 +211,17 @@ designs retain their corner connectors.
 - **Boundary returns.** Each exposed side gets a nested semicircular return
   (type 12), at the same `1 / Paths Per Unit` pitch. Its diameter meets the
   reference's half-pitch edge crossings. The return's inward half copies
-  its host's original fans; only the outside bends back. The circular outer
-  outline closes intersections with neighbouring returns. The first
-  half-pitch corner wedge stays clear, as in the reference, so no terminal
-  dots are needed. An odd central crossing joins the first return as a T.
+  its host's original fans; only the outside bends back. A return facing
+  the void (no cell across any of its side) covers, inward, its host
+  triangle only, and draws its outer outline on the outward half only: the
+  half-disc bulges past the host's other two sides, and painting there laid
+  stray circles and mismatched lanes over the neighbours. A side closed
+  against real cells (its side group closed with it) gets a return that
+  overlaps the neighbour's own; that one keeps the whole disc and full
+  outline, which is the seam between them (`cap.facing`; `capShapes` in
+  `triContours.js` is the CPU cover shape, the cap texture's `z` the GPU's). The first half-pitch about a fan's corner is filled
+  with lane 0, so lane ends and vertex dots are coloured, not background.
+  An odd central crossing joins the first return as a T.
   The smallest one-crossing tile uses its closed incircle. An isolated
   triangle and a two-triangle component retain their closed circular motifs.
 - `laneChannels.js` joins the return bands to the host fans and keeps closed

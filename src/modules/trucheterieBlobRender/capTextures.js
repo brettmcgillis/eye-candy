@@ -37,7 +37,7 @@ export function fillCapTexture(textures, drawn) {
         ...cap.offset,
         Math.cos(angle),
         Math.sin(angle),
-        0,
+        cap.facing ? 1 : 0,
         0,
       ],
       index * 12

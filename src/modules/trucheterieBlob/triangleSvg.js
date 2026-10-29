@@ -6,6 +6,7 @@ import {
   laneRadii,
 } from './laneChannels';
 import { capFrame, triangleSegments } from './triContours';
+import { cornerPoints } from './triangle';
 
 const TAU = Math.PI * 2;
 const round = (n) => Number(n.toFixed(6));
@@ -119,56 +120,53 @@ export default function triangleSvg(
       const frame = capFrame(entry, pitch);
       const center = toCanvas(frame.x, frame.y);
       const r = frame.rMax * field.cellSize;
-      defs.push(
-        `<clipPath id="cap-${index}"><circle cx="${center[0]}" cy="${center[1]}" r="${r}"/></clipPath>`
-      );
       const n = frame.normal;
       const t = [n[1], -n[0]];
       const reach = cap.host.size * 3;
-      const points = [
-        [-1, 0],
-        [1, 0],
-        [1, 1],
-        [-1, 1],
-      ].map(([a, b]) =>
-        toCanvas(
-          frame.x + t[0] * reach * a + n[0] * reach * b,
-          frame.y + t[1] * reach * a + n[1] * reach * b
-        )
-      );
+      const halfPlane = (sign) =>
+        [
+          [-1, 0],
+          [1, 0],
+          [1, sign],
+          [-1, sign],
+        ].map(([a, b]) =>
+          toCanvas(
+            frame.x + t[0] * reach * a + n[0] * reach * b,
+            frame.y + t[1] * reach * a + n[1] * reach * b
+          )
+        );
+      const outward = halfPlane(-1);
+      // See capShapes: only a return facing the void stays out of the
+      // neighbours its inward half-disc bulges into.
+      const host = `<polygon points="${(cap.facing
+        ? halfPlane(1)
+        : cornerPoints(cap.host).map((p) => toCanvas(...p))
+      )
+        .map(point)
+        .join(' ')}"/>`;
       defs.push(
-        `<clipPath id="half-${index}"><polygon points="${points.map(point).join(' ')}"/></clipPath>`
+        `<clipPath id="cap-${index}"><circle cx="${center[0]}" cy="${center[1]}" r="${r}"/></clipPath>`,
+        `<clipPath id="host-${index}">${host}</clipPath>`,
+        `<clipPath id="cover-${index}"><polygon points="${outward.map(point).join(' ')}"/>${host}</clipPath>`
+      );
+      fills.push(
+        `<g clip-path="url(#cap-${index})"><g clip-path="url(#cover-${index})">`
       );
       paint(cell, connections[0][0], connections[0][1], index, 0, {
         start: frame.start,
         span: TAU,
       });
-      fills.push(
-        `<g clip-path="url(#cap-${index})"><g clip-path="url(#half-${index})">`
-      );
-      [...cap.connections.entries()]
-        .reverse()
-        .forEach(([slot, [type, edge]]) => {
-          const row = slot === 2 ? cap.bottomIndex : cap.topIndex;
-          const hostSlot = slot === 1 ? 1 : 0;
-          const { start } = fanFrame(cap.host, edge, type);
-          // Outside the original 60° fan the copied boundary band holds its end colour.
-          const sector = familySector(cap.host, type, edge, pitch);
-          laneRadii(type, cap.host.size, pitch, edge).forEach(
-            ([inner, outer], lane) => {
-              if (outer - inner < 1e-9) return;
-              [
-                [start + Math.PI / 3, Math.PI - Math.PI / 6, 1],
-                [start + Math.PI + Math.PI / 6, Math.PI - Math.PI / 6, 0],
-              ].forEach(([a, span, u]) => {
-                fills.push(
-                  `<path d="${sectorPath([sector.x, sector.y], inner, outer, a, span, toCanvas, field.cellSize)}" fill="${hex(laneColor(row, hostSlot, lane, u))}"/>`
-                );
-              });
-            }
-          );
-          paint(cap.host, type, edge, row, hostSlot);
-        });
+      fills.push(`</g><g clip-path="url(#host-${index})">`);
+      [...cap.connections.entries()].reverse().forEach(([slot, [, edge]]) => {
+        const row = slot === 2 ? cap.bottomIndex : cap.topIndex;
+        paint(
+          cap.host,
+          cap.connections[slot][0],
+          edge,
+          row,
+          slot === 1 ? 1 : 0
+        );
+      });
       fills.push('</g></g>');
     });
   const paths = showStrokes

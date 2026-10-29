@@ -93,7 +93,6 @@ function fanFamily(q, type, edge, size, pathDivU) {
     dBand: vec2(band, capOffset).length(),
     lane: clamp(d.mul(pathDivU).add(0.5).floor(), 0, bands.sub(1)),
     lanes: bands,
-    rMin: select(reference, pathDivU.reciprocal().mul(0.5), 0),
     rMax: bands.sub(0.5).div(pathDivU),
     sweep: angle.abs().div(SIXTH).clamp(0, 1),
   };
@@ -141,7 +140,6 @@ function pocketFamily(q, edge, size, pathDivU) {
       lanes.sub(1)
     ),
     lanes,
-    rMin: size.mul(0),
     rMax: kMax.add(odd).div(pathDivU),
     sweep: angle
       .abs()
@@ -176,7 +174,6 @@ function ringsFamily(q, edge, size, pathDivU) {
     dBand: d.sub(k.mul(pitch)).abs(),
     lane: clamp(d.div(pitch).floor(), 0, bands.sub(1)),
     lanes: bands,
-    rMin: size.mul(0),
     rMax: bands.mul(pitch),
     sweep: atan(rel.x, rel.y.negate()).abs().div(Math.PI),
   };
@@ -250,7 +247,6 @@ function returnFamily(q, type, edge, size, pathDiv) {
     dBand: select(tiny, bulb.sub(size.mul(0.2)).abs(), withStem),
     lane: clamp(d.mul(pathDiv).sub(phase).floor().add(1), 0, bands.sub(1)),
     lanes: bands,
-    rMin: size.mul(0),
     rMax: select(tiny, size.mul(0.2), bands.sub(1).add(phase).div(pathDiv)),
     sweep: angle.abs().div(half).clamp(0, 1),
   };

@@ -228,15 +228,9 @@ export function laneRadii(type, size, pathDiv, edge = 0) {
     return bounds.slice(1).map((r, j) => [bounds[j], r]);
   }
   if (type === FAN || type === BEND) {
-    const hollow = type === FAN && decodeEdge(edge).reference;
     return Array.from(
       { length: laneCount(type, size, pathDiv, edge) },
-      (_, j) => [
-        j === 0 && hollow
-          ? fanRadius(0, pathDiv)
-          : Math.max(0, fanRadius(j - 1, pathDiv)),
-        fanRadius(j, pathDiv),
-      ]
+      (_, j) => [Math.max(0, fanRadius(j - 1, pathDiv)), fanRadius(j, pathDiv)]
     );
   }
   if (type === RINGS) {

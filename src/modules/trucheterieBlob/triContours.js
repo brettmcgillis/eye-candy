@@ -1,4 +1,4 @@
-import { clipCircle, clipHalfPlane, clipLine } from './circleClip';
+import { clipCircle, clipLine, clipShape } from './circleClip';
 import {
   familySector,
   fanFrame,
@@ -6,7 +6,7 @@ import {
   occluderSector,
 } from './laneChannels';
 import { boundaryRadii, boundarySize } from './triFans';
-import { fanStart } from './triangle';
+import { cornerPoints, fanStart } from './triangle';
 
 export function capFrame(entry, pitch) {
   const [type, edge] = entry.connections[0];
@@ -22,23 +22,89 @@ export function capFrame(entry, pitch) {
   };
 }
 
+function hostLines(host) {
+  const points = cornerPoints(host);
+  const cx = (points[0][0] + points[1][0] + points[2][0]) / 3;
+  const cy = (points[0][1] + points[1][1] + points[2][1]) / 3;
+  return points.map((a, i) => {
+    const b = points[(i + 1) % 3];
+    const n = [a[1] - b[1], b[0] - a[0]];
+    const flip = (cx - a[0]) * n[0] + (cy - a[1]) * n[1] < 0 ? -1 : 1;
+    return [a, [n[0] * flip, n[1] * flip]];
+  });
+}
+
+const inside = (lines, x, y) =>
+  lines.every(([p, n]) => (x - p[0]) * n[0] + (y - p[1]) * n[1] >= -1e-9);
+
+// A return facing a real cell overlaps that cell's own return, so it covers
+// its whole disc and its outline seals the seam. One facing the void covers
+// its outward half and, inward, only its own host: the half-disc bulges past
+// the host's other sides into its neighbours.
+export function capShapes(entry, pitch) {
+  const frame = capFrame(entry, pitch);
+  const side = [[frame.x, frame.y], frame.normal];
+  const lines = entry.cap.facing
+    ? [side]
+    : [side, ...hostLines(entry.cap.host)];
+  const inDisc = (x, y) =>
+    Math.hypot(x - frame.x, y - frame.y) <= frame.rMax + 1e-9;
+  const outward = (x, y) =>
+    (x - frame.x) * frame.normal[0] + (y - frame.y) * frame.normal[1] <= 0;
+  const inHost = (x, y) =>
+    entry.cap.facing ? !outward(x, y) : inside(lines.slice(1), x, y);
+  const base = { x: frame.x, y: frame.y, rMax: frame.rMax, lines };
+  return {
+    frame,
+    host: { ...base, contains: (x, y) => inDisc(x, y) && inHost(x, y) },
+    cover: {
+      ...base,
+      contains: (x, y) => inDisc(x, y) && (outward(x, y) || inHost(x, y)),
+    },
+  };
+}
+
 export function triangleSegments(field, pitch) {
   const segments = [];
+  const clip = (piece, cover) =>
+    cover.contains ? clipShape(piece, cover) : clipCircle(piece, cover);
   const append = (arcs, covers) =>
     arcs.flatMap((arc) =>
       covers.reduce(
-        (pieces, cover) => pieces.flatMap((piece) => clipCircle(piece, cover)),
+        (pieces, cover) => pieces.flatMap((piece) => clip(piece, cover)),
         [arc]
       )
     );
   field.cells.forEach((entry, index) => {
     const { cell, connections, cap } = entry;
     const later = (entry.renderOccluders ?? []).map((cover) =>
-      occluderSector(cover, pitch)
+      cover.cap
+        ? capShapes(
+            { ...cover, connections: [[cover.type, cover.edge]] },
+            pitch
+          ).cover
+        : occluderSector(cover, pitch)
     );
     if (cap) {
-      const frame = capFrame(entry, pitch);
-      const circle = { x: frame.x, y: frame.y, rMax: frame.rMax };
+      const { frame, host } = capShapes(entry, pitch);
+      if (cap.facing)
+        segments.push(
+          ...append(
+            [
+              {
+                x: frame.x,
+                y: frame.y,
+                radius: frame.rMax,
+                start: frame.start,
+                span: Math.PI,
+                owner: index,
+                slot: 0,
+                lane: frame.radii.length - 1,
+              },
+            ],
+            later
+          )
+        );
       frame.radii.forEach((radius, lane) => {
         segments.push(
           ...append(
@@ -58,29 +124,12 @@ export function triangleSegments(field, pitch) {
           )
         );
       });
-      segments.push(
-        ...append(
-          [
-            {
-              x: frame.x,
-              y: frame.y,
-              radius: frame.rMax,
-              start: frame.start,
-              span: Math.PI,
-              owner: index,
-              slot: 0,
-              lane: frame.radii.length - 1,
-            },
-          ],
-          later
-        )
-      );
       const higher = [];
       cap.connections.forEach(([type, edge], slot) => {
         const sector = familySector(cap.host, type, edge, pitch);
         laneRadii(type, cap.host.size, pitch, edge).forEach(
           ([, radius], lane) => {
-            let arcs = clipCircle(
+            const arcs = clipShape(
               {
                 x: sector.x,
                 y: sector.y,
@@ -91,11 +140,8 @@ export function triangleSegments(field, pitch) {
                 slot: slot + 1,
                 lane,
               },
-              circle,
+              host,
               true
-            );
-            arcs = arcs.flatMap((arc) =>
-              clipHalfPlane(arc, [frame.x, frame.y], frame.normal)
             );
             segments.push(...append(arcs, [...higher, ...later]));
           }

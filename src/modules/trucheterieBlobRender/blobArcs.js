@@ -147,7 +147,6 @@ export function arcFamily(q, type, edge, size, pathDivU) {
     // How many lanes this family has, so a caller can normalize `lane` into
     // a 0..1 reveal order for growth — see blobShader.js's `growthU`.
     lanes: pick(bands, lanes),
-    rMin: size.mul(0),
     rMax: pick(size, rMax),
     sweep: pick(straightAlong.sub(0.5).abs().mul(2), sweep),
   };

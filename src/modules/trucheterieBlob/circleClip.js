@@ -24,46 +24,53 @@ function trim(arc, angles, keep) {
   });
 }
 
-export function clipCircle(arc, circle, inside = false) {
+function circleCuts(arc, circle) {
   const dx = circle.x - arc.x;
   const dy = circle.y - arc.y;
   const d = Math.hypot(dx, dy);
-  let cuts = [];
   if (
-    d > EPS &&
-    d <= arc.radius + circle.rMax + EPS &&
-    d >= Math.abs(arc.radius - circle.rMax) - EPS
-  ) {
-    const a = Math.atan2(dy, dx);
-    const spread = Math.acos(
-      Math.max(
-        -1,
-        Math.min(
-          1,
-          (d * d + arc.radius ** 2 - circle.rMax ** 2) / (2 * d * arc.radius)
-        )
+    d <= EPS ||
+    d > arc.radius + circle.rMax + EPS ||
+    d < Math.abs(arc.radius - circle.rMax) - EPS
+  )
+    return [];
+  const a = Math.atan2(dy, dx);
+  const spread = Math.acos(
+    Math.max(
+      -1,
+      Math.min(
+        1,
+        (d * d + arc.radius ** 2 - circle.rMax ** 2) / (2 * d * arc.radius)
       )
-    );
-    cuts = [a - spread, a + spread];
-  }
-  return trim(arc, cuts, (x, y) =>
-    inside
-      ? Math.hypot(x - circle.x, y - circle.y) <= circle.rMax + EPS
-      : Math.hypot(x - circle.x, y - circle.y) >= circle.rMax - EPS
+    )
   );
+  return [a - spread, a + spread];
 }
 
-export function clipHalfPlane(arc, pivot, normal) {
+function lineCuts(arc, pivot, normal) {
   const offset =
     (arc.x - pivot[0]) * normal[0] + (arc.y - pivot[1]) * normal[1];
   const level = -offset / arc.radius;
   const a = Math.atan2(normal[1], normal[0]);
-  const cuts =
-    Math.abs(level) <= 1 ? [a - Math.acos(level), a + Math.acos(level)] : [];
-  return trim(
-    arc,
-    cuts,
-    (x, y) => (x - pivot[0]) * normal[0] + (y - pivot[1]) * normal[1] >= -EPS
+  return Math.abs(level) <= 1
+    ? [a - Math.acos(level), a + Math.acos(level)]
+    : [];
+}
+
+// A disc cut by straight lines: `contains` says which pieces are in it.
+export function clipShape(arc, shape, inside = false) {
+  const cuts = [
+    ...circleCuts(arc, shape),
+    ...shape.lines.flatMap(([pivot, normal]) => lineCuts(arc, pivot, normal)),
+  ];
+  return trim(arc, cuts, (x, y) => shape.contains(x, y) === inside);
+}
+
+export function clipCircle(arc, circle, inside = false) {
+  return trim(arc, circleCuts(arc, circle), (x, y) =>
+    inside
+      ? Math.hypot(x - circle.x, y - circle.y) <= circle.rMax + EPS
+      : Math.hypot(x - circle.x, y - circle.y) >= circle.rMax - EPS
   );
 }
 

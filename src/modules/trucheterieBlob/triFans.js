@@ -1,3 +1,4 @@
+import { triangleSides } from './triSides';
 import { H, TRIANGLE, cellCenter, cornerPoints, ringsEdge } from './triangle';
 
 export const BOUNDARY_RETURN = 12;
@@ -102,6 +103,7 @@ export default function triangleFans(design, groups, pitch, connectionsFor) {
       });
     });
   });
+  const { groupOf } = triangleSides(design.cells);
   hosts.forEach((host) => {
     const points = cornerPoints(host.cell);
     [0, 1, 2].forEach((side) => {
@@ -132,6 +134,7 @@ export default function triangleFans(design, groups, pitch, connectionsFor) {
           connections: host.connections,
           offset: [x - hx, y - hy],
           side,
+          facing: groupOf[host.index * 3 + side].members.length > 1,
         },
       });
     });
@@ -141,10 +144,11 @@ export default function triangleFans(design, groups, pitch, connectionsFor) {
     renderOccluders: drawn
       .slice(index + 1)
       .filter((later) => later.cap)
-      .map(({ cell, connections }) => ({
+      .map(({ cell, connections, cap }) => ({
         cell,
         type: connections[0][0],
         edge: connections[0][1],
+        cap,
       })),
   }));
 }

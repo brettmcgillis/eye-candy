@@ -8,8 +8,14 @@ import {
   SRGBColorSpace,
 } from 'three';
 
-import GRADIENTS from './gradients.json';
+import { getPaletteStops } from './paletteRegistry';
 import { samplePalette } from './paletteStops';
+
+export {
+  PALETTE_NAMES,
+  PALETTE_NONE,
+  getPaletteStops,
+} from './paletteRegistry';
 
 export {
   hexToRgb,
@@ -20,15 +26,7 @@ export {
   sampleStops,
 } from './paletteStops';
 
-export const PALETTE_NONE = 'None';
-export const PALETTE_NAMES = GRADIENTS.map((g) => g.name);
-
 const LUT_WIDTH = 256;
-
-export function getPaletteStops(name) {
-  const gradient = GRADIENTS.find((g) => g.name === name);
-  return gradient && gradient.colors.length > 0 ? gradient.colors : null;
-}
 
 export function rgbToColor(rgb, target = new Color()) {
   return target.setRGB(

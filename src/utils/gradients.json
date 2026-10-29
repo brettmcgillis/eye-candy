@@ -2522,5 +2522,35 @@
   {
     "name": "Kumiko Hinoki",
     "colors": ["#4a2f1b", "#8a5a33", "#c08a55", "#e2bb86", "#f6e7c9"]
+  },
+  {
+    "name": "Hot Spring 6 (lospec)",
+    "colors": ["#C3FFEA", "#7AF5B4", "#1DD0AF", "#FB613D", "#DA1020", "#99035D"]
+  },
+  {
+    "name": "Cosmo Zoids (lospec)",
+    "colors": [
+      "#81D697",
+      "#3AA288",
+      "#257171",
+      "#13434E",
+      "#0E234E",
+      "#6548A9",
+      "#AA6BD0",
+      "#ED9EED"
+    ]
+  },
+  {
+    "name": "Revival (lospec)",
+    "colors": [
+      "#2D2144",
+      "#4776C3",
+      "#2FC9ED",
+      "#AAEFD5",
+      "#F7F7EA",
+      "#F5E291",
+      "#F29CAC",
+      "#F5554A"
+    ]
   }
 ]

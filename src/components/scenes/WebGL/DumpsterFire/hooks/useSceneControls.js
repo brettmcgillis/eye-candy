@@ -907,6 +907,9 @@ ${allEntries}
         { collapsed: true }
       ),
       Smoke: generated.Smoke,
+      'Smoke Plume': generated['Smoke Plume'],
+      Fire: generated.Fire,
+      'Particle Smoke': generated['Particle Smoke'],
       'Brick Wall': generated['Brick Wall'],
     };
   }, [

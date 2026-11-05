@@ -1,15 +1,15 @@
 import React, { lazy } from 'react';
-import { GiRabbit } from 'react-icons/gi';
+import { PiRabbit } from 'react-icons/pi';
 
 function SceneIcon() {
-  return <GiRabbit color="#d1d5db" />;
+  return <PiRabbit color="#6a6a6a" size={24} />;
 }
 
 export default {
   id: 'stayHunted',
   label: 'Stay Hunted',
   channel: 'webgpu',
-  area: 'wip',
+  area: 'showcase',
   icon: SceneIcon,
   Component: lazy(() => import('./StayHunted')),
 };

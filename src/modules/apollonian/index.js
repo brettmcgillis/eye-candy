@@ -1,15 +1,53 @@
 export {
-  AO_SAMPLES,
-  AO_STEP,
-  HIT_EPSILON,
-  MARCH_STEPS,
-  MAX_TRACE,
-  MIN_STEP,
-  NORMAL_EPSILON,
-  SHADOW_STEPS,
-} from './constants';
-export { fold1, foldMirror2, rot2 } from './folds';
-export { sdBox, sdPlane, sdSphere } from './shapes';
-export { apollian4, apollianTree } from './fractals';
-export { marchSDF, softShadow } from './march';
-export { sdfAO, sdfNormal } from './shading';
+  BOUNDS_EXTENT_CUBE,
+  OPEN_RADIUS,
+  PACKING_GRID,
+  boundDistance,
+  boundRadius,
+  default as createField,
+  depthOf,
+  packingFor,
+} from './fields';
+export { default as frameView, stageLayout } from './framing';
+export { KLEINIAN_KEY_COUNT, default as kleinianParams } from './kleinianKeys';
+export { directionOf, objectRotation, planeBasis } from './math';
+export {
+  blendConfigs,
+  easeMorph,
+  evolveConfig,
+  morphAt,
+  morphClipSeconds,
+  sweepOffset,
+} from './motion';
+export { PACKING_STRIDE, buildSphereGrid } from './packing';
+export {
+  COLOR_SOURCES,
+  default as colorAt,
+  colorSource,
+  paletteCoordinate,
+} from './palette';
+export { default as renderApollonianSvg } from './renderSvg';
+export {
+  default as rollApollonianConfig,
+  randomSeed,
+  seedFor,
+} from './rollConfig';
+export {
+  default as buildSlice,
+  exactPacking,
+  layerOffsets,
+  pointOn,
+  sliceFrame,
+} from './slice';
+export * from './renderOptions.mjs';
+
+export {
+  HISTORY_GRID,
+  HISTORY_MAX_CIRCLES,
+  historyPackingFor,
+  historyCirclesAt,
+  historyPoint,
+  historyTimeAt,
+  historyWarpAt,
+  historyLipschitz,
+} from './history';

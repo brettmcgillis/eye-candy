@@ -1,6 +1,13 @@
 import React, { memo, useEffect, useMemo } from 'react';
 
-import { Fn, positionLocal, positionWorld, uniform, uv, vec3 } from 'three/tsl';
+import {
+  Fn,
+  positionLocal,
+  uniform,
+  uv,
+  varyingProperty,
+  vec3,
+} from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
 import { herdShadow } from '../utils/herdField';
@@ -45,6 +52,9 @@ function Terrain({ config, dayNight, herd, travelUniform }) {
     // space, so both surfaces ride the identical height field.
     const fieldUv = uv();
 
+    const lit = varyingProperty('float', 'vTerrainLit');
+    const shadow = varyingProperty('float', 'vTerrainShadow');
+
     const vertex = Fn(() => {
       const displaced = positionLocal.toVar();
       displaced.y.addAssign(
@@ -53,26 +63,26 @@ function Terrain({ config, dayNight, herd, travelUniform }) {
         )
       );
 
-      return displaced;
-    });
-
-    const color = Fn(() => {
+      // Shaded per vertex (the plane is untransformed, so local is world):
+      // per pixel the four-sample field normal cost a full-screen pass.
       const normal = fieldNormal(
         fieldUv,
         values.noiseScale,
         travelUniform,
         values.seed
       );
-      const lambert = blendToOne(
-        normal.dot(vec3(1.0).normalize()).max(0.0),
-        values.lightWrap
+      lit.assign(
+        blendToOne(
+          normal.dot(vec3(1.0).normalize()).max(0.0),
+          values.lightWrap
+        ).mul(dayNight.lightIntensity)
       );
+      shadow.assign(herdShadow(displaced, herd));
 
-      return values.color
-        .mul(lambert)
-        .mul(dayNight.lightIntensity)
-        .sub(herdShadow(positionWorld, herd));
+      return displaced;
     });
+
+    const color = Fn(() => values.color.mul(lit).sub(shadow));
 
     const nodeMaterial = new THREE.MeshBasicNodeMaterial();
     nodeMaterial.positionNode = vertex();

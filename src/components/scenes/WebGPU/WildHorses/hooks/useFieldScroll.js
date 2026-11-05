@@ -74,7 +74,7 @@ export default function useFieldScroll({
     travelUniform.value = travelRef.current;
     scrollUniform.value =
       travelRef.current * (terrainExtent / terrainNoiseScale);
-  });
+  }, -1);
 
   return { herd, scrollUniform, travelRef, travelUniform };
 }

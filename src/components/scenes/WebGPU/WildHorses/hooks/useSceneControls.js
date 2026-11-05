@@ -14,9 +14,11 @@ import {
 import { useMediaRecorder } from '@modules/mediaRecorder';
 
 import getFieldControls from '../components/getFieldControls';
+import getFireControls from '../components/getFireControls';
 import getGrassControls from '../components/getGrassControls';
 import getHerdControls from '../components/getHerdControls';
 import getSkyControls from '../components/getSkyControls';
+import getSmokeControls from '../components/getSmokeControls';
 import { DEFAULT_PRESET, PRESETS, getPresetControls } from '../presets/presets';
 import LIGHTING from '../utils/lighting';
 
@@ -45,15 +47,20 @@ export default function useSceneControls() {
     lightingFolderPath: LIGHTING_FOLDER_PATH,
   });
 
-  const [controls, setControls] = useControls(SCENE_LABEL, () => ({
-    Presets: presetsFolder,
-    Camera: folder(cameraControls, { collapsed: true }),
-    Lighting: folder(lightingControls, { collapsed: true }),
-    Field: getFieldControls(),
-    Grass: getGrassControls(),
-    Herd: getHerdControls(),
-    Sky: getSkyControls(),
-  }));
+  const [controls, setControls] = useControls(SCENE_LABEL, () => {
+    const p = controlsSnapshotRef.current;
+    return {
+      Presets: presetsFolder,
+      Camera: folder(cameraControls, { collapsed: true }),
+      Lighting: folder(lightingControls, { collapsed: true }),
+      Field: getFieldControls(p),
+      Grass: getGrassControls(p),
+      Herd: getHerdControls(p),
+      Fire: getFireControls(p),
+      Smoke: getSmokeControls(p),
+      Sky: getSkyControls(p),
+    };
+  });
 
   attachSetControls(setControls);
   controlsSnapshotRef.current = { ...controls };

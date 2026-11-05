@@ -33,10 +33,16 @@ export default function WildHorses() {
     nightLightIntensity: config.nightLightIntensity,
     nightMode: config.nightMode,
     terrainExtent: config.terrainExtent,
+    transitionAngle: config.transitionAngle,
+    transitionHold: config.transitionHold,
+    transitionProgress: config.transitionProgress,
     transitionRate: config.transitionRate,
     waveHeight: config.waveHeight,
     waveLength: config.waveLength,
   });
+
+  const fieldWorldSpeed =
+    (config.fieldSpeed * config.terrainExtent) / config.terrainNoiseScale;
 
   return (
     <>
@@ -57,7 +63,11 @@ export default function WildHorses() {
         scrollUniform={scrollUniform}
         travelUniform={travelUniform}
       />
-      <Herd config={config} dayNight={dayNight} />
+      <Herd
+        config={config}
+        dayNight={dayNight}
+        fieldWorldSpeed={fieldWorldSpeed}
+      />
     </>
   );
 }

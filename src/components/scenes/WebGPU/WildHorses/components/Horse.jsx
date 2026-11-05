@@ -100,14 +100,13 @@ function Horse({
   useEffect(() => {
     if (!onBonesReady) return;
 
-    const byName = new Map();
-    clone.traverse((child) => byName.set(child.name, child));
-
+    // `nodes`, not `clone.traverse`: rendering `_rootJoint` as a primitive
+    // reparents the skeleton out of the clone before this effect runs.
     onBonesReady({
-      mane: MANE_BONES.map((name) => byName.get(name)).filter(Boolean),
-      tail: TAIL_BONES.map((name) => byName.get(name)).filter(Boolean),
+      mane: MANE_BONES.map((name) => nodes[name]).filter(Boolean),
+      tail: TAIL_BONES.map((name) => nodes[name]).filter(Boolean),
     });
-  }, [clone, onBonesReady]);
+  }, [nodes, onBonesReady]);
 
   return (
     <group ref={group} {...props} dispose={null}>

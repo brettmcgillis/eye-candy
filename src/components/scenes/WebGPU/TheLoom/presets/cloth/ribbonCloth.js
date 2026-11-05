@@ -1,5 +1,6 @@
-const RIBBON_CLOTH = {
-  width: 2.0,
+// Literal artwork values; new controls require an explicit migration.
+const PRESET = {
+  width: 2,
   height: 0.3,
   segmentsX: 60,
   segmentsY: 30,
@@ -22,9 +23,27 @@ const RIBBON_CLOTH = {
   roughness: 0.5,
   metalness: 0.1,
   opacity: 1,
-  sphereX: 1.0,
+  sphereX: 1,
   sphereY: -0.15,
   sphereZ: 0.1,
+  orientation: 'vertical',
+  paused: false,
+  cursorCollider: true,
+  cursorRadius: 0.12,
+  debugColliders: true,
+  debugColor: '#ff0000',
+  sphereEnabled: true,
+  sphereRadius: 0.15,
+  sphereVisible: true,
+  bgColor: '#1a1a2e',
+  ambientIntensity: 0.5,
+  ambientColor: '#ffffff',
+  dirIntensity: 1,
+  dirColor: '#ffffff',
+  dirX: 3,
+  dirY: 5,
+  dirZ: 2,
+  cutouts: [],
 };
 
-export default RIBBON_CLOTH;
+export default PRESET;

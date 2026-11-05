@@ -1,6 +1,7 @@
-const GHOST_CLOTH = {
-  width: 1.0,
-  height: 1.0,
+// Literal artwork values; new controls require an explicit migration.
+const PRESET = {
+  width: 1,
+  height: 1,
   segmentsX: 28,
   segmentsY: 28,
   pinMode: 'center',
@@ -20,17 +21,40 @@ const GHOST_CLOTH = {
   holeAmount: 0.2,
   tatterEdge: 0,
   cutouts: [
-    { u: 0.43, v: 0.4, radius: 0.06 },
-    { u: 0.57, v: 0.4, radius: 0.06 },
+    {
+      u: 0.43,
+      v: 0.4,
+      radius: 0.06,
+    },
+    {
+      u: 0.57,
+      v: 0.4,
+      radius: 0.06,
+    },
   ],
   color: '#f5f0e8',
   roughness: 0.8,
-  metalness: 0.0,
+  metalness: 0,
   opacity: 1,
   sphereX: 0,
   sphereY: -0.15,
   sphereZ: 0,
   sphereVisible: false,
+  paused: false,
+  cursorCollider: true,
+  cursorRadius: 0.12,
+  debugColliders: true,
+  debugColor: '#ff0000',
+  sphereEnabled: true,
+  sphereRadius: 0.15,
+  bgColor: '#1a1a2e',
+  ambientIntensity: 0.5,
+  ambientColor: '#ffffff',
+  dirIntensity: 1,
+  dirColor: '#ffffff',
+  dirX: 3,
+  dirY: 5,
+  dirZ: 2,
 };
 
-export default GHOST_CLOTH;
+export default PRESET;

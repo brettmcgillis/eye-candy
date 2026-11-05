@@ -1,11 +1,12 @@
-const DEFAULT_CLOTH = {
-  width: 1.0,
+// Literal artwork values; new controls require an explicit migration.
+const PRESET = {
+  width: 1,
   height: 0.7,
   segmentsX: 30,
   segmentsY: 21,
   pinMode: 'left',
   shapePreset: 'rectangle',
-  wind: 1.0,
+  wind: 1,
   windDirX: 1,
   windDirZ: 0,
   stiffness: 0.2,
@@ -20,11 +21,29 @@ const DEFAULT_CLOTH = {
   tatterEdge: 0,
   color: '#8866aa',
   roughness: 0.6,
-  metalness: 0.0,
+  metalness: 0,
   opacity: 1,
   sphereX: 0.5,
   sphereY: -0.35,
   sphereZ: 0.1,
+  orientation: 'vertical',
+  paused: false,
+  cursorCollider: true,
+  cursorRadius: 0.12,
+  debugColliders: true,
+  debugColor: '#ff0000',
+  sphereEnabled: true,
+  sphereRadius: 0.15,
+  sphereVisible: true,
+  bgColor: '#1a1a2e',
+  ambientIntensity: 0.5,
+  ambientColor: '#ffffff',
+  dirIntensity: 1,
+  dirColor: '#ffffff',
+  dirX: 3,
+  dirY: 5,
+  dirZ: 2,
+  cutouts: [],
 };
 
-export default DEFAULT_CLOTH;
+export default PRESET;

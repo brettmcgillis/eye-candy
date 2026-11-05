@@ -18,7 +18,8 @@ const CLOTH_PRESETS = {
 const DEFAULT_PRESET = 'Default';
 
 // Keys in presets that are NOT Leva controls (passed separately)
-const NON_CONTROL_KEYS = new Set(['cutouts']);
+export const PRESET_METADATA_KEYS = ['cutouts'];
+const NON_CONTROL_KEYS = new Set(PRESET_METADATA_KEYS);
 
 function getPresetControls({ presetSnapshot }) {
   const filtered = {};

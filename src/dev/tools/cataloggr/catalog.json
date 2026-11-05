@@ -115,7 +115,7 @@
     },
     {
       "id": "idea-028",
-      "text": "Consider creative letterboxing for scenes. Could be a 3d element to give it depth in the scene, catch shadows and provide framing.\nConsider creative composition for scenes. contain/arrange the subject(s) within a  Square, Rectangle, Circle, Torus, etc"
+      "text": "Consider creative letterboxing for scenes. Could be a 3d element to give it depth in the scene, catch shadows and provide framing."
     },
     {
       "id": "idea-029",
@@ -218,24 +218,40 @@
       "text": "new dev tool: AntiSocialMedia. streamline the actual posting of my videos & shit to IG/FB/plus more. Goal should include making a post across FB and IG as I currently do, and include one more platform as well, X, Meta/Threads"
     },
     {
-      "id": "idea-1792622543363-0pll4w",
-      "text": "Generative version of Papercuts based on the rules present in the current designs"
-    },
-    {
-      "id": "idea-1792622605065-zxaita",
-      "text": "Generative scene of the argyle pattern from LoaderPatterns. Ranging from a completely tiled plane, to having perlin noise applied to determine where squares are visible, where they are fading, and where theyre completely faded out."
-    },
-    {
       "id": "idea-1792629030983-6xwe3m",
       "text": "CrossTalk style scene but CrossDevice. Inspired by 44ian's TD/p5.js peice.\nFigure out novel scenes that can run across devices. Might need the \"host\" to be able to \"arrange\" devices in 2d or 3d space, and or arrange other scene aspects (spline curves etc). this might require devices to report their viewport dimensions and some identifier. \n- There is a closed spline that all devices get a window to. Particles, objects, etc, flow along this spline giving the illusion that stuff is going from one device to another.\n- A top down view of a stream."
     },
     {
-      "id": "idea-1792695979914-r5vird",
-      "text": "Generative control panels. Sliders, buttons, dials, knobs, patch inputs, all arranged randomly. its unclear if these belong to a vehicle, an electronic device, an audio workstation or instrument due to the wide variety and randomization\ninspired by https://www.shadertoy.com/view/cdSfDV & https://www.shadertoy.com/view/cs2GWD\n- could use square subdivision to get a series of block sizes and then fill with variants\n- could use circle packing to make the dial from hell."
-    },
-    {
       "id": "idea-1792699447903-puyxfk",
       "text": "new dev tool: file converter"
+    },
+    {
+      "id": "idea-1793102690868-zuilto",
+      "text": "Interactive projection mapping scene: https://bunyan.in/bounce/\n- falling balls bouncing off post-its\n- falling liquid bouncing off post-its\n- particle flow around objects"
+    },
+    {
+      "id": "idea-1793102708820-19n36q",
+      "text": "Generative architectural blueprints"
+    },
+    {
+      "id": "idea-1793656301686-rvip92",
+      "text": "Circle packing as a composition.\n- reaction diffusions\n- spirographs\n- ghosts?\n- iso lines"
+    },
+    {
+      "id": "idea-1793656762443-8kjy14",
+      "text": "dr. strange style mirror dimension city scape"
+    },
+    {
+      "id": "idea-1793663572482-de9frp",
+      "text": "Consider creative composition for scenes. contain/arrange the subject(s) within a  Square, Rectangle, Circle, Torus, etc"
+    },
+    {
+      "id": "idea-1793664850828-mkx38g",
+      "text": "Cloud chamber"
+    },
+    {
+      "id": "idea-1793808758440-vh2dua",
+      "text": "Could we do a 3d, colorful version of this style of flow field?\nhttps://turtletoy.net/turtle/36d793188c"
     }
   ],
   "statuses": {
@@ -254,6 +270,8 @@
     "webgl:watercolorSquares::Red": true,
     "webgpu:beautyIsInTheEyeOfTheBeheaded::$scene": true,
     "webgpu:birdsArentReal::$scene": true,
+    "webgpu:burningAtBothEnds::Enlightened": true,
+    "webgpu:burningAtBothEnds::Extinguished": true,
     "webgpu:crossTalk::CloudConnected": true,
     "webgpu:crossTalk::Waterworks": true,
     "webgpu:exhibitA::Kleinian Walk": false,
@@ -263,6 +281,7 @@
     "webgpu:horsesForCourses::$scene": true,
     "webgpu:loGlow::Default": true,
     "webgpu:loGlow::Mondrian": true,
+    "webgpu:stayHunted::Painting": true,
     "webgpu:surrender::Spring": true,
     "webgpu:theSpeedOfLightning::Dark": true,
     "webgpu:touchGrass::$scene": true,

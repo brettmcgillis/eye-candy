@@ -13,7 +13,7 @@ export default function argyleDevPlugin() {
     slug: 'argyle',
     tool: 'argyle',
     preset: {
-      base: 'BASE',
+      base: 'SAVED_BASE',
       configFrom,
       presetFromConfig,
       name: (config, sidecar) => sidecar.name || `Seed ${config.seed}`,

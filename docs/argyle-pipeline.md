@@ -32,9 +32,16 @@ with `@modules/schemaControls`.
 - `framing.js`: front, hero and side views with orthographic or perspective
   projection. Bleed framing crops inside the lattice in front orthographic
   view; panel framing fits the whole arrangement. Logo framing always fits.
-- `plotGeometry.js` / `plot.js`: projected vector cube faces, spatially indexed
-  hidden-line removal using planar depth, page clipping, ink layers and
-  physical hatch spacing. `tileMesh.js` supplies the same solid or hollow tile
+- `plotMesh.js`: the pen plot (`svgStyle` `edges` or `faces`, the default),
+  SubdivisionRelief's pair: every tile placed in world space and handed to
+  plotKit's `meshPlotSvg` with the tiles themselves as exact occluders, so a
+  line ends where a nearer tile covers it, shared edges are drawn once and the
+  strokes land in at most `svgColors` (default 8) pen layers. `edges` outlines
+  every tile, `faces` only each tile's top. A tile under half opaque is
+  neither drawn nor hides anything; the fade is a hatch concern. No GPU.
+- `plotGeometry.js` / `plot.js`: the `hatch` and `filled` styles: projected
+  vector cube faces, spatially indexed hidden-line removal using planar depth,
+  page clipping, ink layers and physical hatch spacing. `tileMesh.js` supplies the same solid or hollow tile
   topology to GPU geometry and SVG projection; ring tops suppress construction
   seams, and openings include inner walls in 3D. Outlines and hatches encode partial fades as pen
   density and omit hidden edges; filled artwork uses the unlit palette colours
@@ -60,10 +67,40 @@ montage mode holds one frame per generation. Motion can run beneath full
 coverage as tile scale, lift and tilt. A stationary complete weave uses tide
 with coverage 1 and colour motion 0.
 
+## Automaton source
+
+`source: automaton` replaces the Perlin coverage field with a five-state
+automaton from `@modules/cellularAutomata` (see `docs/cellular-automata.md`):
+0 empty space, 1 red, 2 red hollow, 3 black, 4 black hollow. Red and black are
+the palette's first two inks; hollow is the frame geometry. The layer (height
+and overlap) stays the checkerboard parity, so ink, style and presence are
+independent of it.
+
+- `automaton.js` builds the neighbour lists from tile positions (edge-adjacent
+  for `near`, plus diagonals for `wide`; Life is always wide), the start
+  (`random` at `density`, or a seeded `centre` cluster) and the rule
+  (`rule`, `threshold`, `inertia`, `heat`, `lambda`).
+- `generation.js` reads generation `generation + seconds * stepsPerSecond`.
+  Between two generations opacity, scale, ink and hollow tween, so live
+  stepping reads as growth rather than flicker; a still at `generation` is
+  exact. `towers` lifts tile depth by how many generations the tile has held
+  its state (capped at twelve).
+- Presence, ink and hollow come from the state, so `coverage`, `softness`,
+  `colorMode` and the other noise controls do nothing. The motion choreography
+  still applies; `tide` follows occupancy.
+- The rig draws four instanced meshes (layer x filled/hollow) and routes each
+  tile by its current `tile.hollow`. The plots read the same flag, so `edges`
+  and `faces` give a two-pen plot (red, black) of the exact generation.
+- Rolls: the `automaton` facet rolls rule, neighbourhood, start, density,
+  generation and rule parameters; `source` is never rolled, so unpinned rolls
+  stay Perlin. The scene's Leva shows the folder only for `source: automaton`.
+- Loops: an automaton does not close a loop. Video runs forward from
+  `generation`; use stills or the live preview for the CA.
+
 ## Surfaces
 
-- Scene: `src/components/scenes/WebGPU/Argyle/`, id `argyle`, WIP, with twelve
-  presets covering hollow lower, hollow upper and double hollow tiles, full tiling, dissolving fields, relief, extrusion and logo.
+- Scene: `src/components/scenes/WebGPU/Argyle/`, id `argyle`, WIP, with fourteen
+  presets covering hollow lower, hollow upper and double hollow tiles, full tiling, dissolving fields, relief, extrusion, logo and two automata.
 - Workbench: `/dev/argyle` (`ArgyleCLI`), `src/dev/tools/argyle/`, with the real
   stage in its default Live tab. Space pauses; F frames; Capture freezes the
   image and vector plot. The capture sidecar stores the frozen phase, so saving
@@ -86,7 +123,7 @@ To render the exact defaults, hold every facet; to vary an existing generation,
 use its `props.json` as `--base` and hold the facets to preserve.
 
 ```sh
-npm run argyle:generate -- --batch edition-a --count 2000 --no-webp --svg --svgStyle hatch
+npm run argyle:generate -- --batch edition-a --count 2000 --no-webp --svg --svgStyle faces
 npm run argyle:generate -- --batch relief-a --dimension extruded --views hero --count 12
 npm run argyle:generate -- --batch logo-a --pattern logo --coverage 1 --count 12
 npm run argyle:video -- --batch loop-a --count 3 --mode loop --mp4 --webm
@@ -94,9 +131,11 @@ npm run argyle:video -- --batch loop-a --count 3 --mode loop --mp4 --webm
 
 SVGs leave through `out.svg`, receiving shared physical sizing, optional ink
 reduction, gallery thumbnails and Open in Plotterizer. Pen plots use their
-actual palette ink colours and do not attempt to plot raster lighting. Hatching
-represents opacity as density; it treats each visible tile as a pen surface
-when suppressing the lines behind it. Filled SVG retains transparency instead.
+actual palette ink colours and do not attempt to plot raster lighting.
+`edges` and `faces` are the Plotterizer-ready styles. Hatching represents
+opacity as density; it treats each visible tile as a pen surface when
+suppressing the lines behind it, but draws its edges as separate segments and
+one layer per tile colour. Filled SVG retains transparency instead.
 
 ## Validation
 

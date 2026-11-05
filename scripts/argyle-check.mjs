@@ -196,12 +196,19 @@ for (const [lowerStyle, upperStyle] of [
         options: { ...options, projection },
         view: 'hero',
       });
-      for (const svgStyle of ['outline', 'hatch', 'filled']) {
+      for (const svgStyle of ['edges', 'faces', 'hatch', 'filled']) {
         const svg = k.renderSvg(field, view, { ...options, svgStyle });
         check(
           svg.includes('<path'),
           `${dimension}/${projection}/${svgStyle} has no vectors`
         );
+        if (svgStyle === 'edges' || svgStyle === 'faces') {
+          const pens = svg.match(/<g /gu)?.length ?? 0;
+          check(
+            pens >= 1 && pens <= 8,
+            `${dimension}/${projection}/${svgStyle} has ${pens} pens, expected 1-8`
+          );
+        }
         check(
           !/NaN|Infinity/u.test(svg),
           `${dimension}/${projection}/${svgStyle} invalid vector coordinates`
@@ -209,6 +216,72 @@ for (const [lowerStyle, upperStyle] of [
       }
     }
   }
+}
+const automatonFields = [];
+for (const rule of ['cyclic', 'territory', 'life', 'table']) {
+  const config = {
+    ...defaults,
+    source: 'automaton',
+    rule,
+    columns: 7,
+    rows: 15,
+    density: rule === 'life' ? 0.5 : 0.9,
+    generation: 12,
+    dimension: 'extruded',
+    towers: 0.3,
+  };
+  const field = k.createField(config);
+  const again = k.createField(config);
+  check(
+    field.data.every((v, i) => v === again.data[i]),
+    `${rule} automaton is not deterministic`
+  );
+  const first = field.update(0).slice();
+  field.update(7.3);
+  field.update(2);
+  check(
+    field.update(0).every((v, i) => v === first[i]),
+    `${rule} automaton does not rewind to its generation`
+  );
+  field.update(0.37);
+  check(
+    field.data.every(
+      (v, i) => Number.isFinite(v) && (i % k.STRIDE !== 7 || (v >= 0 && v <= 1))
+    ),
+    `${rule} automaton wrote invalid tile data`
+  );
+  field.tiles.forEach((tile, i) => {
+    const owned = tile.layer === (field.tiles[i].layer ?? tile.layer);
+    check(owned, `${rule} automaton moved a tile between layers`);
+  });
+  automatonFields.push(field);
+}
+const cyclicField = automatonFields[0];
+cyclicField.update(0);
+check(
+  cyclicField.tiles.some((tile) => tile.hollow) &&
+    cyclicField.tiles.some((tile) => !tile.hollow),
+  'cyclic automaton does not mix hollow and filled tiles'
+);
+check(
+  cyclicField.tiles.some(
+    (_, i) => cyclicField.data[i * k.STRIDE + 7] < 0.015
+  ) &&
+    cyclicField.tiles.some((_, i) => cyclicField.data[i * k.STRIDE + 7] === 1),
+  'cyclic automaton has no empty space beside occupied tiles'
+);
+const cyclicView = k.frameView({
+  bounds: cyclicField.bounds,
+  options,
+  view: 'hero',
+});
+for (const svgStyle of ['edges', 'faces']) {
+  const svg = k.renderSvg(cyclicField, cyclicView, { ...options, svgStyle });
+  check(svg.includes('<path'), `automaton ${svgStyle} has no vectors`);
+  check(
+    (svg.match(/<g /gu)?.length ?? 0) <= 2,
+    `automaton ${svgStyle} used more than the two state inks`
+  );
 }
 const savedView = k.frameView({
   bounds: k.createField(defaults).bounds,
@@ -283,5 +356,5 @@ if (failures.length) {
   process.exit(1);
 }
 console.log(
-  'Argyle: 2,000 unique deterministic rolls, facet holds, pins, six loop seams, coverage endpoints, loader topology, 72 vector branches and workbench schema passed.'
+  'Argyle: 2,000 unique deterministic rolls, facet holds, pins, six loop seams, coverage endpoints, loader topology, 72 vector branches, four automaton rules and workbench schema passed.'
 );

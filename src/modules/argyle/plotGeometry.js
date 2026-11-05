@@ -6,6 +6,28 @@ import tileMesh from './tileMesh';
 
 const srgb = (v) =>
   v <= 0.0031308 ? v * 12.92 : 1.055 * v ** (1 / 2.4) - 0.055;
+export function placeTile(shape, data, k) {
+  const s = data[k + 3];
+  const d = data[k + 4];
+  const ct = Math.cos(data[k + 5]);
+  const st = Math.sin(data[k + 5]);
+  const cr = Math.cos(data[k + 6]);
+  const sr = Math.sin(data[k + 6]);
+  return shape.vertices.map(([x, y, z]) => {
+    const a = x * s;
+    const b = y * s * ct - z * d * st;
+    const c = y * s * st + z * d * ct;
+    return [
+      data[k] + a * cr - b * sr,
+      data[k + 1] + a * sr + b * cr,
+      data[k + 2] + c,
+    ];
+  });
+}
+export const tileInk = (data, k) =>
+  [data[k + 8], data[k + 9], data[k + 10]].map(srgb);
+export const isDrawn = (data, k) =>
+  data[k + 7] >= 0.015 && data[k + 3] >= 0.002;
 export function projectedFaces(field, view, options) {
   const project = createProjector(view, options.width, options.height);
   const result = [];
@@ -13,25 +35,10 @@ export function projectedFaces(field, view, options) {
   const shapes = [tileMesh(false), tileMesh(true, field.config.frameWidth)];
   tiles.forEach((tile, i) => {
     const k = i * STRIDE;
-    if (data[k + 7] < 0.015 || data[k + 3] < 0.002) return;
+    if (!isDrawn(data, k)) return;
     const shape = shapes[Number(tile.hollow)];
-    const s = data[k + 3];
-    const d = data[k + 4];
-    const ct = Math.cos(data[k + 5]);
-    const st = Math.sin(data[k + 5]);
-    const cr = Math.cos(data[k + 6]);
-    const sr = Math.sin(data[k + 6]);
-    const points = shape.vertices.map(([x, y, z]) => {
-      const a = x * s;
-      const b = y * s * ct - z * d * st;
-      const c = y * s * st + z * d * ct;
-      return project(
-        data[k] + a * cr - b * sr,
-        data[k + 1] + a * sr + b * cr,
-        data[k + 2] + c
-      );
-    });
-    const ink = hex([data[k + 8], data[k + 9], data[k + 10]].map(srgb));
+    const points = placeTile(shape, data, k).map((p) => project(...p));
+    const ink = hex(tileInk(data, k));
     shape.faces.forEach((face) => {
       if (field.config.dimension === 'flat' && !face.top) return;
       const polygon = face.indices.map((j) => points[j]);

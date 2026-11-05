@@ -5,6 +5,7 @@ const n = (facet, section, label, value, min, max, step, window = [min, max]) =>
   rolled(facet, window, num(section, null, label, value, min, max, step));
 const c = (facet, section, label, choices, value) =>
   inFacet(facet, choice(section, null, label, choices, value));
+const when = (item, shown, help) => ({ ...item, help, when: shown });
 export default {
   pattern: c(
     'layout',
@@ -109,6 +110,81 @@ export default {
     ['opacity', 'shrink', 'both'],
     'both'
   ),
+  source: choice(
+    'automaton',
+    null,
+    'Field source',
+    ['noise', 'automaton'],
+    'noise',
+    {
+      help: 'noise: the Perlin coverage field; automaton: a five-state cellular automaton (empty, red, red hollow, black, black hollow) picks each tile',
+    }
+  ),
+  rule: when(
+    c(
+      'automaton',
+      'automaton',
+      'Rule',
+      ['cyclic', 'territory', 'life', 'table'],
+      'cyclic'
+    ),
+    { source: ['automaton'] },
+    'cyclic: states chase each other round a cycle (waves); territory: neighbours vote (regions); life: births at three neighbours, survival at two or three (wide neighbourhood); table: a seeded random rulebook'
+  ),
+  neighborhood: when(
+    c('automaton', 'automaton', 'Neighbours', ['near', 'wide'], 'near'),
+    { source: ['automaton'] },
+    'near: the four edge-adjacent tiles; wide: all eight. Life always uses wide'
+  ),
+  start: when(
+    c('automaton', 'automaton', 'Start', ['random', 'centre'], 'random'),
+    { source: ['automaton'] },
+    'random: scattered states; centre: a seeded cluster in the middle'
+  ),
+  density: when(
+    n('automaton', 'automaton', 'Start density', 0.85, 0.05, 1, 0.01, [0.3, 1]),
+    { source: ['automaton'] },
+    'Share of tiles that start occupied (Life likes about 0.35)'
+  ),
+  generation: when(
+    n('automaton', 'automaton', 'Generation', 24, 0, 400, 1, [6, 90]),
+    { source: ['automaton'] },
+    'The generation a still shows and playback starts from'
+  ),
+  stepsPerSecond: when(
+    num('automaton', null, 'Steps per second', 2, 0.25, 12, 0.25),
+    { source: ['automaton'] },
+    'Generations per second in live preview and video'
+  ),
+  threshold: when(
+    n('automaton', 'automaton', 'Advance threshold', 2, 1, 4, 1, [1, 3]),
+    { source: ['automaton'], rule: ['cyclic'] },
+    'Neighbours one step ahead that pull a tile forward'
+  ),
+  inertia: when(
+    n('automaton', 'automaton', 'Inertia', 1, 0, 4, 0.5, [0.5, 2]),
+    { source: ['automaton'], rule: ['territory'] },
+    'Extra votes a tile gives its own state'
+  ),
+  heat: when(
+    n('automaton', 'automaton', 'Heat', 0.03, 0, 0.3, 0.005, [0.01, 0.08]),
+    { source: ['automaton'], rule: ['cyclic', 'territory'] },
+    'Chance a tile ignores its neighbours each generation; keeps waves and borders alive'
+  ),
+  lambda: when(
+    n(
+      'automaton',
+      'automaton',
+      'Table density',
+      0.45,
+      0.05,
+      0.9,
+      0.01,
+      [0.25, 0.6]
+    ),
+    { source: ['automaton'], rule: ['table'] },
+    'Share of neighbourhoods the rulebook fills (the rest empty out)'
+  ),
   palette: c(
     'color',
     'color',
@@ -207,5 +283,10 @@ export default {
     1,
     0.01,
     [0.4, 0.9]
+  ),
+  towers: when(
+    n('relief', 'relief', 'Towers', 0, 0, 1, 0.01, [0, 0.6]),
+    { source: ['automaton'] },
+    'Automaton tiles grow taller the longer they hold a state'
   ),
 };

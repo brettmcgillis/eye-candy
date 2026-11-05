@@ -5,6 +5,7 @@ import {
   pointAt,
   projectedFaces,
 } from './plotGeometry';
+import plotMesh from './plotMesh';
 
 const fmt = (v) => Number(v.toFixed(3));
 const path = (a, b) => `M${fmt(a.x)},${fmt(a.y)}L${fmt(b.x)},${fmt(b.y)}`;
@@ -92,6 +93,8 @@ function visibleLine(a, b, face, candidates) {
     .join('');
 }
 export default function renderSvg(field, view, options) {
+  if (options.svgStyle === 'edges' || options.svgStyle === 'faces')
+    return plotMesh(field, view, options);
   const { width, height } = options;
   const faces = projectedFaces(field, view, options).map((face) => ({
     ...face,

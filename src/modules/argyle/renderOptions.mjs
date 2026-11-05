@@ -42,9 +42,9 @@ export const RENDER_OPTIONS = {
     type: 'enum',
     section: 'svg',
     label: 'SVG style',
-    choices: ['hatch', 'outline', 'filled'],
-    default: 'hatch',
-    help: 'Hatch encodes fades as pen density; filled preserves artwork transparency',
+    choices: ['edges', 'faces', 'hatch', 'filled'],
+    default: 'edges',
+    help: 'edges: every tile outlined; faces: only each tile’s top; hatch encodes fades as pen density; filled preserves artwork transparency',
   }),
   hatchSpacing: still({
     type: 'number',
@@ -64,7 +64,14 @@ export const RENDER_OPTIONS = {
   fov: standard.fov(35),
   margin: standard.margin(0.06, 'Space around the pattern'),
   samples: standard.samples(),
-  keep: standard.keep(['layout', 'field', 'color', 'motion', 'relief']),
+  keep: standard.keep([
+    'layout',
+    'field',
+    'color',
+    'motion',
+    'relief',
+    'automaton',
+  ]),
   base: standard.base('pattern'),
   mode: standard.mode(
     ['loop', 'montage'],

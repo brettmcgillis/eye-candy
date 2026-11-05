@@ -1,7 +1,7 @@
 import { attribute } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import { isHollow, tileMesh } from '@modules/argyle';
+import { tileMesh } from '@modules/argyle';
 
 const CAPACITY = 64 * 64 * 2;
 export default function createInstances() {
@@ -51,9 +51,8 @@ export default function createInstances() {
   return {
     mesh,
     alpha,
-    apply(config, index) {
+    apply(config, nextHollow) {
       const width = config.frameWidth ?? 0.12;
-      const nextHollow = isHollow(config, index);
       if (nextHollow !== hollow || (nextHollow && width !== frameWidth)) {
         hollow = nextHollow;
         mesh.geometry.dispose();

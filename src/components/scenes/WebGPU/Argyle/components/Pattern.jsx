@@ -10,7 +10,9 @@ function Pattern({ config }) {
   const elapsed = useRef(0);
   const generationKey = JSON.stringify(configFrom(config));
   useEffect(() => {
-    rig.apply(JSON.parse(generationKey));
+    const next = JSON.parse(generationKey);
+    if (next.source === 'automaton') elapsed.current = 0;
+    rig.apply(next);
   }, [generationKey, rig]);
   useEffect(() => () => rig.dispose(), [rig]);
   useFrame((state, delta) => {

@@ -1,4 +1,5 @@
 /* eslint-disable no-param-reassign */
+import createTileAutomaton, { hollowOf, inkOf } from './automaton';
 import { clamp, colorCoordinate, linear, paletteFor, smooth } from './color';
 import buildTiles from './layout';
 import createNoise from './noise';
@@ -6,6 +7,7 @@ import { isHollow } from './tileMesh';
 
 export const STRIDE = 12;
 const TAU = Math.PI * 2;
+const TOWER_CAP = 12;
 function fbm(noise, x, y, z, octaves) {
   let sum = 0;
   let weight = 0.5;
@@ -26,6 +28,7 @@ export function createField(config) {
     ...tile,
     hollow: isHollow(c, tile.layer),
   }));
+  const auto = c.source === 'automaton' ? createTileAutomaton(c, tiles) : null;
   const data = new Float32Array(tiles.length * STRIDE);
   const noise = createNoise(c.seed);
   const colors = paletteFor(c);
@@ -63,7 +66,16 @@ export function createField(config) {
           }
         : null,
     min: [-half[0], -half[1], -0.1],
-    max: [half[0], half[1], flat ? 0.02 : c.layerGap + c.lift + depth * 2 + 1],
+    max: [
+      half[0],
+      half[1],
+      flat
+        ? 0.02
+        : c.layerGap +
+          c.lift +
+          depth * (2 + (auto ? c.towers * TOWER_CAP : 0)) +
+          1,
+    ],
   };
   const sources = new Float64Array(tiles.length * 6);
   const palette = new Float32Array(1024 * 3);
@@ -90,7 +102,15 @@ export function createField(config) {
     data[i * STRIDE] = x * cos - y * sin;
     data[i * STRIDE + 1] = x * sin + y * cos;
   });
+  const stateInks = [colors[0], colors[1]].map((ink) =>
+    ink.map((v) => linear(clamp(v)))
+  );
   function update(seconds) {
+    const running = auto ? c.generation + seconds * c.stepsPerSecond : 0;
+    const base = Math.floor(running);
+    const blend = smooth(running - base);
+    const from = auto?.at(base);
+    const to = auto && running > base ? auto.at(base + 1) : from;
     const turn = TAU * ((seconds / c.loopSeconds + c.phase) % 1);
     const tx = Math.cos(turn) * c.travel;
     const ty = Math.sin(turn) * c.travel;
@@ -99,13 +119,18 @@ export function createField(config) {
     for (let i = 0; i < tiles.length; i += 1) {
       const tile = tiles[i];
       const { x, y, layer } = tile;
-      const field = fbm(
-        noise,
-        sources[i * 6] + tx,
-        sources[i * 6 + 1] + ty,
-        2.37 + layer * (1 - c.layerCorrelation) * 3.7,
-        c.octaves
-      );
+      const before = auto ? from.state[i] : 0;
+      const after = auto ? to.state[i] : 0;
+      const level = (before ? 1 - blend : 0) + (after ? blend : 0);
+      const field = auto
+        ? level
+        : fbm(
+            noise,
+            sources[i * 6] + tx,
+            sources[i * 6 + 1] + ty,
+            2.37 + layer * (1 - c.layerCorrelation) * 3.7,
+            c.octaves
+          );
       const along = sources[i * 6 + 2];
       let wave = Math.sin(along - turn);
       if (c.motion === 'ripple') wave = Math.sin(sources[i * 6 + 3] - turn);
@@ -115,9 +140,11 @@ export function createField(config) {
       const threshold = 1 - c.coverage;
       const animated =
         field + (c.motion === 'tide' ? 0 : wave * c.amplitude * 0.3);
-      let fade = smooth((animated - threshold + c.softness / 2) / c.softness);
-      if (c.coverage >= 1) fade = 1;
-      if (c.coverage <= 0) fade = 0;
+      let fade = auto
+        ? level
+        : smooth((animated - threshold + c.softness / 2) / c.softness);
+      if (!auto && c.coverage >= 1) fade = 1;
+      if (!auto && c.coverage <= 0) fade = 0;
       if (c.pattern !== 'logo' && c.edgeFade > 0) {
         let edge = Math.max(Math.abs(x) / halfX, Math.abs(y) / halfY);
         if (c.pattern === 'column')
@@ -135,12 +162,16 @@ export function createField(config) {
         (layer ? c.topScale : 1) *
         (c.fadeStyle === 'opacity' ? 1 : Math.sqrt(fade));
       const at = i * STRIDE;
+      const tileDepth =
+        flat || !auto
+          ? depth
+          : depth * (1 + c.towers * Math.min(from.age[i], TOWER_CAP));
       data[at + 2] =
         layer * (flat ? 0.008 : depth + c.layerGap) +
-        depth / 2 +
+        tileDepth / 2 +
         (flat ? 0 : (wave * 0.5 + 0.5) * c.lift * c.amplitude);
       data[at + 3] = scale;
-      data[at + 4] = depth;
+      data[at + 4] = tileDepth;
       data[at + 5] = flat ? 0 : wave * c.tilt * c.amplitude;
       if (!flat && c.motion === 'hinge')
         data[at + 5] =
@@ -165,6 +196,13 @@ export function createField(config) {
       data[at + 8] = palette[ink];
       data[at + 9] = palette[ink + 1];
       data[at + 10] = palette[ink + 2];
+      if (auto) {
+        const first = stateInks[inkOf(before || after)];
+        const last = stateInks[inkOf(after || before)];
+        for (let k = 0; k < 3; k += 1)
+          data[at + 8 + k] = first[k] + (last[k] - first[k]) * blend;
+        tile.hollow = hollowOf(blend < 0.5 ? before || after : after || before);
+      }
       data[at + 11] = fade;
     }
     return data;

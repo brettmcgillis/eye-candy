@@ -6,7 +6,7 @@ import createInstances from './instances';
 
 export default function createRig() {
   const group = new THREE.Group();
-  const layers = [createInstances(), createInstances()];
+  const layers = Array.from({ length: 4 }, createInstances);
   group.add(...layers.map((layer) => layer.mesh));
   const dummy = new THREE.Object3D();
   const tint = new THREE.Color();
@@ -32,14 +32,15 @@ export default function createRig() {
       const e = camera.matrixWorldInverse.elements;
       [, , vx, , , , vy, , , , vz] = e;
       order.sort(compare);
-      layers[0].mesh.renderOrder = vz >= 0 ? 0 : 1;
-      layers[1].mesh.renderOrder = vz >= 0 ? 1 : 0;
+      for (let k = 0; k < layers.length; k += 1)
+        layers[k].mesh.renderOrder =
+          Math.floor(k / 2) === Number(vz < 0) ? 0 : 1;
     }
-    layers[0].mesh.count = 0;
-    layers[1].mesh.count = 0;
+    for (let k = 0; k < layers.length; k += 1) layers[k].mesh.count = 0;
     for (let i = 0; i < field.tiles.length; i += 1) {
       const index = order[i];
-      const layer = layers[field.tiles[index].layer];
+      const tile = field.tiles[index];
+      const layer = layers[tile.layer * 2 + Number(tile.hollow)];
       const { mesh, alpha } = layer;
       const slot = mesh.count;
       mesh.count += 1;
@@ -53,8 +54,7 @@ export default function createRig() {
       mesh.setColorAt(slot, tint);
       alpha.array[slot] = data[k + 7];
     }
-    layers[0].flush();
-    layers[1].flush();
+    layers.forEach((layer) => layer.flush());
   }
   return {
     group,
@@ -65,7 +65,7 @@ export default function createRig() {
     apply(config) {
       field = createField(config);
       order = Uint32Array.from({ length: field.tiles.length }, (_, i) => i);
-      layers.forEach((layer, index) => layer.apply(config, index));
+      layers.forEach((layer, index) => layer.apply(config, index % 2 === 1));
       update(0);
       return field.bounds;
     },

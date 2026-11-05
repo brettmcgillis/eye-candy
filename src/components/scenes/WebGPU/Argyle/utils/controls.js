@@ -11,6 +11,7 @@ const folders = createSchemaFolders({
   folders: {
     layout: 'Layout',
     field: 'Coverage',
+    automaton: 'Automaton',
     color: 'Colour',
     motion: 'Motion',
     relief: 'Relief',

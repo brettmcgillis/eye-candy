@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 
-import { useTexture } from '@react-three/drei';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useLoader } from '@react-three/fiber';
 
 import {
   abs,
@@ -60,6 +59,9 @@ function createShellMaterial({
   baseColor,
   colorEnd,
   colorStart,
+  densityNode,
+  lit,
+  surfaceColor,
   layerIndex,
   layerThickness,
   layersCount,
@@ -90,11 +92,15 @@ function createShellMaterial({
     useSourceMap: uniform(useSourceMap ? 1 : 0),
     waveScale: uniform(waveScale),
   };
-  const material = new THREE.MeshBasicNodeMaterial({
+  const Material = lit
+    ? THREE.MeshStandardNodeMaterial
+    : THREE.MeshBasicNodeMaterial;
+  const material = new Material({
     alphaTest: 0.001,
     depthWrite: false,
     side: THREE.DoubleSide,
     transparent: true,
+    ...(lit ? { metalness: 0, roughness: 1 } : {}),
   });
   const layerCoeff = uniforms.layerIndex.div(
     uniforms.layersCount.max(float(1))
@@ -188,7 +194,9 @@ function createShellMaterial({
   ).sub(shellNormal.mul(interaction).mul(compressionWeight).mul(0.08));
   let sourceColorNode = uniforms.baseColor;
 
-  if (sourceMap) {
+  if (surfaceColor) {
+    sourceColorNode = surfaceColor;
+  } else if (sourceMap) {
     sourceColorNode = mix(
       uniforms.baseColor,
       uniforms.baseColor.mul(
@@ -198,17 +206,21 @@ function createShellMaterial({
     );
   }
 
-  material.vertexNode = cameraProjectionMatrix
-    .mul(modelViewMatrix)
-    .mul(vec4(interactivePosition, 1.0));
+  if (lit) {
+    material.positionNode = interactivePosition;
+  } else {
+    material.vertexNode = cameraProjectionMatrix
+      .mul(modelViewMatrix)
+      .mul(vec4(interactivePosition, 1.0));
+  }
   const layerColorNode = sourceColorNode.mul(
     mix(uniforms.colorStart, uniforms.colorEnd, layerCoeff)
   );
   material.colorNode = layerColorNode;
-  material.opacityNode = textureSample(
-    new THREE.TextureNode(alphaMap),
-    uv()
-  ).r.mul(mix(uniforms.alphaStart, uniforms.alphaEnd, layerCoeff));
+  const opacity = textureSample(new THREE.TextureNode(alphaMap), uv()).r.mul(
+    mix(uniforms.alphaStart, uniforms.alphaEnd, layerCoeff)
+  );
+  material.opacityNode = densityNode ? opacity.mul(densityNode) : opacity;
 
   return { material, uniforms };
 }
@@ -225,6 +237,9 @@ export default function ShellFurGPU({
   endColor = DEFAULT_END_TINT,
   alphaTexturePath = DEFAULT_ALPHA_TEXTURE_PATH,
   rootColor = null,
+  colorNode = null,
+  densityNode = null,
+  lit = false,
   interactive = false,
   interactionRadius = 0.18,
   interactionStrength = 1.2,
@@ -238,7 +253,7 @@ export default function ShellFurGPU({
   const brushDirectionRef = useRef(new THREE.Vector3(1, 0, 0));
   const markerRef = useRef();
   const fallbackTexture = useMemo(() => createSolidColorTexture(), []);
-  const alphaTexture = useTexture(alphaTexturePath);
+  const alphaTexture = useLoader(THREE.TextureLoader, alphaTexturePath);
   const shouldRenderInteractionSurface = interactive || showInteractionSurface;
   const resolvedLayerCount = useMemo(
     () => clampShellCount(layers ?? shellCount),
@@ -275,25 +290,31 @@ export default function ShellFurGPU({
           baseColor: resolvedBaseColor,
           colorEnd: resolvedEndTint.color,
           colorStart: resolvedStartTint.color,
+          densityNode,
           interactionRadius: resolvedInteractionRadius,
           interactionStrength,
           layerIndex,
           layerThickness: resolvedLayerThickness,
           layersCount: resolvedLayerCount,
+          lit,
           sourceMap: source.map || fallbackTexture,
           stiffness,
+          surfaceColor: colorNode,
           useSourceMap: Boolean(source.map),
           waveScale: resolvedWaveScale,
         })
       ),
     [
       alphaTexture,
+      colorNode,
+      densityNode,
       fallbackTexture,
       resolvedBaseColor,
       resolvedEndTint.alpha,
       resolvedEndTint.color,
       resolvedInteractionRadius,
       interactionStrength,
+      lit,
       resolvedLayerCount,
       resolvedLayerThickness,
       resolvedStartTint.alpha,

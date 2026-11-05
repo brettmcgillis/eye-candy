@@ -1,10 +1,8 @@
 # // Touch Grass
 
-# // TODO:
-
 [Back to main TODO](../../../../../TODO.md)
 
-# // Intent / Use Cases
+## // Intent / Use Cases
 
 Rolling grassy terrain; letters CSG-carved from the terrain down to a common
 water table; sediment strata on the cut walls; wind in the grass; sunny
@@ -56,14 +54,16 @@ afternoon with light clouds rolling through (Surrender-style cloud shade).
 - [ ] replace bee & dragonfly with simplistic approximations like butterfly.
 - [ ] add a preset for Cut Grass. see `cutGrass.js`
 
-# // Presets
+## // TODO:
 
-# // Features
+## // Presets
 
-# // Interactivity
+## // Features
+
+## // Interactivity
 
 - [ ] cursor + water interaction
 - [x] cursor + grass interaction
 - [ ] could we cut the grass? if so then we add an overlay button to allow enabling mower. add control for mower width. as user moves cursor grass gets 'cut' down to a specific length, or removed all together. grass grows back after a few seconds
 
-# // Bugs
+## // Bugs

@@ -1,6 +1,12 @@
 {
-  "mainCaption": "",
+  "mainCaption": "Test 012",
+  "mainPreset": "012",
   "screenshots": [
+    {
+      "file": "a1885e0340.webp",
+      "caption": "Test 002",
+      "preset": "002"
+    },
     {
       "file": "6b957cd5a8.webp",
       "caption": "Test 002, Ink on Paper, Pen Plotter"

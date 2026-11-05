@@ -252,6 +252,10 @@
     {
       "id": "idea-1793808758440-vh2dua",
       "text": "Could we do a 3d, colorful version of this style of flow field?\nhttps://turtletoy.net/turtle/36d793188c"
+    },
+    {
+      "id": "idea-1793907850684-bb7vtu",
+      "text": "space packing with meshes. objects created from contrasting componets.\n- tree made of trash\n- animal made of trash"
     }
   ],
   "statuses": {
@@ -269,7 +273,12 @@
     "webgl:watercolorSquares::Blue": true,
     "webgl:watercolorSquares::Red": true,
     "webgpu:beautyIsInTheEyeOfTheBeheaded::$scene": true,
+    "webgpu:beautyIsInTheEyeOfTheBeheaded::Default": true,
     "webgpu:birdsArentReal::$scene": true,
+    "webgpu:birdsArentReal::Birds Aren't Real": true,
+    "webgpu:birdsArentReal::FakeBirds Eye View": true,
+    "webgpu:birdsArentReal::Hero Shot": true,
+    "webgpu:birdsArentReal::Surveillance State": true,
     "webgpu:burningAtBothEnds::Enlightened": true,
     "webgpu:burningAtBothEnds::Extinguished": true,
     "webgpu:crossTalk::CloudConnected": true,
@@ -277,15 +286,19 @@
     "webgpu:exhibitA::Kleinian Walk": false,
     "webgpu:flora::$scene": true,
     "webgpu:flora::Bouquet": true,
+    "webgpu:flora::Mobile": true,
     "webgpu:ghostBuster::$scene": true,
     "webgpu:horsesForCourses::$scene": true,
     "webgpu:loGlow::Default": true,
     "webgpu:loGlow::Mondrian": true,
     "webgpu:stayHunted::Painting": true,
+    "webgpu:surrender::Autumn": true,
     "webgpu:surrender::Spring": true,
+    "webgpu:surrender::Surrender": true,
     "webgpu:theSpeedOfLightning::Dark": true,
     "webgpu:touchGrass::$scene": true,
     "webgpu:trucheterie::001": true,
+    "webgpu:trucheterie::007": false,
     "webgpu:upstreamDownstream::Default": true,
     "webgpu:waterCycle::An Ocean Implied": true,
     "webgpu:weightless::Sketchbook": true,

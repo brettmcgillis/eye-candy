@@ -1,18 +1,18 @@
 # // Mycelium
 
-# // TODO:
-
 [Back to main TODO](../../../../../TODO.md)
+
+## // Intent / Use Cases
+
+## // TODO:
 
 - [ ] Rename cloud folders and move under scene.
 - [ ] Audio reactivity!
 
-# // Intent/Use Cases
+## // Presets
 
-# // Presets
+## // Features
 
-# // Features
+## // Interactivity
 
-# // Interactivity
-
-# // Bugs
+## // Bugs

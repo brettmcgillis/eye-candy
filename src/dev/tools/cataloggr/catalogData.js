@@ -156,3 +156,39 @@ export function getProgress(scene, statuses) {
 }
 
 export { AREA_ORDER };
+
+const EMPTY_VISIBILITY = { public: [], private: [] };
+
+export function getPresetVisibilityState(visibility, presetName) {
+  if (visibility?.public?.includes(presetName)) return 'public';
+  if (visibility?.private?.includes(presetName)) return 'private';
+  return null;
+}
+
+export function getPresetAudit(scene, presetVisibility, screenshotPresets) {
+  const visibility = presetVisibility[scene.sourcePath] ?? EMPTY_VISIBILITY;
+  const shots = new Set(screenshotPresets[scene.sourcePath] ?? []);
+  const names = new Set(scene.presetNames);
+  const publicNames = scene.presetNames.filter((name) =>
+    visibility.public.includes(name)
+  );
+
+  return {
+    publicNames,
+    publicNoShot: publicNames.filter((name) => !shots.has(name)),
+    shotNotPublic: [...shots].filter(
+      (name) => names.has(name) && !visibility.public.includes(name)
+    ),
+    stale: [...visibility.public, ...visibility.private].filter(
+      (name) => !names.has(name)
+    ),
+    staleShots: [...shots].filter((name) => !names.has(name)),
+    unreviewed: scene.presetNames.filter(
+      (name) => !getPresetVisibilityState(visibility, name)
+    ),
+  };
+}
+
+export function needsPresetReview(audit) {
+  return Boolean(audit.unreviewed.length || audit.stale.length);
+}

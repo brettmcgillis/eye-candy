@@ -1,10 +1,8 @@
 # // QuinnsDice
 
-# // TODO:
-
 [Back to main TODO](../../../../../TODO.md)
 
-# // Intent/Use Cases
+## // Intent / Use Cases
 
 - Provide a showcase for Quinn's 3d models, that can be demo'ed on low-powered and mobile devices during artist showcases at school or job interviews.
 - Provide an interactive experience using physics and the mouse/touch pointer, as well as media pipe vision for hand control
@@ -13,13 +11,15 @@
 - Camera should have a second modality where it follows the die being rolled, and returns home after timeout elapses.
 - Should be very, very performant due to point # 1.
 
-# // Presets
+## // TODO:
+
+## // Presets
 
 - [x] Default
 - [ ] High Performance - Simplified colliders
 - [ ] Low Performance - Simplified colliders for mobile
 
-# // Features
+## // Features
 
 - [x] custom and trimesh colliders for each dice.
 - [x] controls to roll a specific or random dice
@@ -33,14 +33,14 @@
 
 - [ ] Add a die roll overlay button like we did in DumpsterFire with clear trash
 
-# // Interactivity
+## // Interactivity
 
 - [x] Die/Cursor interaction
 - [x] Die/Cursor/Hands interaction
 - [x] Die roll interaction
 - [ ] Overlay button click die roll interaction
 
-# // Bugs
+## // Bugs
 
 - [x] Improve performance, too few fps right now, very slow.
 - [ ] Can we improve perf by removing the hull colliders and adding the appropriate colliders for the given die geometry?

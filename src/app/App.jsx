@@ -1,8 +1,11 @@
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useMemo } from 'react';
 import { Navigate, Route, Routes, useLocation } from 'react-router-dom';
+
+import ScenePresetVisibilityContext from '@hooks/scenePresetVisibility';
 
 import './App.css';
 import Gallery from './gallery/Gallery';
+import getPublicPresets from './presetVisibility';
 import useAppScenes from './scaffold/hooks/useAppScenes';
 import useDocumentTitle from './scaffold/hooks/useDocumentTitle';
 import Loader from './scaffold/loader/Loader';
@@ -28,6 +31,10 @@ function SceneShell() {
     useLoaderGate();
 
   useDocumentTitle(redirectPath ? null : resolveSceneTitle(sceneDef));
+  const presetVisibility = useMemo(
+    () => ({ publicPresets: getPublicPresets(sceneDef?.sourceDir) }),
+    [sceneDef?.sourceDir]
+  );
 
   if (redirectPath) {
     return (
@@ -39,7 +46,7 @@ function SceneShell() {
   }
 
   return (
-    <>
+    <ScenePresetVisibilityContext.Provider value={presetVisibility}>
       <Overlay />
       <div className="App">
         <CanvasWrapper key={renderer}>
@@ -52,7 +59,7 @@ function SceneShell() {
           <Loader onComplete={onLoaderComplete} suspended={suspended} />
         )}
       </div>
-    </>
+    </ScenePresetVisibilityContext.Provider>
   );
 }
 

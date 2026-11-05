@@ -1,17 +1,21 @@
 {
   "mainCaption": "Waterworks",
+  "mainPreset": "Waterworks",
   "screenshots": [
     {
       "file": "5854740b39.webp",
-      "caption": "Radiance Cascades"
+      "caption": "Radiance Cascades",
+      "preset": "RadianceCascades"
     },
     {
       "file": "6eb33e2a5e.webp",
-      "caption": "Cloud Connected"
+      "caption": "Cloud Connected",
+      "preset": "CloudConnected"
     },
     {
       "file": "83f91de1e9.webp",
-      "caption": "Gravity Rooms"
+      "caption": "Gravity Rooms",
+      "preset": "GravityRooms"
     }
   ]
 }

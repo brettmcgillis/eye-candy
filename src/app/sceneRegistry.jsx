@@ -168,8 +168,14 @@ const sceneConfigModules = import.meta.glob(
   }
 );
 
-const sceneEntries = Object.values(sceneConfigModules).flatMap((mod) =>
-  Array.isArray(mod.default) ? mod.default : [mod.default]
+const sceneEntries = Object.entries(sceneConfigModules).flatMap(
+  ([file, mod]) => {
+    const sourceDir = file
+      .replace(/^\.\.\/components\/scenes\//u, '')
+      .replace(/\/scene\.config\.jsx$/u, '');
+    const entries = Array.isArray(mod.default) ? mod.default : [mod.default];
+    return entries.map((entry) => ({ ...entry, sourceDir }));
+  }
 );
 
 const noSceneEntries = Object.keys(CHANNELS).flatMap((channel) =>

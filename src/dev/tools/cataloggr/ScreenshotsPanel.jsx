@@ -10,29 +10,69 @@ import {
 } from 'react-icons/fi';
 
 import {
+  SCREENSHOT_ACCEPT,
   addScreenshot,
+  addScreenshotVideo,
   fetchScreenshots,
   getScreenshotUrl,
+  grabVideoFrame,
+  isVideoFile,
+  isVideoScreenshot,
+  setMainPreset as saveMainPreset,
   saveScreenshots,
 } from './screenshotApi';
-import {
-  IMAGE_ACCEPT,
-  getImageFile,
-  getThumbnailUrl,
-  uploadThumbnail,
-} from './thumbnailApi';
+import { getImageFile, getThumbnailUrl, uploadThumbnail } from './thumbnailApi';
+
+function getManifestPresets(manifest) {
+  return [
+    manifest.mainPreset,
+    ...manifest.screenshots.map((shot) => shot.preset),
+  ].filter(Boolean);
+}
+
+function PresetSelect({ disabled, label, onChange, presetNames, value }) {
+  if (!presetNames.length && !value) return null;
+  const known = !value || presetNames.includes(value);
+
+  return (
+    <select
+      aria-label={label}
+      className="cataloggr-shots__preset"
+      data-stale={known ? undefined : true}
+      disabled={disabled}
+      onChange={(event) => onChange(event.target.value)}
+      title={
+        known
+          ? 'Preset this screenshot shows (the Gallery opens it on click)'
+          : `"${value}" is not a preset of this scene any more`
+      }
+      value={value}
+    >
+      <option value="">No preset</option>
+      {known ? null : <option value={value}>{value} (missing)</option>}
+      {presetNames.map((presetName) => (
+        <option key={presetName} value={presetName}>
+          {presetName}
+        </option>
+      ))}
+    </select>
+  );
+}
 
 function ScreenshotsPanel({
   canCapture,
   onCapture,
   onError,
+  onPresetsChanged,
   onThumbnailSaved,
+  presetNames,
   revision,
   sourcePath,
   thumbnailVersion,
 }) {
   const [shots, setShots] = useState([]);
   const [mainCaption, setMainCaption] = useState('');
+  const [mainPreset, setMainPreset] = useState('');
   const [busy, setBusy] = useState(false);
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef(null);
@@ -44,6 +84,7 @@ function ScreenshotsPanel({
         if (cancelled) return;
         setShots(next.screenshots);
         setMainCaption(next.mainCaption);
+        setMainPreset(next.mainPreset ?? '');
       })
       .catch((error) => onError(`Screenshots load failed: ${error.message}`));
     return () => {
@@ -58,18 +99,32 @@ function ScreenshotsPanel({
         const next = await task();
         setShots(next.screenshots);
         setMainCaption(next.mainCaption);
+        setMainPreset(next.mainPreset ?? '');
+        onPresetsChanged?.(sourcePath, getManifestPresets(next));
       } catch (error) {
         onError(`Screenshots failed: ${error.message}`);
       } finally {
         setBusy(false);
       }
     },
-    [onError]
+    [onError, onPresetsChanged, sourcePath]
   );
 
-  const handleAdd = (source) => run(() => addScreenshot(sourcePath, source));
-  const handleSave = (next, nextMain = mainCaption) =>
-    run(() => saveScreenshots(sourcePath, nextMain, next));
+  const handleAdd = (source) =>
+    run(() =>
+      source instanceof File && isVideoFile(source)
+        ? addScreenshotVideo(sourcePath, source)
+        : addScreenshot(sourcePath, source)
+    );
+  const handleSave = (next, overrides = {}) =>
+    run(() =>
+      saveScreenshots(sourcePath, {
+        mainCaption,
+        mainPreset,
+        screenshots: next,
+        ...overrides,
+      })
+    );
 
   const handleMove = (index, delta) => {
     const next = [...shots];
@@ -84,11 +139,24 @@ function ScreenshotsPanel({
     );
   };
 
-  const handleUseAsThumbnail = async (file) => {
+  const handlePreset = (index, preset) =>
+    handleSave(
+      shots.map((shot, i) => (i === index ? { ...shot, preset } : shot))
+    );
+
+  const handleUseAsThumbnail = async ({ file, preset }) => {
     setBusy(true);
     try {
-      const response = await fetch(getScreenshotUrl(sourcePath, file));
-      const saved = await uploadThumbnail(sourcePath, await response.blob());
+      const url = getScreenshotUrl(sourcePath, file);
+      const saved = await uploadThumbnail(
+        sourcePath,
+        isVideoScreenshot(file)
+          ? await grabVideoFrame(url)
+          : await (await fetch(url)).blob()
+      );
+      const next = await saveMainPreset(sourcePath, preset ?? '');
+      setMainPreset(next.mainPreset ?? '');
+      onPresetsChanged?.(sourcePath, getManifestPresets(next));
       onThumbnailSaved(sourcePath, saved.updatedAt);
     } catch (error) {
       onError(`Thumbnail failed: ${error.message}`);
@@ -129,7 +197,9 @@ function ScreenshotsPanel({
       onDrop={(event) => {
         event.preventDefault();
         setDragging(false);
-        const file = getImageFile(event.dataTransfer);
+        const file =
+          getImageFile(event.dataTransfer) ??
+          [...event.dataTransfer.files].find(isVideoFile);
         if (file) handleAdd(file);
       }}
     >
@@ -155,7 +225,7 @@ function ScreenshotsPanel({
           <FiUpload aria-hidden="true" /> File
         </button>
         <input
-          accept={IMAGE_ACCEPT}
+          accept={SCREENSHOT_ACCEPT}
           hidden
           onChange={(event) => {
             const file = event.target.files?.[0];
@@ -177,11 +247,18 @@ function ScreenshotsPanel({
             maxLength={200}
             onBlur={(event) => {
               if (event.target.value.trim() !== mainCaption) {
-                handleSave(shots, event.target.value);
+                handleSave(shots, { mainCaption: event.target.value });
               }
             }}
             placeholder="Main screenshot caption (optional)"
             type="text"
+          />
+          <PresetSelect
+            disabled={busy}
+            label="Preset for the main screenshot"
+            onChange={(preset) => handleSave(shots, { mainPreset: preset })}
+            presetNames={presetNames}
+            value={mainPreset}
           />
         </div>
       ) : null}
@@ -189,11 +266,21 @@ function ScreenshotsPanel({
         <ol className="cataloggr-shots__list">
           {shots.map((shot, index) => (
             <li key={shot.file}>
-              <img
-                alt=""
-                loading="lazy"
-                src={getScreenshotUrl(sourcePath, shot.file)}
-              />
+              {isVideoScreenshot(shot.file) ? (
+                <video
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  src={getScreenshotUrl(sourcePath, shot.file)}
+                />
+              ) : (
+                <img
+                  alt=""
+                  loading="lazy"
+                  src={getScreenshotUrl(sourcePath, shot.file)}
+                />
+              )}
               <input
                 aria-label={`Caption for screenshot ${index + 1}`}
                 defaultValue={shot.caption}
@@ -202,6 +289,13 @@ function ScreenshotsPanel({
                 onBlur={(event) => handleCaption(index, event.target.value)}
                 placeholder="Caption (optional)"
                 type="text"
+              />
+              <PresetSelect
+                disabled={busy}
+                label={`Preset for screenshot ${index + 1}`}
+                onChange={(preset) => handlePreset(index, preset)}
+                presetNames={presetNames}
+                value={shot.preset ?? ''}
               />
               <span className="cataloggr-shots__row-actions">
                 <button
@@ -223,7 +317,7 @@ function ScreenshotsPanel({
                 <button
                   aria-label="Use as card thumbnail"
                   disabled={busy}
-                  onClick={() => handleUseAsThumbnail(shot.file)}
+                  onClick={() => handleUseAsThumbnail(shot)}
                   title="Use as card thumbnail"
                   type="button"
                 >
@@ -245,7 +339,7 @@ function ScreenshotsPanel({
         </ol>
       ) : (
         <p className="cataloggr-shots__empty">
-          No extra screenshots yet. Drop images here too.
+          No extra screenshots yet. Drop images or videos here too.
         </p>
       )}
     </div>

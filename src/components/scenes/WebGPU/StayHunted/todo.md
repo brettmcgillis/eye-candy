@@ -1,6 +1,8 @@
-# Stay Hunted
+# // Stay Hunted
 
-# // Intent / Use Cases
+[Back to main TODO](../../../../../TODO.md)
+
+## // Intent / Use Cases
 
 - This should be a small, but fully formed composition with no presets.
 - The scene contains an animated rabbit model at the center
@@ -10,23 +12,21 @@
 
 - grass reference: https://github.com/Faraz-Portfolio/demo-2022-grass/blob/main/src/Grass.jsx
 
-# // TODO:
+## // TODO:
 
-[Back to main TODO](../../../../../TODO.md)
-
-# // Presets
+## // Presets
 
 - [ ] Spring (Grass)
 - [ ] Winter (Snow)
 
-# // Features
+## // Features
 
 - [ ] Wind blown arrow ribbon.
 - [ ] Cursor-ribbon interaction.
 
-# // Interactivity
+## // Interactivity
 
 - [ ] Ribbon/Cursor interaction
 - [ ] Ribbon/Cursor/Hands interaction
 
-# // Bugs
+## // Bugs

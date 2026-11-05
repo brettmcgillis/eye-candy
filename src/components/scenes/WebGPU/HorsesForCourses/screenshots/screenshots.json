@@ -1,9 +1,16 @@
 {
   "mainCaption": "Procedural oxidization",
+  "mainPreset": "Heavy Rust",
   "screenshots": [
     {
       "file": "4d46deb06a.webp",
-      "caption": "Mesh slicing and displacement"
+      "caption": "Mesh slicing and displacement",
+      "preset": "Polished Bronze"
+    },
+    {
+      "file": "87e2a31ea4.webp",
+      "caption": "",
+      "preset": "Default"
     }
   ]
 }

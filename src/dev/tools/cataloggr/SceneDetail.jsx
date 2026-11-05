@@ -1,8 +1,10 @@
 import React, { memo, useCallback, useEffect, useRef, useState } from 'react';
 import {
+  FiAlertTriangle,
   FiCamera,
   FiClipboard,
   FiExternalLink,
+  FiImage,
   FiUpload,
   FiX,
 } from 'react-icons/fi';
@@ -10,7 +12,12 @@ import {
 import { SceneThumbnail } from './SceneCard';
 import ScreenshotsPanel from './ScreenshotsPanel';
 import TodoPanel from './TodoPanel';
-import { getSceneTargets, getStatusKey } from './catalogData';
+import {
+  getPresetAudit,
+  getPresetVisibilityState,
+  getSceneTargets,
+  getStatusKey,
+} from './catalogData';
 import {
   IMAGE_ACCEPT,
   fetchByline,
@@ -27,8 +34,72 @@ function isTypingTarget(target) {
   );
 }
 
-function PublishTargets({ disabled, entry, onToggle, statuses }) {
+function VisibilityToggle({ disabled, onChange, presetName, value }) {
+  return (
+    <span
+      aria-label={`Visibility of ${presetName}`}
+      className="cataloggr-visibility"
+      data-state={value ?? 'unreviewed'}
+      role="group"
+    >
+      {['public', 'private'].map((state) => (
+        <button
+          aria-pressed={value === state}
+          disabled={disabled}
+          key={state}
+          onClick={() => onChange(value === state ? null : state)}
+          title={
+            value === state
+              ? `Marked ${state}; click to mark unreviewed`
+              : `Mark ${state}`
+          }
+          type="button"
+        >
+          {state === 'public' ? 'Public' : 'Private'}
+        </button>
+      ))}
+    </span>
+  );
+}
+
+function ShotIndicator({ hasShot, visibility }) {
+  if (hasShot) {
+    return (
+      <span
+        className="cataloggr-detail__shot"
+        title="A Gallery screenshot shows this preset"
+      >
+        <FiImage aria-label="Has screenshot" />
+      </span>
+    );
+  }
+
+  if (visibility === 'public') {
+    return (
+      <span
+        className="cataloggr-detail__shot cataloggr-detail__shot--missing"
+        title="Public, but no Gallery screenshot shows this preset"
+      >
+        <FiAlertTriangle aria-label="Public without screenshot" />
+      </span>
+    );
+  }
+
+  return <span className="cataloggr-detail__shot" />;
+}
+
+function PublishTargets({
+  disabled,
+  entry,
+  onToggle,
+  onVisibilityChange,
+  screenshotPresets,
+  statuses,
+  visibility,
+}) {
   const targets = getSceneTargets(entry);
+  const shots = new Set(screenshotPresets);
+  const canMarkVisibility = !entry.key.startsWith('devtool:');
 
   return (
     <ul className="cataloggr-detail__targets">
@@ -37,9 +108,16 @@ function PublishTargets({ disabled, entry, onToggle, statuses }) {
           entry.statusKey ?? getStatusKey(entry.key, presetName);
         const inputId = `cataloggr-detail-${encodeURIComponent(statusKey)}`;
         const posted = Boolean(statuses[statusKey]);
+        const state = presetName
+          ? getPresetVisibilityState(visibility, presetName)
+          : null;
 
         return (
-          <li data-posted={posted} key={statusKey}>
+          <li
+            data-posted={posted}
+            data-visibility={presetName ? (state ?? 'unreviewed') : undefined}
+            key={statusKey}
+          >
             <input
               checked={posted}
               disabled={disabled}
@@ -51,6 +129,27 @@ function PublishTargets({ disabled, entry, onToggle, statuses }) {
             <label htmlFor={inputId}>
               {presetName ?? entry.targetLabel ?? 'Scene itself'}
             </label>
+            {presetName && canMarkVisibility ? (
+              <>
+                <ShotIndicator
+                  hasShot={shots.has(presetName)}
+                  visibility={state}
+                />
+                <VisibilityToggle
+                  disabled={disabled}
+                  onChange={(next) =>
+                    onVisibilityChange(entry.sourcePath, presetName, next)
+                  }
+                  presetName={presetName}
+                  value={state}
+                />
+              </>
+            ) : (
+              <>
+                <span />
+                <span />
+              </>
+            )}
             {entry.path ? (
               <a
                 aria-label={`Open ${presetName ?? entry.label}`}
@@ -71,6 +170,37 @@ function PublishTargets({ disabled, entry, onToggle, statuses }) {
         );
       })}
     </ul>
+  );
+}
+
+function PresetAuditNotes({ audit, disabled, entry, onVisibilityChange }) {
+  if (!audit.stale.length && !audit.staleShots.length) return null;
+
+  return (
+    <div className="cataloggr-detail__audit">
+      {audit.stale.map((presetName) => (
+        <p key={`stale:${presetName}`}>
+          <FiAlertTriangle aria-hidden="true" /> <code>{presetName}</code> is
+          marked in visibility.json but is no longer a preset.
+          <button
+            className="dev-button"
+            disabled={disabled}
+            onClick={() =>
+              onVisibilityChange(entry.sourcePath, presetName, null)
+            }
+            type="button"
+          >
+            Forget
+          </button>
+        </p>
+      ))}
+      {audit.staleShots.map((presetName) => (
+        <p key={`shot:${presetName}`}>
+          <FiAlertTriangle aria-hidden="true" /> A screenshot is tagged with{' '}
+          <code>{presetName}</code>, which is no longer a preset.
+        </p>
+      ))}
+    </div>
   );
 }
 
@@ -148,13 +278,20 @@ function SceneDetail({
   onDropImage,
   onBylineSaved,
   onError,
+  onScreenshotPresetsChanged,
   onThumbnailSaved,
   onToggle,
   onTodoSaved,
+  onVisibilityChange,
+  presetVisibility,
+  screenshotPresets,
   screenshotRevision,
   statuses,
   thumbnailVersion,
 }) {
+  const visibility = presetVisibility[entry.sourcePath];
+  const scenePresetShots = screenshotPresets[entry.sourcePath] ?? [];
+  const audit = getPresetAudit(entry, presetVisibility, screenshotPresets);
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef(null);
 
@@ -298,12 +435,32 @@ function SceneDetail({
             {entry.presetNames.length
               ? `Presets (${entry.presetNames.length})`
               : 'Publishing'}
+            {entry.presetNames.length ? (
+              <span className="cataloggr-detail__audit-summary">
+                {audit.publicNames.length} public
+                {audit.unreviewed.length
+                  ? ` · ${audit.unreviewed.length} to review`
+                  : ''}
+                {audit.publicNoShot.length
+                  ? ` · ${audit.publicNoShot.length} without screenshot`
+                  : ''}
+              </span>
+            ) : null}
           </h3>
           <PublishTargets
             disabled={disabled}
             entry={entry}
             onToggle={onToggle}
+            onVisibilityChange={onVisibilityChange}
+            screenshotPresets={scenePresetShots}
             statuses={statuses}
+            visibility={visibility}
+          />
+          <PresetAuditNotes
+            audit={audit}
+            disabled={disabled}
+            entry={entry}
+            onVisibilityChange={onVisibilityChange}
           />
         </section>
       ) : null}
@@ -316,7 +473,9 @@ function SceneDetail({
             key={entry.sourcePath}
             onCapture={() => onCaptureScreenshot(entry)}
             onError={onError}
+            onPresetsChanged={onScreenshotPresetsChanged}
             onThumbnailSaved={onThumbnailSaved}
+            presetNames={entry.presetNames}
             revision={screenshotRevision}
             sourcePath={entry.sourcePath}
             thumbnailVersion={thumbnailVersion}

@@ -1120,7 +1120,7 @@
 
 .cataloggr-detail__targets li {
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
   align-items: center;
   gap: 0.45rem;
   padding: 0.2rem 0.35rem;
@@ -1436,8 +1436,9 @@
   align-items: center;
 }
 
-.cataloggr-shots__list img {
-  grid-row: span 2;
+.cataloggr-shots__list img,
+.cataloggr-shots__list video {
+  grid-row: span 3;
   width: 72px;
   aspect-ratio: 16 / 10;
   object-fit: cover;
@@ -1462,11 +1463,12 @@
 .cataloggr-shots__main {
   display: grid;
   grid-template-columns: 72px minmax(0, 1fr);
-  gap: 8px;
+  gap: 4px 8px;
   align-items: center;
 }
 
 .cataloggr-shots__main img {
+  grid-row: span 2;
   width: 72px;
   aspect-ratio: 16 / 10;
   object-fit: cover;
@@ -1476,4 +1478,91 @@
   box-sizing: border-box;
   width: 100%;
   font: inherit;
+}
+
+.cataloggr-shots__preset {
+  box-sizing: border-box;
+  width: 100%;
+  font: inherit;
+}
+
+.cataloggr-shots__preset[data-stale] {
+  color: #b91c1c;
+}
+
+.cataloggr-detail__audit-summary {
+  margin-left: 0.5rem;
+  color: var(--dev-text-secondary);
+  font-weight: 400;
+  text-transform: none;
+  letter-spacing: 0;
+}
+
+.cataloggr-detail__shot {
+  display: inline-grid;
+  place-items: center;
+  width: 1.1rem;
+  color: var(--dev-text-secondary);
+}
+
+.cataloggr-detail__shot--missing {
+  color: #b45309;
+}
+
+.cataloggr-visibility {
+  display: inline-flex;
+  overflow: hidden;
+  border: 1px solid var(--dev-border);
+  border-radius: 4px;
+}
+
+.cataloggr-visibility button {
+  padding: 0.1rem 0.4rem;
+  border: 0;
+  background: transparent;
+  color: var(--dev-text-secondary);
+  font: inherit;
+  font-size: 0.68rem;
+  cursor: pointer;
+}
+
+.cataloggr-visibility button + button {
+  border-left: 1px solid var(--dev-border);
+}
+
+.cataloggr-visibility button:hover:not(:disabled) {
+  background: var(--dev-surface-subtle);
+  color: var(--dev-text);
+}
+
+.cataloggr-visibility[data-state='public'] button[aria-pressed='true'] {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.cataloggr-visibility[data-state='private'] button[aria-pressed='true'] {
+  background: #e5e7eb;
+  color: #374151;
+}
+
+.cataloggr-detail__targets
+  li[data-visibility='unreviewed']
+  .cataloggr-visibility {
+  border-style: dashed;
+}
+
+.cataloggr-detail__audit {
+  display: grid;
+  gap: 0.3rem;
+  padding: 0 0.8rem 0.55rem;
+  font-size: 0.72rem;
+  color: #b45309;
+}
+
+.cataloggr-detail__audit p {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
 }

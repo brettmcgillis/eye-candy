@@ -1,9 +1,25 @@
 {
   "mainCaption": "",
+  "mainPreset": "Birds Aren't Real",
   "screenshots": [
     {
       "file": "10b03e9a08.webp",
       "caption": "Half-tone Surveillance Drone"
+    },
+    {
+      "file": "7a7ffcc5aa.webp",
+      "caption": "",
+      "preset": "Hero Shot"
+    },
+    {
+      "file": "57fce8ca2c.webp",
+      "caption": "A FakeBird's eye view",
+      "preset": "FakeBirds Eye View"
+    },
+    {
+      "file": "9754708d98.webp",
+      "caption": "They're watching your every move.",
+      "preset": "Surveillance State"
     }
   ]
 }

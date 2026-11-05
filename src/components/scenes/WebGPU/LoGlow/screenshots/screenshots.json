@@ -1,0 +1,16 @@
+{
+  "mainCaption": "Warm glow",
+  "mainPreset": "Default",
+  "screenshots": [
+    {
+      "file": "970267308e.webp",
+      "caption": "Fractal Pixelation",
+      "preset": "Mondrian"
+    },
+    {
+      "file": "bab4d75550.webp",
+      "caption": "Trixelation",
+      "preset": "Trixelate"
+    }
+  ]
+}

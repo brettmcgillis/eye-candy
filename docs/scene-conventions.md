@@ -93,9 +93,11 @@ SceneName/
   components/              ← child components (+ colocated getXControls.js)
   hooks/useSceneControls.js
   presets/presets.js
+  presets/visibility.json  ← public/private preset names, written by Cataloggr
   utils/sceneUtils.js
   todo.md
   thumbnail.webp           ← 640×400 cover, written by Cataloggr (capture or paste)
+  screenshots/             ← Gallery screenshots (.webp/.webm) + screenshots.json, by Cataloggr
 ```
 
 ## 1b. Import aliases
@@ -496,7 +498,9 @@ backlog, where they are removed when implementation begins.
 Curated Toolbox and Test Lab demo scenes join Showcase scenes in Cataloggr's
 Post workflow; the catalog stores their scene ids and uses normal scene posting
 status. Registered dev pages appear there automatically with independent
-checked-in posting status.
+checked-in posting status. Preset visibility (public / private) and the preset
+each Gallery screenshot shows are also set there; see
+`docs/scene-presets.md` § Public and private presets.
 
 When creating a scene, add its `todo.md` link under the matching area in root
 `TODO.md`'s `### Scene TODO Files` index, alphabetized within the group. This is

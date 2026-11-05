@@ -1,8 +1,10 @@
 # // Cardinals
 
-# // TODO:
-
 [Back to main TODO](../../../../../TODO.md)
+
+## // Intent / Use Cases
+
+## // TODO:
 
 - [x] Add ink on paper as a preset here named Magpies
 - [x] Add a blue variant as a preset called Bluejays
@@ -11,19 +13,17 @@
 - [x] Add a toggle to enable scrolling through presets like in AllMyThoughtsAreSoCumulus. add control to new scene level folder Animations.
 - [x] fix Leva `set` errors for button-type controls (reset, copy, resetSimulation, randomBurst) — fixed in `usePresetsFolder.js` by filtering function values before calling setControls.
 
-# // Intent/Use Cases
-
-# // Presets
+## // Presets
 
 - [x] Cardinals - Red fluid, black/white markers
 - [x] Magpies - Ink on paper
 - [x] Bluejays - Blue variant
 
-# // Features
+## // Features
 
-# // Interactivity
+## // Interactivity
 
 - [x] Fluid/Cursor interaction
 - [ ] Fluid/Hands interaction
 
-# // Bugs
+## // Bugs

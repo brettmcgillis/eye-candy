@@ -64,6 +64,40 @@ through the real hooks and Leva normalization, with recording, tracking, unused
 geometry setup and Canvas-only hotkeys disabled. It checks the data contract; mount-effect and browser visual
 review is still required for rendered appearance and performance.
 
+## Public and private presets
+
+Off localhost (`localEnv()` false — GitHub Pages, or `?testMode=true` locally)
+`usePresetsFolder` shows only the scene's **public** presets plus its
+`defaultPreset`. A `?preset=` URL naming any other preset falls back to the
+default, and `applyPresetByName` ignores it, so cycling hotkeys and toggles
+only reach visible presets. Locally every preset stays available.
+
+Visibility is stored per scene in `presets/visibility.json`
+(`{ "public": [...], "private": [...] }`), written by Cataloggr's Public /
+Private toggle on each preset row in the scene detail. A preset in neither list
+is **unreviewed** and is treated as private, so a scene with no file shows only
+its default preset in prod. The file is not artwork data and is not read by
+`presets:check`; renaming a preset needs its visibility entry renamed too
+(Cataloggr flags stale names). `src/app/presetVisibility.js` reads the files and
+`SceneShell` provides them through `@hooks/scenePresetVisibility`. Scenes that
+manage presets without `usePresetsFolder` are not filtered.
+
+Each Gallery screenshot (and the main thumbnail, `mainPreset`) can name the
+preset it shows in `screenshots/screenshots.json`; Capture fills it from the
+seeder's preset choice. The Gallery modal lists the public presets as links,
+and clicking a screenshot tagged with a public preset opens the scene at it.
+
+A screenshot can also be a video: drop or pick an MP4, MOV, WebM or MKV in
+Cataloggr's screenshot panel and the dev server converts it with `ffmpeg` to a
+silent VP9 `.webm` (at most 1280px on the long edge) beside the `.webp` shots.
+The Gallery plays it muted on a loop; "Use as card thumbnail" takes its first
+frame.
+
+To audit, use Cataloggr's grid filters **Presets to review** (Showcase scenes
+with unreviewed or stale presets) and **Public preset, no screenshot**, then
+open a scene: each preset row shows its toggle and whether a screenshot covers
+it. Mark the default preset public explicitly if the Gallery should list it.
+
 ## Changing the contract
 
 - **Add a control:** give every existing preset an explicit compatibility

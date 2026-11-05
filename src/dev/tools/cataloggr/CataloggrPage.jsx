@@ -33,13 +33,19 @@ import ThumbnailSeeder, { readSeedSession } from './ThumbnailSeeder';
 import {
   AREA_ORDER,
   buildCatalogScenes,
+  getPresetAudit,
   getProgress,
   getSceneTargets,
   loadSceneConfigModules,
   needsByline,
+  needsPresetReview,
   toCatalogDevTool,
   toCatalogTodoOnly,
 } from './catalogData';
+import {
+  setMainPreset as saveMainPreset,
+  savePresetVisibility,
+} from './screenshotApi';
 import { uploadThumbnail } from './thumbnailApi';
 import { listTodos } from './todoApi';
 
@@ -60,6 +66,8 @@ const GRID_FILTER_OPTIONS = [
   ['open', 'Has open TODOs'],
   ['noThumbnail', 'No thumbnail'],
   ['noByline', 'No byline'],
+  ['reviewPresets', 'Presets to review'],
+  ['publicNoShot', 'Public preset, no screenshot'],
   ['issues', 'TODO format issues'],
 ];
 const DEV_TOOL_ENTRIES = DEV_PAGES.map(toCatalogDevTool);
@@ -119,6 +127,8 @@ export default function CataloggrPage() {
   const [thumbnails, setThumbnails] = useState({});
   const [bylines, setBylines] = useState({});
   const [screenshotRevision, setScreenshotRevision] = useState(0);
+  const [presetVisibility, setPresetVisibility] = useState({});
+  const [screenshotPresets, setScreenshotPresets] = useState({});
   const [selectedKey, setSelectedKey] = useState(null);
   const [gridSortKey, setGridSortKey] = useState('name');
   const [gridFilter, setGridFilter] = useState('all');
@@ -152,6 +162,8 @@ export default function CataloggrPage() {
         setScenes(buildCatalogScenes(payload.presetsByFolder, sceneModules));
         setThumbnails(payload.thumbnails ?? {});
         setBylines(payload.bylines ?? {});
+        setPresetVisibility(payload.presetVisibility ?? {});
+        setScreenshotPresets(payload.screenshotPresets ?? {});
         setTodos(nextTodos);
       }
     } catch (loadError) {
@@ -334,6 +346,21 @@ export default function CataloggrPage() {
           return entry.trackPosting !== false && !thumbnails[entry.sourcePath];
         }
         if (gridFilter === 'noByline') return needsByline(entry, bylines);
+        if (gridFilter === 'reviewPresets') {
+          return (
+            entry.area === 'showcase' &&
+            needsPresetReview(
+              getPresetAudit(entry, presetVisibility, screenshotPresets)
+            )
+          );
+        }
+        if (gridFilter === 'publicNoShot') {
+          return (
+            entry.presetNames.length > 0 &&
+            getPresetAudit(entry, presetVisibility, screenshotPresets)
+              .publicNoShot.length > 0
+          );
+        }
         return true;
       })
       .sort((left, right) => {
@@ -366,6 +393,8 @@ export default function CataloggrPage() {
     filteredScenes,
     gridFilter,
     gridSortKey,
+    presetVisibility,
+    screenshotPresets,
     thumbnails,
     todoOnlyEntries,
     todosBySource,
@@ -479,9 +508,68 @@ export default function CataloggrPage() {
     });
   }, []);
 
-  const handleThumbnailSaved = useCallback((sourcePath, updatedAt) => {
-    setThumbnails((current) => ({ ...current, [sourcePath]: updatedAt }));
+  const handleScreenshotPresetsChanged = useCallback((sourcePath, presets) => {
+    setScreenshotPresets((current) => {
+      const next = { ...current };
+      const unique = [...new Set(presets)].sort((left, right) =>
+        left.localeCompare(right)
+      );
+      if (unique.length) next[sourcePath] = unique;
+      else delete next[sourcePath];
+      return next;
+    });
   }, []);
+
+  const handleManifestSaved = useCallback(
+    (sourcePath, manifest) => {
+      if (!manifest) return;
+      handleScreenshotPresetsChanged(
+        sourcePath,
+        [
+          manifest.mainPreset,
+          ...(manifest.screenshots ?? []).map((shot) => shot.preset),
+        ].filter(Boolean)
+      );
+    },
+    [handleScreenshotPresetsChanged]
+  );
+
+  const handleThumbnailSaved = useCallback(
+    (sourcePath, updatedAt, manifest) => {
+      setThumbnails((current) => ({ ...current, [sourcePath]: updatedAt }));
+      if (manifest) {
+        handleManifestSaved(sourcePath, manifest);
+        setScreenshotRevision((current) => current + 1);
+      }
+    },
+    [handleManifestSaved]
+  );
+
+  const handleVisibilityChange = useCallback(
+    async (sourcePath, presetName, visibility) => {
+      setSaving(true);
+      setError('');
+      try {
+        const saved = await savePresetVisibility(
+          sourcePath,
+          presetName,
+          visibility
+        );
+        setPresetVisibility((current) => {
+          const next = { ...current };
+          if (saved.visibility.public.length || saved.visibility.private.length)
+            next[sourcePath] = saved.visibility;
+          else delete next[sourcePath];
+          return next;
+        });
+      } catch (saveError) {
+        setError(`Visibility save failed: ${saveError.message}`);
+      } finally {
+        setSaving(false);
+      }
+    },
+    []
+  );
 
   const handleDropImage = useCallback(
     async (sourcePath, file) => {
@@ -489,7 +577,8 @@ export default function CataloggrPage() {
       setError('');
       try {
         const saved = await uploadThumbnail(sourcePath, file);
-        handleThumbnailSaved(sourcePath, saved.updatedAt);
+        const manifest = await saveMainPreset(sourcePath, '');
+        handleThumbnailSaved(sourcePath, saved.updatedAt, manifest);
       } catch (uploadError) {
         setError(uploadError.message);
       } finally {
@@ -508,8 +597,11 @@ export default function CataloggrPage() {
   }, []);
 
   const handleScreenshotCaptured = useCallback(
-    () => setScreenshotRevision((current) => current + 1),
-    []
+    (sourcePath, updatedAt, manifest) => {
+      handleManifestSaved(sourcePath, manifest);
+      setScreenshotRevision((current) => current + 1);
+    },
+    [handleManifestSaved]
   );
 
   const handleCaptureMissing = useCallback(() => {
@@ -854,8 +946,12 @@ export default function CataloggrPage() {
               onClose={handleCloseDetail}
               onDropImage={handleDropImage}
               onError={handleTodoError}
+              onScreenshotPresetsChanged={handleScreenshotPresetsChanged}
               onToggle={handleToggle}
               onTodoSaved={refreshTodos}
+              onVisibilityChange={handleVisibilityChange}
+              presetVisibility={presetVisibility}
+              screenshotPresets={screenshotPresets}
               statuses={statuses}
               onBylineSaved={handleBylineSaved}
               onThumbnailSaved={handleThumbnailSaved}

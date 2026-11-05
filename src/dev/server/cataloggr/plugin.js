@@ -1,6 +1,9 @@
 import { listBylines, readByline, writeByline } from './bylineService';
 import {
   addScreenshot,
+  addScreenshotVideo,
+  getScreenshotContentType,
+  listScreenshotPresets,
   listScreenshots,
   readScreenshotFile,
   writeScreenshots,
@@ -18,12 +21,17 @@ import {
   writeThumbnail,
 } from './thumbnailService';
 import { listSceneTodos, readSceneTodo, writeSceneTodo } from './todoService';
+import {
+  listPresetVisibility,
+  writePresetVisibility,
+} from './visibilityService';
 
 const CATALOG_PATH = '/dev-api/cataloggr';
 const TODOS_PATH = '/dev-api/cataloggr/todos';
 const THUMBNAIL_PATH = '/dev-api/cataloggr/thumbnail';
 const BYLINE_PATH = '/dev-api/cataloggr/byline';
 const SCREENSHOTS_PATH = '/dev-api/cataloggr/screenshots';
+const VISIBILITY_PATH = '/dev-api/cataloggr/preset-visibility';
 
 function sendJson(res, statusCode, payload) {
   res.statusCode = statusCode;
@@ -63,15 +71,32 @@ export default function cataloggrDevPlugin() {
 
         if (req.method === 'GET' && pathname === CATALOG_PATH) {
           await handleRequest(res, async () => {
-            const [catalog, thumbnails, bylines] = await Promise.all([
+            const [
+              catalog,
+              thumbnails,
+              bylines,
+              presetVisibility,
+              screenshotPresets,
+            ] = await Promise.all([
               readCatalog(rootDir, {
                 loadPresetModule: (modulePath) =>
                   server.ssrLoadModule(modulePath),
+                resolvePresetModule: async (specifier, importer) =>
+                  (await server.pluginContainer.resolveId(specifier, importer))
+                    ?.id ?? null,
               }),
               listThumbnails(rootDir),
               listBylines(rootDir),
+              listPresetVisibility(rootDir),
+              listScreenshotPresets(rootDir),
             ]);
-            return { ...catalog, thumbnails, bylines };
+            return {
+              ...catalog,
+              bylines,
+              presetVisibility,
+              screenshotPresets,
+              thumbnails,
+            };
           });
           return;
         }
@@ -129,7 +154,10 @@ export default function cataloggrDevPlugin() {
                 params.get('file')
               );
               res.statusCode = 200;
-              res.setHeader('Content-Type', 'image/webp');
+              res.setHeader(
+                'Content-Type',
+                getScreenshotContentType(params.get('file'))
+              );
               res.setHeader('Cache-Control', 'no-cache');
               res.end(image);
             } catch (error) {
@@ -140,10 +168,23 @@ export default function cataloggrDevPlugin() {
             return;
           }
 
+          if (req.method === 'POST' && route === '/video') {
+            await handleRequest(res, () =>
+              addScreenshotVideo({
+                preset: params.get('preset') ?? '',
+                req,
+                rootDir,
+                sourcePath,
+              })
+            );
+            return;
+          }
+
           if (req.method === 'POST' && route === '') {
             await handleRequest(res, async () =>
               addScreenshot({
                 body: await readBinaryBody(req),
+                preset: params.get('preset') ?? '',
                 rootDir,
                 sourcePath,
               })
@@ -157,12 +198,26 @@ export default function cataloggrDevPlugin() {
               return writeScreenshots({
                 rootDir,
                 mainCaption: payload.mainCaption,
+                mainPreset: payload.mainPreset,
                 screenshots: payload.screenshots,
                 sourcePath,
               });
             });
             return;
           }
+        }
+
+        if (req.method === 'POST' && pathname === VISIBILITY_PATH) {
+          await handleRequest(res, async () => {
+            const payload = await readJsonBody(req);
+            return writePresetVisibility({
+              presetName: payload.presetName,
+              rootDir,
+              sourcePath: payload.sourcePath,
+              visibility: payload.visibility ?? null,
+            });
+          });
+          return;
         }
 
         if (pathname === BYLINE_PATH) {

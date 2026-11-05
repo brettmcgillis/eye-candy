@@ -1,13 +1,16 @@
 {
   "mainCaption": "",
+  "mainPreset": "Morse Code",
   "screenshots": [
     {
       "file": "29ef93799c.webp",
-      "caption": ""
+      "caption": "",
+      "preset": "Default"
     },
     {
       "file": "5b6da0899d.webp",
-      "caption": ""
+      "caption": "",
+      "preset": "Layer Fade"
     }
   ]
 }

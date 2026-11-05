@@ -6,7 +6,7 @@ import {
   loadFrame,
   snapshotSceneFrame,
 } from './captureSceneFrame';
-import { addScreenshot } from './screenshotApi';
+import { addScreenshot, setMainPreset } from './screenshotApi';
 import { getAppUrl, uploadThumbnail } from './thumbnailApi';
 
 const DEFAULT_SETTLE_SECONDS = 6;
@@ -187,13 +187,18 @@ function ThumbnailSeeder({
         }
 
         if (asScreenshot) {
-          await addScreenshot(target.sourcePath, snapshot);
+          const manifest = await addScreenshot(
+            target.sourcePath,
+            snapshot,
+            preset
+          );
           setStatus(target.key, 'saved');
-          onCaptured(target.sourcePath);
+          onCaptured(target.sourcePath, null, manifest);
         } else {
           const saved = await uploadThumbnail(target.sourcePath, snapshot);
+          const manifest = await setMainPreset(target.sourcePath, preset ?? '');
           setStatus(target.key, 'saved');
-          onCaptured(target.sourcePath, saved.updatedAt);
+          onCaptured(target.sourcePath, saved.updatedAt, manifest);
         }
       } catch (error) {
         if (error.name === 'AbortError') throw error;

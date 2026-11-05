@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 
 import { button, folder } from 'leva';
 
@@ -6,6 +13,7 @@ import { localEnv } from '@utils/appUtils';
 import resolvePresetControls from '@utils/presetControls';
 import { readQueryParam, writeQueryParam } from '@utils/queryParams';
 
+import ScenePresetVisibilityContext from './scenePresetVisibility';
 import { useSyncPresetQueryParam } from './usePresetQueryParam';
 
 function toObjectLiteral(snapshot) {
@@ -13,6 +21,14 @@ function toObjectLiteral(snapshot) {
     /"([A-Za-z_$][A-Za-z0-9_$]*)":/g,
     '$1:'
   );
+}
+
+function getVisiblePresetOptions(allOptions, defaultPreset, publicPresets) {
+  if (!publicPresets) return allOptions;
+  const visible = allOptions.filter(
+    (name) => name === defaultPreset || publicPresets.includes(name)
+  );
+  return visible.length ? visible : allOptions.slice(0, 1);
 }
 
 function resolvePresetOption(value, options) {
@@ -29,7 +45,17 @@ export default function usePresetsFolder({
   presets,
 }) {
   const local = localEnv();
-  const presetOptions = useMemo(() => Object.keys(presets), [presets]);
+  const visibility = useContext(ScenePresetVisibilityContext);
+  const publicPresets = local ? null : (visibility?.publicPresets ?? null);
+  const presetOptions = useMemo(
+    () =>
+      getVisiblePresetOptions(
+        Object.keys(presets),
+        defaultPreset,
+        publicPresets
+      ),
+    [defaultPreset, presets, publicPresets]
+  );
   const requestedPreset = readQueryParam('preset');
   const initialPreset = useRef(
     resolvePresetOption(requestedPreset, presetOptions) || defaultPreset
@@ -55,7 +81,12 @@ export default function usePresetsFolder({
   const applyPresetByName = useCallback(
     (presetName, context = {}) => {
       const saved = presets[presetName];
-      if (!saved || applyingPresetRef.current) return;
+      if (
+        !saved ||
+        !presetOptions.includes(presetName) ||
+        applyingPresetRef.current
+      )
+        return;
       const presetSnapshot = structuredClone(saved);
       preparePresetRef.current?.({ presetName, presetSnapshot });
       pendingPresetRef.current = { context, presetName, presetSnapshot };
@@ -63,7 +94,7 @@ export default function usePresetsFolder({
       setSelectedPreset(presetName);
       setRequestRevision((revision) => revision + 1);
     },
-    [presets]
+    [presetOptions, presets]
   );
 
   const attachSetControls = useCallback((setControls) => {

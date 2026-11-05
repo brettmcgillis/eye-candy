@@ -2,7 +2,7 @@
 
 [Back to main TODO](../../../../../TODO.md)
 
-# // Intent/Use Cases
+## // Intent / Use Cases
 
 - Generative Truchet-tile patterns rendered as multi-stroke "engraved contour"
   line art (many parallel offset strokes per arc, not flat fill), in the
@@ -11,7 +11,7 @@
   (tiles flip/scale to reveal a new arrangement), and composition controls
   (border, clip shape, fill mode, color) all reachable from one scene.
 
-# // TODO:
+## // TODO:
 
 - [ ] do a subdivide retile mode. ie sometimes a large tile will flip into a subdivision, other times a set of small tiles will flip as one into a big tile.
 - [ ] true edge-matching (Wang-tile style) across the square/triangular grid
@@ -27,9 +27,9 @@
 - [ ] blob field: interactive/authoring mode — click to seed points, pattern
       grows outward from wherever the user clicks
 
-# // Presets
+## // Presets
 
-# // Features
+## // Features
 
 - Multiscale tiling: recursive subdivision on both square and triangular
   grid modes (quadtree / quadrisection), a "lanes" motif (nested
@@ -41,7 +41,9 @@
   still connected, not chosen randomly, so adjacent cells' strokes always
   meet exactly at shared edges.
 
-# // Bugs
+## // Interactivity
+
+## // Bugs
 
 - zrotation in triangle mode doesnt work well.
 - straight tiles in triangular mode done line up.

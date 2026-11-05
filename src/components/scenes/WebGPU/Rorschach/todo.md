@@ -1,10 +1,8 @@
 # // Rorschach
 
-# // TODO:
-
 [Back to main TODO](../../../../../TODO.md)
 
-# // Intent/Use Cases
+## // Intent / Use Cases
 
 - This scene is a part of a larger set of code, includeing the RorschachCLI scripts and UI. Any feature that is added to this scene should generally be supported by the CLI and dev tool page UX as well.
 
@@ -17,15 +15,19 @@
 - Three render modes sharing one ODE generator core: Lines (3D strokes),
   Points (3D point cloud), Ink (watercolor-on-paper). Lines ships first.
 
-# // Presets
+## // TODO:
 
-# // Features
+## // Presets
 
-# // Bugs
+## // Features
 
-# // Scripts
+## // Interactivity
 
-## Rendering: two paths
+## // Bugs
+
+### // Scripts
+
+### // Rendering: two paths
 
 The `.png` is rendered by the **real three.js WebGPU renderer running headless
 in Node** (`scripts/lib/gpuCapture.mjs`), so it carries the scene's actual
@@ -55,7 +57,7 @@ Gotchas worth not rediscovering:
   renderer's own `antialias` flag applies to a canvas a headless capture never
   draws to. It measurably changes ~7% of pixels and costs nothing.
 
-## rorschach:generate — stills + props JSON
+### // rorschach:generate — stills + props JSON
 
 `scripts/rorschach-generate.mjs`. Fully headless: no browser, no GPU. Rolls a
 config with `utils/rollConfig.js`, grows the test, and renders it with
@@ -131,7 +133,7 @@ Notes:
   area icon. The live app puts a wrench there for WIP scenes and a posted image
   should never carry it.
 
-## rorschach:video — stills, turntable, cinematic
+### // rorschach:video — stills, turntable, cinematic
 
 `scripts/rorschach-video.mjs`. Same renderer and same bloom as the stills, so
 a frame here and a still of the same test are pixel-identical. Needs `ffmpeg`
@@ -181,7 +183,7 @@ Notes:
   most for `--in`, where encoding is the _only_ step and would otherwise sit
   silent for a minute.
 
-## Cinematic Mode (in-app)
+### // Cinematic Mode (in-app)
 
 Leva → Rorschach → Cinematic. Orbits the camera continuously; each
 half-revolution grows a fresh rolled test, flattens it as the camera reaches
@@ -191,7 +193,7 @@ rotation stay locked; turning the mode off restores the Growth Speed you had.
 Flatten is animated through a ref, not a Leva control, so the sweep doesn't
 re-render the scene every frame.
 
-## Planned
+### // Planned
 
 - [ ] IG posting — CLI or Graph API, taking a directory from
       `rorschach:generate` and using `props.json` as the caption.

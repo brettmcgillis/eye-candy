@@ -1,6 +1,8 @@
 # // Dumpster Fire
 
-# // Intent / Use Cases
+[Back to main TODO](../../../../../TODO.md)
+
+## // Intent / Use Cases
 
 - The scene features our dumpster engulfed in flames and smoke.
 - The scene has a white background by default, with a dark/nighttime mode available via presets.
@@ -9,15 +11,13 @@
 - The scene contains additional garbage props scattered around the dumpster
 - The scene contains an interactive element that allows the user to click, tap, or space bar, to throw a garbage bag, similar to how we are doing ShotCubes in CharacterController.
 
-# // TODO:
+## // TODO:
 
-[Back to main TODO](../../../../../TODO.md)
+## // Presets
 
-# // Presets
+## // Features
 
-# // Features
-
-# // Interactivity
+## // Interactivity
 
 - [x] Smoke/Cursor interaction
 - [ ] Smoke/Cursor/Hands interaction
@@ -26,9 +26,9 @@
 - [x] Click/drag to move bricks
 - [x] Click/drag to move dumpster lids
 
-# // Bugs
+## // Bugs
 
-# // Shots
+### // Shots
 
 - [ ] smoke + fire disabled -> fire trash in -> smoke starts.
 - [ ] smoke cursor attractor interaction

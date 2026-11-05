@@ -1,3 +1,4 @@
+import getPublicPresets from '../presetVisibility';
 import { CHANNELS, getScenePath } from '../sceneRegistry';
 
 const configModules = import.meta.glob(
@@ -22,25 +23,37 @@ const screenshotManifests = import.meta.glob(
 );
 
 const screenshotImages = import.meta.glob(
-  '../../components/scenes/**/screenshots/*.webp',
+  '../../components/scenes/**/screenshots/*.{webp,webm}',
   { eager: true, import: 'default' }
 );
 
-function getScreenshots(dir, thumbnail) {
+function toPublicPreset(preset, publicPresets) {
+  return preset && publicPresets.includes(preset) ? preset : null;
+}
+
+function getScreenshots(dir, thumbnail, publicPresets) {
   const manifest =
     screenshotManifests[`${dir}/screenshots/screenshots.json`] ?? {};
   const list = Array.isArray(manifest)
     ? manifest
     : (manifest.screenshots ?? []);
   const shots = list
-    .map(({ file, caption }) => ({
+    .map(({ file, caption, preset }) => ({
       src: screenshotImages[`${dir}/screenshots/${file}`],
+      video: file.endsWith('.webm'),
       caption,
+      preset: toPublicPreset(preset, publicPresets),
     }))
     .filter((shot) => shot.src);
 
   const main = thumbnail
-    ? [{ src: thumbnail, caption: manifest.mainCaption ?? '' }]
+    ? [
+        {
+          src: thumbnail,
+          caption: manifest.mainCaption ?? '',
+          preset: toPublicPreset(manifest.mainPreset, publicPresets),
+        },
+      ]
     : [];
   return [...main, ...shots];
 }
@@ -60,6 +73,9 @@ function toShowcaseScenes() {
         if (seenDirs.has(dir)) return;
         seenDirs.add(dir);
         const thumbnail = thumbnails[`${dir}/thumbnail.webp`] ?? null;
+        const publicPresets = getPublicPresets(
+          dir.replace(/^(?:\.\.\/)+components\/scenes\//u, '')
+        );
         scenes.push({
           id: entry.id,
           label: entry.title || entry.label || entry.id,
@@ -67,7 +83,8 @@ function toShowcaseScenes() {
           byline: bylines[`${dir}/byline.md`]?.trim() || entry.byline || null,
           linkDisabled: entry.galleryLink === false,
           path: getScenePath('showcase', entry.route ?? entry.id),
-          screenshots: getScreenshots(dir, thumbnail),
+          publicPresets,
+          screenshots: getScreenshots(dir, thumbnail, publicPresets),
           thumbnail,
         });
       });

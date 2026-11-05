@@ -1,6 +1,8 @@
 # // Windswept
 
-# // Intent / Use Cases
+[Back to main TODO](../../../../../TODO.md)
+
+## // Intent / Use Cases
 
 - the scene is centered around particles & attractors through the lens of windswept leaves.
 - the scene contains two modes, strage attractors and physical attractors
@@ -11,9 +13,7 @@
 - the scene will contain flowing vines all over the ground. Vines will spawn, travel, bloom, then fade. see `~dev/examples/VegetationGeneratorThreeJS` for vines.
   - When building this feature in we will build in an leva control that allows the user to be able to toggle between cursor-branch interaction and a draw mode where they can draw vines on the ground and the trunk and branches of the tree.
 
-# // TODO:
-
-[Back to main TODO](../../../../../TODO.md)
+## // TODO:
 
 - create a preset with three attractor systems/leafswams at various points on the tree. leva controls to govern position, swarm size per attractor, field lines per attractor, attractor type, attractor simulation props, attractor group rotation. can each attractor have a god ray light too, or are we
   limited to 1? perf impact on n?
@@ -23,10 +23,10 @@
 - test out multiple godray lights
 - see if we can incorporate techniques from webgpu_volume_lighting_traa & webgpu_volume_perlin to create multicolored godrays
 
-# // Presets
+## // Presets
 
-# // Features
+## // Features
 
-# // Interactivity
+## // Interactivity
 
-# // Bugs
+## // Bugs

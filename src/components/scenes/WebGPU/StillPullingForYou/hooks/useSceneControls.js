@@ -3,10 +3,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { button, folder, useControls } from 'leva';
 import * as THREE from 'three';
 
-import {
-  DEFAULT_SPLINE_CONFIG as BASE_DEFAULT_SPLINE_CONFIG,
-  updateSplineConfig,
-} from '@elements/SplineGroup/splineDefaults';
+import { smokeFolder } from '@elements/SimFire/simFireControls';
+import { updateSplineConfig } from '@elements/SplineGroup/splineDefaults';
 import usePresetsFolder from '@hooks/usePresetsFolder';
 
 import { SCENE_PRESETS } from '../presets/presets';
@@ -18,48 +16,17 @@ function getPresetControls({ presetSnapshot }) {
   return presetSnapshot;
 }
 
+// Smoke splines are paths for the curl smoke; they draw no smoke of their own.
 const DEFAULT_SPLINE_CONFIG = {
-  ...BASE_DEFAULT_SPLINE_CONFIG,
+  name: '',
+  visible: true,
   type: 'Smoke',
-  smokeType: 'Particle',
+  smokeType: 'None',
   tension: 0.6,
   closed: false,
   showSpline: false,
   showHelpers: false,
   arcSegments: 200,
-  particleCount: 3000,
-  particleSize: 0.4,
-  particleColor: '#a8a8a0',
-  opacity: 0.35,
-  growth: 2.0,
-  fadeExponent: 1.0,
-  springK: 1.0,
-  flowSpeed: 0.15,
-  damping: 0.93,
-  turbulence: 0.5,
-  turbulenceSpeed: 0.3,
-  spawnSpread: 0.3,
-  maxDrift: 2,
-  fadeRate: 1.5,
-  buoyancy: 0,
-  rotSpeed: 0,
-  blendMode: 'Normal',
-  volParticleCount: 3000,
-  volSize: 0.6,
-  volColor: '#9090a0',
-  volOpacity: 0.06,
-  volFlowSpeed: 0.04,
-  volFadeRate: 8,
-  volSpread: 0.3,
-  volSpringK: 1.0,
-  volDamping: 0.9,
-  volTurbulence: 0.5,
-  volTurbulenceSpeed: 0.25,
-  volMaxDrift: 2,
-  volGrowth: 1.5,
-  volFadeExp: 1.2,
-  volBuoyancy: 0,
-  volBlendMode: 'Normal',
 };
 
 export { DEFAULT_SPLINE_CONFIG };
@@ -69,18 +36,14 @@ export default function useSceneControls(
   setSplines,
   initialSplineConfigs
 ) {
-  const {
-    attachSetControls,
-    controlsSnapshotRef,
-    initialPreset,
-    presetsFolder,
-  } = usePresetsFolder({
-    defaultPreset: DEFAULT_SCENE_PRESET,
-    getPresetControls,
-    presets: SCENE_PRESETS,
-  });
+  const { attachSetControls, controlsSnapshotRef, presetsFolder } =
+    usePresetsFolder({
+      defaultPreset: DEFAULT_SCENE_PRESET,
+      getPresetControls,
+      presets: SCENE_PRESETS,
+    });
 
-  const D = SCENE_PRESETS[initialPreset];
+  const D = controlsSnapshotRef.current;
 
   const splinesRef = useRef(splines);
   splinesRef.current = splines;
@@ -542,12 +505,10 @@ export default function useSceneControls(
         { collapsed: true }
       ),
 
-      Smoke: folder(
+      Smoke: smokeFolder(D),
+
+      'Smoke Paths': folder(
         {
-          smokeVisible: {
-            label: 'Visible',
-            value: D.smokeVisible,
-          },
           editSplines: {
             label: 'Edit Splines',
             value: D.editSplines,
@@ -632,485 +593,6 @@ export default function useSceneControls(
                   onChange: (v) =>
                     updateSplineConfig(setSplineConfigs, index, 'name', v),
                 },
-                [`smokeType_${index}`]: {
-                  label: 'Type',
-                  value: cfg.smokeType ?? 'Particle',
-                  options: ['Particle', 'Volumetric'],
-                  onChange: (v) =>
-                    updateSplineConfig(setSplineConfigs, index, 'smokeType', v),
-                },
-                [`Particle Smoke ${index}`]: folder(
-                  {
-                    [`particleCount_${index}`]: {
-                      label: 'Count',
-                      value: cfg.particleCount,
-                      min: 100,
-                      max: 10000,
-                      step: 100,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'particleCount',
-                          v
-                        ),
-                    },
-                    [`particleSize_${index}`]: {
-                      label: 'Size',
-                      value: cfg.particleSize,
-                      min: 0.05,
-                      max: 2,
-                      step: 0.01,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'particleSize',
-                          v
-                        ),
-                    },
-                    [`particleColor_${index}`]: {
-                      label: 'Color',
-                      value: cfg.particleColor,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'particleColor',
-                          v
-                        ),
-                    },
-                    [`opacity_${index}`]: {
-                      label: 'Opacity',
-                      value: cfg.opacity,
-                      min: 0,
-                      max: 1,
-                      step: 0.01,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'opacity',
-                          v
-                        ),
-                    },
-                    [`growth_${index}`]: {
-                      label: 'Growth',
-                      value: cfg.growth,
-                      min: 0,
-                      max: 10,
-                      step: 0.1,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'growth',
-                          v
-                        ),
-                    },
-                    [`fadeExponent_${index}`]: {
-                      label: 'Fade Exponent',
-                      value: cfg.fadeExponent,
-                      min: 0.1,
-                      max: 5,
-                      step: 0.1,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'fadeExponent',
-                          v
-                        ),
-                    },
-                    [`springK_${index}`]: {
-                      label: 'Spring K',
-                      value: cfg.springK,
-                      min: 0,
-                      max: 5,
-                      step: 0.1,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'springK',
-                          v
-                        ),
-                    },
-                    [`flowSpeed_${index}`]: {
-                      label: 'Flow Speed',
-                      value: cfg.flowSpeed,
-                      min: 0,
-                      max: 1,
-                      step: 0.01,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'flowSpeed',
-                          v
-                        ),
-                    },
-                    [`damping_${index}`]: {
-                      label: 'Damping',
-                      value: cfg.damping,
-                      min: 0,
-                      max: 1,
-                      step: 0.01,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'damping',
-                          v
-                        ),
-                    },
-                    [`turbulence_${index}`]: {
-                      label: 'Turbulence',
-                      value: cfg.turbulence,
-                      min: 0,
-                      max: 3,
-                      step: 0.1,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'turbulence',
-                          v
-                        ),
-                    },
-                    [`turbulenceSpeed_${index}`]: {
-                      label: 'Turbulence Speed',
-                      value: cfg.turbulenceSpeed,
-                      min: 0,
-                      max: 2,
-                      step: 0.01,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'turbulenceSpeed',
-                          v
-                        ),
-                    },
-                    [`fadeRate_${index}`]: {
-                      label: 'Fade Rate',
-                      value: cfg.fadeRate,
-                      min: 0,
-                      max: 10,
-                      step: 0.1,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'fadeRate',
-                          v
-                        ),
-                    },
-                    [`spawnSpread_${index}`]: {
-                      label: 'Spawn Spread',
-                      value: cfg.spawnSpread,
-                      min: 0,
-                      max: 5,
-                      step: 0.05,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'spawnSpread',
-                          v
-                        ),
-                    },
-                    [`maxDrift_${index}`]: {
-                      label: 'Max Drift',
-                      value: cfg.maxDrift,
-                      min: 0.5,
-                      max: 20,
-                      step: 0.5,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'maxDrift',
-                          v
-                        ),
-                    },
-                    [`buoyancy_${index}`]: {
-                      label: 'Buoyancy',
-                      value: cfg.buoyancy,
-                      min: -5,
-                      max: 5,
-                      step: 0.1,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'buoyancy',
-                          v
-                        ),
-                    },
-                    [`rotSpeed_${index}`]: {
-                      label: 'Rotation Speed',
-                      value: cfg.rotSpeed,
-                      min: 0,
-                      max: 5,
-                      step: 0.05,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'rotSpeed',
-                          v
-                        ),
-                    },
-                    [`blendMode_${index}`]: {
-                      label: 'Blend Mode',
-                      value: cfg.blendMode,
-                      options: [
-                        'Normal',
-                        'Additive',
-                        'Subtractive',
-                        'Multiply',
-                      ],
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'blendMode',
-                          v
-                        ),
-                    },
-                  },
-                  { collapsed: true }
-                ),
-                [`Volumetric Smoke ${index}`]: folder(
-                  {
-                    [`volParticleCount_${index}`]: {
-                      label: 'Count',
-                      value: cfg.volParticleCount,
-                      min: 100,
-                      max: 10000,
-                      step: 100,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'volParticleCount',
-                          v
-                        ),
-                    },
-                    [`volSize_${index}`]: {
-                      label: 'Size',
-                      value: cfg.volSize,
-                      min: 0.05,
-                      max: 3,
-                      step: 0.05,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'volSize',
-                          v
-                        ),
-                    },
-                    [`volColor_${index}`]: {
-                      label: 'Color',
-                      value: cfg.volColor,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'volColor',
-                          v
-                        ),
-                    },
-                    [`volOpacity_${index}`]: {
-                      label: 'Opacity',
-                      value: cfg.volOpacity,
-                      min: 0.005,
-                      max: 1,
-                      step: 0.005,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'volOpacity',
-                          v
-                        ),
-                    },
-                    [`volSpread_${index}`]: {
-                      label: 'Spread',
-                      value: cfg.volSpread,
-                      min: 0,
-                      max: 5,
-                      step: 0.05,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'volSpread',
-                          v
-                        ),
-                    },
-                    [`volFlowSpeed_${index}`]: {
-                      label: 'Flow Speed',
-                      value: cfg.volFlowSpeed,
-                      min: 0,
-                      max: 0.5,
-                      step: 0.005,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'volFlowSpeed',
-                          v
-                        ),
-                    },
-                    [`volFadeRate_${index}`]: {
-                      label: 'Fade Rate',
-                      value: cfg.volFadeRate,
-                      min: 0,
-                      max: 50,
-                      step: 1,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'volFadeRate',
-                          v
-                        ),
-                    },
-                    [`volSpringK_${index}`]: {
-                      label: 'Spring K',
-                      value: cfg.volSpringK,
-                      min: 0,
-                      max: 5,
-                      step: 0.1,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'volSpringK',
-                          v
-                        ),
-                    },
-                    [`volDamping_${index}`]: {
-                      label: 'Damping',
-                      value: cfg.volDamping,
-                      min: 0,
-                      max: 1,
-                      step: 0.01,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'volDamping',
-                          v
-                        ),
-                    },
-                    [`volTurbulence_${index}`]: {
-                      label: 'Turbulence',
-                      value: cfg.volTurbulence,
-                      min: 0,
-                      max: 3,
-                      step: 0.1,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'volTurbulence',
-                          v
-                        ),
-                    },
-                    [`volTurbulenceSpeed_${index}`]: {
-                      label: 'Turbulence Speed',
-                      value: cfg.volTurbulenceSpeed,
-                      min: 0,
-                      max: 2,
-                      step: 0.01,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'volTurbulenceSpeed',
-                          v
-                        ),
-                    },
-                    [`volMaxDrift_${index}`]: {
-                      label: 'Max Drift',
-                      value: cfg.volMaxDrift,
-                      min: 0.5,
-                      max: 20,
-                      step: 0.5,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'volMaxDrift',
-                          v
-                        ),
-                    },
-                    [`volGrowth_${index}`]: {
-                      label: 'Growth',
-                      value: cfg.volGrowth,
-                      min: 0,
-                      max: 10,
-                      step: 0.1,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'volGrowth',
-                          v
-                        ),
-                    },
-                    [`volFadeExp_${index}`]: {
-                      label: 'Fade Exponent',
-                      value: cfg.volFadeExp,
-                      min: 0.1,
-                      max: 5,
-                      step: 0.1,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'volFadeExp',
-                          v
-                        ),
-                    },
-                    [`volBuoyancy_${index}`]: {
-                      label: 'Buoyancy',
-                      value: cfg.volBuoyancy,
-                      min: -5,
-                      max: 5,
-                      step: 0.1,
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'volBuoyancy',
-                          v
-                        ),
-                    },
-                    [`volBlendMode_${index}`]: {
-                      label: 'Blend Mode',
-                      value: cfg.volBlendMode,
-                      options: [
-                        'Normal',
-                        'Additive',
-                        'Subtractive',
-                        'Multiply',
-                      ],
-                      onChange: (v) =>
-                        updateSplineConfig(
-                          setSplineConfigs,
-                          index,
-                          'volBlendMode',
-                          v
-                        ),
-                    },
-                  },
-                  { collapsed: true }
-                ),
                 [`Config ${index}`]: folder(
                   {
                     [`visible_${index}`]: {

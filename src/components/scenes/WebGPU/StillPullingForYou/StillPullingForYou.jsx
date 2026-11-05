@@ -9,6 +9,7 @@ import React, {
 import { OrbitControls, PerspectiveCamera } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
 
+import { smokeConfig } from '@elements/SimFire/simFireControls';
 import SplineGroup from '@elements/SplineGroup/SplineGroup';
 import { getSplineWorldPoints } from '@elements/SplineGroup/splineDefaults';
 import NurbsWaterColumn from '@elements/Water/NurbsWaterColumn';
@@ -21,6 +22,7 @@ import FlagCloth from './components/FlagCloth';
 import FloatingTugboat from './components/FloatingTugboat';
 import Seafloor from './components/Seafloor';
 import SinkingTugboat from './components/SinkingTugboat';
+import StackSmoke from './components/StackSmoke';
 import useRuntimeSmokeSplines from './hooks/useRuntimeSmokeSplines';
 import useSceneControls, {
   DEFAULT_SPLINE_CONFIG,
@@ -61,11 +63,7 @@ function toRuntimeSplineConfigs(preset) {
     configKeys.forEach((key) => {
       if (key in spline) cfg[key] = spline[key];
     });
-    if (spline.type === 'Particle' || spline.type === 'Volumetric') {
-      cfg.type = 'Smoke';
-      cfg.smokeType = spline.type;
-    }
-    return cfg;
+    return { ...cfg, type: 'Smoke', smokeType: 'None' };
   });
 }
 
@@ -84,8 +82,6 @@ export default function StillPullingForYouGPU() {
     toRuntimeSplineConfigs(DEFAULT_PRESET)
   );
 
-  // setSplinePoints kept so the controls hook can wire spline editing; smoke
-  // won't render but the controls panel remains functional for future use.
   const setSplinePoints = useCallback((splineIndex, updater) => {
     setSplines((prev) =>
       prev.map((pts, i) => {
@@ -343,8 +339,19 @@ export default function StillPullingForYouGPU() {
         bumpDetail={config.bumpDetail}
       />
 
-      {/* Smoke splines — TSL PointsNodeMaterial */}
+      {/* Smoke — sorted curl smoke along the stack's splines */}
       {config.smokeVisible && (
+        <StackSmoke
+          attractorEnabled={config.cursorAttractorEnabled}
+          attractorsRef={attractorsRef}
+          configs={config.splineConfigs}
+          runtimeSplines={renderSplines}
+          smoke={smokeConfig(config)}
+          smokeAnchorRef={smokeAnchorRef}
+          splines={splines}
+        />
+      )}
+      {config.smokeVisible && config.editSplines && (
         <>
           {/* eslint-disable react/no-array-index-key */}
           {renderSplines.map((pts, index) => (
@@ -355,10 +362,9 @@ export default function StillPullingForYouGPU() {
               config={SPLINE_GROUP_CONFIG}
               splineConfig={{
                 ...(config.splineConfigs[index] ?? DEFAULT_SPLINE_CONFIG),
-                showSpline: config.editSplines,
-                showHelpers: config.editSplines,
+                showSpline: true,
+                showHelpers: true,
               }}
-              attractorsRef={attractorsRef}
               setSplinePoints={setSplinePoints}
               allowedTypes="smoke"
               splineColor="#ff4444"

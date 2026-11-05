@@ -8,7 +8,7 @@ function SceneIcon() {
 export default {
   id: 'policePresence',
   label: 'Police Presence',
-  channel: 'webgl',
+  channel: 'webgpu',
   area: 'wip',
   icon: SceneIcon,
   Component: lazy(() => import('./PolicePresence')),

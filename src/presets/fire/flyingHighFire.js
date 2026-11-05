@@ -1,5 +1,7 @@
 import { makeSpline } from '../splineAuthoring';
 
+// In the Boeing737 model's own space (nose +z, unscaled): Flying High burns
+// and smokes these inside the plane's transform, so they follow the plane.
 const FLYING_HIGH_FIRE = {
   splines: [
     makeSpline({
@@ -18,12 +20,12 @@ const FLYING_HIGH_FIRE = {
       fireAnimated: true,
       fireAnimSpeed: 0.85,
       fireTintColor: '#ffcc44',
-      pos: [-1.8, 0.0, 0.3],
+      pos: [-4.93, -0.55, -0.3],
       points: [
         [0, 0, 0],
-        [-0.2, 0.5, -1.1],
-        [-0.4, 1.2, -2.4],
-        [-0.4, 2, -3.9],
+        [0.1, 0.7, -1.4],
+        [0.3, 1.5, -3.2],
+        [0.5, 2.4, -5.4],
       ],
     }),
     makeSpline({
@@ -42,12 +44,12 @@ const FLYING_HIGH_FIRE = {
       fireAnimated: true,
       fireAnimSpeed: 0.75,
       fireTintColor: '#ffcc44',
-      pos: [1.8, 0.0, 0.3],
+      pos: [4.93, -0.55, -0.3],
       points: [
         [0, 0, 0],
-        [0.2, 0.5, -1.1],
-        [0.4, 1.2, -2.4],
-        [0.4, 2, -3.9],
+        [-0.1, 0.7, -1.4],
+        [-0.3, 1.5, -3.2],
+        [-0.5, 2.4, -5.4],
       ],
     }),
     makeSpline({
@@ -65,11 +67,11 @@ const FLYING_HIGH_FIRE = {
       fireAnimated: true,
       fireAnimSpeed: 1.1,
       fireTintColor: '#ff8833',
-      pos: [-1.4, 0.3, -0.2],
+      pos: [-2, 0.1, -1.6],
       points: [
         [0, 0, 0],
-        [-0.1, 0.5, -0.9],
-        [-0.2, 1.0, -1.8],
+        [0.1, 0.8, -1.5],
+        [0.2, 1.7, -3.2],
       ],
     }),
     makeSpline({
@@ -87,11 +89,11 @@ const FLYING_HIGH_FIRE = {
       fireAnimated: true,
       fireAnimSpeed: 1.0,
       fireTintColor: '#ff8833',
-      pos: [1.4, 0.3, -0.2],
+      pos: [2, 0.1, -1.6],
       points: [
         [0, 0, 0],
-        [0.1, 0.5, -0.9],
-        [0.2, 1.0, -1.8],
+        [-0.1, 0.8, -1.5],
+        [-0.2, 1.7, -3.2],
       ],
     }),
     makeSpline({
@@ -119,13 +121,13 @@ const FLYING_HIGH_FIRE = {
       attractorStrength: 0,
       attractorRadius: 0,
       maxDrift: 10,
-      pos: [-1.8, -0.1, 0.3],
+      pos: [-4.6, 1.6, -4.5],
       points: [
         [0, 0, 0],
-        [-0.2, 0.7, -1.8],
-        [-0.4, 1.7, -3.8],
-        [-0.2, 3.1, -5.8],
-        [0.2, 5.1, -7.8],
+        [0.2, 1.4, -2.5],
+        [0.6, 3.6, -4.2],
+        [1, 6.5, -5.2],
+        [1.3, 10, -5.6],
       ],
     }),
     makeSpline({
@@ -153,13 +155,13 @@ const FLYING_HIGH_FIRE = {
       attractorStrength: 0,
       attractorRadius: 0,
       maxDrift: 10,
-      pos: [1.8, -0.1, 0.3],
+      pos: [4.6, 1.6, -4.5],
       points: [
         [0, 0, 0],
-        [0.2, 0.7, -1.8],
-        [0.4, 1.7, -3.8],
-        [0.2, 3.1, -5.8],
-        [-0.2, 5.1, -7.8],
+        [-0.2, 1.4, -2.5],
+        [-0.6, 3.6, -4.2],
+        [-1, 6.5, -5.2],
+        [-1.3, 10, -5.6],
       ],
     }),
   ],

@@ -385,7 +385,7 @@ export default function LiveStage({ bench, context, tool }) {
       } else if (key === 'c' || key === 'enter') {
         event.preventDefault();
         capture();
-      } else if (key === 'r') {
+      } else if (key === 'r' && bench.canRoll !== false) {
         roll();
       } else if (key === 'f') {
         frame();
@@ -393,7 +393,7 @@ export default function LiveStage({ bench, context, tool }) {
     };
     window.addEventListener('keydown', down);
     return () => window.removeEventListener('keydown', down);
-  }, [capture, frame, roll]);
+  }, [bench.canRoll, capture, frame, roll]);
 
   useEffect(() => {
     if (paused) draw();
@@ -417,9 +417,11 @@ export default function LiveStage({ bench, context, tool }) {
         >
           <FiCamera /> Capture
         </button>
-        <button className="dev-button" onClick={roll} type="button">
-          <FiShuffle /> Roll
-        </button>
+        {bench.canRoll !== false ? (
+          <button className="dev-button" onClick={roll} type="button">
+            <FiShuffle /> Roll
+          </button>
+        ) : null}
         <button className="dev-button" onClick={frame} type="button">
           <FiCrosshair /> Frame
         </button>
@@ -433,14 +435,18 @@ export default function LiveStage({ bench, context, tool }) {
             <FiLock /> Keep this generation
           </button>
         ) : null}
-        <span className="rw-live__seed">seed {seed}</span>
+        {bench.canRoll !== false ? (
+          <span className="rw-live__seed">seed {seed}</span>
+        ) : null}
       </div>
       <p className="rw-hint">
-        Space pause · C capture · R roll · F frame ·{' '}
-        {flat ? 'drag to pan · scroll to zoom' : 'drag to orbit'}
-        {bench.hint ? ` · ${bench.hint}` : ''}. Pinned fields hold; the rest
-        roll from the seed. Captures use the form&apos;s size, formats, SVG and
-        overlay settings.
+        Space pause · C capture · {bench.canRoll !== false ? 'R roll · ' : ''}F
+        frame · {flat ? 'drag to pan · scroll to zoom' : 'drag to orbit'}
+        {bench.hint ? ` · ${bench.hint}` : ''}.{' '}
+        {bench.canRoll !== false
+          ? 'Pinned fields hold; the rest roll from the seed. '
+          : ''}
+        Captures use the form&apos;s size, formats, SVG and overlay settings.
       </p>
       <div
         className="rw-live__stage"

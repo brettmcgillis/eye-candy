@@ -8,7 +8,10 @@ import useQueryTab from './useQueryTab';
 // mobile no longer has to scroll past every render setting to reach the
 // gallery. The bar itself is hidden by CSS above the breakpoint.
 export default function WorkbenchLayout({ controls, results }) {
-  const [tab, setTab] = useQueryTab('panel', 'controls', ['controls', 'results']);
+  const [tab, setTab] = useQueryTab('panel', 'controls', [
+    'controls',
+    'results',
+  ]);
 
   return (
     <div className="rw-layout" data-active-tab={tab}>

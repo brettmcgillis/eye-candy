@@ -1,6 +1,8 @@
 /* eslint-disable no-param-reassign */
 import * as THREE from 'three/webgpu';
 
+import { CELL_GEOMETRIES } from '@modules/hyperCubes';
+
 import createStudio from './environment';
 import {
   createCellGeometry,
@@ -37,11 +39,10 @@ export default function createCubeRig() {
   const frameUniforms = createFrameUniforms();
   const floorUniforms = createFloorUniforms();
   const studio = createStudio();
-  // One layer per shape, so a mixed fill draws cubes and spheres together.
-  const byShape = (make) => ({
-    cube: make(createCellGeometry('cube')),
-    sphere: make(createCellGeometry('sphere')),
-  });
+  const byShape = (make) =>
+    Object.fromEntries(
+      CELL_GEOMETRIES.map((shape) => [shape, make(createCellGeometry(shape))])
+    );
   const solids = byShape((geometry) =>
     createLayer({
       attributes: ['aCenter', 'aHalf', 'aColor', 'aEmissive'],
@@ -77,7 +78,7 @@ export default function createCubeRig() {
     items.filter(({ look }) => look.shape === shape);
 
   function setInstances(instances) {
-    ['cube', 'sphere'].forEach((shape) => {
+    CELL_GEOMETRIES.forEach((shape) => {
       solids[shape].set(ofShape(instances.solids, shape), (item, a, i) => {
         writeBox(item, a, i);
         const { look } = item;
@@ -126,8 +127,7 @@ export default function createCubeRig() {
     },
 
     setShadows(cast) {
-      solids.cube.setShadows(cast);
-      solids.sphere.setShadows(cast);
+      Object.values(solids).forEach((layer) => layer.setShadows(cast));
       frames.setShadows(cast);
     },
 

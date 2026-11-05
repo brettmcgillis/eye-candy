@@ -27,3 +27,8 @@ export {
   treeDepth,
 } from './tree';
 export * from './renderOptions.mjs';
+export {
+  CELL_GEOMETRIES,
+  CYLINDER_SEGMENTS,
+  HOLLOW_CYLINDER_INNER_RADIUS,
+} from './shapes.mjs';

@@ -1,9 +1,42 @@
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import * as THREE from 'three/webgpu';
 
+import {
+  CYLINDER_SEGMENTS,
+  HOLLOW_CYLINDER_INNER_RADIUS,
+} from '@modules/hyperCubes';
+
+function createHollowCylinderGeometry() {
+  const inner = HOLLOW_CYLINDER_INNER_RADIUS;
+  const profile = [
+    [inner, -1],
+    [1, -1],
+    [1, 1],
+    [inner, 1],
+  ];
+  const faces = profile.map((point, i) => {
+    const next = profile[(i + 1) % profile.length];
+    return new THREE.LatheGeometry(
+      [new THREE.Vector2(...point), new THREE.Vector2(...next)],
+      CYLINDER_SEGMENTS
+    );
+  });
+  const geometry = mergeGeometries(faces);
+  faces.forEach((face) => face.dispose());
+  return geometry;
+}
+
 export function createCellGeometry(shape) {
-  return shape === 'sphere'
-    ? new THREE.SphereGeometry(1, 32, 16)
-    : new THREE.BoxGeometry(2, 2, 2);
+  switch (shape) {
+    case 'sphere':
+      return new THREE.SphereGeometry(1, 32, 16);
+    case 'cylinder':
+      return new THREE.CylinderGeometry(1, 1, 2, CYLINDER_SEGMENTS);
+    case 'hollowCylinder':
+      return createHollowCylinderGeometry();
+    default:
+      return new THREE.BoxGeometry(2, 2, 2);
+  }
 }
 
 // The rect reference's frame: a box `width` larger than the cell with its

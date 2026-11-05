@@ -1,6 +1,8 @@
 /* eslint-disable no-bitwise */
 import { rgbToHex } from '@utils/paletteStops';
 
+import { CYLINDER_SEGMENTS, HOLLOW_CYLINDER_INNER_RADIUS } from './shapes.mjs';
+
 const SAMPLE_PX = 1.5;
 const MIN_BOX_PX = 0.75;
 const CIRCLE_STEPS = 64;
@@ -81,16 +83,56 @@ const boxSegments = (center, half) => {
   return EDGES.map(([a, b]) => [points[a], points[b]]);
 };
 
-function circleSegments(center, radius, basis) {
+function circleSegments(center, radius, basis, steps = CIRCLE_STEPS) {
   const at = (i) => {
-    const angle = (i / CIRCLE_STEPS) * Math.PI * 2;
+    const angle = (i / steps) * Math.PI * 2;
     return center.map(
       (c, a) =>
         c +
         (basis.x[a] * Math.cos(angle) + basis.y[a] * Math.sin(angle)) * radius
     );
   };
-  return Array.from({ length: CIRCLE_STEPS }, (_, i) => [at(i), at(i + 1)]);
+  return Array.from({ length: steps }, (_, i) => [at(i), at(i + 1)]);
+}
+
+function cylinderSegments({ center, half, look }, camera, basis) {
+  const radii = [half[0]];
+  if (look.shape === 'hollowCylinder') {
+    radii.push(half[0] * HOLLOW_CYLINDER_INNER_RADIUS);
+  }
+  const ends = [-1, 1].map((sign) => [
+    center[0],
+    center[1] + half[1] * sign,
+    center[2],
+  ]);
+  const horizontal = { x: [1, 0, 0], y: [0, 0, 1] };
+  const direction =
+    camera.projection === 'orthographic' ? basis.z : sub(camera.eye, center);
+  const distance = Math.hypot(direction[0], direction[2]);
+  const angle = Math.atan2(direction[2], direction[0]);
+  return radii.flatMap((radius) => {
+    const segments = ends.flatMap((end) =>
+      circleSegments(end, radius, horizontal, CYLINDER_SEGMENTS)
+    );
+    if (distance <= 1e-6) return segments;
+    if (camera.projection !== 'orthographic' && distance <= radius)
+      return segments;
+    const tangent =
+      camera.projection === 'orthographic'
+        ? Math.PI / 2
+        : Math.acos(radius / distance);
+    [-1, 1].forEach((sign) => {
+      const theta = angle + sign * tangent;
+      segments.push(
+        ends.map((end) => [
+          end[0] + radius * Math.cos(theta),
+          end[1],
+          end[2] + radius * Math.sin(theta),
+        ])
+      );
+    });
+    return segments;
+  });
 }
 
 // A plottable twin of a still: every solid, glass cell and frame edge through
@@ -166,10 +208,18 @@ export default function renderHyperCubesSvg({
     });
   };
 
-  const shapeOf = ({ center, half, look }) =>
-    look.shape === 'sphere'
-      ? circleSegments(center, half[0], basis)
-      : boxSegments(center, half);
+  const shapeOf = (item) => {
+    const { center, half, look } = item;
+    switch (look.shape) {
+      case 'sphere':
+        return circleSegments(center, half[0], basis);
+      case 'cylinder':
+      case 'hollowCylinder':
+        return cylinderSegments(item, camera, basis);
+      default:
+        return boxSegments(center, half);
+    }
+  };
 
   instances.solids
     .filter(({ look }) => look.role !== 'core')

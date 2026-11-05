@@ -55,6 +55,8 @@ const FACET_ROLLS = {
         ['cube', 7],
         ['sphere', 1.5],
         ['mixed', 1.5],
+        ['cylinder', 1.5],
+        ['hollowCylinder', 1.5],
       ]),
       domainX: cube ? 1 : round(between(rng, 0.6, 1.5)),
       domainY: cube ? 1 : round(between(rng, 0.5, 1.4)),

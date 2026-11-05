@@ -28,6 +28,12 @@ function solidHalf(config, shape, size, presence) {
     const r = Math.max(0, Math.min(...size) / 2 - config.gap) * presence;
     return [r, r, r];
   }
+  if (shape === 'cylinder' || shape === 'hollowCylinder') {
+    const r =
+      Math.max(0, Math.min(size[0], size[2]) / 2 - config.gap) * presence;
+    const height = Math.max(0, size[1] / 2 - config.gap) * presence;
+    return [r, height, r];
+  }
   return size.map((s) => Math.max(0, s / 2 - config.gap) * presence);
 }
 

@@ -16,9 +16,10 @@ import createOptionSchema, {
   spec,
   standard,
 } from '../optionSchema/index.mjs';
+import { CELL_GEOMETRIES } from './shapes.mjs';
 
 export const STRUCTURES = ['rect', 'octree'];
-export const CELL_SHAPES = ['cube', 'sphere', 'mixed'];
+export const CELL_SHAPES = [...CELL_GEOMETRIES, 'mixed'];
 export const FRAME_MODES = ['all', 'solid', 'none'];
 export const STUDIOS = ['crimson', 'mono', 'none'];
 export const ROLES = ['emissive', 'accent', 'dark', 'light', 'glass'];
@@ -136,7 +137,13 @@ const STRUCTURE = {
     'structure',
     choice('structure', 'Fill', 'Shape', CELL_SHAPES, 'cube', {
       help: 'Solid shape; mixed rolls cube or sphere per cell',
-      choiceLabels: { cube: 'Cube', mixed: 'Cube + Sphere', sphere: 'Sphere' },
+      choiceLabels: {
+        cube: 'Cube',
+        cylinder: 'Cylinder',
+        hollowCylinder: 'Hollow Cylinder',
+        mixed: 'Cube + Sphere',
+        sphere: 'Sphere',
+      },
     })
   ),
   sphereShare: rolled(

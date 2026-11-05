@@ -16,8 +16,8 @@ every preset change that sets one of its keys (docs/scene-conventions.md §9).
 ```
 @modules/candle            three-free: option schema, roll, wax form (SDF) and mesher,
         │                    flame states + signal, placement, framing, plot
-@modules/candleRender      CandleStage (R3F stage), the fluid-sim flame (fireSim),
-        │                    the sorted curl smoke (curlSmoke), wax/wick, legacy
+@modules/candleRender      CandleStage (R3F stage), the fluid-sim flame (@modules/fireSim),
+        │                    the sorted curl smoke (@modules/curlSmoke), wax/wick, legacy
         │                    flames and smoke, capture read-backs
         ├─ WebGPU/BurningAtBothEnds    CameraRig + CandleStage, Leva from the schema
   scripts/lib/candleRender.mjs         src/dev/tools/candle
@@ -90,7 +90,11 @@ discs scale with them. In the plot, cartoon puffs
 and clay balls become outlined circles (the CPU mirrors their PCG-hashed
 sizes exactly).
 
-## The fluid-sim flame (`fireSim.js`)
+## The fluid-sim flame (`@modules/fireSim`)
+
+The solver and its looks are shared (`docs/fire-sim.md`); the candle
+drives one emitter at the wick (`SimFlames.jsx`) and hides the flame behind
+its own analytic wax occluder (`waxOccluder.js`).
 
 A port of three's `webgpu_volume_fire`: the same compute passes (advect
 velocity with buoyancy against soot weight, thermal + ambient curl
@@ -110,7 +114,7 @@ grid in a box over the top wick. Candle-specific changes:
   taller box burned a thinner flame. Cells stay cubic.
 - It is not drawn with `VolumeNodeMaterial`, which marches the whole camera
   ray (far too coarse for a candle). A box-clipped march draws it instead,
-  clipped where the camera ray first enters the wax (`waxEntry`): an
+  clipped where the camera ray first enters the wax (`waxOccluder.js`): an
   analytic test against the candle as a cylinder of its widest body radius
   between the rims, less a crater pocket at each end, so wax far outside the
   flame's box (the candle's body in front of the bottom flame) still hides
@@ -119,7 +123,10 @@ grid in a box over the top wick. Candle-specific changes:
   the bottom flame adds light over the candle seen from above.
 - One sim is drawn twice: upright, and turned half a turn for the bottom end.
 
-## The curl smoke (`curlSmoke.js`)
+## The curl smoke (`@modules/curlSmoke`)
+
+Shared (`docs/fire-sim.md`); the candle creates it with `mirror: true` and
+the default straight-up path.
 
 The TouchDesigner recipe: many particles, each nearly transparent, opacity
 by age, sorted back to front every frame (a bitonic network over both ends'

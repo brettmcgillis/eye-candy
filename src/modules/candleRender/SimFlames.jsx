@@ -5,8 +5,9 @@ import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three/webgpu';
 
 import { flameParams, maxBodyRadius, mirrorEnd } from '@modules/candle';
+import { createFireSim } from '@modules/fireSim';
 
-import createFireSim from './fireSim';
+import createWaxOccluder from './waxOccluder';
 
 // The sim's box round a wick, in units of the flame's size.
 const BOX = [0.6, 2.2, 0.6];
@@ -36,14 +37,16 @@ export default function SimFlames({
 }) {
   const gl = useThree((state) => state.gl);
   const { box, centre } = useMemo(() => simBox(placement), [placement]);
+  const wax = useMemo(() => createWaxOccluder(), []);
   const sim = useMemo(
     () =>
       createFireSim({
         forceHeight: FORCE_HEIGHT * placement.size,
+        occluder: wax.occluder,
         resolution: config.simResolution,
         size: box,
       }),
-    [box, config.simResolution, placement.size]
+    [box, config.simResolution, placement.size, wax]
   );
   const widest = useMemo(() => maxBodyRadius(form) * 1.01, [form]);
   const material = useMemo(() => sim.material(config.look), [config.look, sim]);
@@ -79,14 +82,15 @@ export default function SimFlames({
   u.cooling.value = (styled ? 3.6 : 1.3) / p.life;
   u.dissipation.value = 1 / p.sootLife;
   u.emitSoot.value = p.soot;
-  u.sourceRadius.value = 0.05 * size * (styled ? 1.8 : 1);
-  u.candleMatrix.value
+  const sourceRadius = 0.05 * size * (styled ? 1.8 : 1);
+  const w = wax.uniforms;
+  w.candleMatrix.value
     .makeRotationZ((-(config.tilt ?? 0) * Math.PI) / 180)
     .multiply(new THREE.Matrix4().makeTranslation(...centre));
-  u.rimY.value = (form.rimAt(0) + form.rimAt(2) + form.rimAt(4)) / 3;
-  u.poolY.value = form.pool;
-  u.outerR.value = widest;
-  u.innerR.value = form.radius - form.wall;
+  w.rimY.value = (form.rimAt(0) + form.rimAt(2) + form.rimAt(4)) / 3;
+  w.poolY.value = form.pool;
+  w.outerR.value = widest;
+  w.innerR.value = form.radius - form.wall;
 
   const anchors = useMemo(() => {
     const local = (q) => q.map((v, k) => v - centre[k]);
@@ -107,16 +111,19 @@ export default function SimFlames({
         (config.look === 'realistic' ? 20 : 15) * (p.temperature / 5.5);
       u.emitFuel.value = lit;
       u.wind.value.set(signal.wind[0], 0, signal.wind[1]);
-      u.sourceA.value.set(
-        anchors.a[0] + signal.sway[0],
-        anchors.a[1],
-        anchors.a[2] + signal.sway[1]
-      );
-      u.sourceB.value.set(
-        anchors.b[0] + signal.sway[0] * 2,
-        anchors.b[1],
-        anchors.b[2] + signal.sway[1] * 2
-      );
+      sim.setEmitter(0, {
+        a: [
+          anchors.a[0] + signal.sway[0],
+          anchors.a[1],
+          anchors.a[2] + signal.sway[1],
+        ],
+        b: [
+          anchors.b[0] + signal.sway[0] * 2,
+          anchors.b[1],
+          anchors.b[2] + signal.sway[1] * 2,
+        ],
+        radius: sourceRadius,
+      });
     });
   }, -1);
 

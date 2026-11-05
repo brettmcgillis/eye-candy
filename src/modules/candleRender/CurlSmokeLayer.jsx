@@ -4,7 +4,12 @@ import { useFrame, useThree } from '@react-three/fiber';
 
 import * as THREE from 'three/webgpu';
 
-import createCurlSmoke from './curlSmoke';
+import { createCurlSmoke } from '@modules/curlSmoke';
+
+import { createClayMaterial } from './styleMaterials';
+
+const clayMaterial = (u, colorNode) =>
+  createClayMaterial(u, colorNode, { scale: 3 });
 
 const mix = (a, b, t) => a.map((v, k) => v + (b[k] - v) * t);
 
@@ -18,7 +23,13 @@ export default function CurlSmokeLayer({
 }) {
   const gl = useThree((state) => state.gl);
   const smoke = useMemo(
-    () => createCurlSmoke({ count: config.smokeCount, look: config.look }),
+    () =>
+      createCurlSmoke({
+        clayMaterial,
+        count: config.smokeCount,
+        look: config.look,
+        mirror: true,
+      }),
     [config.look, config.smokeCount]
   );
   useEffect(() => () => smoke.dispose(), [smoke]);

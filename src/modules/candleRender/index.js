@@ -19,6 +19,4 @@ export {
   showEffects,
 } from './capture';
 export { default as CandleStage } from './CandleStage';
-export { default as createCurlSmoke } from './curlSmoke';
-export { default as createFireSim } from './fireSim';
 export { default as createStageRoot } from './createStageRoot';

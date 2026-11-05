@@ -18,6 +18,7 @@ import {
   loadKernel,
 } from './lib/candleRender.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import presetKeys from './lib/presetKeys.mjs';
 import schemaControlCoverage from './lib/schemaControlCoverage.mjs';
 import checkWorkbenchPage from './lib/workbenchPage.mjs';
 
@@ -57,11 +58,11 @@ async function checkKernelPurity() {
   );
 }
 
-async function checkPresets(candle) {
+async function checkPresets() {
   const loaded = await loadModules([PRESETS]);
   const { PRESETS: presets } = loaded[PRESETS];
   failures.push(...(await schemaControlCoverage([CONTROLS])));
-  const known = new Set([...candle.SCENE_KEYS, 'cameraMode']);
+  const known = await presetKeys('BurningAtBothEnds');
   Object.entries(presets).forEach(([name, preset]) => {
     Object.entries(preset).forEach(([key, value]) => {
       if (key.startsWith('camera') && key !== 'cameraMode') return;

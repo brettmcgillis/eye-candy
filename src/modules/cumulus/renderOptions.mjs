@@ -889,8 +889,8 @@ export const RENDER_OPTIONS = {
   batch: standard.batch(),
   out: standard.out('cumulus'),
   count: standard.count('thoughts'),
-  width: standard.width(),
-  height: standard.height(),
+  width: standard.width(1700),
+  height: standard.height(1200),
   pixelRatio: standard.pixelRatio(),
   webp: standard.webp(),
   svg: standard.svg(
@@ -898,8 +898,20 @@ export const RENDER_OPTIONS = {
   ),
   capture: standard.capture(),
   transparent: standard.transparent(),
-  plotWidthMm: standard.plotWidthMm(),
+  plotWidthMm: standard.plotWidthMm(215.9),
   svgColors: standard.svgColors(),
+  svgDrawing: still(
+    choice('svg', null, 'Drawing method', ['contours', 'ink'], 'contours', {
+      choiceLabels: { contours: 'Contour detail', ink: 'Ink study' },
+      help: 'Ink draws connected shadow areas and clean colour boundaries; contours uses the existing detail and shading controls',
+    })
+  ),
+  svgCensorCellMm: still(
+    num('svg', null, 'Pixel square size (mm)', 4, 2, 8, 0.5, {
+      help: 'Physical cell size for the ink study; the actual censor shader is sampled at this grid for SVG only',
+      when: { svgDrawing: ['ink'] },
+    })
+  ),
   svgAnatomyInk: still({
     type: 'color',
     section: 'svg',
@@ -952,25 +964,61 @@ export const RENDER_OPTIONS = {
       placeholder: 'PX',
     })
   ),
+  svgAnatomyDetail: still(
+    choice(
+      'svg',
+      'Bone detail',
+      'Bone detail source',
+      ['structure', 'mesh', 'none'],
+      'structure',
+      {
+        help: 'Structure traces depth and surface-normal changes at nib scale; mesh uses the legacy scan contours and creases',
+      }
+    )
+  ),
+  svgStructureSensitivity: still(
+    num('svg', 'Bone detail', 'Structure sensitivity', 0.55, 0, 1, 0.05, {
+      help: 'Higher values retain shallower anatomical ridges',
+      when: { svgAnatomyDetail: ['structure'] },
+    })
+  ),
+  svgFeatureMinMm: still(
+    num(
+      'svg',
+      'Bone detail',
+      'Shortest structural feature (mm)',
+      0.6,
+      0.2,
+      3,
+      0.1,
+      {
+        help: 'A short socket or nasal edge can survive even when shorter than the legacy mesh cutoff',
+        when: { svgAnatomyDetail: ['structure'] },
+      }
+    )
+  ),
   svgAnatomyContours: still(
     flag('svg', null, 'SVG bone contours', true, {
       help: 'Trace where the skull and femur turn away from the camera',
+      when: { svgAnatomyDetail: ['mesh'] },
     })
   ),
   svgAnatomyEdges: still(
-    flag('svg', null, 'SVG bone creases', true, {
+    flag('svg', null, 'SVG bone creases', false, {
       help: 'Trace sharp edges of the scanned skull and femur',
+      when: { svgAnatomyDetail: ['mesh'] },
     })
   ),
   svgAnatomyCreaseAngle: still(
     num('svg', null, 'SVG bone crease angle', 70, 5, 150, 1, {
       help: 'Degrees the scanned bone must fold by for a crease; low values speckle',
-      when: { svgAnatomyEdges: [true] },
+      when: { svgAnatomyDetail: ['mesh'], svgAnatomyEdges: [true] },
     })
   ),
   svgAnatomyMinLength: still(
     num('svg', null, 'SVG bone min length', 8, 0, 60, 0.5, {
       help: 'Drop bone lines shorter than this in output px',
+      when: { svgAnatomyDetail: ['mesh'] },
       placeholder: 'PX',
     })
   ),
@@ -995,14 +1043,67 @@ export const RENDER_OPTIONS = {
     help: 'Stroke width in output px; empty uses the pen width, 0 draws hairlines',
     nullable: true,
   }),
-  svgPenMm: standard.svgPenMm(),
+  svgPenMm: standard.svgPenMm({ default: 0.4 }),
   svgShading: standard.svgShading(
-    'Tone traced from the frozen frame',
-    'crosshatch'
+    'Halo shading; bones, cloud and censor have independent styles',
+    'crosshatch',
+    { label: 'Halo shading', group: 'Region shading' }
   ),
-  svgShadeSpacing: standard.svgShadeSpacing(),
-  svgShadeGamma: standard.svgShadeGamma(),
-  svgShadeAngle: standard.svgShadeAngle(),
+  svgAnatomyShading: still(
+    choice(
+      'svg',
+      'Region shading',
+      'Bone shading',
+      [
+        'none',
+        'hatch',
+        'crosshatch',
+        'stipple',
+        'halftone',
+        'squiggle',
+        'scribble',
+      ],
+      'hatch'
+    )
+  ),
+  svgCloudShading: still(
+    choice(
+      'svg',
+      'Region shading',
+      'Cloud shading',
+      ['none', 'hatch', 'stipple', 'halftone', 'squiggle', 'scribble'],
+      'stipple'
+    )
+  ),
+  svgCensorShading: still(
+    choice(
+      'svg',
+      'Region shading',
+      'Censor shading',
+      ['none', 'hatch'],
+      'hatch',
+      {
+        help: 'Rectilinear marks preserve the pixel grid regardless of the halo shading style',
+      }
+    )
+  ),
+  svgShadeSpacingMm: still(
+    num(
+      'svg',
+      'Region shading',
+      'Minimum shade spacing (mm)',
+      1.1,
+      0.4,
+      4,
+      0.1,
+      {
+        help: 'Physical spacing floor; each style also reserves room for its loops or dots',
+      }
+    )
+  ),
+  svgShadeSpacing: standard.svgShadeSpacing(6, { when: undefined }),
+  svgShadeGamma: standard.svgShadeGamma({ when: undefined }),
+  svgShadeAngle: standard.svgShadeAngle({ when: undefined }),
   views: standard.views(VIEWS, 'hero'),
   fov: standard.fov(20),
   margin: standard.margin(0.08, 'Frame padding'),
@@ -1024,6 +1125,21 @@ export const RENDER_OPTIONS = {
   ...standard.videoFormats(),
   ...standard.overlayOptions(),
 };
+const INK_CONTROLS = new Set([
+  'svgDrawing',
+  'plotWidthMm',
+  'svgColors',
+  'svgAnatomyInk',
+  'svgMonochrome',
+  'svgPaper',
+  'svgPaperDistance',
+  'svgPenMm',
+  'svgCensorCellMm',
+]);
+Object.entries(RENDER_OPTIONS).forEach(([key, item]) => {
+  if (item.section === 'svg' && !INK_CONTROLS.has(key))
+    Object.assign(item, { when: { svgDrawing: ['contours'], ...item.when } });
+});
 const HALO_PREFIXES = {
   rings: 'rings',
   record: 'record',

@@ -12,3 +12,5 @@ export {
   thoughtAt,
 } from './generation';
 export { default as renderThoughtSvg, thoughtInks } from './plot';
+
+export { skullInk } from './skullInk';

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 
 import { folder, useControls } from 'leva';
 
@@ -20,40 +20,19 @@ const ORBIT_CUSTOM_TARGET_PATH =
   'All My Thoughts Are So Cumulus.Scene.Camera.orbitCameraUseCustomTarget';
 const DEFAULT_PRESET = 'Default Rings';
 
-function cloneSnapshot(snapshot) {
-  return JSON.parse(JSON.stringify(snapshot));
+function getPresetControls({ presetName, presetSnapshot }) {
+  return { ...presetSnapshot, preset: presetName };
 }
 
 export default function useSceneControls() {
-  const defaultControlsRef = useRef(null);
   const previousHaloTypeRef = useRef('rings');
 
-  const getPresetControls = useCallback(
-    ({ currentControls, presetName, presetSnapshot }) => {
-      const base = defaultControlsRef.current || {};
-      return {
-        ...base,
-        ...presetSnapshot,
-        preset: presetName,
-        cameraMode: presetSnapshot.cameraMode ?? currentControls.cameraMode,
-        haloScrollEnabled: currentControls.haloScrollEnabled,
-        haloScrollInterval: currentControls.haloScrollInterval,
-      };
-    },
-    []
-  );
-
-  const {
-    applyPresetByName,
-    attachSetControls,
-    controlsSnapshotRef,
-    presetsFolder,
-    selectedPreset,
-  } = usePresetsFolder({
-    defaultPreset: DEFAULT_PRESET,
-    getPresetControls,
-    presets: PRESETS,
-  });
+  const { attachSetControls, controlsSnapshotRef, presetsFolder } =
+    usePresetsFolder({
+      defaultPreset: DEFAULT_PRESET,
+      getPresetControls,
+      presets: PRESETS,
+    });
 
   const { Animations, Environment, Lighting, Post } = sceneRigFolders();
   const [controls, setControls] = useControls(
@@ -280,19 +259,11 @@ export default function useSceneControls() {
     { collapsed: true }
   );
 
+  controlsSnapshotRef.current = { ...controls };
+
   useEffect(() => {
     attachSetControls(setControls);
   }, [attachSetControls, setControls]);
-
-  useEffect(() => {
-    if (!defaultControlsRef.current) {
-      defaultControlsRef.current = cloneSnapshot(controls);
-    }
-  }, [controls]);
-
-  useEffect(() => {
-    applyPresetByName(selectedPreset, { currentControls: controls });
-  }, [applyPresetByName, selectedPreset]);
 
   useEffect(() => {
     const hasHaloTypeChanged =

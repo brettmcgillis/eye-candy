@@ -1,17 +1,32 @@
 import {
+  chain,
   distance2,
   erodeMask,
   imagePalette,
   inkLayers,
   inkMap,
   inkMask,
+  isoSegments,
   lab,
   meshPlotSvg,
   penPx,
   plotLayer,
   shadePath,
+  silhouetteRuns,
+  simplifyLoop,
+  smooth,
   stretchTone,
 } from '@modules/plotKit';
+
+import {
+  clipStrokePath,
+  lineClearance,
+  pathRuns,
+  selectFeatures,
+  structureRuns,
+  thinPlot,
+} from './plotFeatures';
+import renderInkStudy from './plotInkStudy';
 
 const BLACK = { color: '#000000', lab: lab(0, 0, 0) };
 const rgbOf = (color) =>
@@ -145,6 +160,7 @@ function settleInks(map, radius) {
 function dropSpecks(svg, minLength) {
   return svg.replace(/ d="([^"]*)"/gu, (_, d) => {
     const kept = d.split(/(?=M)/u).filter((part) => {
+      if (/[ACHQSTV]/iu.test(part)) return true;
       const n = (part.match(/-?\d+(?:\.\d+)?/gu) ?? []).map(Number);
       let length = 0;
       for (let i = 2; i + 1 < n.length; i += 2)
@@ -155,28 +171,140 @@ function dropSpecks(svg, minLength) {
   });
 }
 
+function softenedTone(image, radius) {
+  const { data, height, width } = image;
+  let values = new Float32Array(width * height);
+  for (let i = 0; i < values.length; i += 1)
+    values[i] =
+      0.2126 * data[i * 4] +
+      0.7152 * data[i * 4 + 1] +
+      0.0722 * data[i * 4 + 2];
+  [true, false].forEach((horizontal) => {
+    const blurred = new Float32Array(values.length);
+    const length = horizontal ? width : height;
+    const rows = horizontal ? height : width;
+    const at = (row, k) => (horizontal ? row * width + k : k * width + row);
+    for (let row = 0; row < rows; row += 1) {
+      let sum = 0;
+      for (let k = -radius; k < length; k += 1) {
+        if (k + radius < length) sum += values[at(row, k + radius)];
+        if (k - radius - 1 >= 0) sum -= values[at(row, k - radius - 1)];
+        if (k >= 0)
+          blurred[at(row, k)] =
+            sum /
+            (Math.min(length - 1, k + radius) - Math.max(0, k - radius) + 1);
+      }
+    }
+    values = blurred;
+  });
+  const softened = new Uint8ClampedArray(data.length);
+  values.forEach((value, i) => {
+    softened.fill(value, i * 4, i * 4 + 3);
+    softened[i * 4 + 3] = 255;
+  });
+  return { data: softened, height, width };
+}
+
+function formRuns(image, region, level, pixelRatio, pen) {
+  if (!image) return [];
+  const { height, width } = image;
+  const at = (u, v) =>
+    Math.min(height - 1, Math.floor(v * height)) * width +
+    Math.min(width - 1, Math.floor(u * width));
+  const segments = isoSegments(
+    (u, v) => image.data[at(u, v) * 4] / 255,
+    Math.max(
+      16,
+      Math.ceil(Math.max(width, height) / Math.max(1, pen * pixelRatio * 0.5))
+    ),
+    level,
+    (u, v) => region.covered[at(u, v)]
+  );
+  return chain(segments).map((run) =>
+    smooth(
+      simplifyLoop(
+        run.map(([x, y]) => [x * width, y * height]),
+        pen * pixelRatio * 0.5
+      )
+    ).map(([x, y]) => ({ x: x / pixelRatio, y: y / pixelRatio }))
+  );
+}
+
 export default function renderThoughtSvg({
   albedo,
   anatomy = [],
+  anatomyMask = null,
+  anatomyImage = null,
+  skullMask = null,
+  femurMask = null,
   camera,
   censor = null,
+  censorGrid = null,
   cloud = null,
+  cloudImage = null,
+  cloudPuffs = [],
   coverage,
   image,
   lines,
   meshes,
+  normals = null,
   options,
   palette: given = null,
   visible,
 }) {
   const { height, pixelRatio, svgMonochrome, width } = options;
   const stroke = options.svgStroke ?? penPx(options) ?? 0.6;
+  const pen = penPx(options) ?? stroke;
   const palette = given ?? thoughtInks({ albedo, coverage, options });
+  if (options.svgDrawing === 'ink')
+    return renderInkStudy({
+      albedo,
+      anatomyMask,
+      skullMask,
+      femurMask,
+      anatomyImage: anatomyImage ?? image,
+      cloud,
+      cloudImage,
+      cloudPuffs,
+      censor,
+      censorGrid,
+      coverage,
+      options,
+      palette,
+    });
+  const structural = (options.svgAnatomyDetail ?? 'structure') === 'structure';
+  const boneRims =
+    anatomyMask && options.svgSilhouette !== false
+      ? silhouetteRuns(anatomyMask, pixelRatio, pen * pixelRatio * 0.35)
+      : [];
+  const features =
+    structural && anatomyMask
+      ? selectFeatures(
+          structureRuns({
+            camera,
+            coverage,
+            mask: anatomyMask,
+            normals,
+            pen,
+            pixelRatio,
+            sensitivity: options.svgStructureSensitivity ?? 0.55,
+          }),
+          boneRims,
+          pen,
+          ((options.svgFeatureMinMm ?? 0.6) * width) /
+            (options.plotWidthMm || (width * 25.4) / 96)
+        )
+      : [];
+  const haloMask = minus(coverage, cloud, anatomyMask);
+  const haloRims =
+    options.svgSilhouette !== false
+      ? silhouetteRuns(haloMask, pixelRatio, pen * pixelRatio * 0.35)
+      : [];
   let outlines = meshPlotSvg({
     albedo,
     camera,
     contours: options.svgContours ?? true,
-    coverage,
+    coverage: haloMask,
     creaseAngle: options.svgCreaseAngle ?? 35,
     edges: options.svgEdges ?? true,
     height,
@@ -185,14 +313,52 @@ export default function renderThoughtSvg({
     minLength: options.svgMinLength ?? 3,
     palette,
     pixelRatio,
-    silhouette: options.svgSilhouette ?? true,
+    silhouette: false,
     stroke,
-    texture: options.svgTexture
-      ? { image, levels: options.svgTextureLevels }
-      : null,
+    texture: null,
     visible,
     width,
   });
+  outlines = thinPlot(
+    outlines,
+    haloRims,
+    pen,
+    Math.max(pen, options.svgMinLength ?? 3)
+  );
+  const haloMarks = [
+    ...haloRims,
+    ...[...outlines.matchAll(/ d="([^"]*)"/gu)].flatMap(([, d]) => pathRuns(d)),
+  ];
+  if (options.svgTexture) {
+    const textureSvg = meshPlotSvg({
+      albedo,
+      camera,
+      coverage: haloMask,
+      contours: false,
+      edges: false,
+      height,
+      meshes: [],
+      palette,
+      pixelRatio,
+      silhouette: false,
+      stroke,
+      texture: { image, levels: options.svgTextureLevels },
+      width,
+    });
+    const clean = thinPlot(textureSvg, haloMarks, pen, pen * 2);
+    const paths = clean
+      .slice(clean.indexOf('>') + 1, clean.lastIndexOf('</svg>'))
+      .replace(/pen-(\d+)/gu, (_, index) => `pen-${100 + Number(index)}`);
+    haloMarks.push(
+      ...[...clean.matchAll(/ d="([^"]*)"/gu)].flatMap(([, d]) => pathRuns(d))
+    );
+    outlines = outlines.replace('</svg>', `${paths}</svg>`);
+  }
+  if (haloRims.length)
+    outlines = outlines.replace(
+      '</svg>',
+      `${plotLayer(76, 'halo silhouette', stroke, pathOfRuns(haloRims), palette[0].color)}</svg>`
+    );
   // The bone outline shares the nearest plot ink rather than taking a pen
   // of its own out of a small `svgColors` budget.
   const wanted = options.svgAnatomyInk ?? '#222222';
@@ -202,33 +368,50 @@ export default function renderThoughtSvg({
         distance2(b.lab, target) < distance2(a.lab, target) ? b : a
       ).color
     : wanted;
-  if (anatomy.length) {
+  if (anatomy.length || anatomyMask) {
     const skeleton = meshPlotSvg({
       camera,
-      contours: options.svgAnatomyContours ?? true,
+      contours:
+        !structural &&
+        options.svgAnatomyDetail !== 'none' &&
+        (options.svgAnatomyContours ?? true),
+      contourTolerance: pen * 0.5,
+      coverage: anatomyMask,
       creaseAngle: options.svgAnatomyCreaseAngle ?? 70,
-      edges: options.svgAnatomyEdges ?? true,
+      edges:
+        !structural &&
+        options.svgAnatomyDetail !== 'none' &&
+        (options.svgAnatomyEdges ?? false),
       height,
-      meshes: anatomy,
-      minLength: options.svgAnatomyMinLength ?? 8,
+      meshes: structural || options.svgAnatomyDetail === 'none' ? [] : anatomy,
+      minLength: Math.max(options.svgAnatomyMinLength ?? 8, pen * 4),
       pixelRatio,
-      silhouette: false,
+      silhouette: options.svgSilhouette ?? true,
+      outlineTolerance: pen * 0.5,
       stroke,
       visible,
       width,
     });
     const paths = skeleton
       .slice(skeleton.indexOf('>') + 1, skeleton.lastIndexOf('</svg>'))
-      .replace(/pen-(\d+)/gu, (_, pen) => `pen-${60 + Number(pen)}`)
+      .replace(/pen-(\d+)/gu, (_, index) => `pen-${60 + Number(index)}`)
       .replaceAll('#000000', svgMonochrome ? '#000000' : anatomyInk);
     outlines = outlines.replace('</svg>', `${paths}</svg>`);
   }
-  outlines = dropSpecks(outlines, options.svgMinLength ?? 3);
-  const pen = penPx(options) ?? stroke;
-  const spacing = Math.max(options.svgShadeSpacing ?? 6, pen * 2);
+  const perMm = width / (options.plotWidthMm || (width * 25.4) / 96);
+  const spacing = Math.max(
+    options.svgShadeSpacing ?? 6,
+    (options.svgShadeSpacingMm ?? 1.1) * perMm,
+    pen * 2.5
+  );
   const raw = inkMap({ image: albedo, mask: coverage, palette });
   const map = settleInks(raw, Math.max(1, Math.round(2 * pixelRatio)));
   const extra = [];
+  const outlineInk = svgMonochrome ? '#000000' : anatomyInk;
+  if (cloud && options.svgSilhouette !== false) {
+    const runs = silhouetteRuns(cloud, pixelRatio, pen * pixelRatio * 0.6);
+    extra.push(plotLayer(70, 'cloud', stroke, pathOfRuns(runs), outlineInk));
+  }
   if (censor) {
     blockEdges(raw, censor, palette, pixelRatio).forEach((runs, i) => {
       if (runs.length)
@@ -243,62 +426,165 @@ export default function renderThoughtSvg({
         );
     });
   }
-  if (options.svgShading !== 'none') {
-    const shade = (region, tone, angle, gap) =>
-      tone
-        ? shadePath({
-            angle,
-            gamma: options.svgShadeGamma,
-            height,
-            image: tone,
-            mask: region,
-            pen,
-            pixelRatio,
-            shading: options.svgShading,
-            spacing: gap,
-            width,
-          })
-        : '';
+  {
+    const shade = (region, tone, angle, gap, style, obstacles = []) => {
+      if (!tone || style === 'none') return '';
+      const factors = {
+        scribble: 5,
+        squiggle: 4,
+        stipple: 5,
+        halftone: 4,
+        tsp: 4,
+      };
+      const separated = Math.max(gap, pen * (factors[style] ?? 2.5));
+      let footprint = pen * 0.5;
+      if (style === 'halftone') footprint += separated * 0.5;
+      if (style === 'stipple')
+        footprint += Math.max(pen * 0.5, separated * 0.12);
+      const within = lineClearance(
+        erodeMask(region, Math.ceil(footprint * pixelRatio)),
+        obstacles,
+        Math.max(pen * 1.25, footprint + pen * 0.75),
+        pixelRatio
+      );
+      const path = shadePath({
+        angle,
+        equalize: false,
+        gamma: options.svgShadeGamma,
+        height,
+        image: tone,
+        mask: within,
+        pen,
+        pixelRatio,
+        shading: style === 'hatch' ? 'crosshatch' : style,
+        spacing: separated,
+        width,
+      });
+      return clipStrokePath(path, within, pixelRatio, pen);
+    };
     // Thin parts (orbit tubes, ring rims) are left to their outlines.
-    const body = minus(
-      erodeMask(
-        minus(coverage, cloud, censor),
-        Math.round((spacing / 2) * pixelRatio)
-      ),
-      cloud,
-      censor
+    const body = erodeMask(
+      minus(coverage, cloud, censor, anatomyMask),
+      Math.round((spacing / 2) * pixelRatio)
     );
+    if (anatomyMask) {
+      const bone = erodeMask(anatomyMask, Math.ceil(pen * pixelRatio));
+      const tone = softenedTone(
+        image,
+        Math.max(1, Math.round(pen * pixelRatio))
+      );
+      const stretched = stretchTone({
+        floor:
+          (options.svgAnatomyShading ?? 'hatch') === 'crosshatch' ? 0.52 : 0.65,
+        image: tone,
+        minSpan: 0.25,
+        region: bone,
+      });
+      extra.push(
+        plotLayer(
+          71,
+          'bone shading',
+          stroke,
+          shade(
+            bone,
+            stretched,
+            options.svgShadeAngle,
+            Math.max(spacing * 1.1, pen * 3),
+            options.svgAnatomyShading ?? 'hatch',
+            [...boneRims, ...features]
+          ),
+          outlineInk
+        )
+      );
+    }
+    if (cloud) {
+      const source = cloudImage ?? image;
+      const opacity = {
+        ...source,
+        data: new Uint8ClampedArray(source.data.length),
+      };
+      cloud.covered.forEach((on, i) => {
+        const value = on ? 255 - source.data[i * 4 + 3] : 255;
+        opacity.data.fill(value, i * 4, i * 4 + 3);
+        opacity.data[i * 4 + 3] = 255;
+      });
+      const tone = stretchTone({
+        floor: 0.65,
+        image: softenedTone(opacity, Math.max(1, Math.round(pen * pixelRatio))),
+        minSpan: 0.2,
+        region: cloud,
+      });
+      const interior = erodeMask(cloud, Math.ceil(pen * pixelRatio * 0.5));
+      const cloudRims = silhouetteRuns(
+        cloud,
+        pixelRatio,
+        pen * pixelRatio * 0.6
+      );
+      const puffs = selectFeatures(
+        [0.76, 0.87].flatMap((level) =>
+          formRuns(tone, interior, level, pixelRatio, pen)
+        ),
+        cloudRims,
+        pen,
+        pen * 3
+      );
+      extra.push(
+        plotLayer(74, 'cloud puffs', stroke, pathOfRuns(puffs), outlineInk)
+      );
+      extra.push(
+        plotLayer(
+          72,
+          'cloud shading',
+          stroke,
+          shade(
+            erodeMask(cloud, Math.ceil(pen * pixelRatio)),
+            tone,
+            options.svgShadeAngle,
+            Math.max(spacing * 1.4, pen * 4),
+            options.svgCloudShading ?? 'stipple',
+            puffs
+          ),
+          outlineInk
+        )
+      );
+    }
+    const blockTone = censor
+      ? { ...image, data: new Uint8ClampedArray(image.data.length).fill(175) }
+      : null;
     palette.forEach((ink, i) => {
       const solid = inkMask(map, i, body);
-      const haze = cloud ? inkMask(map, i, cloud) : null;
       const blocks = censor ? inkMask(raw, i, censor) : null;
       const d = [
         shade(
           solid,
           stretchTone({ image, keep: 0.35, region: solid }),
           options.svgShadeAngle,
-          spacing
+          spacing,
+          options.svgShading,
+          haloMarks
         ),
-        haze &&
-          shade(
-            haze,
-            stretchTone({ floor: 0.72, image, region: haze }),
-            options.svgShadeAngle,
-            spacing * 1.5
-          ),
         blocks &&
           shade(
             blocks,
-            stretchTone({ image, keep: 1, region: blocks }),
+            blockTone,
             0,
-            spacing
+            Math.max(pen * 2.5, spacing * 0.7),
+            options.svgCensorShading ?? 'hatch'
           ),
       ].join('');
       if (d)
         extra.push(plotLayer(40 + i, `shading ${i + 1}`, stroke, d, ink.color));
     });
   }
-  outlines = outlines.replace('</svg>', `${extra.join('')}</svg>`);
+  outlines = dropSpecks(
+    outlines.replace('</svg>', `${extra.join('')}</svg>`),
+    Math.max(options.svgMinLength ?? 3, pen * 2)
+  );
+  if (features.length)
+    outlines = outlines.replace(
+      '</svg>',
+      `${plotLayer(75, 'bone structure', stroke, pathOfRuns(features), outlineInk)}</svg>`
+    );
   // Lines and shading in one ink share one layer, one pen.
   const pens = new Set(
     [...outlines.matchAll(/stroke="(#[0-9a-f]{6})"/giu)].map(([, color]) =>

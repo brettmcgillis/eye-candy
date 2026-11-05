@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { useFrame, useThree } from '@react-three/fiber';
 
@@ -135,7 +135,7 @@ export default function Censor({
     };
   }, [renderTarget, fullSceneRenderTarget, material]);
 
-  useFrame(() => {
+  const captureScene = useCallback(() => {
     const mesh = meshRef.current;
     if (!mesh) return;
 
@@ -200,7 +200,30 @@ export default function Censor({
     material.uniforms.sceneTexture.value = renderTarget.texture;
     material.uniforms.sceneDepthTexture.value = renderTarget.depthTexture;
     material.uniforms.fullSceneTexture.value = fullSceneRenderTarget.texture;
-  });
+  }, [
+    camera,
+    camDir,
+    clearColor,
+    clipOffset,
+    clipPlane,
+    fullSceneRenderTarget,
+    gl,
+    material,
+    pixelSize,
+    refraction,
+    renderTarget,
+    scene,
+    sizeVec,
+    worldPos,
+  ]);
+
+  useFrame(captureScene);
+  useEffect(() => {
+    material.userData.captureScene = captureScene;
+    return () => {
+      delete material.userData.captureScene;
+    };
+  }, [captureScene, material]);
 
   return (
     <mesh ref={meshRef} material={material} {...props}>

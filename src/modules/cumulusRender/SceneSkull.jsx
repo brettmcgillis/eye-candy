@@ -22,7 +22,7 @@ const SceneSkull = memo(function SceneSkull({
 
   return (
     <Skull
-      userData={{ plotAnatomy: true }}
+      userData={{ plotAnatomy: 'skull' }}
       {...skullControls}
       position={skullPosition}
       rotation={skullRotation}

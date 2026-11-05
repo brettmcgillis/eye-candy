@@ -16,6 +16,7 @@ import {
   normalizeOptions,
 } from '../src/modules/rugPull/renderOptions.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import presetKeys from './lib/presetKeys.mjs';
 import { createRugCapturer, drape, loadKernel } from './lib/rugPullRender.mjs';
 import schemaControlCoverage from './lib/schemaControlCoverage.mjs';
 
@@ -28,7 +29,7 @@ const ALLOWED_KERNEL_IMPORTS = new Set([
   '@modules/flora',
   '@utils/argylePattern',
 ]);
-const CAMERA_KEY = /^(camera|orbit|fixed|spline|operator)/u;
+const REGISTERED_PRESET_KEYS = await presetKeys('RugPull');
 const HOUSE = {
   mineBorder: 1,
   mineField: 0.4,
@@ -66,7 +67,7 @@ async function checkPurity() {
 function checkValue(where, key, value) {
   const spec = RENDER_OPTIONS[key];
   if (!spec) {
-    check(CAMERA_KEY.test(key), `${where}: unknown key ${key}.`);
+    check(REGISTERED_PRESET_KEYS.has(key), `${where}: unknown key ${key}.`);
     return;
   }
   if (spec.type === 'number') {

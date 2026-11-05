@@ -1,8 +1,8 @@
 import {
-  boundRadius as apollianBoundRadius,
-  sceneDefaults as apollianDefaults,
-  createField as createApollianField,
-} from '@modules/apollian';
+  boundRadius as apollonianBoundRadius,
+  sceneDefaults as apollonianDefaults,
+  createField as createApollonianField,
+} from '@modules/apollonian';
 
 import { DEG, PHI, clamp, mod, rot2 } from './math';
 import { exhibitOf } from './renderOptions.mjs';
@@ -266,15 +266,15 @@ export const FIELD_EXHIBITS = {
   quatJulia: { core: quatJulia, radius: (c) => 1.25 / c.fractalZoom },
 };
 
-export const isGuest = (id) => id === 'apollian4' || id === 'kleinian';
+export const isGuest = (id) => id === 'apollonian4' || id === 'kleinian';
 
-// The flat Apollian config a guest exhibit is drawn with, so @modules/apollian
-// and @modules/apollianRender stay the only home of those two fields.
+// The flat Apollonian config a guest exhibit is drawn with, so @modules/apollonian
+// and @modules/apollonianRender stay the only home of those two fields.
 export function guestConfig(config) {
   const id = exhibitOf(config);
   const klein = id === 'kleinian';
   return {
-    ...apollianDefaults(),
+    ...apollonianDefaults(),
     a4Folds: config.a4Folds,
     a4RotXW: config.a4RotXW,
     a4RotYW: config.a4RotYW,
@@ -302,14 +302,14 @@ export function guestConfig(config) {
 // units.
 export function fieldRadius(config) {
   const id = exhibitOf(config);
-  return isGuest(id) ? apollianBoundRadius(guestConfig(config)) : 1;
+  return isGuest(id) ? apollonianBoundRadius(guestConfig(config)) : 1;
 }
 
 // `sample(p)` → { s, trap } with `s < 0` inside, in object units.
 export default function createExhibitField(config) {
   const id = exhibitOf(config);
   if (isGuest(id)) {
-    const field = createApollianField(guestConfig(config));
+    const field = createApollonianField(guestConfig(config));
     return {
       distance: field.distance,
       sample: (p) => {

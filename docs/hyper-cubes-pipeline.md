@@ -45,7 +45,12 @@ their structures exactly, and the look is raster.
 Leaves carry four dice: fill, role, variation (palette stop, glass
 frosting) and shape. `cellShape: mixed` reads only the shape die against
 `sphereShare`, so switching to it changes shapes and nothing else; the rig
-keeps one layer per shape. Roles take
+keeps one layer per shape. `cylinder` and `hollowCylinder` are upright, with
+circular radii fitted to the smaller X/Z extent and height fitted to Y.
+The hollow cylinder has a through-bore with an inner radius of 60% of the
+outer radius, leaving thick walls and annular caps. Its four surfaces are
+built once as an instanced mesh, equivalent to subtracting a coaxial cylinder.
+`mixed` retains its cube/sphere distribution. Roles take
 consecutive slices of the role die in the order emissive, accent, dark,
 light, glass, which makes both references plain weights.
 
@@ -84,7 +89,8 @@ in over `morphSeconds`; look edits snap.
   `morph` (each structure holds, then morphs into the next and back to the
   first; the first structure's atmosphere is held for the clip) and
   `turntable`.
-- **Plot SVG**: solid, glass and frame edges (sphere silhouettes) through the
+- **Plot SVG**: solid, glass and frame edges (sphere silhouettes; cylinder
+  rims and side silhouettes, including the hollow bore) through the
   same camera, hidden lines dropped against the render's depth pass. One
   layer per role in that role's mean colour; frames use the frame colour.
 

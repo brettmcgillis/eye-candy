@@ -9,7 +9,7 @@ import {
 import createSchemaToolPlugin from '../renderJobs/schemaTool';
 
 const preset = {
-  base: 'FLOOR',
+  base: 'SAVED_BASE',
   configFrom,
   name: (config, sidecar) => sidecar.name || `Rug ${config.rugSeed}`,
   presetFromConfig,

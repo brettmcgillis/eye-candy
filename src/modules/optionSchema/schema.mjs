@@ -366,15 +366,13 @@ export default function createOptionSchema({
     );
   }
 
-  // Only what differs from the scene's defaults, the way hand-written presets
-  // are.
   function presetFromConfig(config = {}) {
     const defaults = sceneDefaults();
     return Object.fromEntries(
-      Object.entries(config).filter(
-        ([name, value]) =>
-          name in defaults && value != null && value !== defaults[name]
-      )
+      Object.entries(defaults).map(([name, value]) => [
+        name,
+        Object.hasOwn(config, name) ? config[name] : value,
+      ])
     );
   }
 

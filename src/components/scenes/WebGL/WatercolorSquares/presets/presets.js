@@ -1,6 +1,5 @@
-// Fluid config shared across both color variants.
-// All debugXxx flags are false — the squares are rendered as scene geometry.
-const SHARED_FLUID = {
+// Literal artwork values; new controls require an explicit migration.
+const SAVED_BASE = {
   brightness: 1.76,
   contrast: 1.09,
   saturation: 1.64,
@@ -26,10 +25,6 @@ const SHARED_FLUID = {
   autoSplatRange: 1,
   autoSplatBurst: 4,
   autoSplatCount: 2,
-  autoSplatStarts: [
-    { x: 0.5, y: 0.4 },
-    { x: 0.5, y: 0.5 },
-  ],
   randomSplatStrength: 1,
   randomSplatDyeStrength: 1.71,
   randomSplatForce: 4200,
@@ -39,47 +34,9 @@ const SHARED_FLUID = {
   stationarySplatForce: 6000,
   stationarySplatDirectionStrength: 0.001,
   stationarySplatDirectionAngle: 270,
-  // Positions are in height-normalised design UV space:
-  //   x=0.5, y=0.5 → screen centre.
-  // WatercolorSquares.jsx converts these to fluid UV via designToFluidUV
-  // (aspect-corrected) before passing to the fluid simulation, while
-  // WatercolorMarkerLayer uses them directly with uvToConstrainedWorld
-  // (height-scaled on both axes).
-  //
-  // Argyle grid geometry — d = size / √2 ≈ 0.085.
-  // Equal column separation and row half-step (d) ensures diagonal neighbours
-  // have |Δx| = |Δy| so diamond edges are collinear, forming a clean grid.
-  // Row step (same column) = 2d = 0.17.
-  // Outlined splats (s=0.12) → tip-to-tip = s√2 ≈ 0.17 = 2d → edges meet.
-  // Filled markers (s=0.10) → tip-to-tip ≈ 0.14 < 2d → sit inside cells.
   stationarySplatCount: 10,
-  stationarySplats: [
-    // Centre column – 4 fluid emitters (y = 0.5 ± d, 0.5 ± 3d)
-    { x: 0.5, y: 0.245 },
-    { x: 0.5, y: 0.415 },
-    { x: 0.5, y: 0.585 },
-    { x: 0.5, y: 0.755 },
-    // Left column – 3 fluid emitters (y = 0.5 − 2d, 0.5, 0.5 + 2d)
-    { x: 0.415, y: 0.33 },
-    { x: 0.415, y: 0.5 },
-    { x: 0.415, y: 0.67 },
-    // Right column – 3 fluid emitters
-    { x: 0.585, y: 0.33 },
-    { x: 0.585, y: 0.5 },
-    { x: 0.585, y: 0.67 },
-  ],
   stationaryDebugMarkersEnabled: true,
   stationaryDebugMarkerCount: 7,
-  stationaryDebugMarkers: [
-    // Filled diamonds at midpoints between outlined splats.
-    { x: 0.5, y: 0.33 },
-    { x: 0.5, y: 0.5 },
-    { x: 0.5, y: 0.67 },
-    { x: 0.415, y: 0.415 },
-    { x: 0.415, y: 0.585 },
-    { x: 0.585, y: 0.415 },
-    { x: 0.585, y: 0.585 },
-  ],
   shading: true,
   bgA: '#4b4b4b',
   bgB: '#797979',
@@ -102,9 +59,6 @@ const SHARED_FLUID = {
   debugAutoSplat: false,
   debugStationarySplat: false,
   debugRandomBurst: false,
-  // Geometry marker appearance — debugXxx fields drive the marker layer.
-  // The shader debug flags stay false so the display shader does not render
-  // its own marker pass.
   debugStationarySplatColor: '#000000',
   debugStationarySplatWidth: 0.105,
   debugStationarySplatHeight: 0.105,
@@ -117,17 +71,171 @@ const SHARED_FLUID = {
   debugStationaryMarkerLineWeight: 2,
   debugStationaryMarkerFill: true,
   debugStationaryMarkerRotation: 0,
+  colorA: '#ff0000',
+  colorB: '#ff0000',
+  colorC: '#7b0000',
+  simResolution: 0.98,
+  debugPointerColor: '#ffffff',
+  debugPointerWidth: 0.03,
+  debugPointerHeight: 0.03,
+  debugPointerLineWeight: 2,
+  debugPointerFill: false,
+  debugPointerRotation: 0,
+  handsMaxHands: 1,
+  handsShowVideo: false,
+  handsLandmarkColor: '#ff3366',
+  handsConnectorColor: '#00ffaa',
+  handsLandmarkRadius: 4,
+  handsConnectorLineWidth: 3,
+  handsModelComplexity: 1,
+  handsMinDetectionConfidence: 0.6,
+  handsMinTrackingConfidence: 0.6,
+  handsXScale: 4,
+  handsYScale: 3,
+  handsZScale: 5,
+  handsInvertX: false,
+  handsInvertY: false,
+  gesturesEnabled: true,
+  handsShowDebugSkeleton: false,
+  autoSplat1StartPos: {
+    x: 0.5,
+    y: 0.4,
+  },
+  autoSplat2StartPos: {
+    x: 0.5,
+    y: 0.5,
+  },
+  autoSplat3StartPos: {
+    x: 0.5,
+    y: 0.5,
+  },
+  autoSplat4StartPos: {
+    x: 0.5,
+    y: 0.5,
+  },
+  autoSplat5StartPos: {
+    x: 0.5,
+    y: 0.5,
+  },
+  autoSplat6StartPos: {
+    x: 0.5,
+    y: 0.5,
+  },
+  autoSplat7StartPos: {
+    x: 0.5,
+    y: 0.5,
+  },
+  autoSplat8StartPos: {
+    x: 0.5,
+    y: 0.5,
+  },
+  autoSplat9StartPos: {
+    x: 0.5,
+    y: 0.5,
+  },
+  autoSplat10StartPos: {
+    x: 0.5,
+    y: 0.5,
+  },
+  debugAutoColor: '#000000',
+  debugAutoWidth: 0.03,
+  debugAutoHeight: 0.03,
+  debugAutoLineWeight: 2,
+  debugAutoFill: false,
+  debugAutoRotation: 0,
+  stationarySplat1Pos: {
+    x: 0.5,
+    y: 0.245,
+  },
+  stationarySplat2Pos: {
+    x: 0.5,
+    y: 0.415,
+  },
+  stationarySplat3Pos: {
+    x: 0.5,
+    y: 0.585,
+  },
+  stationarySplat4Pos: {
+    x: 0.5,
+    y: 0.755,
+  },
+  stationarySplat5Pos: {
+    x: 0.415,
+    y: 0.33,
+  },
+  stationarySplat6Pos: {
+    x: 0.415,
+    y: 0.5,
+  },
+  stationarySplat7Pos: {
+    x: 0.415,
+    y: 0.67,
+  },
+  stationarySplat8Pos: {
+    x: 0.585,
+    y: 0.33,
+  },
+  stationarySplat9Pos: {
+    x: 0.585,
+    y: 0.5,
+  },
+  stationarySplat10Pos: {
+    x: 0.585,
+    y: 0.67,
+  },
+  stationaryDebugMarker1Pos: {
+    x: 0.5,
+    y: 0.33,
+  },
+  stationaryDebugMarker2Pos: {
+    x: 0.5,
+    y: 0.5,
+  },
+  stationaryDebugMarker3Pos: {
+    x: 0.5,
+    y: 0.67,
+  },
+  stationaryDebugMarker4Pos: {
+    x: 0.415,
+    y: 0.415,
+  },
+  stationaryDebugMarker5Pos: {
+    x: 0.415,
+    y: 0.585,
+  },
+  stationaryDebugMarker6Pos: {
+    x: 0.585,
+    y: 0.415,
+  },
+  stationaryDebugMarker7Pos: {
+    x: 0.585,
+    y: 0.585,
+  },
+  stationaryDebugMarker8Pos: {
+    x: 0.5,
+    y: 0.5,
+  },
+  stationaryDebugMarker9Pos: {
+    x: 0.5,
+    y: 0.5,
+  },
+  stationaryDebugMarker10Pos: {
+    x: 0.5,
+    y: 0.5,
+  },
+  debugRandomColor: '#7c3aed',
+  debugRandomWidth: 0.03,
+  debugRandomHeight: 0.03,
+  debugRandomLineWeight: 2,
+  debugRandomFill: false,
+  debugRandomRotation: 0,
+  debugContactFadeDuration: 0.28,
 };
 
 export const WATERCOLOR_SQUARES_PRESETS = {
-  Red: {
-    ...SHARED_FLUID,
-    colorA: '#ff0000',
-    colorB: '#ff0000',
-    colorC: '#7b0000',
-  },
+  Red: { ...SAVED_BASE },
   Blue: {
-    ...SHARED_FLUID,
+    ...SAVED_BASE,
     colorA: '#0033ff',
     colorB: '#0033ff',
     colorC: '#001a7b',

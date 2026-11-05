@@ -36,7 +36,7 @@ export default async function loadModules(entries, { noExternal } = {}) {
     optimizeDeps: { noDiscovery: true },
     resolve: { alias: await repoAliases() },
     root: REPO_ROOT,
-    server: { middlewareMode: true },
+    server: { middlewareMode: true, hmr: false, ws: false },
     ...(noExternal && { ssr: { noExternal } }),
   });
 

@@ -25,7 +25,7 @@ export {
   wiggleRuns,
 } from './color';
 export { regionFill, rowsWalk, spiralWalk } from './fill';
-export { distance2, fixedPalette, lab } from './palette.mjs';
+export { distance2, fixedPalette, foldClose, lab } from './palette.mjs';
 export { chain, simplify, simplifyLoop, smooth } from './lines';
 export {
   chainKeyed,

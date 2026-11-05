@@ -162,6 +162,21 @@ const CAMERA_SPLINE_PRESETS = {
       P(9, 5, 10),
     ],
   },
+
+  'Front Arc': {
+    tension: 0.4,
+    closed: true,
+    points: [
+      P(-3.83, 1.3, 3.21),
+      P(-2.11, 1, 4.53),
+      P(0, 0.9, 5.0),
+      P(2.11, 1, 4.53),
+      P(3.83, 1.3, 3.21),
+      P(4.18, 2.4, 4.98),
+      P(0, 2.8, 6.5),
+      P(-4.18, 2.4, 4.98),
+    ],
+  },
 };
 
 export default CAMERA_SPLINE_PRESETS;

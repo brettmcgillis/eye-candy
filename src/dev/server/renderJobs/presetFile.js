@@ -1,6 +1,8 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 
+import presetValues from './presetValues.mjs';
+
 // Finds the `}` closing the object literal opened by `declaration`, by
 // counting braces from its own `{`. A regex for the last `};` finds some other
 // block, and string literals make any cheaper scan wrong the first time a
@@ -53,9 +55,8 @@ async function format(source, filePath) {
 // file and hands the result to prettier with the repo's own config, so a
 // written entry is indistinguishable from a hand-authored one. `nameFor`
 // receives the object's source and picks the entry's key; names are never
-// reused, since a name is how a preset is linked to. `base` names the object
-// the scene's own presets spread first, so a written entry carries only what
-// differs from it.
+// reused, since a name is how a preset is linked to. Resolve the scene's saved
+// base into literal values so future edits cannot change this entry.
 export default async function appendPreset(
   rootDir,
   { base, declaration, file, nameFor, value }
@@ -72,9 +73,8 @@ export default async function appendPreset(
   }
 
   const name = nameFor(source.slice(range.open, range.close));
-  const fields = JSON.stringify(value).slice(1, -1);
-  const body = base ? [`...${base}`, fields].filter(Boolean).join(',') : fields;
-  const entry = `${JSON.stringify(name)}: {${body}},\n`;
+  const snapshot = { ...presetValues(source, base ?? 'SAVED_BASE'), ...value };
+  const entry = `${JSON.stringify(name)}: ${JSON.stringify(snapshot)},\n`;
   const spliced =
     source.slice(0, range.close) + entry + source.slice(range.close);
 

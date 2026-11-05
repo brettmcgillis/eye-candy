@@ -23,12 +23,12 @@ run `npm run brutalist:check`.
              src/dev/server/brutalist → src/dev/tools/brutalist (BrutalistCLI)
 ```
 
-| Piece                      | Rule                                                                                                                                                                                                                               |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@modules/brutalist`       | **Three-free.** May import only `@modules/flora` (`createRng`). Solids are a centre, half extents and `yaw`/`tilt`/`pitch` (or a prism profile), never matrices. `brutalist:check` enforces it.                                    |
-| `@modules/brutalistRender` | The only home of the look. `createBrutalistRig({ Tree, stage })` is the one object both scenes and the CLI draw with: `apply`, `setStructure`, `setSite`, `setPhase`, `attach(scene)`.                                             |
-| `renderOptions.mjs`        | Every knob, once. `stages` says which scene shows a key (`forest`, `maquette`); each scene's Leva is generated from `levaKeysFor(stage)` and its presets spread `stageDefaults(stage)`. Facets: `form`, `weather`, `site`, `mood`. |
-| Rig keys                   | `light*` / `post*` keys are declared with `rig: true`; their defaults must equal `lighting.js` / `post.js`. Forest slots are `sun` + `sky`, maquette slots `key` + `fill`.                                                         |
+| Piece                      | Rule                                                                                                                                                                                                                                                  |
+| -------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@modules/brutalist`       | **Three-free.** May import only `@modules/flora` (`createRng`). Solids are a centre, half extents and `yaw`/`tilt`/`pitch` (or a prism profile), never matrices. `brutalist:check` enforces it.                                                       |
+| `@modules/brutalistRender` | The only home of the look. `createBrutalistRig({ Tree, stage })` is the one object both scenes and the CLI draw with: `apply`, `setStructure`, `setSite`, `setPhase`, `attach(scene)`.                                                                |
+| `renderOptions.mjs`        | Every knob, once. `stages` says which scene shows a key (`forest`, `maquette`); each scene's Leva is generated from `levaKeysFor(stage)` and its presets store literal snapshots of that stage's controls. Facets: `form`, `weather`, `site`, `mood`. |
+| Rig keys                   | `light*` / `post*` keys are declared with `rig: true`; their defaults must equal `lighting.js` / `post.js`. Forest slots are `sun` + `sky`, maquette slots `key` + `fill`.                                                                            |
 
 ## The vision
 

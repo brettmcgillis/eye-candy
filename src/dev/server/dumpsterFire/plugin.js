@@ -24,15 +24,15 @@ const PRESET_FILE = path.join(
   'index.js'
 );
 
-// A generation into the scene's PRESETS, as only what differs from its
-// Default (the scene keys; the CLI's camera and mood stay with the render).
+// Scene settings and their saved base are materialized together; render-only
+// camera and mood settings remain on the generation's sidecar.
 function writePreset(rootDir, { name: requested, sidecar }) {
   const config = configFrom(sidecar);
   const clean = String(requested ?? '')
     .replace(/[^\w -]/gu, '')
     .trim();
   return appendPreset(rootDir, {
-    base: 'DEFAULT_PRESET_SNAPSHOT',
+    base: 'SAVED_BASE',
     declaration: 'export const PRESETS = {',
     file: PRESET_FILE,
     nameFor: uniqueName(clean || sidecar.name || 'Generated'),

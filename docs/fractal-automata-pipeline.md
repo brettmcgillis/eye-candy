@@ -25,7 +25,7 @@ the same commit, and run `npm run fractal-automata:check`.
 | `@modules/fractalAutomata`       | **Three-free.** May import only `@modules/flora` (`createRng`) and `@utils/paletteStops`. `fractal-automata:check` enforces it.                                                                                   |
 | `@modules/fractalAutomataRender` | The only home of the look. `buildVoxelObject` / `rebakeVoxelObject` / `updateVoxelMaterials` are what the scene's `VoxelField` and the CLI both call; the scene adds only React lifecycle (debounce, swap).       |
 | `renderOptions.mjs`              | Every knob, once; the scene's Leva is generated from it (`utils/controls.js`). Facets: `structure`, `detail`, `color`, `material`, `atmosphere`. `godraysPosition` is `sceneOnly` (a vec3 the video modes drive). |
-| Presets                          | `presets.js` spreads `BASE` (camera keys + `sceneDefaults()`); `Default` is `BASE`. A preset that leaves a key out gets its default (`getPresetControls`).                                                        |
+| Presets                          | `presets.js` spreads a literal saved `BASE`, including camera values. Every preset is complete; new controls require explicit compatibility values (`docs/scene-presets.md`).                                     |
 
 ## Structure
 

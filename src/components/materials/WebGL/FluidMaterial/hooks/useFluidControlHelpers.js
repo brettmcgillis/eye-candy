@@ -40,33 +40,6 @@ export function normalizeFromPreset(arr, count, fallback = rndPos) {
   return out;
 }
 
-// ─── Preset array extraction ────────────────────────────────────────────────
-
-export function getAutoSplatStartsFromPreset(p) {
-  const count = clampAutoSplatCount(
-    p?.autoSplatCount ?? p?.autoSplatStarts?.length
-  );
-  return normalizeFromPreset(p?.autoSplatStarts, count);
-}
-
-export function getStationarySplatsFromPreset(p) {
-  const count = clampStationarySplatCount(
-    p?.stationarySplatCount ?? p?.stationarySplats?.length
-  );
-  return normalizeFromPreset(p?.stationarySplats, count);
-}
-
-export function getStationaryDebugMarkersFromPreset(p) {
-  const count = clampStationaryDebugMarkerCount(
-    p?.stationaryDebugMarkerCount ??
-      p?.stationaryDebugMarkers?.length ??
-      p?.stationarySplatCount ??
-      p?.stationarySplats?.length
-  );
-  const arr = p?.stationaryDebugMarkers ?? p?.stationarySplats;
-  return normalizeFromPreset(arr, count);
-}
-
 // ─── Leva control key helpers ───────────────────────────────────────────────
 
 function autoSplatKey(i) {
@@ -79,6 +52,45 @@ function stationarySplatKey(i) {
 
 function stationaryDebugMarkerKey(i) {
   return `stationaryDebugMarker${i + 1}Pos`;
+}
+
+// ─── Preset array extraction ────────────────────────────────────────────────
+
+export function getAutoSplatStartsFromPreset(p) {
+  const count = clampAutoSplatCount(
+    p?.autoSplatCount ?? p?.autoSplatStarts?.length
+  );
+  const positions = Array.from(
+    { length: count },
+    (_, i) => p?.[autoSplatKey(i)] ?? p?.autoSplatStarts?.[i]
+  );
+  return normalizeFromPreset(positions, count);
+}
+
+export function getStationarySplatsFromPreset(p) {
+  const count = clampStationarySplatCount(
+    p?.stationarySplatCount ?? p?.stationarySplats?.length
+  );
+  const positions = Array.from(
+    { length: count },
+    (_, i) => p?.[stationarySplatKey(i)] ?? p?.stationarySplats?.[i]
+  );
+  return normalizeFromPreset(positions, count);
+}
+
+export function getStationaryDebugMarkersFromPreset(p) {
+  const count = clampStationaryDebugMarkerCount(
+    p?.stationaryDebugMarkerCount ??
+      p?.stationaryDebugMarkers?.length ??
+      p?.stationarySplatCount ??
+      p?.stationarySplats?.length
+  );
+  const arr = p?.stationaryDebugMarkers ?? p?.stationarySplats;
+  const positions = Array.from(
+    { length: count },
+    (_, i) => p?.[stationaryDebugMarkerKey(i)] ?? arr?.[i]
+  );
+  return normalizeFromPreset(positions, count);
 }
 
 // ─── Leva control builders ──────────────────────────────────────────────────
@@ -105,6 +117,7 @@ export function buildAutoSplatStartControls(starts, setStarts, sceneName) {
         );
         return i < count;
       },
+      transient: false,
       onChange: (next) => {
         setStarts((prev) => {
           if (!prev[i]) return prev;
@@ -143,6 +156,7 @@ export function buildStationarySplatControls(splats, setSplats, sceneName) {
         );
         return i < count;
       },
+      transient: false,
       onChange: (next) => {
         setSplats((prev) => {
           if (!prev[i]) return prev;
@@ -187,6 +201,7 @@ export function buildStationaryDebugMarkerControls(
         );
         return i < count;
       },
+      transient: false,
       onChange: (next) => {
         setMarkers((prev) => {
           if (!prev[i]) return prev;

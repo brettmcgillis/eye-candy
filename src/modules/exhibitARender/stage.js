@@ -209,7 +209,7 @@ function createMountMaterial(s) {
 }
 
 // A soft darkening round the plinth's foot, standing in for the contact
-// occlusion the field march gave Apollian's floor.
+// occlusion the field march gave Apollonian's floor.
 function createContactMaterial(contact) {
   const material = new THREE.MeshBasicNodeMaterial({
     depthWrite: false,

@@ -1,7 +1,7 @@
 /* eslint-disable prefer-destructuring */
 
 /* eslint-disable no-param-reassign */
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { button, folder, useControls } from 'leva';
 
@@ -106,16 +106,16 @@ function getPresetControls({ presetSnapshot, currentControls }) {
 }
 
 export default function useSceneControls({ matRef, randomSplatQueueRef }) {
+  const preparePresetRef = useRef(null);
   const {
-    applyPresetByName,
     attachSetControls,
     controlsSnapshotRef,
     initialPreset,
     presetsFolder,
-    selectedPreset,
   } = usePresetsFolder({
     defaultPreset: DEFAULT_PRESET,
     getPresetControls,
+    preparePreset: (context) => preparePresetRef.current?.(context),
     presets: WATERCOLOR_SQUARES_PRESETS,
   });
 
@@ -835,21 +835,14 @@ export default function useSceneControls({ matRef, randomSplatQueueRef }) {
     controlsSnapshotRef.current = JSON.parse(JSON.stringify(controlValues));
   }, [controlValues, controlsSnapshotRef]);
 
-  // Apply/re-apply preset values and arrays when the selected preset changes.
-  useEffect(() => {
-    const presetSnapshot = WATERCOLOR_SQUARES_PRESETS[selectedPreset];
-    if (!presetSnapshot) return;
-
-    applyPresetByName(selectedPreset, {
-      currentControls: controlsSnapshotRef.current,
-    });
+  preparePresetRef.current = ({ presetSnapshot }) => {
     notifyArrayUpdate(
       setAutoSplatStarts,
       setStationarySplats,
       setStationaryDebugMarkers,
       presetSnapshot
     );
-  }, [applyPresetByName, controlsSnapshotRef, selectedPreset]);
+  };
 
   // Sync autoSplatStarts array length when count control changes.
   useEffect(() => {
@@ -889,8 +882,8 @@ export default function useSceneControls({ matRef, randomSplatQueueRef }) {
   }, [controlValues.stationaryDebugMarkerCount]);
 
   const fluidConfig = useMemo(() => {
-    // eslint-disable-next-line no-unused-vars
-    const { preset: _preset, ...scalars } = controlValues;
+    const scalars = { ...controlValues };
+    delete scalars.preset;
     return {
       ...scalars,
       stationarySplats,

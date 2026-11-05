@@ -25,7 +25,7 @@ import {
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
-import { sdfAO } from '@modules/apollonian';
+import { sdfAO } from '@modules/apollonianSdf';
 
 import { createExhibitFieldNode } from './fields';
 import { surfaceLook, tonemap } from './look';

@@ -26,10 +26,10 @@ import {
 import * as THREE from 'three/webgpu';
 
 import {
-  applyApollianConfig,
-  createApollianUniforms,
+  applyApollonianConfig,
+  createApollonianUniforms,
   createObjectField,
-} from '@modules/apollianRender';
+} from '@modules/apollonianRender';
 import { FIELD_EXHIBITS, guestConfig } from '@modules/exhibitA';
 
 // The TSL twins of @modules/exhibitA's fields.js, line for line: change both
@@ -83,8 +83,8 @@ export function createFieldUniforms() {
 const ORIENTATION = { barth: -1, clebsch: -1, kummer: 1 };
 
 export function applyFieldConfig(f, guest, id, c) {
-  if (id === 'apollian4' || id === 'kleinian') {
-    applyApollianConfig(guest, guestConfig(c));
+  if (id === 'apollonian4' || id === 'kleinian') {
+    applyApollonianConfig(guest, guestConfig(c));
     return;
   }
   f.fieldRadius.value = FIELD_EXHIBITS[id].radius(c);
@@ -382,7 +382,7 @@ const CORES = {
 // The solid in object space (unit ball, or a guest's bound): `distance(p)`
 // and `info(p)` → vec2(distance, structure) in object units.
 export function createExhibitFieldNode(id, f, guest) {
-  if (id === 'apollian4' || id === 'kleinian') {
+  if (id === 'apollonian4' || id === 'kleinian') {
     const field = createObjectField(id, guest, null);
     return {
       distance: (p) => field.distance(p),
@@ -406,4 +406,4 @@ export function createExhibitFieldNode(id, f, guest) {
   return { distance: (p) => solid(p).x, info: (p) => solid(p) };
 }
 
-export { createApollianUniforms as createGuestUniforms };
+export { createApollonianUniforms as createGuestUniforms };

@@ -1,45 +1,8 @@
-import { button, folder, useControls } from 'leva';
+import { folder, useControls } from 'leva';
+
+import usePresetsFolder from '@hooks/usePresetsFolder';
 
 import EXPLOSION_PRESETS from '../presets/presets';
-
-const PRESET_OPTIONS = Object.keys(EXPLOSION_PRESETS);
-const PRESET_CONTROL_KEYS = [
-  'backgroundColor',
-  'ambientIntensity',
-  'directionalIntensity',
-  'rowSpacing',
-  'columnSpacing',
-  'explodeStrength',
-  'pointerRadius',
-  'falloff',
-  'shakeAmount',
-  'shakeSpeed',
-  'returnSpeed',
-  'motionBoost',
-  'damping',
-  'materialType',
-  'color',
-  'roughness',
-  'metalness',
-  'shininess',
-  'specular',
-  'clearcoat',
-  'clearcoatRoughness',
-  'emissive',
-  'emissiveIntensity',
-  'sheen',
-  'sheenRoughness',
-  'sheenColor',
-  'iridescence',
-  'iridescenceIOR',
-  'flatShading',
-  'wireframe',
-  'glassColor',
-  'transmission',
-  'thickness',
-  'ior',
-  'chromaticAberration',
-];
 
 const MATERIAL_TYPES = [
   'Standard',
@@ -54,54 +17,21 @@ const MATERIAL_TYPES = [
 
 const MAT_PATH = 'Explosion Test.Material Settings.materialType';
 
-function pickSupportedPresetValues(presetValues) {
-  return PRESET_CONTROL_KEYS.reduce((next, key) => {
-    if (presetValues[key] !== undefined) {
-      return { ...next, [key]: presetValues[key] };
-    }
-    return next;
-  }, {});
+function getPresetControls({ presetSnapshot }) {
+  return { ...presetSnapshot };
 }
 
-export default function useSceneControls(latestResolvedSettingsRef) {
-  const isLocalDev = import.meta.env.DEV;
-
+export default function useSceneControls() {
+  const { attachSetControls, controlsSnapshotRef, presetsFolder } =
+    usePresetsFolder({
+      defaultPreset: 'Standard',
+      getPresetControls,
+      presets: EXPLOSION_PRESETS,
+    });
   const [controls, setControls] = useControls(
     'Explosion Test',
     () => ({
-      Presets: folder(
-        {
-          preset: {
-            value: 'Standard',
-            options: PRESET_OPTIONS,
-            onChange: (value) => {
-              const presetValues = EXPLOSION_PRESETS[value];
-              if (!presetValues) return;
-              setControls(pickSupportedPresetValues(presetValues));
-            },
-          },
-          reset: button(() => {
-            const { preset: presetName } =
-              latestResolvedSettingsRef.current || {};
-            if (!presetName) return;
-            const presetValues = EXPLOSION_PRESETS[presetName];
-            if (!presetValues) return;
-            setControls(pickSupportedPresetValues(presetValues));
-          }),
-          ...(isLocalDev
-            ? {
-                copy: button(() => {
-                  const settings = latestResolvedSettingsRef.current;
-                  if (!settings || !navigator?.clipboard?.writeText) return;
-                  navigator.clipboard.writeText(
-                    JSON.stringify(settings, null, 2)
-                  );
-                }),
-              }
-            : {}),
-        },
-        { collapsed: true }
-      ),
+      Presets: presetsFolder,
       Scene: folder(
         {
           backgroundColor: EXPLOSION_PRESETS.Standard.backgroundColor,
@@ -263,6 +193,9 @@ export default function useSceneControls(latestResolvedSettingsRef) {
     }),
     { collapsed: true }
   );
+
+  attachSetControls(setControls);
+  controlsSnapshotRef.current = { ...controls };
 
   return controls;
 }

@@ -9,13 +9,13 @@ import path from 'node:path';
 import process from 'node:process';
 
 import {
-  LEVA_KEYS,
   RENDER_OPTIONS,
   SCENE_KEYS,
   normalizeOptions,
 } from '../src/modules/fractalAutomata/renderOptions.mjs';
 import { loadThree } from './lib/headlessWebgpu.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import presetKeys from './lib/presetKeys.mjs';
 import schemaControlCoverage from './lib/schemaControlCoverage.mjs';
 import checkWorkbenchPage from './lib/workbenchPage.mjs';
 
@@ -45,7 +45,7 @@ const ALLOWED_KERNEL_IMPORTS = new Set([
   '@modules/flora',
   '@utils/paletteStops',
 ]);
-const CAMERA_KEY = /^(camera|orbit|fixed|spline|operator)/u;
+const REGISTERED_PRESET_KEYS = await presetKeys('FractalAutomata');
 
 const failures = [];
 const check = (condition, message) => {
@@ -86,12 +86,11 @@ async function checkKernelPurity() {
 // A preset that leaves a control out gets its default in the scene, so only
 // keys the schema does not know, values outside its range and the Default
 // preset drifting from the schema are failures.
-function checkPresets({ PRESETS: presets }, { auto }) {
+function checkPresets({ PRESETS: presets }) {
   const scene = new Set(SCENE_KEYS);
-  const defaults = auto.sceneDefaults();
   Object.entries(presets).forEach(([name, preset]) => {
     Object.keys(preset)
-      .filter((key) => !scene.has(key) && !CAMERA_KEY.test(key))
+      .filter((key) => !scene.has(key) && !REGISTERED_PRESET_KEYS.has(key))
       .forEach((key) =>
         failures.push(
           `preset "${name}" sets "${key}", which renderOptions.mjs does not declare.`
@@ -115,12 +114,6 @@ function checkPresets({ PRESETS: presets }, { auto }) {
         )
       );
   });
-  LEVA_KEYS.forEach((key) =>
-    check(
-      JSON.stringify(presets.Default[key]) === JSON.stringify(defaults[key]),
-      `the Default preset's ${key} differs from the schema default.`
-    )
-  );
 }
 
 function checkRolls({ auto, look }) {

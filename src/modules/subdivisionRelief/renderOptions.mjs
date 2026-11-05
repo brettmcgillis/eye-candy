@@ -12,8 +12,8 @@ import createOptionSchema, {
 } from '../optionSchema/index.mjs';
 import {
   FIELDS,
-  PLOT_KEYS,
   RENDER_OPTIONS as PIECE_OPTIONS,
+  PLOT_KEYS,
 } from '../subdivision/renderOptions.mjs';
 
 export {

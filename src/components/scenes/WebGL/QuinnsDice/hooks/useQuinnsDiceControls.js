@@ -1,12 +1,10 @@
-import { useEffect, useRef } from 'react';
-
 import { button, folder, useControls } from 'leva';
 
+import usePresetsFolder from '@hooks/usePresetsFolder';
 import { webcamFacingControl } from '@modules/webcam';
 
 import QUINNS_DICE_PRESETS from '../presets/QuinnsDice.presets';
 
-const PRESET_OPTIONS = Object.keys(QUINNS_DICE_PRESETS);
 const ROLL_TARGET_OPTIONS = {
   Random: 'random',
   D4: 'd4',
@@ -28,157 +26,30 @@ const POINTER_LOOK_OPTIONS = {
   'Magic Glass': 'magicGlass',
   None: 'none',
 };
-const PRESET_CONTROL_KEYS = [
-  'mode',
-  'autoSpeed',
-  'handsWebcamFacing',
-  'handsShowVideo',
-  'handsShowDebugSkeleton',
-  'handsVideoSize',
-  'handsCameraWidth',
-  'handsCameraHeight',
-  'handsXScale',
-  'handsYScale',
-  'handsZScale',
-  'handsLandmarkColor',
-  'handsConnectorColor',
-  'handsLandmarkRadius',
-  'handsConnectorLineWidth',
-  'handsEnableGestures',
-  'handsPointRollEnabled',
-  'handsPointRollCooldownMs',
-  'physicsEnabled',
-  'debug',
-  'debugLights',
-  'orbitControlsEnabled',
-  'backgroundTopColor',
-  'backgroundBottomColor',
-  'aoEnabled',
-  'bloomEnabled',
-  'bloomIntensity',
-  'bloomLuminanceThreshold',
-  'bloomLuminanceSmoothing',
-  'bloomRadius',
-  'd4Scale',
-  'd6Scale',
-  'd8Scale',
-  'd10Scale',
-  'd12Scale',
-  'd20Scale',
-  'd20EmissiveColor',
-  'd20EmissiveIntensity',
-  'rollTarget',
-  'rollPower',
-  'rollRejoinDelaySeconds',
-  'returnStrength',
-  'maxImpulse',
-  'linearDamping',
-  'angularDamping',
-  'friction',
-  'boxDepth',
-  'targetX',
-  'targetY',
-  'targetZ',
-  'pointerFollowSpeed',
-  'pointerLook',
-  'pointerLightColor',
-  'pointerLightIntensity',
-  'pointerLightDistance',
-  'pointerLightDecay',
-  'pointerLightBallScale',
-  'pointerRadius',
-  'pointerSphereColor',
-  'pointerSphereOpacity',
-  'pointerSphereRoughness',
-  'pointerSphereMetalness',
-  'pointerSphereEmissiveColor',
-  'pointerSphereEmissiveIntensity',
-  'pointerSphereWireframe',
-  'pointerMagicGlassColor',
-  'pointerMagicGlassOpacity',
-  'pointerMagicGlassTransmission',
-  'pointerMagicGlassThickness',
-  'pointerMagicGlassRoughness',
-  'pointerMagicGlassIor',
-  'pointerMagicGlassChromaticAberration',
-  'pointerMagicGlassAnisotropy',
-  'pointerMagicGlassDistortion',
-  'pointerMagicGlassDistortionScale',
-  'pointerMagicGlassTemporalDistortion',
-  'pointerMagicGlassAttenuationColor',
-  'pointerMagicGlassAttenuationDistance',
-];
-
-function pickSupportedPresetValues(presetValues) {
-  return PRESET_CONTROL_KEYS.reduce((next, key) => {
-    if (presetValues[key] !== undefined) {
-      return { ...next, [key]: presetValues[key] };
-    }
-    return next;
-  }, {});
-}
-
-function toUnquotedKeyObjectString(obj) {
-  return JSON.stringify(obj, null, 2).replace(
-    /^(\s*)"([A-Za-z_$][A-Za-z0-9_$]*)":/gm,
-    '$1$2:'
-  );
+function getPresetControls({ presetSnapshot }) {
+  return { ...presetSnapshot };
 }
 
 export default function useQuinnsDiceControls() {
-  const isLocalDev = import.meta.env.DEV;
-  const latestResolvedSettingsRef = useRef(null);
-  const selectedPresetRef = useRef('Default');
-  const setControlsRef = useRef(null);
+  const { attachSetControls, controlsSnapshotRef, presetsFolder } =
+    usePresetsFolder({
+      defaultPreset: 'Default',
+      getPresetControls,
+      presets: QUINNS_DICE_PRESETS,
+    });
   const emitResetGrid = () => {
     if (typeof window === 'undefined') return;
     window.dispatchEvent(new Event('quinns-dice-reset-grid'));
   };
   const emitRoll = () => {
     if (typeof window === 'undefined') return;
-    const target = latestResolvedSettingsRef.current?.rollTarget || 'random';
+    const target = controlsSnapshotRef.current?.rollTarget || 'random';
     window.dispatchEvent(
       new CustomEvent(ROLL_DIE_EVENT, { detail: { target } })
     );
   };
-  const resetToSelectedPreset = () => {
-    const presetValues = QUINNS_DICE_PRESETS[selectedPresetRef.current];
-    if (!presetValues) return;
-    setControlsRef.current?.(pickSupportedPresetValues(presetValues));
-  };
-
   const [controls, setControls] = useControls('Quinns Dice', () => ({
-    ...(PRESET_OPTIONS.length > 1
-      ? {
-          Presets: folder(
-            {
-              preset: {
-                value: 'Default',
-                options: PRESET_OPTIONS,
-                onChange: (value) => {
-                  selectedPresetRef.current = value;
-                  const presetValues = QUINNS_DICE_PRESETS[value];
-                  if (!presetValues) return;
-                  setControls(pickSupportedPresetValues(presetValues));
-                },
-              },
-              resetPreset: button(resetToSelectedPreset),
-              ...(isLocalDev
-                ? {
-                    copySettings: button(() => {
-                      const settings = latestResolvedSettingsRef.current;
-                      if (!settings || !navigator?.clipboard?.writeText) return;
-                      navigator.clipboard.writeText(
-                        toUnquotedKeyObjectString(settings)
-                      );
-                    }),
-                  }
-                : {}),
-            },
-            { collapsed: true, order: 0 }
-          ),
-        }
-      : {}),
+    Presets: presetsFolder,
     Mode: folder(
       {
         mode: {
@@ -796,11 +667,8 @@ export default function useQuinnsDiceControls() {
       { collapsed: true, order: 7 }
     ),
   }));
-  setControlsRef.current = setControls;
-
-  useEffect(() => {
-    latestResolvedSettingsRef.current = pickSupportedPresetValues(controls);
-  }, [controls]);
+  attachSetControls(setControls);
+  controlsSnapshotRef.current = { ...controls };
 
   return controls;
 }

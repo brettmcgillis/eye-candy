@@ -29,6 +29,7 @@ import {
   sidecarFor,
 } from './lib/exhibitARender.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import presetKeys from './lib/presetKeys.mjs';
 import schemaControlCoverage from './lib/schemaControlCoverage.mjs';
 import checkWorkbenchPage from './lib/workbenchPage.mjs';
 
@@ -51,8 +52,11 @@ const PAGE_FIELDS = path.join(
   REPO_ROOT,
   'src/dev/tools/exhibitA/ExhibitAWorkbenchPage.jsx'
 );
-const ALLOWED_KERNEL_IMPORTS = new Set(['@modules/apollian', '@modules/flora']);
-const CAMERA_KEY = /^(camera|orbit|fixed|spline|operator)/u;
+const ALLOWED_KERNEL_IMPORTS = new Set([
+  '@modules/apollonian',
+  '@modules/flora',
+]);
+const REGISTERED_PRESET_KEYS = await presetKeys('ExhibitA');
 const ROLLS = 400;
 const DRAW_SIZE = 96;
 const PARITY_SIZE = 128;
@@ -135,7 +139,7 @@ function checkPresets({ DEFAULT_PRESET, PRESETS: presets }) {
   );
   Object.entries(presets).forEach(([name, preset]) => {
     Object.keys(preset)
-      .filter((key) => !scene.has(key) && !CAMERA_KEY.test(key))
+      .filter((key) => !scene.has(key) && !REGISTERED_PRESET_KEYS.has(key))
       .forEach((key) =>
         failures.push(
           `preset "${name}" sets "${key}", which renderOptions.mjs does not declare.`

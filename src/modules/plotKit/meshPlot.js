@@ -5,7 +5,7 @@ import createHiddenLines from './hiddenLines';
 import { composeInks, inkAt, inkMap } from './inks';
 import { simplifyLoop, smooth } from './lines';
 import { chainKeyed, meshEdges, traceRuns, weldMesh } from './mesh';
-import { foldClose, nearestInk, samplePalette } from './palette.mjs';
+import { foldClose, hex, nearestInk, samplePalette } from './palette.mjs';
 import createProjector from './projector';
 import textureRuns from './texture';
 
@@ -24,7 +24,7 @@ const EDGE_MIN = 5;
 // take its own colours — `inks` of them, a layer each — else they are drawn
 // black in contours / creases / silhouette layers. What a bench with no
 // line work of its own plots (ExhibitA, FractalAutomata, Trucheterie3D).
-// Given `occluders` (world triangle meshes, the subject's solid form), lines
+// `inkLuma` caps how light an ink is drawn. Given `occluders` (world triangle meshes, the subject's solid form), lines
 // are cut exactly against them rather than probed through `visible`, so a
 // corner stays a corner; a mesh entry's `color` (sRGB 0–255) inks its lines.
 export default function meshPlotSvg({
@@ -36,6 +36,7 @@ export default function meshPlotSvg({
   creaseAngle = 35,
   edges = true,
   height,
+  inkLuma = null,
   inks = 8,
   lines = [],
   meshes,
@@ -175,12 +176,25 @@ export default function meshPlotSvg({
       : [];
   const kept = sampled.filter((entry) => entry.mass >= 0.01);
   const fallback = kept.length ? kept : sampled.slice(0, 1);
-  const palette = albedo && given ? given : fallback;
+  const palette = given ?? fallback;
+  // A pale render's inks would vanish on white paper: each is drawn no
+  // lighter than `inkLuma` (0..1), its hue kept.
+  const onPaper = (inksOf) =>
+    inkLuma === null
+      ? inksOf
+      : inksOf.map((entry) => {
+          const rgb = [1, 3, 5].map((i) =>
+            Number.parseInt(entry.color.slice(i, i + 2), 16)
+          );
+          const luma =
+            (0.2126 * rgb[0] + 0.7152 * rgb[1] + 0.0722 * rgb[2]) / 255;
+          const k = luma > inkLuma ? inkLuma / luma : 1;
+          return { ...entry, color: hex(rgb.map((v) => v * k)) };
+        });
   if (palette.length) {
-    const inside = inkAt(
-      inkMap({ image: albedo, mask: albedo, palette }),
-      pixelRatio
-    );
+    const inside = albedo
+      ? inkAt(inkMap({ image: albedo, mask: albedo, palette }), pixelRatio)
+      : () => -1;
     // A stroke along the subject's rim lands a pixel outside its coverage:
     // it takes the ink of the nearest pixel within reach rather than none.
     const at = (x, y) => {
@@ -211,7 +225,7 @@ export default function meshPlotSvg({
     };
     // The silhouette sits just off the subject, so it takes the darkest ink.
     return `${open}${composeInks(
-      palette,
+      onPaper(palette),
       [
         ...inked(contourRuns),
         ...inked(creaseRuns),

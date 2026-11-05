@@ -231,6 +231,11 @@ gallery item its whole folder — keep and delete move every file in it.
 
 ## 4. Dev server — `src/dev/server/renderJobs/schemaTool`
 
+Saved scene presets are complete artwork snapshots (`docs/scene-presets.md`).
+`presetFromConfig` includes values equal to defaults; the writer expands the
+scene's literal saved base into the new entry. Never emit a live base spread
+or recompute an existing saved artwork from current defaults.
+
 `createSchemaToolPlugin({ tool, slug, options, normalizeOptions, kinds,
 preset, routes })` serves `/dev-api/<tool>/jobs|saved|presets`. It runs
 `scripts/<slug>-generate.mjs` (stills into the job folder) and

@@ -44,6 +44,7 @@ export function weldMesh({ index, position, rest }) {
   }
   return {
     count: ids.size,
+    remap,
     tris: Uint32Array.from(tris),
     world: Float64Array.from(world),
   };

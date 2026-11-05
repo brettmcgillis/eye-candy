@@ -15,17 +15,35 @@ function areColorsEqual(a, b) {
   return true;
 }
 
+const SAVED_COLOR_SLOTS = Math.max(
+  ...Object.values(WINDOW_PRESETS).map((preset) => preset.colors.length)
+);
+
 function getPresetControls({ presetName, presetSnapshot }) {
-  return { ...presetSnapshot, preset: presetName };
+  const controls = { ...presetSnapshot };
+  delete controls.colors;
+  return { ...controls, preset: presetName };
 }
 
 export default function useSceneControls() {
+  const preparePresetRef = useRef(null);
+  const customColorsRef = useRef([]);
   const {
     attachSetControls,
     controlsSnapshotRef,
     initialPreset,
     presetsFolder,
   } = usePresetsFolder({
+    copyTransform: (snapshot, { currentControls }) => {
+      const values = { ...snapshot };
+      delete values.preset;
+      return JSON.stringify(
+        { ...values, ...currentControls, colors: customColorsRef.current },
+        (key, value) => (key === 'preset' ? undefined : value),
+        2
+      );
+    },
+    preparePreset: (context) => preparePresetRef.current?.(context),
     defaultPreset: 'Default',
     getPresetControls,
     presets: WINDOW_PRESETS,
@@ -35,13 +53,16 @@ export default function useSceneControls() {
     WINDOW_PRESETS[initialPreset] || WINDOW_PRESETS.Default;
 
   const initialColorPreset = initialSnapshot.colorPreset || 'Default';
-  const initialColors =
-    COLOR_PRESETS[initialColorPreset] || COLOR_PRESETS.Default;
+  const initialColors = initialSnapshot.colors;
 
   const selectedColorPresetRef = useRef(initialColorPreset);
-  const customColorsRef = useRef(initialColors);
   const pushedColorsRef = useRef(initialColors);
   const [customColors, setCustomColors] = useState(initialColors);
+  customColorsRef.current = customColors;
+  preparePresetRef.current = ({ presetSnapshot }) => {
+    selectedColorPresetRef.current = presetSnapshot.colorPreset;
+    setCustomColors([...presetSnapshot.colors]);
+  };
 
   const [controls, setControls] = useControls(
     'Paper Stack',
@@ -74,13 +95,19 @@ export default function useSceneControls() {
               .join(',\n')}\n]`;
             navigator.clipboard.writeText(asArrayLiteral);
           }),
-          ...customColors.reduce((acc, color, index) => {
+          ...Array.from(
+            { length: Math.max(customColors.length, SAVED_COLOR_SLOTS) },
+            (_, index) => customColors[index] ?? '#ffffff'
+          ).reduce((acc, color, index) => {
             acc[`customColor${index}`] = {
               label: `Layer ${index + 1}`,
               value: color,
+              transient: false,
+              render: () => index < customColorsRef.current.length,
               onChange: (nextColor) => {
                 setCustomColors((prev) => {
-                  if (prev[index] === nextColor) return prev;
+                  if (index >= prev.length || prev[index] === nextColor)
+                    return prev;
                   const next = [...prev];
                   next[index] = nextColor;
                   return next;
@@ -510,6 +537,7 @@ export default function useSceneControls() {
   }, [controls, controlsSnapshotRef]);
 
   useEffect(() => {
+    if (selectedColorPresetRef.current === colorPreset) return;
     const presetColors = COLOR_PRESETS[colorPreset] || COLOR_PRESETS.Default;
     selectedColorPresetRef.current = colorPreset;
     setCustomColors((prev) =>

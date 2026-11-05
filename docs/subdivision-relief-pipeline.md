@@ -28,7 +28,7 @@ the same commit, and run `npm run subdivision:check` and
 | `@modules/subdivisionReliefRender` | The only home of the relief look. `createReliefRig()`: `apply(config)`, `setPiece(piece)`, `setGrow(levels)`, `setMotion({ mix, noisePhase, wavePhase })`.                                                          |
 | `renderOptions.mjs`                | Subdivision's options as they are (`subdivision-relief:check` holds ranges and defaults equal), minus the outline band, plus `relief`, `motion` and the cameras. Facets: `structure`, `field`, `palette`, `relief`. |
 | Pieces                             | Every consumer builds one with `buildReliefPiece(config, { canvas, image, stops })`: Subdivision's `buildPiece` over the flat defaults for the keys the relief drops, plus `maxDepth`.                              |
-| Presets                            | The scene's presets are Subdivision's, piece for piece, each with a relief; SubdivisionReliefCLI appends saved generations to the same `PRESETS`.                                                                   |
+| Presets                            | Independent literal artwork snapshots, originally paired with Subdivision's pieces, each with a relief; SubdivisionReliefCLI appends complete saved generations to `PRESETS`.                                       |
 
 ## Look
 

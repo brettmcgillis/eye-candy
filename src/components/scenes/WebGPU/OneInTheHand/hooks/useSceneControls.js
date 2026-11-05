@@ -5,7 +5,9 @@ import { folder, useControls } from 'leva';
 import usePresetsFolder from '@hooks/usePresetsFolder';
 import { useSceneCameraControls } from '@modules/cameraRig';
 
-import PRESETS, { DEFAULT_PRESET } from '../presets/presets';
+import PRESETS, {
+  DEFAULT_PRESET as DEFAULT_PRESET_KEY,
+} from '../presets/presets';
 
 const SCENE_LABEL = 'One In The Hand';
 const COLLAPSED = { collapsed: true };
@@ -37,8 +39,12 @@ const SKELETON_POSE_OPTIONS = {
   two_in_the_chest: 'two_in_the_chest',
 };
 
-function getPresetControls({ presetSnapshot }) {
-  return { ...presetSnapshot };
+function getPresetControls({ currentControls, presetSnapshot }) {
+  return Object.fromEntries(
+    Object.keys(currentControls)
+      .filter((key) => Object.hasOwn(presetSnapshot, key))
+      .map((key) => [key, presetSnapshot[key]])
+  );
 }
 
 function buildBirdControls(prefix, preset) {
@@ -84,12 +90,12 @@ export default function useSceneControls() {
     initialPreset,
     presetsFolder,
   } = usePresetsFolder({
-    defaultPreset: DEFAULT_PRESET,
+    defaultPreset: DEFAULT_PRESET_KEY,
     getPresetControls,
     presets: PRESETS,
   });
 
-  const p = PRESETS[initialPreset] || PRESETS[DEFAULT_PRESET];
+  const p = PRESETS[initialPreset] || PRESETS[DEFAULT_PRESET_KEY];
 
   const cameraDeclaration = useMemo(() => {
     return {

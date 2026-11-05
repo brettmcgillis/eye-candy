@@ -9,7 +9,7 @@ import {
 import createSchemaToolPlugin from '../renderJobs/schemaTool';
 
 const preset = {
-  base: 'BASE',
+  base: 'SAVED_BASE',
   configFrom,
   name: (config, sidecar) => sidecar.name || `Seed ${config.seed}`,
   presetFromConfig,

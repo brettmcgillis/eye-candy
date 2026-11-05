@@ -17,7 +17,7 @@ const SPIN = linear('objectSpin', 9, ANGLE);
 
 export const EVOLVE = {
   aizawa: [sine('aizawaD', 0.3, 30)],
-  apollian4: [
+  apollonian4: [
     linear('a4RotXW', 5, ANGLE),
     linear('a4RotYW', 3.2, ANGLE),
     linear('a4RotZW', 2.1, ANGLE),

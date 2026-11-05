@@ -725,14 +725,12 @@ export const stageDefaults = (stage) =>
     )
   );
 
-// A generation as a scene snapshot: only that stage's keys, and only those
-// that differ from its defaults.
 export function snapshotForStage(config, stage) {
   const defaults = stageDefaults(stage);
   return Object.fromEntries(
-    Object.entries(config).filter(
-      ([name, value]) =>
-        name in defaults && value != null && value !== defaults[name]
-    )
+    Object.entries(defaults).map(([name, value]) => [
+      name,
+      Object.hasOwn(config, name) ? config[name] : value,
+    ])
   );
 }

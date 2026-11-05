@@ -207,6 +207,7 @@ green dumpster and red wall, and draw only its own pens.
 folders from the schema (`createSchemaFolders`), each headed by a Roll
 button that rolls that facet with the rest held. `buildSceneItems` turns the
 trash layout into rigid-body items; `DumpsterBrickWall` turns the wall
-layout into physics blocks. Presets seed every schema key from
-`sceneDefaults()`; the workbench's **Save as scene preset** appends a
-generation's scene keys to `PRESETS` as `{ ...DEFAULT_PRESET_SNAPSHOT, diff }`.
+layout into physics blocks. Presets contain complete literal artwork snapshots;
+the workbench's **Save as scene preset** expands the frozen scene base and the
+generation into a new literal entry. Existing presets never inherit current
+schema defaults (`docs/scene-presets.md`).

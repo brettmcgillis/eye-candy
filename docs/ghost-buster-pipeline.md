@@ -11,7 +11,7 @@ component tree**, mounted on the headless renderer by the CLI and in a
 ## The shape
 
 ```
-@presets/ghost/ghostSkins   GHOST_SKINS (GhostBuster's preset list), textures, base
+@presets/ghost/ghostSkins   GHOST_SKINS (authored skin library), textures, base
         │
 @modules/ghostBuster        three-free: option schema, roll, framing, lattice, plot SVG
 @modules/ghostBusterRender  GhostStudio (R3F stage), skins, capture readbacks, createStageRoot
@@ -27,7 +27,7 @@ component tree**, mounted on the headless renderer by the CLI and in a
 
 | Piece                        | Rule                                                                                                                                                                                                                                                                                                                                                                                                        |
 | ---------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@presets/ghost/ghostSkins`  | The one skin library. GhostBuster's preset menu reads it (`presets/scenePresets.js` re-exports it as `SCENE_PRESETS`), and so do this tool and PrintShop. **Add a skin there and every consumer has it** — nothing else to edit.                                                                                                                                                                            |
+| `@presets/ghost/ghostSkins`  | The one skin library. The workbench and PrintShop read this authored skin library. GhostBuster's URL-addressable scene presets are complete literal snapshots in `presets/scenePresets.js`, so later library authoring cannot repaint an existing scene preset. Add a new scene snapshot when publishing a new skin as a scene variant; do not overwrite an existing name.                                  |
 | `@modules/ghostBuster`       | **Three-free.** May import only `@modules/flora` (`createRng`), `@modules/clothBurn` (the three-free burn and ember mirrors), `@modules/plotKit` (the shared plot layers and framing), `@elements/WebGPU/cloth/clothTopology`, `@elements/WebGPU/cloth/clothDecay`, `@elements/WebGPU/ghost/ghostRig` and `@elements/WebGPU/rainCloud/rainCloudRig`. The check enforces it.                                 |
 | `@modules/ghostBusterRender` | The only home of the stage. `GhostStudio` is GhostBuster's studio (`StudioEnvironment` and `Backdrop` from `@modules/renderStage`, ambient, spot, orbit light, grid floor) plus the pose wrapper; `ghostProps(skin)` is GhostBuster's prop mapping.                                                                                                                                                         |
 | `renderOptions.mjs`          | Every knob, once. Facets: `location`, `skin`, `burn`, `material`, `fabric`, `texture`, `outline`, `emissive`, `shape`, `wear`, `face`, `decay`, `storm`, `motion`, `lighting`, `pose`, `camera`. `lookOptions.mjs` declares the inherited look controls and is composed into this schema. The skin is a `string` option the page and CLI validate against the library, so the schema stays dependency-free. |

@@ -18,7 +18,7 @@ export default function paperCutsDevPlugin() {
       if (!config.generationSeed)
         throw new Error('The generation has no seed.');
       return appendPreset(rootDir, {
-        base: 'DEFAULT_PRESET',
+        base: 'SAVED_BASE',
         declaration: 'export const FOLDED_FRAME_PRESETS = {',
         file: 'src/components/scenes/WebGL/PaperCuts/presets/presets.js',
         nameFor: uniqueName(

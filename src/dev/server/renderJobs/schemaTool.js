@@ -59,8 +59,7 @@ export function createSchemaJobService({
   });
 }
 
-// Writes a generation into the scene's PRESETS as a hand-written preset
-// would be: only what differs from the scene defaults.
+// Save every scene value, including values equal to today's defaults.
 export function createScenePresetWriter({
   base,
   configFrom,

@@ -609,6 +609,7 @@ function normalizeSplineDeclaration(camera, fixedDeclaration) {
       splineConfig.tension,
       selectedPath?.tension ?? DEFAULT_SPLINE_TENSION
     ),
+    yaw: toFiniteNumber(splineConfig.yaw, 0),
   };
 }
 
@@ -851,29 +852,37 @@ function parseSequenceOrder(value, validShotIds) {
   return filteredValues.length ? filteredValues : validShotIds;
 }
 
-function applySplineTransform(value, position, scale) {
+// Library paths are authored around a subject facing +Z; `yaw` (degrees,
+// about +Y) turns them to face a subject pointing elsewhere.
+function applySplineTransform(value, position, scale, yaw = 0) {
+  const x = value[0] * scale[0];
+  const z = value[2] * scale[2];
+  const angle = (yaw * Math.PI) / 180;
+  const cos = Math.cos(angle);
+  const sin = Math.sin(angle);
   return [
-    value[0] * scale[0] + position[0],
+    x * cos + z * sin + position[0],
     value[1] * scale[1] + position[1],
-    value[2] * scale[2] + position[2],
+    z * cos - x * sin + position[2],
   ];
 }
 
-function transformSplinePoints(pathDefinition, position, scale) {
+function transformSplinePoints(pathDefinition, position, scale, yaw) {
   if (!pathDefinition?.points?.length) {
     return [];
   }
 
   return pathDefinition.points.map((point) => {
     const normalizedPoint = {
-      position: applySplineTransform(point.position, position, scale),
+      position: applySplineTransform(point.position, position, scale, yaw),
     };
 
     if (point.lookAt) {
       normalizedPoint.lookAt = applySplineTransform(
         point.lookAt,
         position,
-        scale
+        scale,
+        yaw
       );
     }
 
@@ -955,7 +964,8 @@ export function buildSceneCameraRuntimeConfig({ camera, controls = {} } = {}) {
   const splinePoints = transformSplinePoints(
     splinePath,
     splinePosition,
-    splineScale
+    splineScale,
+    normalizedCamera.spline.yaw
   );
   const orbitAzimuthUnlimited =
     controls.orbitAzimuthUnlimited ?? normalizedCamera.orbit.azimuthUnlimited;
@@ -1155,6 +1165,7 @@ export function buildSceneCameraRuntimeConfig({ camera, controls = {} } = {}) {
         controls.splineTension,
         normalizedCamera.spline.tension
       ),
+      yaw: normalizedCamera.spline.yaw,
     },
   };
 }
@@ -1345,6 +1356,7 @@ function buildSplineSnapshotFragment(snapshot, viewportKeys) {
       scale: [...snapshot.spline.scale],
       showPath: snapshot.spline.showPath,
       tension: snapshot.spline.tension,
+      ...(snapshot.spline.yaw ? { yaw: snapshot.spline.yaw } : {}),
     },
   };
 }

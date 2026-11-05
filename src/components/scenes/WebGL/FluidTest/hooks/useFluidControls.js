@@ -368,16 +368,16 @@ function getPresetControls({ presetSnapshot: p, currentControls }) {
 }
 
 export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
+  const preparePresetRef = useRef(null);
   const {
-    applyPresetByName,
     attachSetControls,
     controlsSnapshotRef,
     initialPreset,
     presetsFolder,
-    selectedPreset,
   } = usePresetsFolder({
     defaultPreset: DEFAULT_PRESET,
     getPresetControls,
+    preparePreset: (context) => preparePresetRef.current?.(context),
     presets: FLUID_PRESETS,
   });
 
@@ -1124,13 +1124,7 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
     controlsSnapshotRef.current = JSON.parse(JSON.stringify(controlValues));
   }, [controlValues, controlsSnapshotRef]);
 
-  useEffect(() => {
-    const presetSnapshot = FLUID_PRESETS[selectedPreset];
-    if (!presetSnapshot) return;
-
-    applyPresetByName(selectedPreset, {
-      currentControls: controlsSnapshotRef.current,
-    });
+  preparePresetRef.current = ({ presetSnapshot }) => {
     notifyArrayUpdate(
       setAutoSplatStarts,
       setStationarySplats,
@@ -1138,7 +1132,7 @@ export default function useFluidControls({ randomSplatQueueRef, resetSimRef }) {
       presetSnapshot
     );
     setPresetInitialized(true);
-  }, [applyPresetByName, controlsSnapshotRef, selectedPreset]);
+  };
 
   useEffect(() => {
     if (!presetInitialized) return;

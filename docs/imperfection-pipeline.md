@@ -1,7 +1,7 @@
 # Imperfection pipeline
 
 A TSL port of the Imperfection Shadertoy bundles (full, lite, wild), in the
-Apollian arrangement: one kernel, one render module drawn by the scene and the
+Apollonian arrangement: one kernel, one render module drawn by the scene and the
 headless CLIs, and ImperfectionCLI over the CLIs. Change the kernel first,
 land every consumer in the same commit, and run `npm run imperfection:check`.
 

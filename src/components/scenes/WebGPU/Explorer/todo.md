@@ -6,18 +6,18 @@
 
 - An emissive sphere trailing smoke, exploring the dark caverns of an
   Apollonian fractal. The sphere is the scene's only light source.
-- The fractal is mrange's "gnarly apollian tree", which came out of the
-  Apollian scene when that scene narrowed to the 4D slice. Unconfined, its
+- The fractal is mrange's "gnarly apollonian tree", which came out of the
+  Apollonian scene when that scene narrowed to the 4D slice. Unconfined, its
   mirrored lattice is an infinite cavern system rather than a sculpture; the
   `Confine to Tree` control puts the original's bounding box and ground plane
   back to see it as the Shadertoy framed it.
-- The distance estimator is shared with Apollian through `@modules/apollonian`
+- The distance estimator is shared with Apollonian through `@modules/apollonianSdf`
   — one Apollonian fold in the repo, not two.
 
 ## // Notes
 
 - **The field is written twice.** `utils/treeDistance.js` is a CPU mirror of
-  `apollianTree` in `@modules/apollonian`, because the agent steers by probing
+  `apollonianTree` in `@modules/apollonianSdf`, because the agent steers by probing
   the field and there is no cheap way to read the GPU's copy back per frame.
   They take the same control values and must stay identical.
 - **Measured before it was built.** A survey of the field at the shipped

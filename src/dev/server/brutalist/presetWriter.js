@@ -9,7 +9,7 @@ import appendPreset, { uniqueName } from '../renderJobs/presetFile';
 const SCENES = { forest: 'Brutalist', maquette: 'BrutalistMaquette' };
 
 // Writes a generation into the PRESETS of the scene for the stage it was
-// rendered on, as a hand-written preset would be: only what differs.
+// rendered on, as a hand-written preset would be: a complete saved configuration.
 export default function writeScenePreset(rootDir, { name, sidecar }) {
   const config = configFrom(sidecar);
   if (config.family == null) {
@@ -20,7 +20,7 @@ export default function writeScenePreset(rootDir, { name, sidecar }) {
     .replace(/[^\w -]/gu, '')
     .trim();
   return appendPreset(rootDir, {
-    base: 'BASE',
+    base: 'SAVED_BASE',
     declaration: 'export const PRESETS = {',
     file: path.join(
       'src',

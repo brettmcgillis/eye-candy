@@ -129,6 +129,7 @@ const TOOL_DIRS = { trucheterie: 'trucheterie' };
 const R3F_LIVE = {
   cumulus: 'LiveCumulus.jsx',
   'birds-arent-real': 'LiveFlock.jsx',
+  rabbit: 'LiveRabbit.jsx',
   candle: 'LiveCandle.jsx',
   'dumpster-fire': 'LiveDumpster.jsx',
   'ghost-buster': 'LiveGhost.jsx',

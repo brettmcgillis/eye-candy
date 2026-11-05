@@ -34,6 +34,21 @@ scene especially never imports from a Test Lab or Toolbox scene. Imports outside
 the current scene folder go through path aliases (`@elements`, `@modules`,
 `@utils`, …), never `../../../..` chains (§1b).
 
+## Required reading before touching Argyle
+
+- **`docs/argyle-pipeline.md`** — the LoaderPatterns-derived lattice and logo,
+  three-free `@modules/argyle` kernel, shared `@modules/argyleRender` stage,
+  scene, CLIs and ArgyleCLI. Run `npm run argyle:check` and
+  `npm run live:check -- argyle` after changing any of them.
+
+## Required reading before touching cellular automata
+
+- **`docs/cellular-automata.md`** — `@modules/cellularAutomata`: the seeded
+  neighbour-list engine, the four rules and the frame contract. Argyle's
+  `source: automaton` (see `docs/argyle-pipeline.md`) is its consumer. Run
+  `npm run cellular-automata:check` and `npm run argyle:check` after changing
+  it.
+
 ## Required reading before touching src/dev
 
 - **`docs/dev-tooling.md`** — the local-only dev-tooling boundary, tool
@@ -50,19 +65,19 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   new one. Read it before adding or changing any `renderOptions.mjs`, scene
   `utils/controls.js`, workbench page or `src/dev/server/<tool>/plugin.js`.
 
-## Required reading before touching Apollian
+## Required reading before touching Apollonian
 
-- **`docs/apollian-pipeline.md`** — the HyperCubes arrangement for the
-  Apollonian fractal objects: `@modules/apollian` (three-free CPU mirrors of
+- **`docs/apollonian-pipeline.md`** — the HyperCubes arrangement for the
+  Apollonian fractal objects: `@modules/apollonian` (three-free CPU mirrors of
   the four fields, the exact Soddy packing, slice sampling and contours, plot
   SVG, roll and option schema; the scene's Leva is generated from it),
-  `@modules/apollianRender` (`createApollianRig`, the full-screen stage
-  march, surfaces and slice view), the headless CLIs, and ApollianCLI. Run
-  `npm run apollian:check` after changing any of them.
+  `@modules/apollonianRender` (`createApollonianRig`, the full-screen stage
+  march, surfaces and slice view), the headless CLIs, and ApollonianCLI. Run
+  `npm run apollonian:check` after changing any of them.
 
 ## Required reading before touching ExhibitA
 
-- **`docs/exhibit-a-pipeline.md`** — the Apollian arrangement for the museum
+- **`docs/exhibit-a-pipeline.md`** — the Apollonian arrangement for the museum
   exhibits: `@modules/exhibitA` (three-free registry, builders, framing,
   motion, roll and option schema; the scene's Leva is generated from it),
   `@modules/exhibitARender` (`createExhibitRig`, the stage and materials), the
@@ -130,6 +145,18 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   headless CLIs and BirdsArentRealCLI with its Live tab. Run
   `npm run birds-arent-real:check` after changing any of them.
 
+## Required reading before touching Stay Hunted / RabbitCLI
+
+- **`docs/rabbit-pipeline.md`** — the BirdsArentReal arrangement for the
+  Stay Hunted rabbit: `@modules/rabbit` (three-free option schema, roll,
+  the arrow volley, framing, the CPU mirror of the grass blade shader, fur
+  strokes and the plot; the scene's subject folders are generated from it),
+  `@modules/rabbitRender` (`HuntedSubject`, the rabbit, arrows, ribbon and
+  graze grass the scene mounts, and `RabbitStudio`, the real R3F stage),
+  the headless CLIs and RabbitCLI with its Live tab. Run
+  `npm run rabbit:check` after changing any of them, or `@elements/Grass`'s
+  straight blade.
+
 ## Required reading before touching DumpsterFire / DumpsterFireCLI
 
 - **`docs/dumpster-fire-pipeline.md`** — the BirdsArentReal arrangement for
@@ -140,6 +167,50 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   plus the sidewalk, cinderblocks, fire lights and smoke authoring the scene
   shares), the headless CLIs and DumpsterFireCLI with its Live tab. Run
   `npm run dumpster-fire:check` after changing any of them.
+
+## Required reading before touching Burning At Both Ends / CandleCLI
+
+- **`docs/candle-pipeline.md`** — the BirdsArentReal arrangement for the
+  candle burning at both ends: `@modules/candle` (three-free option schema,
+  roll, the SDF wax form and its surface-nets mesher, flame states and their
+  signal, placement, framing and the plot; the scene's Leva is generated
+  from it), `@modules/candleRender` (`CandleStage`, the real R3F stage, with
+  the fluid-sim flame ported from `webgpu_volume_fire`, the sorted curl-noise
+  smoke and the legacy flame/smoke elements, in realistic, cartoon and
+  claymation looks), the headless CLIs and
+  CandleCLI with its Live tab. Run `npm run candle:check` after changing any
+  of them.
+
+## Required reading before touching the fire sim or curl smoke
+
+- **`docs/fire-sim.md`** — `@modules/fireSim` (the fluid fire: capsule
+  emitters, baked spline guide, depth or analytic occluder) and
+  `@modules/curlSmoke` (sorted curl smoke along paths), their consumers
+  (`@modules/candleRender`, `@elements/SimFire` and the Police Presence,
+  Flying High and Still Pulling For You scenes) and the shared `fire*` / `smoke*` Leva keys. Run
+  `npm run candle:check -- --render` after changing either module.
+
+## Required reading before touching Cables
+
+- **`docs/cables-pipeline.md`** — the HyperCubes arrangement for the Hair
+  turtle as cables: `@modules/cables` (three-free line-for-line port of the
+  turtle's noise and walk, the 3D tangle, the cable lay out of the floor
+  hole, framing, plot SVG, roll and option schema; the scene's Leva is
+  generated from it), `@modules/cablesRender` (`createCablesRig`,
+  `createCablesStage`, the softbox studio), the headless CLIs and CablesCLI.
+  Run `npm run cables:check` after changing any of them; it fails if the walk
+  stops matching the reference turtle.
+
+## Required reading before touching ControlPanel
+
+- **`docs/control-panel-pipeline.md`** — the HyperCubes arrangement for
+  generative control panels: `@modules/controlPanel` (three-free layouts —
+  subdivide, block grid, circle packing — the control catalogue, signals and
+  procedural audio, pose, framing, plot SVG, roll and option schema; the
+  scene's Leva is generated from it), `@modules/controlPanelRender`
+  (`createPanelRig`, `createPanelStage`, the softbox studio), the headless
+  CLIs and ControlPanelCLI. Run `npm run control-panel:check` after changing
+  any of them.
 
 ## Required reading before touching Kumiko
 
@@ -289,7 +360,8 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   model, neighbour rule and codec in `@modules/trucheterieBlob`
   (`design.js`, `fieldFromConfig`, `designs/*.json`), the shared editor in
   `@modules/trucheterieDesigner`, both scenes' Design folders,
-  TrucheterieDesigner and the CLIs' `--blobDesign`. Run
+  TrucheterieDesigner and the CLIs' `--blobDesign`, plus triangle grids
+  (`triangle.js`, `triDesign.js`, `triField.js`; per-corner connectors). Run
   `npm run trucheterie:check` after changing any of them.
 
 ## Required reading before touching the Plotterizer or plot export
@@ -310,6 +382,13 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   (`cloth/clothTopology.js`, `cloth/clothCpu.js`), which GhostCharacter and
   `createClothSimulation` share. Run `npm run print-shop:check` after
   changing any of them.
+
+## Required reading before touching PaperCuts / PaperCutsCLI / PaperCutsDesigner
+
+- **`docs/paper-cuts-pipeline.md`** — the three-free seeded paper grammar,
+  shared relief/frame renderer, existing scene's Generated mode, headless
+  CLIs and PaperCutsCLI with its Live tab. Run `npm run paper-cuts:check`
+  after changing any of them.
 
 ## Orientation
 
@@ -355,6 +434,14 @@ directly from the local three.js checkout:
 
 ## Process
 
+- **Don't break the art.** A scene preset is an atomic, persistent artwork
+  configuration, including camera, lighting and postprocessing. Published
+  preset names/URLs keep their meaning. Never save a diff against live schema
+  defaults, spread changing defaults into existing presets, or inherit values
+  from the previously selected preset. Read `docs/scene-presets.md` before
+  changing presets, controls, option schemas, preset writers or migrations.
+  New controls require explicit compatibility values for existing presets;
+  intentional new looks get new preset names. Run `npm run presets:check`.
 - The human developer owns the dev server — do not start, kill, or restart it.
 - No unit tests; rely on the live dev server and human-in-the-loop visual checks.
 - Lint/format are enforced: `npm run lint:fix`, `npm run format:fix`.

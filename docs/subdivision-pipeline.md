@@ -59,9 +59,10 @@ splitting and stay empty (a pit in the relief). Holes are leaves, keyed like
 the split hash, and are left out of the plot. Rolls and presets leave
 `holeChance` at 0.
 
-SubdivisionRelief builds its presets from Subdivision's (same names and
-pieces, outline keys dropped, relief and motion added), so the two scenes
-stay aligned; its own pipeline is `docs/subdivision-relief-pipeline.md`.
+SubdivisionRelief began with matching pieces, outline keys dropped and relief
+and motion added. Both scenes now own independent literal preset snapshots,
+so editing one never changes the other's artwork. Its pipeline is
+`docs/subdivision-relief-pipeline.md`.
 
 ## Canvas
 

@@ -16,7 +16,9 @@
 // camera) to the sequencer rather than enabling an effect.
 
 export const DEFAULT_PRESET = 'Pristine';
-const BASE = {
+
+// Literal artwork values; new controls require an explicit migration.
+const SAVED_BASE = {
   cameraMode: 'orbit',
   cameraAutoFit: true,
   fixedBehavior: 'single',
@@ -257,7 +259,7 @@ const BASE = {
   glitchInnerStretchDensity: 0.25,
   glitchInnerStretchStretch: 0.35,
   glitchInnerStretchCellFrequency: 1.25,
-  glitchInnerStretchSharpness: 0,
+  glitchInnerStretchSharpness: 0.1,
   glitchInnerStretchChaos: 0,
   glitchWarpFieldEnabled: false,
   glitchWarpFieldAmount: 0.5,
@@ -343,7 +345,7 @@ const BASE = {
   postDatamoshVectorSnap: 4,
   postDatamoshSkipThreshold: 2.15,
   postDatamoshWrongVectors: 0.6,
-  postDatamoshLossLayers: 4,
+  postDatamoshLossLayers: 3,
   postDatamoshLossCell: 72,
   postDatamoshLossLife: 1.27,
   postDatamoshLossChance: 0.43,
@@ -402,40 +404,46 @@ const BASE = {
   theatreLoop: true,
   theatreRate: 1,
   theatreTime: 0,
+  cameraProjection: 'perspective',
+  cameraFrustumHeight: 10,
+  cameraMobileFrustumHeight: 10,
 };
 
 export const PRESETS = {
-  Pristine: BASE,
-  'Cut & Paste': { ...BASE, glitchCutPasteEnabled: true },
-  Hopscotch: { ...BASE, glitchHopscotchEnabled: true },
-  'Find & Replace': { ...BASE, glitchFindReplaceEnabled: true },
-  'Texture Scramble': { ...BASE, glitchUvEnabled: true },
-  'Slit Scan': { ...BASE, glitchSlitScanEnabled: true },
-  'Scroll Tear': { ...BASE, glitchScrollTearEnabled: true },
-  'Row Jitter': { ...BASE, glitchRowJitterEnabled: true },
-  'Resolution Loss': { ...BASE, glitchDegradeEnabled: true },
-  'Torn Open': { ...BASE, glitchTornEnabled: true },
-  'Block Deconstruct': { ...BASE, glitchBlockDeconstructEnabled: true },
-  'Slice Suite': { ...BASE, glitchSliceSuiteEnabled: true },
-  'Voxel Snap': { ...BASE, glitchVoxelSnapEnabled: true },
-  'Inner Stretch': { ...BASE, glitchInnerStretchEnabled: true },
-  'Warp Field': { ...BASE, glitchWarpFieldEnabled: true },
-  Godrays: { ...BASE, postGodraysEnabled: true },
-  'Chromatic Aberration': { ...BASE, postChromaticAberrationEnabled: true },
+  Pristine: { ...SAVED_BASE },
+  'Cut & Paste': { ...SAVED_BASE, glitchCutPasteEnabled: true },
+  Hopscotch: { ...SAVED_BASE, glitchHopscotchEnabled: true },
+  'Find & Replace': { ...SAVED_BASE, glitchFindReplaceEnabled: true },
+  'Texture Scramble': { ...SAVED_BASE, glitchUvEnabled: true },
+  'Slit Scan': { ...SAVED_BASE, glitchSlitScanEnabled: true },
+  'Scroll Tear': { ...SAVED_BASE, glitchScrollTearEnabled: true },
+  'Row Jitter': { ...SAVED_BASE, glitchRowJitterEnabled: true },
+  'Resolution Loss': { ...SAVED_BASE, glitchDegradeEnabled: true },
+  'Torn Open': { ...SAVED_BASE, glitchTornEnabled: true },
+  'Block Deconstruct': { ...SAVED_BASE, glitchBlockDeconstructEnabled: true },
+  'Slice Suite': { ...SAVED_BASE, glitchSliceSuiteEnabled: true },
+  'Voxel Snap': { ...SAVED_BASE, glitchVoxelSnapEnabled: true },
+  'Inner Stretch': { ...SAVED_BASE, glitchInnerStretchEnabled: true },
+  'Warp Field': { ...SAVED_BASE, glitchWarpFieldEnabled: true },
+  Godrays: { ...SAVED_BASE, postGodraysEnabled: true },
+  'Chromatic Aberration': {
+    ...SAVED_BASE,
+    postChromaticAberrationEnabled: true,
+  },
   'Chromatic Aberration (Model)': {
-    ...BASE,
+    ...SAVED_BASE,
     glitchModelChromaticEnabled: true,
   },
-  'Pixel Sort': { ...BASE, postPixelSortEnabled: true },
-  'Screen Slit Scan': { ...BASE, postSlitScanEnabled: true },
-  Datamosh: { ...BASE, postDatamoshEnabled: true },
-  'Pixel Bleed': { ...BASE, postPixelBleedEnabled: true },
+  'Pixel Sort': { ...SAVED_BASE, postPixelSortEnabled: true },
+  'Screen Slit Scan': { ...SAVED_BASE, postSlitScanEnabled: true },
+  Datamosh: { ...SAVED_BASE, postDatamoshEnabled: true },
+  'Pixel Bleed': { ...SAVED_BASE, postPixelBleedEnabled: true },
   'Slit Scan & Pixel Bleed': {
-    ...BASE,
+    ...SAVED_BASE,
     glitchSlitScanEnabled: true,
     postPixelBleedEnabled: true,
   },
-  Theatre: { ...BASE, theatreEnabled: true },
+  Theatre: { ...SAVED_BASE, theatreEnabled: true },
 };
 
 export function getPresetControls({ presetSnapshot }) {

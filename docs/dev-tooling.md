@@ -35,7 +35,7 @@ Codex).
 - Each independent tool lives under `src/dev/tools/<tool>/` (current tools:
   `blockParty`, `brutalist`, `cataloggr`, `colors`, `darkroom`, `exhibitA`, `flora`, `fractalAutomata`, `fungi`, `gltfjsx`, `glyphs`, `hyperCubes`, `iconography`, `inventory`,
   `isoLines`, `isoLinesRelief`, `kumiko`, `loaderPatterns`, `nestingBoxes`, `networkTest`, `plotterizer`, `printShop`, `projectionMapping`, `pushComesToShove`, `rorschach`,
-  `subdivision`, `trucheterie3d`, `trucheterieDesigner`).
+  `subdivision`, `trucheterie3d`, `trucheterieDesigner`, `controlPanelDesigner`).
 - Every registered tool owns a colocated `todo.md` using the same canonical
   TODO shape as scenes (`docs/scene-conventions.md` §15): scaffold it with
   `npm run todo:new` and verify with `npm run todo:check`. Cataloggr discovers
@@ -50,7 +50,7 @@ Codex).
   `DevPageHeaderBar.jsx`, `DevPageTitle.jsx`, `DevTooltip.jsx`), or a clearly
   named shared folder under `src/dev` when it's non-shell dev-only behavior.
 - **Generative workbenches share `src/dev/renderWorkbench/`** (RorschachCLI,
-  BirdsArentRealCLI, ExhibitACLI, FloraCLI, FractalAutomataCLI, FungiCLI, GhostBusterCLI, KumikoCLI, BlockPartyCLI, BrutalistCLI, NestingBoxesCLI, HyperCubesCLI, NetworkTestCLI, IsoLinesCLI, IsoLinesReliefCLI, PushComesToShoveCLI, RugPullCLI, SubdivisionCLI, SubdivisionReliefCLI, TrucheterieCLI, Trucheterie3DCLI, and Fauna next).
+  BirdsArentRealCLI, ExhibitACLI, FloraCLI, FractalAutomataCLI, FungiCLI, GhostBusterCLI, KumikoCLI, BlockPartyCLI, BrutalistCLI, NestingBoxesCLI, HyperCubesCLI, NetworkTestCLI, IsoLinesCLI, IsoLinesReliefCLI, PushComesToShoveCLI, RabbitCLI, RugPullCLI, SubdivisionCLI, SubdivisionReliefCLI, TrucheterieCLI, Trucheterie3DCLI, and Fauna next).
   A facet-rolling generator's page is a `RollWorkbench` configuration — its
   kernel barrel, nouns, palette choices and preview stats — and nothing else;
   see `docs/render-workbench.md`. The parts it is built from (`useRenderJobs`,

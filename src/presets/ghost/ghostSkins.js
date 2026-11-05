@@ -1,5 +1,24 @@
-import { BURN_DEFAULTS } from '@modules/clothBurn';
 import { textureFile } from '@utils/appUtils';
+
+const BURN_DEFAULTS = {
+  burnEnabled: false,
+  burnSpeed: 0.12,
+  burnAmount: 0.32,
+  burnLoop: false,
+  burnNoiseScale: 3,
+  burnEdgeWidth: 0.06,
+  burnCharWidth: 0.22,
+  burnColorA: '#ff4000',
+  burnColorB: '#ffd089',
+  burnGlowIntensity: 5,
+  emberRate: 45,
+  emberSize: 0.012,
+  emberRise: 0.55,
+  emberDrift: 0.15,
+  emberColorHot: '#ffe8a3',
+  emberColorCool: '#ff3c00',
+  emberIntensity: 4,
+};
 
 const PURPLE_NEBULA_1 = textureFile('purpleNebula1.png');
 const PURPLE_NEBULA_8 = textureFile('purpleNebula8.png');

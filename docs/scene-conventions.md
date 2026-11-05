@@ -199,6 +199,13 @@ Inside a scene folder, keep imports relative (`./components/Foo`,
 
 ## 9. Controls & presets
 
+**Presets are atomic artwork snapshots, not overrides of current defaults.**
+Read `docs/scene-presets.md` before changing this contract. Existing preset
+URLs must preserve their artwork as the scene evolves. New controls require
+explicit compatibility values in every existing preset. Never derive saved
+presets from live schema defaults or another scene's preset data. Run
+`npm run presets:check` as well as the affected pipeline checks.
+
 - Encapsulate scene controls in `hooks/useSceneControls.js` using `useControls` +
   `folder` from Leva. Colocate per-component control schemas as
   `components/getXControls.js`.

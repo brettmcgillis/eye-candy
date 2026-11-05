@@ -9,11 +9,9 @@ import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import process from 'node:process';
 
-import {
-  RENDER_OPTIONS,
-  SCENE_KEYS,
-} from '../src/modules/isoMeter/renderOptions.mjs';
+import { RENDER_OPTIONS } from '../src/modules/isoMeter/renderOptions.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import presetKeys from './lib/presetKeys.mjs';
 import schemaControlCoverage from './lib/schemaControlCoverage.mjs';
 import checkWorkbenchPage from './lib/workbenchPage.mjs';
 
@@ -22,6 +20,8 @@ const CONTROLS = ['/src/components/scenes/WebGPU/IsoMeter/utils/controls.js'];
 
 const KERNEL_DIR = path.join(REPO_ROOT, 'src', 'modules', 'isoMeter');
 const ENTRY = '/src/modules/isoMeter/index.js';
+const REGISTERED_PRESET_KEYS = await presetKeys('IsoMeter');
+
 const PRESETS_ENTRY =
   '/src/components/scenes/WebGPU/IsoMeter/presets/presets.js';
 const PALETTES_ENTRY = '/src/utils/gradientPalette.js';
@@ -393,7 +393,7 @@ function checkVoxels(kernel) {
 
 function checkValue(label, key, value, paletteNames) {
   const spec = RENDER_OPTIONS[key];
-  check(SCENE_KEYS.includes(key), `${label}: ${key} is not a scene key`);
+  check(REGISTERED_PRESET_KEYS.has(key), `${label}: ${key} is not a scene key`);
   if (!spec) return;
   if (spec.type === 'number') {
     check(

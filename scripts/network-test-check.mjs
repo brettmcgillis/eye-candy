@@ -21,6 +21,7 @@ import {
 } from '../src/modules/networkTest/renderOptions.mjs';
 import { createHeadlessRenderer, loadThree } from './lib/headlessWebgpu.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import presetKeys from './lib/presetKeys.mjs';
 import schemaControlCoverage from './lib/schemaControlCoverage.mjs';
 import checkWorkbenchPage from './lib/workbenchPage.mjs';
 
@@ -50,7 +51,7 @@ const ALLOWED_KERNEL_IMPORTS = new Set([
   '@utils/paletteStops',
 ]);
 // Keys the camera rig owns; a preset may carry them but the schema does not.
-const CAMERA_KEY = /^(camera|orbit|fixed|spline|operator)/u;
+const REGISTERED_PRESET_KEYS = await presetKeys('NetworkTest');
 const RULE_KEYS = {
   band: 'ruleBand',
   bridge: 'ruleBridge',
@@ -127,7 +128,7 @@ function checkPresets({ PRESETS: presets }) {
   const scene = new Set(SCENE_KEYS);
   Object.entries(presets).forEach(([name, preset]) => {
     Object.keys(preset)
-      .filter((key) => !scene.has(key) && !CAMERA_KEY.test(key))
+      .filter((key) => !scene.has(key) && !REGISTERED_PRESET_KEYS.has(key))
       .forEach((key) =>
         failures.push(
           `preset "${name}" sets "${key}", which renderOptions.mjs does not declare.`

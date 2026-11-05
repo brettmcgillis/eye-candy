@@ -1,19 +1,115 @@
-import { PALETTE } from '@modules/terrainErosion';
-
 export const DEFAULT_PRESET = 'Endless Erosion';
 
-const BASE = {
+// Literal artwork values; new controls require an explicit migration.
+const SAVED_BASE = {
   cameraMode: 'orbit',
+  cameraProjection: 'perspective',
+  cameraFrustumHeight: 10,
+  cameraMobileFrustumHeight: 10,
+  cameraAutoFit: true,
+  fixedBehavior: 'single',
+  fixedShotRidgeDesktopPosition: {
+    x: -2.81,
+    y: 1.75,
+    z: -0.91,
+  },
+  fixedShotRidgeDesktopTarget: {
+    x: 0,
+    y: 0.4,
+    z: 0,
+  },
+  fixedShotRidgeDesktopFov: 11,
+  fixedShotRidgeMobilePosition: {
+    x: -2.81,
+    y: 1.75,
+    z: -0.91,
+  },
+  fixedShotRidgeMobileTarget: {
+    x: 0,
+    y: 0.4,
+    z: 0,
+  },
+  fixedShotRidgeMobileFov: 11,
   orbitAutoRotate: true,
   orbitAutoRotateSpeed: 1,
+  orbitEnablePan: true,
+  orbitMinPolarAngle: 0,
+  orbitMaxPolarAngle: 180,
+  orbitAzimuthUnlimited: true,
+  orbitMinAzimuthAngle: -180,
+  orbitMaxAzimuthAngle: 180,
+  orbitMinDistance: 0,
+  orbitMaxDistanceUnlimited: true,
+  orbitMaxDistance: 100,
+  orbitDesktopPosition: {
+    x: -2.81,
+    y: 1.75,
+    z: -0.91,
+  },
+  orbitDesktopTarget: {
+    x: 0,
+    y: 0.4,
+    z: 0,
+  },
+  orbitDesktopPivot: {
+    x: 0,
+    y: 0.4,
+    z: 0,
+  },
   orbitDesktopFov: 11,
-  orbitDesktopPosition: { x: -2.81, y: 1.75, z: -0.91 },
-  // The reference looks at the middle of the terrain at height 0.4, not at the
-  // origin. Left to the rig's own fallback this lands off the near edge of the
-  // patch and the long lens then frames a corner of it.
-  orbitDesktopTarget: { x: 0, y: 0.4, z: 0 },
-  orbitDesktopPivot: { x: 0, y: 0.4, z: 0 },
-
+  orbitMobilePosition: {
+    x: -3.4,
+    y: 2.1,
+    z: -1.1,
+  },
+  orbitMobileTarget: {
+    x: 0,
+    y: 0.4,
+    z: 0,
+  },
+  orbitMobilePivot: {
+    x: 0,
+    y: 0.4,
+    z: 0,
+  },
+  orbitMobileFov: 16,
+  splinePreset: 'Loop de Loop',
+  splineDesktopTarget: {
+    x: 0,
+    y: 0.4,
+    z: 0,
+  },
+  splineDesktopFov: 11,
+  splineMobileTarget: {
+    x: 0,
+    y: 0.4,
+    z: 0,
+  },
+  splineMobileFov: 11,
+  splineOrientationMode: 'target',
+  splineForwardDistance: 1,
+  splinePosition: {
+    x: 0,
+    y: 0,
+    z: 0,
+  },
+  splineScale: {
+    x: 1,
+    y: 1,
+    z: 1,
+  },
+  splineDuration: 30,
+  splineTension: 0.5,
+  splineClosed: true,
+  splineShowPath: false,
+  operatorMoveSpeed: 6,
+  operatorLiftSpeed: 6,
+  operatorBoostMultiplier: 2,
+  operatorPointerLookSensitivity: 0.003,
+  operatorStickLookSpeed: 2.5,
+  operatorZoomSpeed: 24,
+  operatorMinFov: 20,
+  operatorMaxFov: 80,
   viewMode: 'Raymarch',
   renderScale: 1,
   raymarchQuality: 2,
@@ -26,7 +122,6 @@ const BASE = {
   drainage: true,
   detailAmount: 1,
   timeScale: 1,
-
   scale: 0.15,
   strength: 0.22,
   gullyWeight: 0.5,
@@ -48,7 +143,6 @@ const BASE = {
   normalization: 0.5,
   heightOffset: -0.65,
   heightOffsetFade: 0,
-
   heightFrequency: 3,
   heightAmplitude: 0.125,
   heightOctaves: 3,
@@ -57,28 +151,25 @@ const BASE = {
   waterHeight: 0.36,
   grassHeight: 0.465,
   drainageWidth: 0.3,
-
   scrollPeriod: 60,
   scrollRadius: 2,
   scrollDrift: 0.1,
   animateErosion: true,
   animateWater: true,
-
   paintEnabled: false,
   brushSize: 0.2,
   brushStrength: 0.05,
-
-  cliffColor: PALETTE.cliff,
-  dirtColor: PALETTE.dirt,
-  grass1Color: PALETTE.grass1,
-  grass2Color: PALETTE.grass2,
-  treeColor: PALETTE.tree,
-  sandColor: PALETTE.sand,
-  waterColor: PALETTE.water,
-  waterShoreColor: PALETTE.waterShore,
-  sunColor: PALETTE.sun,
+  cliffColor: '#383333',
+  dirtColor: '#998066',
+  grass1Color: '#264d1a',
+  grass2Color: '#668033',
+  treeColor: '#1f4219',
+  sandColor: '#ccb399',
+  waterColor: '#000d1a',
+  waterShoreColor: '#004040',
+  sunColor: '#fffaf2',
   sunIntensity: 2,
-  ambientColor: PALETTE.ambient,
+  ambientColor: '#4d80b3',
   ambientIntensity: 0.1,
   sunX: -1,
   sunY: 0.4,
@@ -86,58 +177,48 @@ const BASE = {
 };
 
 export const PRESETS = {
-  'Endless Erosion': { ...BASE },
-
-  // The reference's second camera: closer, wider, and low enough that the
-  // gullies read as terrain you could walk into rather than a relief map.
+  'Endless Erosion': { ...SAVED_BASE },
   'Low Ridge': {
-    ...BASE,
+    ...SAVED_BASE,
     orbitAutoRotate: false,
+    orbitDesktopPosition: {
+      x: 0,
+      y: 0.91,
+      z: 1.41,
+    },
     orbitDesktopFov: 20,
-    orbitDesktopPosition: { x: 0, y: 0.91, z: 1.41 },
-    animateWater: false,
     waterHeight: 0.42,
     scrollRadius: 1.1,
+    animateWater: false,
   },
-
-  // The ridge map is the filter's own by-product, and the drainage network it
-  // encodes is more legible on its own than shaded.
   'Ridge Map': {
-    ...BASE,
+    ...SAVED_BASE,
+    orbitAutoRotate: false,
     debugView: 'Ridge Map',
     animateErosion: false,
-    orbitAutoRotate: false,
   },
-
-  // The painted variant's own settings, which differ from the animated one in
-  // three places: no height offset, a lower waterline, and a base onset of 0.7
-  // that keeps gullies off the gentler slopes a brush leaves behind.
   'Paint Mountains': {
-    ...BASE,
-    paintEnabled: true,
+    ...SAVED_BASE,
+    orbitAutoRotate: false,
+    onsetInput: 0.7,
+    heightOffset: 0,
+    waterHeight: 0.46,
     animateErosion: false,
     animateWater: false,
-    orbitAutoRotate: false,
-    heightOffset: 0,
-    onsetInput: 0.7,
-    waterHeight: 0.46,
+    paintEnabled: true,
   },
-
   'Displaced Mesh': {
-    ...BASE,
+    ...SAVED_BASE,
     viewMode: 'Mesh',
-    animateErosion: false,
     meshResolution: 768,
-  },
-
-  // Strength at zero is the reference's erosion toggle: the same base noise with
-  // none of the gullies, which is the whole argument for the filter.
-  'Unfiltered Base': {
-    ...BASE,
-    strength: 0,
     animateErosion: false,
+  },
+  'Unfiltered Base': {
+    ...SAVED_BASE,
     orbitAutoRotate: false,
     trees: false,
+    strength: 0,
+    animateErosion: false,
   },
 };
 

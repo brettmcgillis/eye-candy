@@ -1,5 +1,7 @@
 export const SCENE_POST_TYPES = Object.freeze({
   bloom: 'bloom',
+  cctv: 'cctv',
+  crt: 'crt',
   dof: 'dof',
   godrays: 'godrays',
   grade: 'grade',

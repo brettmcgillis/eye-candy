@@ -1,8 +1,13 @@
-import apollianPlugin from './apollian/plugin';
+import apollonianPlugin from './apollonian/plugin';
+import argylePlugin from './argyle/plugin';
 import birdsArentRealPlugin from './birdsArentReal/plugin';
 import blockPartyPlugin from './blockParty/plugin';
 import brutalistPlugin from './brutalist/plugin';
+import cablesPlugin from './cables/plugin';
+import candlePlugin from './candle/plugin';
 import cataloggrPlugin from './cataloggr/plugin';
+import controlPanelPlugin from './controlPanel/plugin';
+import controlPanelDesignerPlugin from './controlPanelDesigner/plugin';
 import cumulusPlugin from './cumulus/plugin';
 import darkroomPlugin from './darkroom/plugin';
 import dumpsterFirePlugin from './dumpsterFire/plugin';
@@ -22,9 +27,12 @@ import isoMeterPlugin from './isoMeter/plugin';
 import kumikoPlugin from './kumiko/plugin';
 import nestingBoxesPlugin from './nestingBoxes/plugin';
 import networkTestPlugin from './networkTest/plugin';
+import paperCutsPlugin from './paperCuts/plugin';
+import paperCutsDesignerPlugin from './paperCutsDesigner/plugin';
 import plotterizerPlugin from './plotterizer/plugin';
 import printShopPlugin from './printShop/plugin';
 import pushComesToShovePlugin from './pushComesToShove/plugin';
+import rabbitPlugin from './rabbit/plugin';
 import rorschachPlugin from './rorschach/plugin';
 import rugPullPlugin from './rugPull/plugin';
 import subdivisionPlugin from './subdivision/plugin';
@@ -36,11 +44,16 @@ import trucheterieDesignerPlugin from './trucheterieDesigner/plugin';
 
 export default function devServerPlugins() {
   return [
-    apollianPlugin(),
+    argylePlugin(),
+    apollonianPlugin(),
     birdsArentRealPlugin(),
     blockPartyPlugin(),
     brutalistPlugin(),
+    candlePlugin(),
     cataloggrPlugin(),
+    cablesPlugin(),
+    controlPanelPlugin(),
+    controlPanelDesignerPlugin(),
     cumulusPlugin(),
     darkroomPlugin(),
     dumpsterFirePlugin(),
@@ -60,9 +73,12 @@ export default function devServerPlugins() {
     kumikoPlugin(),
     nestingBoxesPlugin(),
     networkTestPlugin(),
+    paperCutsPlugin(),
+    paperCutsDesignerPlugin(),
     plotterizerPlugin(),
     printShopPlugin(),
     pushComesToShovePlugin(),
+    rabbitPlugin(),
     rorschachPlugin(),
     rugPullPlugin(),
     subdivisionPlugin(),

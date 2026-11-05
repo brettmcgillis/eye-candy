@@ -3,32 +3,29 @@ export const DEFAULT_PRESET = 'Night Danger';
 // Settings shared by both modes: the streetlight, lamp, lighting, ground, trash,
 // weapon attachment tuning and bloom. The two presets differ only in how the
 // three raccoons are posed/armed and whether their clips play (animated vs. hero).
-const SHARED = {
-  // Streetlight
+
+// Literal artwork values; new controls require an explicit migration.
+const SAVED_BASE = {
   streetlightX: -1.7,
   streetlightZ: -1.3,
   streetlightScale: 3.5,
   showBase: true,
   glassColor: '#ffb347',
   glassEmissive: 6,
-  // Lamp (light inside the streetlight head)
   lampColor: '#ffae42',
   lampIntensity: 14,
   lampHeight: 4.7,
   lampDistance: 16,
   lampDecay: 1.6,
   lampFlicker: 0.12,
-  // Lighting (global night fill)
   ambientIntensity: 0.18,
   ambientColor: '#2a3b5c',
   moonIntensity: 0.35,
   moonColor: '#6f86c9',
-  // Environment
   bgColor: '#070a14',
   fogColor: '#0a0e1a',
   fogNear: 7,
   fogFar: 26,
-  // Wet ground
   asphaltColor: '#3a3a42',
   puddleColor: '#05060a',
   puddleScale: 0.55,
@@ -41,10 +38,7 @@ const SHARED = {
   rippleSpeed: 1,
   roughDry: 0.92,
   roughWet: 0.04,
-  // Trash
   showTrash: true,
-  // Trash can placements (tunable). t1/t2 upright cans, t3 tipped can body, t4 lid.
-
   t1PosX: -2.1,
   t1PosY: 0,
   t1PosZ: -1.05,
@@ -69,8 +63,6 @@ const SHARED = {
   t4RotX: 0.7792036732051035,
   t4RotY: -2.25,
   t4RotZ: 1.5,
-  // Gun attachment tuning (local to the holding hand bone). Magnum self-scales
-  // to 0.193, so ~1 here yields a sensible revolver in the paw.
   gunScale: 1,
   gunPosX: 0,
   gunPosY: 0.11,
@@ -78,8 +70,6 @@ const SHARED = {
   gunRotX: -2,
   gunRotY: 0,
   gunRotZ: -2,
-  // Knife attachment tuning (local to the holding hand bone). BowieKnife uses its
-  // raw model scale, so start small and dial in via the Knife folder.
   knifeScale: 0.91,
   knifePosX: 0.105,
   knifePosY: 0.02,
@@ -87,75 +77,162 @@ const SHARED = {
   knifeRotX: -0.05,
   knifeRotY: -0.7,
   knifeRotZ: 3.14,
-  // Bloom
   bloomEnabled: true,
   bloomThreshold: 0.7,
   bloomStrength: 0.7,
   bloomRadius: 0.6,
+  animatePoses: true,
+  r1Pose: 'racoon|idle eat',
+  r1X: 0.25,
+  r1Z: 0.55,
+  r1RotY: -0.6,
+  r1Scale: 1,
+  r1Weapon: 'gun',
+  r1WeaponHand: 'right',
+  r2Pose: 'racoon|idle eat 2',
+  r2X: -0.95,
+  r2Z: -0.2,
+  r2RotY: 1.1,
+  r2Scale: 1,
+  r2Weapon: 'none',
+  r2WeaponHand: 'right',
+  r3Pose: 'racoon|idle smell',
+  r3X: 1.25,
+  r3Z: -0.25,
+  r3RotY: -1.6,
+  r3Scale: 1,
+  r3Weapon: 'none',
+  r3WeaponHand: 'right',
+  cameraMode: 'orbit',
+  cameraProjection: 'perspective',
+  cameraFrustumHeight: 10,
+  cameraMobileFrustumHeight: 10,
+  cameraAutoFit: true,
+  fixedBehavior: 'single',
+  fixedShotHeroDesktopPosition: {
+    x: 3.4,
+    y: 1.5,
+    z: 5.6,
+  },
+  fixedShotHeroDesktopTarget: {
+    x: 0,
+    y: 0.7,
+    z: 0,
+  },
+  fixedShotHeroDesktopFov: 38,
+  fixedShotHeroMobilePosition: {
+    x: 3.4,
+    y: 1.5,
+    z: 5.6,
+  },
+  fixedShotHeroMobileTarget: {
+    x: 0,
+    y: 0.7,
+    z: 0,
+  },
+  fixedShotHeroMobileFov: 38,
+  orbitAutoRotate: false,
+  orbitAutoRotateSpeed: 2,
+  orbitEnablePan: true,
+  orbitMinPolarAngle: 0,
+  orbitMaxPolarAngle: 180,
+  orbitAzimuthUnlimited: true,
+  orbitMinAzimuthAngle: -180,
+  orbitMaxAzimuthAngle: 180,
+  orbitMinDistance: 0,
+  orbitMaxDistanceUnlimited: true,
+  orbitMaxDistance: 100,
+  orbitDesktopPosition: {
+    x: 3.4,
+    y: 1.5,
+    z: 5.6,
+  },
+  orbitDesktopTarget: {
+    x: 0,
+    y: 0.7,
+    z: 0,
+  },
+  orbitDesktopPivot: {
+    x: 0,
+    y: 0.7,
+    z: 0,
+  },
+  orbitDesktopFov: 38,
+  orbitMobilePosition: {
+    x: 3.8,
+    y: 1.8,
+    z: 7.2,
+  },
+  orbitMobileTarget: {
+    x: 0,
+    y: 0.7,
+    z: 0,
+  },
+  orbitMobilePivot: {
+    x: 0,
+    y: 0.7,
+    z: 0,
+  },
+  orbitMobileFov: 52,
+  splinePreset: 'Loop de Loop',
+  splineDesktopTarget: {
+    x: 0,
+    y: 0.7,
+    z: 0,
+  },
+  splineDesktopFov: 38,
+  splineMobileTarget: {
+    x: 0,
+    y: 0.7,
+    z: 0,
+  },
+  splineMobileFov: 38,
+  splineOrientationMode: 'target',
+  splineForwardDistance: 1,
+  splinePosition: {
+    x: 0,
+    y: 0,
+    z: 0,
+  },
+  splineScale: {
+    x: 1,
+    y: 1,
+    z: 1,
+  },
+  splineDuration: 30,
+  splineTension: 0.5,
+  splineClosed: true,
+  splineShowPath: false,
+  operatorMoveSpeed: 6,
+  operatorLiftSpeed: 6,
+  operatorBoostMultiplier: 2,
+  operatorPointerLookSensitivity: 0.003,
+  operatorStickLookSpeed: 2.5,
+  operatorZoomSpeed: 24,
+  operatorMinFov: 20,
+  operatorMaxFov: 80,
 };
 
 const PRESETS = {
-  // Animated mode: the three raccoons play their looping idle clips, one toying
-  // with the revolver it found in the spilled trash.
-  'Night Danger': {
-    ...SHARED,
-    // Raccoons — global
-    animatePoses: true,
-    // Raccoon 1 (gun holder)
-    r1Pose: 'racoon|idle eat',
-    r1X: 0.25,
-    r1Z: 0.55,
-    r1RotY: -0.6,
-    r1Scale: 1.0,
-    r1Weapon: 'gun',
-    r1WeaponHand: 'right',
-    // Raccoon 2 (rummaging)
-    r2Pose: 'racoon|idle eat 2',
-    r2X: -0.95,
-    r2Z: -0.2,
-    r2RotY: 1.1,
-    r2Scale: 1.0,
-    r2Weapon: 'none',
-    r2WeaponHand: 'right',
-    // Raccoon 3 (lookout)
-    r3Pose: 'racoon|idle smell',
-    r3X: 1.25,
-    r3Z: -0.25,
-    r3RotY: -1.6,
-    r3Scale: 1.0,
-    r3Weapon: 'none',
-    r3WeaponHand: 'right',
-  },
-  // Stationary hero mode: frozen single-frame poses — an angry raccoon flanked by
-  // one wielding a knife and one wielding a gun. Built for the band-merch shot.
+  'Night Danger': { ...SAVED_BASE },
   'Hero Standoff': {
-    ...SHARED,
-    // Raccoons — global
+    ...SAVED_BASE,
     animatePoses: false,
-    // Raccoon 1 (angry, unarmed, centre)
     r1Pose: 'angry-singleFrame',
-    r1X: 0.0,
+    r1X: 0,
     r1Z: 0.4,
     r1RotY: 1.8,
-    r1Scale: 1.0,
     r1Weapon: 'none',
-    r1WeaponHand: 'right',
-    // Raccoon 2 (gun)
     r2Pose: 'holding-singleFrame',
-    r2X: -1.0,
+    r2X: -1,
     r2Z: -0.1,
     r2RotY: -0.2,
-    r2Scale: 1.0,
     r2Weapon: 'gun',
-    r2WeaponHand: 'right',
-    // Raccoon 3 (knife)
     r3Pose: 'holding2-singleFrame',
     r3X: 1.1,
     r3Z: -0.1,
     r3RotY: -0.5,
-    r3Scale: 1.0,
     r3Weapon: 'knife',
-    r3WeaponHand: 'right',
   },
 };
 

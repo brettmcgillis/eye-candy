@@ -524,6 +524,7 @@ export const penPx = ({ plotWidthMm, svgPenMm, width }) =>
 // output × pixelRatio) and the depth pass's coverage (`mask`).
 export default function shadePath({
   angle = 45,
+  equalize = true,
   gamma = 1,
   height,
   image,
@@ -537,7 +538,9 @@ export default function shadePath({
   const shader = SHADERS[shading];
   if (!shader || !image) return '';
   const darkness = createDarkness({ gamma, image, mask, pixelRatio });
-  const tone = createTone({ gamma, image, mask, pixelRatio });
+  const tone = equalize
+    ? createTone({ gamma, image, mask, pixelRatio })
+    : darkness;
   const inside = (x, y) => {
     const px = Math.floor(x * pixelRatio);
     const py = Math.floor(y * pixelRatio);

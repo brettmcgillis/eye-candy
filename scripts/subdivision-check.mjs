@@ -14,13 +14,15 @@ import {
   CUT_DRIVERS,
   DRIVERS,
   LATTICES,
-  SCENE_NAMES,
   SCENE_OPTIONS,
   defaultsFor,
   plotOptionsFrom,
   sceneDefaults,
 } from '../src/modules/subdivision/renderOptions.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import presetKeys from './lib/presetKeys.mjs';
+
+const REGISTERED_PRESET_KEYS = await presetKeys('Subdivision');
 
 const KERNEL_DIR = path.join(REPO_ROOT, 'src', 'modules', 'subdivision');
 const ENTRIES = {
@@ -275,7 +277,7 @@ function checkPresets({ presets }) {
     Object.entries(preset).forEach(([key, value]) => {
       const spec = SCENE_OPTIONS[key];
       check(
-        SCENE_NAMES.includes(key),
+        REGISTERED_PRESET_KEYS.has(key),
         `preset "${name}": ${key} is not a scene key`
       );
       if (!spec) return;

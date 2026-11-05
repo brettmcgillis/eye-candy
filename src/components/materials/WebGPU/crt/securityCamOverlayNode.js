@@ -103,9 +103,9 @@ function buildFrameMask(uv) {
 export default function applySecurityCamOverlay(
   sceneNode,
   uniforms,
-  timestampTexture
+  timestampTexture,
+  uv = screenUV
 ) {
-  const uv = screenUV;
   const overlayMix = uniforms.surveillanceOverlayEnabled;
   const frameMin = uniforms.surveillanceFrameMin;
   const frameMax = uniforms.surveillanceFrameMax;

@@ -413,8 +413,8 @@ designs retain their corner connectors.
 - `designTool` (`off` = View, `paint`, `erase`, `connect`, `diagonal`,
   `order`, `straight`, `move`, `duplicate`), `designBrush` (cell size) and `designAutoConnect` are scene
   controls that are never
-  render options. They are in every preset (2D: written out, 3D: through
-  `sceneDefaults()`), so switching away from a design preset clears it.
+  render options. Their values are stored explicitly in every 2D and 3D
+  preset snapshot, so switching away from a design preset clears it.
 
 ## Editor (`BlobDesignEditor`)
 

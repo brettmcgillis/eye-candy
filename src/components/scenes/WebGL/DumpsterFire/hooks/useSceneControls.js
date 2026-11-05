@@ -27,14 +27,16 @@ import {
   buildSplineGroupControls,
 } from '@modules/splineAuthoring';
 import { localEnv } from '@utils/appUtils';
+import { persistPresetControls } from '@utils/presetControls';
 
 import { DUMPSTER_LID_INITIAL_ANGLE } from '../components/ArticulatedDumpster';
 import {
   DEFAULT_FIRE_LIGHT_RIG,
   DEFAULT_PRESET,
   PRESETS,
-  PRESET_CONTROL_KEYS,
+  PRESET_METADATA_KEYS,
 } from '../presets';
+import authoringSnapshot from '../utils/authoringSnapshot';
 import sceneFolders, { SCENE_LABEL, rollFacets } from '../utils/controls';
 import {
   CAMERA,
@@ -52,10 +54,9 @@ let idCounter = 0;
 const mkId = () => idCounter++;
 
 function hydrateFireAndSmokeInstance(seed = {}) {
-  return {
-    id: mkId(),
-    ...seed,
-  };
+  const id = seed.id ?? mkId();
+  idCounter = Math.max(idCounter, id + 1);
+  return { ...seed, id };
 }
 
 function hydrateFireAndSmokeInstances(seeds) {
@@ -113,57 +114,11 @@ function formatPresetKey(presetName = DEFAULT_PRESET) {
 }
 
 function pickPresetControlValues(snapshot = {}) {
-  return PRESET_CONTROL_KEYS.reduce((acc, key) => {
-    if (snapshot[key] !== undefined) {
-      acc[key] = snapshot[key];
-    }
-
-    return acc;
-  }, {});
-}
-
-function buildParticleSmokeColorOverrides(particleSmokeConfigs = []) {
-  const baselineConfigs = cloneDumpsterParticleSmokeConfigs();
-  const particleSmokeColorOverrides = baselineConfigs.map(
-    (baselineConfig, index) => {
-      const overrideValue = particleSmokeConfigs[index]?.particleColor;
-
-      if (overrideValue === baselineConfig.particleColor) {
-        return null;
-      }
-
-      return overrideValue ?? null;
-    }
+  return Object.fromEntries(
+    Object.entries(snapshot).filter(
+      ([key]) => key !== 'preset' && !PRESET_METADATA_KEYS.includes(key)
+    )
   );
-  const particleSmokeVolumeColorOverrides = baselineConfigs.map(
-    (baselineConfig, index) => {
-      const overrideValue = particleSmokeConfigs[index]?.volColor;
-
-      if (overrideValue === baselineConfig.volColor) {
-        return null;
-      }
-
-      return overrideValue ?? null;
-    }
-  );
-
-  return {
-    ...(particleSmokeColorOverrides.some(Boolean)
-      ? { particleSmokeColorOverrides }
-      : {}),
-    ...(particleSmokeVolumeColorOverrides.some(Boolean)
-      ? { particleSmokeVolumeColorOverrides }
-      : {}),
-  };
-}
-
-function buildPresetCopySnapshot({ controlsSnapshot, particleSmokeConfigs }) {
-  const presetSnapshot = pickPresetControlValues(controlsSnapshot ?? {});
-
-  return {
-    ...presetSnapshot,
-    ...buildParticleSmokeColorOverrides(particleSmokeConfigs),
-  };
 }
 
 function getPresetControls({ currentControls, presetSnapshot }) {
@@ -204,8 +159,14 @@ function getPresetDumpsterLidControls(presetSnapshot = {}) {
   };
 }
 
-function getFireAndSmokeInstancesFromPreset() {
-  return hydrateFireAndSmokeInstances(cloneDumpsterFireAndSmokeSeeds());
+function getFireAndSmokeInstancesFromPreset(presetSnapshot = {}) {
+  const seeds = presetSnapshot.fireAndSmokeSeeds;
+  return hydrateFireAndSmokeInstances(
+    cloneDumpsterFireAndSmokeSeeds(seeds).map((seed, index) => ({
+      ...seed,
+      id: seeds?.[index]?.id ?? index,
+    }))
+  );
 }
 
 function getParticleSmokeStateFromPreset(presetSnapshot = {}) {
@@ -215,8 +176,12 @@ function getParticleSmokeStateFromPreset(presetSnapshot = {}) {
     presetSnapshot.particleSmokeVolumeColorOverrides ?? [];
 
   return {
-    splines: cloneDumpsterParticleSmokeSplines(),
-    configs: cloneDumpsterParticleSmokeConfigs().map((config, index) => ({
+    splines: cloneDumpsterParticleSmokeSplines(
+      presetSnapshot.particleSmokeSplines
+    ),
+    configs: cloneDumpsterParticleSmokeConfigs(
+      presetSnapshot.particleSmokeConfigs
+    ).map((config, index) => ({
       ...config,
       ...(typeof particleSmokeColorOverrides[index] === 'string'
         ? { particleColor: particleSmokeColorOverrides[index] }
@@ -229,21 +194,26 @@ function getParticleSmokeStateFromPreset(presetSnapshot = {}) {
 }
 
 export default function useSceneControls() {
+  const preparePresetRef = useRef(null);
   const [presetRevision, setPresetRevision] = useState(0);
   const fireAndSmokeInstancesRef = useRef([]);
   const particleSmokeSplinesRef = useRef([]);
   const particleSmokeConfigsRef = useRef([]);
-  const copyTransform = useCallback((controlsSnapshot) => {
+  const copyTransform = useCallback((controlsSnapshot, { currentControls }) => {
     const presetName = controlsSnapshot?.preset ?? DEFAULT_PRESET;
-    const presetSnapshot = buildPresetCopySnapshot({
-      controlsSnapshot,
-      particleSmokeConfigs: particleSmokeConfigsRef.current,
-    });
+    const presetSnapshot = {
+      ...pickPresetControlValues(controlsSnapshot),
+      ...pickPresetControlValues(currentControls),
+      ...authoringSnapshot({
+        fireAndSmokeSeeds: fireAndSmokeInstancesRef.current,
+        particleSmokeSplines: particleSmokeSplinesRef.current,
+        particleSmokeConfigs: particleSmokeConfigsRef.current,
+      }),
+    };
 
     return `${formatPresetKey(presetName)}: ${toObjectLiteral(presetSnapshot)},`;
   }, []);
   const {
-    applyPresetByName,
     attachSetControls,
     controlsSnapshotRef,
     initialPreset,
@@ -253,6 +223,7 @@ export default function useSceneControls() {
     copyTransform,
     defaultPreset: DEFAULT_PRESET,
     getPresetControls,
+    preparePreset: (context) => preparePresetRef.current?.(context),
     presets: PRESETS,
   });
   const initialPresetSnapshot =
@@ -261,7 +232,7 @@ export default function useSceneControls() {
     initialPresetSnapshot
   );
   const [fireAndSmokeInstances, setFireAndSmokeInstances] = useState(() =>
-    getFireAndSmokeInstancesFromPreset()
+    getFireAndSmokeInstancesFromPreset(initialPresetSnapshot)
   );
   const [particleSmokeSplines, setParticleSmokeSplines] = useState(
     () => getParticleSmokeStateFromPreset(initialPresetSnapshot).splines
@@ -425,7 +396,7 @@ export default function useSceneControls() {
       onRoll: rollGeneration,
     });
 
-    return {
+    return persistPresetControls({
       Presets: presetsFolder,
       Camera: folder(cameraControls, { collapsed: true }),
       Overlay: folder(
@@ -911,7 +882,7 @@ ${allEntries}
       Fire: generated.Fire,
       'Particle Smoke': generated['Particle Smoke'],
       'Brick Wall': generated['Brick Wall'],
-    };
+    });
   }, [
     cameraControls,
     fireAndSmokeInstances.length,
@@ -1018,18 +989,15 @@ ${allEntries}
     controlsSnapshotRef.current = cloneSnapshot(controls);
   }, [controls, controlsSnapshotRef]);
 
-  useEffect(() => {
-    const presetSnapshot = PRESETS[selectedPreset] || PRESETS[DEFAULT_PRESET];
+  preparePresetRef.current = ({ presetSnapshot }) => {
     const particleSmokeState = getParticleSmokeStateFromPreset(presetSnapshot);
-
-    applyPresetByName(selectedPreset, {
-      currentControls: controlsSnapshotRef.current,
-    });
-    setFireAndSmokeInstances(getFireAndSmokeInstancesFromPreset());
+    setFireAndSmokeInstances(
+      getFireAndSmokeInstancesFromPreset(presetSnapshot)
+    );
     setParticleSmokeSplines(particleSmokeState.splines);
     setParticleSmokeConfigs(particleSmokeState.configs);
     setPresetRevision((previousValue) => previousValue + 1);
-  }, [applyPresetByName, controlsSnapshotRef, selectedPreset]);
+  };
 
   useEffect(() => {
     shotModeRef.current = shotMode;

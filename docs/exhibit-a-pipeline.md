@@ -1,6 +1,6 @@
 # ExhibitA pipeline
 
-ExhibitA follows Apollian's arrangement (`docs/apollian-pipeline.md`): one
+ExhibitA follows Apollonian's arrangement (`docs/apollonian-pipeline.md`): one
 kernel, one rig, and a dev tool that is a UI over the headless CLIs. Change
 the kernel first, land every consumer in the same commit, and run
 `npm run exhibit-a:check`.
@@ -56,7 +56,7 @@ selected.
 `npm run exhibit-a:check` (about a minute) fails on drift between the kernel
 and everything that shares it:
 
-- **Kernel purity**: `@modules/exhibitA` imports only `@modules/apollian` and
+- **Kernel purity**: `@modules/exhibitA` imports only `@modules/apollonian` and
   `@modules/flora`.
 - **Rig defaults**: the `post*` keys declared `rig: true` equal `post.js`.
 - **Scene presets**: every Leva key present and in range, enums valid, and

@@ -10,7 +10,7 @@ import appendPreset, { uniqueName } from '../renderJobs/presetFile';
 const LABELS = new Set(Object.values(EXHIBIT_LABELS));
 
 // Writes a generated exhibit into the scene's PRESETS as a hand-written
-// preset would be: only what differs from the scene defaults. The scene's
+// preset would be: a complete saved configuration. The scene's
 // one-per-exhibit presets are built by a loop, so a saved one goes into the
 // literal below it, and may not reuse an exhibit's own name.
 export default function writeScenePreset(rootDir, { name, sidecar }) {
@@ -21,8 +21,8 @@ export default function writeScenePreset(rootDir, { name, sidecar }) {
     .trim();
   const requested = clean || sidecar.name || config.family;
   return appendPreset(rootDir, {
-    base: 'BASE',
-    declaration: 'Object.assign(PRESETS, {',
+    base: 'SAVED_BASE',
+    declaration: 'export const PRESETS = {',
     file: path.join(
       'src',
       'components',

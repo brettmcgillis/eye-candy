@@ -9,7 +9,7 @@ import {
 import createSchemaToolPlugin from '../renderJobs/schemaTool';
 
 const preset = {
-  base: 'SCENE_DEFAULTS',
+  base: 'SAVED_BASE',
   configFrom,
   name: (config) => `Seed ${config.seed}`,
   presetFromConfig,

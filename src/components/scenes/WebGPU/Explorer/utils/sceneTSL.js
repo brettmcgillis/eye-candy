@@ -20,13 +20,13 @@ import {
 import * as THREE from 'three/webgpu';
 
 import {
-  apollianTree,
+  apollonianTree,
   marchSDF,
   sdBox,
   sdfAO,
   sdfNormal,
   softShadow,
-} from '@modules/apollonian';
+} from '@modules/apollonianSdf';
 
 import { airlight, createSteamUniforms, marchSteam } from './steamTSL';
 
@@ -98,7 +98,7 @@ export function createUniforms() {
   };
 }
 
-// Same domain rescale Apollian uses: the marcher keeps working at the
+// Same domain rescale Apollonian uses: the marcher keeps working at the
 // fractal's own scale and the result is converted back to world units, so
 // inflating the caverns to room size costs no precision. `worldScale` above 1
 // magnifies — the fractal's chambers top out around 0.22 across in its own
@@ -110,7 +110,7 @@ export function createUniforms() {
 export function createDistanceField(u) {
   return (p) => {
     const q = u.pivot.add(p.div(u.worldScale));
-    const tree = apollianTree(
+    const tree = apollonianTree(
       q,
       u.scaleBase,
       u.scaleGain,

@@ -19,6 +19,7 @@ import {
 } from '../src/modules/subdivisionRelief/renderOptions.mjs';
 import { createHeadlessRenderer } from './lib/headlessWebgpu.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import presetKeys from './lib/presetKeys.mjs';
 import schemaControlCoverage from './lib/schemaControlCoverage.mjs';
 import { loadKernel } from './lib/subdivisionReliefRender.mjs';
 import checkWorkbenchPage from './lib/workbenchPage.mjs';
@@ -27,6 +28,8 @@ import checkWorkbenchPage from './lib/workbenchPage.mjs';
 const CONTROLS = [
   '/src/components/scenes/WebGPU/SubdivisionRelief/utils/controls.js',
 ];
+
+const REGISTERED_PRESET_KEYS = await presetKeys('SubdivisionRelief');
 
 const KERNEL_DIR = path.join(REPO_ROOT, 'src/modules/subdivisionRelief');
 const PRESETS =
@@ -83,7 +86,7 @@ function checkSharedSpecs() {
 
 // Leva clamps an out-of-range preset silently.
 function checkPresets({ PRESETS: presets }) {
-  const scene = new Set(SCENE_NAMES);
+  const scene = REGISTERED_PRESET_KEYS;
   Object.entries(presets).forEach(([name, preset]) => {
     Object.entries(preset).forEach(([key, value]) => {
       const spec = SCENE_OPTIONS[key];

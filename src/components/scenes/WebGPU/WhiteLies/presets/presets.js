@@ -1,37 +1,142 @@
-// Preset snapshots for the scene. Keys here must match the Leva schema built
-// in useSceneControls 1:1 — no reshaping between a preset and the controls it
-// applies (see docs/scene-conventions.md, "Controls & presets").
 export const DEFAULT_PRESET = 'Default';
 
-export const PRESETS = {
-  Default: {
-    wallColor: '#e8e4da',
-    wallRoughness: 0.75,
-    craneCount: 1000,
-    craneScale: 0.22,
-    craneMass: 0.12,
-    craneFriction: 0.6,
-    craneRestitution: 0.15,
-    craneLinearDamping: 0.8,
-    craneAngularDamping: 1,
-    pushRadius: 1,
-    pushStrength: 0.6,
-    lightColor: '#fff4e0',
-    lightIntensity: 60,
-    ssgiEnabled: true,
-    sliceCount: 2,
-    stepCount: 8,
-    aoIntensity: 1,
-    giIntensity: 10,
-    radius: 8,
-    traaEnabled: true,
-    exposure: 0.7,
+// Literal artwork values; new controls require an explicit migration.
+const SAVED_BASE = {
+  cameraMode: 'fixed',
+  cameraProjection: 'perspective',
+  cameraFrustumHeight: 10,
+  cameraMobileFrustumHeight: 10,
+  cameraAutoFit: true,
+  fixedBehavior: 'single',
+  fixedShotDefaultDesktopPosition: {
+    x: 0,
+    y: 2.75,
+    z: 9.600000000000001,
   },
+  fixedShotDefaultDesktopTarget: {
+    x: 0,
+    y: 2.5,
+    z: 0,
+  },
+  fixedShotDefaultDesktopFov: 40,
+  fixedShotDefaultMobilePosition: {
+    x: 0,
+    y: 2.75,
+    z: 11.399999999999999,
+  },
+  fixedShotDefaultMobileTarget: {
+    x: 0,
+    y: 2.5,
+    z: 0,
+  },
+  fixedShotDefaultMobileFov: 45,
+  orbitAutoRotate: false,
+  orbitAutoRotateSpeed: 2,
+  orbitEnablePan: true,
+  orbitMinPolarAngle: 0,
+  orbitMaxPolarAngle: 180,
+  orbitAzimuthUnlimited: true,
+  orbitMinAzimuthAngle: -180,
+  orbitMaxAzimuthAngle: 180,
+  orbitMinDistance: 0,
+  orbitMaxDistanceUnlimited: true,
+  orbitMaxDistance: 100,
+  orbitDesktopPosition: {
+    x: 0,
+    y: 2.75,
+    z: 9.600000000000001,
+  },
+  orbitDesktopTarget: {
+    x: 0,
+    y: 2.5,
+    z: 0,
+  },
+  orbitDesktopPivot: {
+    x: 0,
+    y: 2.5,
+    z: 0,
+  },
+  orbitDesktopFov: 40,
+  orbitMobilePosition: {
+    x: 0,
+    y: 2.75,
+    z: 11.399999999999999,
+  },
+  orbitMobileTarget: {
+    x: 0,
+    y: 2.5,
+    z: 0,
+  },
+  orbitMobilePivot: {
+    x: 0,
+    y: 2.5,
+    z: 0,
+  },
+  orbitMobileFov: 45,
+  splinePreset: 'Loop de Loop',
+  splineDesktopTarget: {
+    x: 0,
+    y: 2.5,
+    z: 0,
+  },
+  splineDesktopFov: 40,
+  splineMobileTarget: {
+    x: 0,
+    y: 2.5,
+    z: 0,
+  },
+  splineMobileFov: 45,
+  splineOrientationMode: 'target',
+  splineForwardDistance: 1,
+  splinePosition: {
+    x: 0,
+    y: 0,
+    z: 0,
+  },
+  splineScale: {
+    x: 1,
+    y: 1,
+    z: 1,
+  },
+  splineDuration: 30,
+  splineTension: 0.5,
+  splineClosed: true,
+  splineShowPath: false,
+  operatorMoveSpeed: 6,
+  operatorLiftSpeed: 6,
+  operatorBoostMultiplier: 2,
+  operatorPointerLookSensitivity: 0.003,
+  operatorStickLookSpeed: 2.5,
+  operatorZoomSpeed: 24,
+  operatorMinFov: 20,
+  operatorMaxFov: 80,
+  wallColor: '#e8e4da',
+  wallRoughness: 0.75,
+  craneCount: 1000,
+  craneScale: 0.22,
+  craneMass: 0.12,
+  craneFriction: 0.6,
+  craneRestitution: 0.15,
+  craneLinearDamping: 0.8,
+  craneAngularDamping: 1,
+  pushRadius: 1,
+  pushStrength: 0.6,
+  lightColor: '#fff4e0',
+  lightIntensity: 60,
+  ssgiEnabled: true,
+  sliceCount: 2,
+  stepCount: 8,
+  aoIntensity: 1,
+  giIntensity: 10,
+  radius: 8,
+  traaEnabled: true,
+  exposure: 0.7,
 };
 
-// Companion fn to usePresetsFolder. Given the snapshot for the preset being
-// applied, return the control values to set. Override this when a preset
-// needs to derive values rather than apply the snapshot verbatim.
+export const PRESETS = {
+  Default: { ...SAVED_BASE },
+};
+
 export function getPresetControls({ presetSnapshot }) {
   return { ...presetSnapshot };
 }

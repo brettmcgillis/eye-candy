@@ -16,10 +16,14 @@ import { REPO_ROOT } from './loadModules.mjs';
 // Every generator that burns the overlay in: its script slug, its scene
 // folder, and the module whose renderOptions.mjs declares the overlay options.
 export const OVERLAY_TOOLS = {
+  argyle: { module: 'argyle', scene: 'Argyle' },
   cumulus: { module: 'cumulus', scene: 'AllMyThoughtsAreSoCumulus' },
-  apollian: { module: 'apollian', scene: 'Apollian' },
+  apollonian: { module: 'apollonian', scene: 'Apollonian' },
   'birds-arent-real': { module: 'birdsArentReal', scene: 'BirdsArentReal' },
   'block-party': { module: 'blockParty', scene: 'BlockParty' },
+  cables: { module: 'cables', scene: 'Cables' },
+  candle: { module: 'candle', scene: 'BurningAtBothEnds' },
+  'control-panel': { module: 'controlPanel', scene: 'ControlPanel' },
   brutalist: { module: 'brutalist', scene: 'Brutalist' },
   'dumpster-fire': { module: 'dumpsterFire', scene: 'DumpsterFire' },
   'exhibit-a': { module: 'exhibitA', scene: 'ExhibitA' },
@@ -39,6 +43,8 @@ export const OVERLAY_TOOLS = {
     module: 'pushComesToShove',
     scene: 'PushComesToShove',
   },
+  'paper-cuts': { module: 'paperCuts', scene: 'PaperCuts' },
+  rabbit: { module: 'rabbit', scene: 'StayHunted' },
   rorschach: { module: 'rorschach', scene: 'Rorschach' },
   'rug-pull': { module: 'rugPull', scene: 'RugPull' },
   subdivision: { module: 'subdivision', scene: 'Subdivision' },

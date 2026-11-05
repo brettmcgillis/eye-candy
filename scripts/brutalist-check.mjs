@@ -20,6 +20,7 @@ import {
 import { loadKernel } from './lib/brutalistRender.mjs';
 import { createHeadlessRenderer } from './lib/headlessWebgpu.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import presetKeys from './lib/presetKeys.mjs';
 import schemaControlCoverage from './lib/schemaControlCoverage.mjs';
 import checkWorkbenchPage from './lib/workbenchPage.mjs';
 
@@ -51,7 +52,10 @@ const PAGE_FIELDS = path.join(
   'src/dev/tools/brutalist/BrutalistWorkbenchPage.jsx'
 );
 const ALLOWED_KERNEL_IMPORTS = new Set(['@modules/flora']);
-const CAMERA_KEY = /^(camera|orbit|fixed|spline|operator)/u;
+const REGISTERED_PRESET_KEYS = {
+  forest: await presetKeys('Brutalist'),
+  maquette: await presetKeys('BrutalistMaquette'),
+};
 const MAX_PARTS = 2000;
 const VARIANTS = { habitable: LAYOUTS, spomenik: MOTIFS };
 
@@ -133,7 +137,9 @@ function checkPresets(stage, { PRESETS: presets }) {
   Object.entries(presets).forEach(([name, preset]) => {
     const label = `${stage} preset "${name}"`;
     Object.keys(preset)
-      .filter((key) => !allowed.has(key) && !CAMERA_KEY.test(key))
+      .filter(
+        (key) => !allowed.has(key) && !REGISTERED_PRESET_KEYS[stage].has(key)
+      )
       .forEach((key) =>
         failures.push(`${label} sets "${key}", which its scene does not show.`)
       );

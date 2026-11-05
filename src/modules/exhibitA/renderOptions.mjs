@@ -25,12 +25,12 @@ export const FAMILIES = [
   'knot',
   'strings',
   'polytope',
-  'apollian',
+  'apollonian',
 ];
 
 export const FAMILY_LABELS = {
   algebraic: 'Algebraic Surface',
-  apollian: 'Apollian (Guest)',
+  apollonian: 'Apollonian (Guest)',
   attractor: 'Strange Attractor',
   fractal: 'Escape-Time Fractal',
   knot: 'Knot & Fibration',
@@ -43,7 +43,7 @@ export const FAMILY_LABELS = {
 // config names its exhibit as `config[`${family}Kind`]`.
 export const EXHIBITS = {
   algebraic: ['kummer', 'clebsch', 'barth'],
-  apollian: ['apollian4', 'kleinian'],
+  apollonian: ['apollonian4', 'kleinian'],
   attractor: [
     'lorenz',
     'rossler',
@@ -63,7 +63,7 @@ export const EXHIBITS = {
 
 export const EXHIBIT_LABELS = {
   aizawa: 'Aizawa',
-  apollian4: '4D Apollian',
+  apollonian4: '4D Apollonian',
   barth: 'Barth Sextic',
   boy: "Boy's Surface",
   breather: 'Breather',
@@ -106,7 +106,7 @@ export const EXHIBIT_LABELS = {
 // the rest are meshes the kernel builds (tubes, thickened shells).
 export const FAMILY_KINDS = {
   algebraic: 'field',
-  apollian: 'field',
+  apollonian: 'field',
   attractor: 'curve',
   fractal: 'field',
   knot: 'curve',
@@ -671,28 +671,43 @@ const POLYTOPE = {
   }),
 };
 
-const APOLLIAN = {
+const APOLLONIAN = {
   a4Shape: form(
-    choice('form', EXHIBIT_LABELS.apollian4, 'Estimator', A4_SHAPES, 'sheets', {
-      exhibit: 'apollian4',
-      choiceLabels: { sheets: 'Sheets (twist)', tubes: 'Tubes (slice)' },
-      when: isExhibit('apollian', 'apollian4'),
-    })
+    choice(
+      'form',
+      EXHIBIT_LABELS.apollonian4,
+      'Estimator',
+      A4_SHAPES,
+      'sheets',
+      {
+        exhibit: 'apollonian4',
+        choiceLabels: { sheets: 'Sheets (twist)', tubes: 'Tubes (slice)' },
+        when: isExhibit('apollonian', 'apollonian4'),
+      }
+    )
   ),
-  a4FieldScale: param('apollian', 'apollian4', 'Scale', 0.5, 0.05, 6, 0.001),
+  a4FieldScale: param(
+    'apollonian',
+    'apollonian4',
+    'Scale',
+    0.5,
+    0.05,
+    6,
+    0.001
+  ),
   a4Thickness: param(
-    'apollian',
-    'apollian4',
+    'apollonian',
+    'apollonian4',
     'Thickness',
     0.004,
     0,
     0.1,
     0.0005
   ),
-  a4Folds: param('apollian', 'apollian4', 'Folds', 7, 1, 12, 1),
+  a4Folds: param('apollonian', 'apollonian4', 'Folds', 7, 1, 12, 1),
   a4Scale: param(
-    'apollian',
-    'apollian4',
+    'apollonian',
+    'apollonian4',
     'Inversion',
     1.2,
     0.8,
@@ -701,8 +716,8 @@ const APOLLIAN = {
     [1.12, 1.32]
   ),
   a4W: param(
-    'apollian',
-    'apollian4',
+    'apollonian',
+    'apollonian4',
     'W',
     0.03125,
     -1,
@@ -710,10 +725,10 @@ const APOLLIAN = {
     0.0005,
     [-0.06, 0.08]
   ),
-  a4Twist: param('apollian', 'apollian4', 'Twist', 1, 0, 1, 0.01, [0.4, 1]),
+  a4Twist: param('apollonian', 'apollonian4', 'Twist', 1, 0, 1, 0.01, [0.4, 1]),
   a4RotXW: param(
-    'apollian',
-    'apollian4',
+    'apollonian',
+    'apollonian4',
     'Rotate XW',
     0,
     -180,
@@ -722,8 +737,8 @@ const APOLLIAN = {
     [-25, 25]
   ),
   a4RotYW: param(
-    'apollian',
-    'apollian4',
+    'apollonian',
+    'apollonian4',
     'Rotate YW',
     0,
     -180,
@@ -732,8 +747,8 @@ const APOLLIAN = {
     [-25, 25]
   ),
   a4RotZW: param(
-    'apollian',
-    'apollian4',
+    'apollonian',
+    'apollonian4',
     'Rotate ZW',
     0,
     -180,
@@ -741,9 +756,17 @@ const APOLLIAN = {
     0.1,
     [-25, 25]
   ),
-  kleinFieldScale: param('apollian', 'kleinian', 'Scale', 1.2, 0.05, 6, 0.001),
+  kleinFieldScale: param(
+    'apollonian',
+    'kleinian',
+    'Scale',
+    1.2,
+    0.05,
+    6,
+    0.001
+  ),
   kleinThickness: param(
-    'apollian',
+    'apollonian',
     'kleinian',
     'Thickness',
     0.003,
@@ -751,22 +774,32 @@ const APOLLIAN = {
     0.1,
     0.0005
   ),
-  kleinFolds: param('apollian', 'kleinian', 'Folds', 7, 1, 12, 1),
-  kleinKey: param('apollian', 'kleinian', 'Keyframe', 0, 0, 16, 0.01, [0, 16], {
-    help: "Position along Durand's 16 box-fold keyframes",
-  }),
+  kleinFolds: param('apollonian', 'kleinian', 'Folds', 7, 1, 12, 1),
+  kleinKey: param(
+    'apollonian',
+    'kleinian',
+    'Keyframe',
+    0,
+    0,
+    16,
+    0.01,
+    [0, 16],
+    {
+      help: "Position along Durand's 16 box-fold keyframes",
+    }
+  ),
   guestBound: form(
-    choice('form', FAMILY_LABELS.apollian, 'Bound', GUEST_BOUNDS, 'sphere', {
+    choice('form', FAMILY_LABELS.apollonian, 'Bound', GUEST_BOUNDS, 'sphere', {
       choiceLabels: {
         cube: 'Cube / Slab',
         disc: 'Disc / Coin',
         sphere: 'Sphere',
       },
-      when: isFamily('apollian'),
+      when: isFamily('apollonian'),
     })
   ),
   guestDiscHalf: familyParam(
-    'apollian',
+    'apollonian',
     'Coin Half Thickness',
     0.25,
     0.03,
@@ -774,11 +807,11 @@ const APOLLIAN = {
     0.005,
     null,
     {
-      when: { family: ['apollian'], guestBound: ['disc'] },
+      when: { family: ['apollonian'], guestBound: ['disc'] },
     }
   ),
   guestCubeHalf: familyParam(
-    'apollian',
+    'apollonian',
     'Slab Half Height',
     0.75,
     0.05,
@@ -786,7 +819,7 @@ const APOLLIAN = {
     0.005,
     null,
     {
-      when: { family: ['apollian'], guestBound: ['cube'] },
+      when: { family: ['apollonian'], guestBound: ['cube'] },
     }
   ),
 };
@@ -813,7 +846,7 @@ const FORM = {
   ...KNOT,
   ...STRINGS,
   ...POLYTOPE,
-  ...APOLLIAN,
+  ...APOLLONIAN,
   ...PLACEMENT,
 };
 

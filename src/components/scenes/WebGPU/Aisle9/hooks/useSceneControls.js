@@ -118,7 +118,7 @@ export default function useSceneControls() {
     controlsSnapshotRef.current = controls;
   }, [controls, controlsSnapshotRef]);
 
-  const activePreset = PRESETS[controls.preset] || PRESETS[DEFAULT_PRESET];
+  const activePreset = PRESETS[selectedPreset] || PRESETS[DEFAULT_PRESET];
 
   // Stable key from only camera-relevant control keys — prevents non-camera leva
   // changes (lighting, etc.) from triggering a camera rebuild and snapping position.

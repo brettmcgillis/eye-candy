@@ -66,7 +66,7 @@
       }
     },
     {
-      "files": ["src/dev/tools/apollian/**/*.{js,jsx}"],
+      "files": ["src/dev/tools/apollonian/**/*.{js,jsx}"],
       "rules": {
         "no-restricted-imports": [
           "error",
@@ -110,18 +110,26 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
               {
                 "group": [
-                  "@modules/apollian/*",
-                  "**/modules/apollian/*",
-                  "@modules/apollianRender/*",
-                  "**/modules/apollianRender/*"
+                  "@modules/apollonian/*",
+                  "**/modules/apollonian/*",
+                  "@modules/apollonianRender/*",
+                  "**/modules/apollonianRender/*"
                 ],
-                "message": "Import the Apollian kernel through its @modules/apollian barrel, never a file inside it. See docs/apollian-pipeline.md."
+                "message": "Import the Apollonian kernel through its @modules/apollonian barrel, never a file inside it. See docs/apollonian-pipeline.md."
               }
             ]
           }
@@ -137,7 +145,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -173,7 +181,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -191,7 +207,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -227,7 +243,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -245,7 +269,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -281,7 +305,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior).",
                 "caseSensitive": true
@@ -300,7 +332,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -336,7 +368,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -354,7 +394,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -390,7 +430,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -408,7 +456,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -444,7 +492,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -462,7 +518,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -498,7 +554,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -520,7 +584,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -556,7 +620,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -574,7 +646,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -610,7 +682,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -628,7 +708,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -664,7 +744,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -682,7 +770,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -718,7 +806,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -745,7 +841,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -781,7 +877,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -808,7 +912,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -844,7 +948,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -871,7 +983,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -907,7 +1019,15 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -934,7 +1054,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -970,7 +1090,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -992,7 +1120,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -1028,7 +1156,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1055,7 +1191,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/brutalist/**",
                   "**/cataloggr/**",
@@ -1091,7 +1227,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1118,7 +1262,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -1154,7 +1298,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1181,7 +1333,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -1217,7 +1369,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1244,7 +1404,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/cataloggr/**",
@@ -1280,7 +1440,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -1298,7 +1466,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -1334,7 +1502,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1353,6 +1529,148 @@
       }
     },
     {
+      "files": ["src/dev/tools/controlPanel/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/apollonian/**",
+                  "**/birdsArentReal/**",
+                  "**/blockParty/**",
+                  "**/brutalist/**",
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/darkroom/**",
+                  "**/dumpsterFire/**",
+                  "**/exhibitA/**",
+                  "**/flora/**",
+                  "**/fractalAutomata/**",
+                  "**/fungi/**",
+                  "**/ghostBuster/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/iconography/**",
+                  "**/imperfection/**",
+                  "**/inventory/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
+                  "**/isoMeter/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/networkTest/**",
+                  "**/plotterizer/**",
+                  "**/printShop/**",
+                  "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
+                  "**/rorschach/**",
+                  "**/rugPull/**",
+                  "**/subdivision/**",
+                  "**/subdivisionRelief/**",
+                  "**/trucheterie/**",
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/hyperCubes/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": [
+                  "@modules/controlPanel/*",
+                  "**/modules/controlPanel/*",
+                  "@modules/controlPanelRender/*",
+                  "**/modules/controlPanelRender/*"
+                ],
+                "message": "Import the ControlPanel kernel through its @modules/controlPanel barrel, never a file inside it. See docs/control-panel-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/cables/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/apollonian/**",
+                  "**/birdsArentReal/**",
+                  "**/blockParty/**",
+                  "**/brutalist/**",
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/darkroom/**",
+                  "**/dumpsterFire/**",
+                  "**/exhibitA/**",
+                  "**/flora/**",
+                  "**/fractalAutomata/**",
+                  "**/fungi/**",
+                  "**/ghostBuster/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/iconography/**",
+                  "**/imperfection/**",
+                  "**/inventory/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
+                  "**/isoMeter/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/networkTest/**",
+                  "**/plotterizer/**",
+                  "**/printShop/**",
+                  "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
+                  "**/rorschach/**",
+                  "**/rugPull/**",
+                  "**/subdivision/**",
+                  "**/subdivisionRelief/**",
+                  "**/trucheterie/**",
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/hyperCubes/**",
+                  "**/candle/**",
+                  "**/controlPanel/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": [
+                  "@modules/cables/*",
+                  "**/modules/cables/*",
+                  "@modules/cablesRender/*",
+                  "**/modules/cablesRender/*"
+                ],
+                "message": "Import the Cables kernel through its @modules/cables barrel, never a file inside it. See docs/cables-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "files": ["src/dev/tools/imperfection/**/*.{js,jsx}"],
       "rules": {
         "no-restricted-imports": [
@@ -1361,7 +1679,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -1397,7 +1715,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1424,7 +1750,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -1460,7 +1786,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1487,7 +1821,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -1523,7 +1857,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1550,7 +1892,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -1586,7 +1928,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1613,7 +1963,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -1649,7 +1999,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1676,7 +2034,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -1712,7 +2070,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1739,7 +2105,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -1775,7 +2141,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1802,7 +2176,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -1838,7 +2212,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior).",
                 "caseSensitive": true
@@ -1857,7 +2239,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -1893,7 +2275,15 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1921,7 +2311,7 @@
               {
                 "caseSensitive": true,
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -1957,7 +2347,15 @@
                   "**/subdivisionRelief/**",
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -1985,7 +2383,7 @@
               {
                 "caseSensitive": true,
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -2021,7 +2419,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -2039,7 +2445,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -2075,7 +2481,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -2102,7 +2516,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
                   "**/cataloggr/**",
@@ -2138,7 +2552,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -2157,6 +2579,77 @@
       }
     },
     {
+      "files": ["src/dev/tools/rabbit/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/birdsArentReal/**",
+                  "**/apollonian/**",
+                  "**/blockParty/**",
+                  "**/brutalist/**",
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/darkroom/**",
+                  "**/dumpsterFire/**",
+                  "**/exhibitA/**",
+                  "**/flora/**",
+                  "**/fractalAutomata/**",
+                  "**/fungi/**",
+                  "**/ghostBuster/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/hyperCubes/**",
+                  "**/iconography/**",
+                  "**/imperfection/**",
+                  "**/inventory/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
+                  "**/isoMeter/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/networkTest/**",
+                  "**/plotterizer/**",
+                  "**/printShop/**",
+                  "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
+                  "**/rorschach/**",
+                  "**/rugPull/**",
+                  "**/subdivision/**",
+                  "**/subdivisionRelief/**",
+                  "**/trucheterie/**",
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": [
+                  "@modules/rabbit/*",
+                  "**/modules/rabbit/*",
+                  "@modules/rabbitRender/*",
+                  "**/modules/rabbitRender/*"
+                ],
+                "message": "Import the Rabbit kernel through its @modules/rabbit and @modules/rabbitRender barrels, never a file inside them. See docs/rabbit-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "files": ["src/dev/tools/dumpsterFire/**/*.{js,jsx}"],
       "rules": {
         "no-restricted-imports": [
@@ -2165,7 +2658,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -2201,7 +2694,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -2228,7 +2729,7 @@
             "patterns": [
               {
                 "group": [
-                  "**/apollian/**",
+                  "**/apollonian/**",
                   "**/birdsArentReal/**",
                   "**/blockParty/**",
                   "**/brutalist/**",
@@ -2264,7 +2765,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/cumulus/**"
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
@@ -2394,7 +2903,11 @@
       }
     },
     {
-      "files": ["vite.config.*", "vitest.config.*", "src/dev/server/**/*.js"],
+      "files": [
+        "vite.config.*",
+        "vitest.config.*",
+        "src/dev/server/**/*.{js,mjs}"
+      ],
       "env": {
         "node": true
       },
@@ -2462,7 +2975,15 @@
                   "**/trucheterie/**",
                   "**/trucheterie3d/**",
                   "**/trucheterieDesigner/**",
-                  "**/apollian/**"
+                  "**/apollonian/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
                 ],
                 "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               },
@@ -2474,6 +2995,353 @@
                   "**/modules/cumulusRender/*"
                 ],
                 "message": "Import the Cumulus kernel and renderer through their barrels. See docs/cumulus-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/paperCuts/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/apollonian/**",
+                  "**/birdsArentReal/**",
+                  "**/blockParty/**",
+                  "**/brutalist/**",
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/darkroom/**",
+                  "**/dumpsterFire/**",
+                  "**/exhibitA/**",
+                  "**/flora/**",
+                  "**/fractalAutomata/**",
+                  "**/fungi/**",
+                  "**/ghostBuster/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/iconography/**",
+                  "**/imperfection/**",
+                  "**/inventory/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
+                  "**/isoMeter/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/networkTest/**",
+                  "**/plotterizer/**",
+                  "**/printShop/**",
+                  "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
+                  "**/rorschach/**",
+                  "**/rugPull/**",
+                  "**/subdivision/**",
+                  "**/subdivisionRelief/**",
+                  "**/trucheterie/**",
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**",
+                  "**/hyperCubes/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": [
+                  "@modules/hyperCubes/*",
+                  "**/modules/hyperCubes/*",
+                  "@modules/hyperCubesRender/*",
+                  "**/modules/hyperCubesRender/*"
+                ],
+                "message": "Import the HyperCubes kernel through its @modules/hyperCubes barrel, never a file inside it. See docs/hyper-cubes-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/argyle/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/birdsArentReal/**",
+                  "**/blockParty/**",
+                  "**/brutalist/**",
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/darkroom/**",
+                  "**/dumpsterFire/**",
+                  "**/exhibitA/**",
+                  "**/flora/**",
+                  "**/fractalAutomata/**",
+                  "**/fungi/**",
+                  "**/ghostBuster/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/hyperCubes/**",
+                  "**/iconography/**",
+                  "**/imperfection/**",
+                  "**/inventory/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
+                  "**/isoMeter/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/networkTest/**",
+                  "**/plotterizer/**",
+                  "**/printShop/**",
+                  "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
+                  "**/rorschach/**",
+                  "**/rugPull/**",
+                  "**/subdivision/**",
+                  "**/subdivisionRelief/**",
+                  "**/trucheterie/**",
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/apollonian/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": [
+                  "@modules/apollonian/*",
+                  "**/modules/apollonian/*",
+                  "@modules/apollonianRender/*",
+                  "**/modules/apollonianRender/*",
+                  "**/apollonian/**"
+                ],
+                "message": "Import the Apollonian kernel through its @modules/apollonian barrel, never a file inside it. See docs/apollonian-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/candle/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/apollonian/**",
+                  "**/blockParty/**",
+                  "**/brutalist/**",
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/darkroom/**",
+                  "**/dumpsterFire/**",
+                  "**/exhibitA/**",
+                  "**/flora/**",
+                  "**/fractalAutomata/**",
+                  "**/fungi/**",
+                  "**/ghostBuster/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/hyperCubes/**",
+                  "**/iconography/**",
+                  "**/imperfection/**",
+                  "**/inventory/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
+                  "**/isoMeter/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/networkTest/**",
+                  "**/plotterizer/**",
+                  "**/printShop/**",
+                  "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
+                  "**/rorschach/**",
+                  "**/rugPull/**",
+                  "**/subdivision/**",
+                  "**/subdivisionRelief/**",
+                  "**/trucheterie/**",
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**",
+                  "**/paperCuts/**",
+                  "**/argyle/**",
+                  "**/cables/**",
+                  "**/controlPanel/**",
+                  "**/birdsArentReal/**",
+                  "**/paperCutsDesigner/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": [
+                  "@modules/candle/*",
+                  "**/modules/candle/*",
+                  "@modules/candleRender/*",
+                  "**/modules/candleRender/*"
+                ],
+                "message": "Import the Candle kernel through its @modules/candle barrel, never a file inside it. See docs/candle-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/paperCutsDesigner/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/apollonian/**",
+                  "**/birdsArentReal/**",
+                  "**/blockParty/**",
+                  "**/brutalist/**",
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/darkroom/**",
+                  "**/dumpsterFire/**",
+                  "**/exhibitA/**",
+                  "**/flora/**",
+                  "**/fractalAutomata/**",
+                  "**/fungi/**",
+                  "**/ghostBuster/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/iconography/**",
+                  "**/imperfection/**",
+                  "**/inventory/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
+                  "**/isoMeter/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/networkTest/**",
+                  "**/plotterizer/**",
+                  "**/printShop/**",
+                  "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
+                  "**/rorschach/**",
+                  "**/rugPull/**",
+                  "**/subdivision/**",
+                  "**/subdivisionRelief/**",
+                  "**/trucheterie/**",
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**",
+                  "**/cumulus/**",
+                  "**/hyperCubes/**",
+                  "**/argyle/**",
+                  "**/controlPanel/**",
+                  "**/candle/**",
+                  "**/cables/**",
+                  "**/paperCuts/**",
+                  "**/controlPanelDesigner/**",
+                  "**/rabbit/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
+              },
+              {
+                "group": [
+                  "@modules/hyperCubes/*",
+                  "**/modules/hyperCubes/*",
+                  "@modules/hyperCubesRender/*",
+                  "**/modules/hyperCubesRender/*"
+                ],
+                "message": "Import the HyperCubes kernel through its @modules/hyperCubes barrel, never a file inside it. See docs/hyper-cubes-pipeline.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["src/dev/tools/controlPanelDesigner/**/*.{js,jsx}"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "**/apollonian/**",
+                  "**/argyle/**",
+                  "**/birdsArentReal/**",
+                  "**/blockParty/**",
+                  "**/brutalist/**",
+                  "**/cables/**",
+                  "**/candle/**",
+                  "**/cataloggr/**",
+                  "**/colors/**",
+                  "**/controlPanel/**",
+                  "**/cumulus/**",
+                  "**/darkroom/**",
+                  "**/dumpsterFire/**",
+                  "**/exhibitA/**",
+                  "**/flora/**",
+                  "**/fractalAutomata/**",
+                  "**/fungi/**",
+                  "**/ghostBuster/**",
+                  "**/gltfjsx/**",
+                  "**/glyphs/**",
+                  "**/hyperCubes/**",
+                  "**/iconography/**",
+                  "**/imperfection/**",
+                  "**/inventory/**",
+                  "**/isoLines/**",
+                  "**/isoLinesRelief/**",
+                  "**/isoMeter/**",
+                  "**/kumiko/**",
+                  "**/loaderPatterns/**",
+                  "**/nestingBoxes/**",
+                  "**/networkTest/**",
+                  "**/paperCuts/**",
+                  "**/paperCutsDesigner/**",
+                  "**/plotterizer/**",
+                  "**/printShop/**",
+                  "**/projectionMapping/**",
+                  "**/pushComesToShove/**",
+                  "**/rorschach/**",
+                  "**/rugPull/**",
+                  "**/subdivision/**",
+                  "**/subdivisionRelief/**",
+                  "**/trucheterie/**",
+                  "**/trucheterie3d/**",
+                  "**/trucheterieDesigner/**",
+                  "**/rabbit/**"
+                ],
+                "message": "A dev tool may not import another tool's internals. Promote shared code to src/dev/shell (UI) or a shared src/dev folder (behavior)."
               }
             ]
           }

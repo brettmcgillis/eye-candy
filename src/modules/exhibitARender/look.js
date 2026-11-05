@@ -18,7 +18,7 @@ import {
   paletteColor,
   paletteCoordinate,
   writePaletteLut,
-} from '@modules/apollianRender';
+} from '@modules/apollonianRender';
 
 // The exhibit's surface, shared by the raster materials and the field march
 // so an object reads the same whichever way it is drawn. Each material

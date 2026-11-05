@@ -14,7 +14,9 @@ export function levelRange(lo, hi, config) {
   ];
 }
 
-// Marching squares over the grid, every crossed level at once, chained into
+// Marching squares over the grid, every crossed level at once (only those
+// inside the field's 0..1: a value may stray past it, but nothing stands
+// there), chained into
 // polylines. A cell is walked counter-clockwise and each exit from the
 // region f >= level is joined to an entry, so a segment always has the
 // higher ground on its left and a crossing on a shared edge ends one cell's
@@ -27,6 +29,7 @@ export default function traceContours(values, { aspect, nx, ny }, config) {
   const cellX = (2 * aspect) / nx;
   const cellY = 2 / ny;
   const { levelOffset, levels } = config;
+  const [kFirst, kLast] = levelRange(0, 1, config);
   const next = new Map();
   const hasPrevious = new Set();
   const slot = new Map();
@@ -80,8 +83,8 @@ export default function traceContours(values, { aspect, nx, ny }, config) {
       corners[3] = values[c3];
       const lo = Math.min(corners[0], corners[1], corners[2], corners[3]);
       const hi = Math.max(corners[0], corners[1], corners[2], corners[3]);
-      const kLo = Math.floor(lo * levels - levelOffset) + 1;
-      const kHi = Math.floor(hi * levels - levelOffset);
+      const kLo = Math.max(Math.floor(lo * levels - levelOffset) + 1, kFirst);
+      const kHi = Math.min(Math.floor(hi * levels - levelOffset), kLast);
       // eslint-disable-next-line no-continue
       if (kLo > kHi) continue;
       const centre = (corners[0] + corners[1] + corners[2] + corners[3]) / 4;

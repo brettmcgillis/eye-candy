@@ -29,7 +29,13 @@ export {
   STYLES,
 } from '../isoLines/optionSpecs.mjs';
 
-export const RELIEF_STYLES = ['terraced', 'smooth', 'lines'];
+export const RELIEF_STYLES = [
+  'terraced',
+  'smooth',
+  'lines',
+  'tubes',
+  'extrudedRibbons',
+];
 export const WALL_MODES = ['solid', 'floating'];
 export const LINE_EXTRUDES = ['height', 'time'];
 export const MOTION_MODES = ['off', 'flow', 'build', 'rise'];
@@ -81,14 +87,14 @@ const FORM = {
     'form',
     [0.01, 0.08],
     num('form', 'Lines', 'Wall Height', 0.03, 0, 1, 0.001, {
-      help: 'How tall a contour wall stands, in frame heights',
+      help: 'Height above each contour level, in frame heights; tubes use Thickness as their diameter',
     })
   ),
   lineThickness: rolled(
     'form',
     [0.002, 0.008],
     num('form', 'Lines', 'Thickness', 0.004, 0.0005, 0.05, 0.0005, {
-      help: 'Contour wall thickness, in frame heights',
+      help: 'Ribbon thickness or tube diameter, in frame heights',
     })
   ),
   trailSlices: num('form', 'Trail', 'Slices', 24, 2, 64, 1, {
@@ -163,15 +169,21 @@ const STYLE = {
   style: {
     ...CONTOURS.style,
     choices: RELIEF_STYLES,
-    help: 'terraced: stacked bands; smooth: one continuous surface; lines: the contours alone',
-    choiceLabels: { lines: 'Lines', smooth: 'Smooth', terraced: 'Terraced' },
+    help: 'terraced: stacked bands; smooth: one continuous surface; lines: fixed-height ribbons; tubes: circular contours; extruded ribbons: ribbons extending to the ground',
+    choiceLabels: {
+      extrudedRibbons: 'Extruded Ribbons',
+      lines: 'Lines',
+      smooth: 'Smooth',
+      terraced: 'Terraced',
+      tubes: 'Tubes',
+    },
   },
 };
 
 // The relief plots the piece through each view's camera, hidden lines removed
 // and inked from the render's colours; the flat plot's pens and minimum
 // length are IsoLines'.
-const { svgMinLength, svgPens, ...SHARED } = sharedRender({
+const SHARED = sharedRender({
   facets: FACETS,
   name: 'iso-lines-relief',
 });
@@ -180,7 +192,9 @@ const SVG = {
   svg: standard.svg(
     'Write a plottable SVG per view: each level’s contour at its height, with the walls and surface the style draws, hidden lines removed'
   ),
-  svgOcclusion: standard.svgOcclusion('Drop lines hidden behind nearer terraces'),
+  svgOcclusion: standard.svgOcclusion(
+    'Drop lines hidden behind nearer terraces'
+  ),
 };
 
 export const RENDER_OPTIONS = {
@@ -192,7 +206,11 @@ export const RENDER_OPTIONS = {
   ...FORM,
   ...MOTION,
   ...RIG,
-  ...SHARED,
+  ...Object.fromEntries(
+    Object.entries(SHARED).filter(
+      ([key]) => !['svgMinLength', 'svgPens'].includes(key)
+    )
+  ),
   ...SVG,
   ...CAMERAS,
   ...standard.overlayOptions(),

@@ -1,5 +1,19 @@
 import * as THREE from 'three/webgpu';
 
+import { tubeTemplate } from './tube';
+
+export function createTubeTemplate() {
+  const { face, index, position } = tubeTemplate();
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute(
+    'position',
+    new THREE.Float32BufferAttribute(position, 3)
+  );
+  geometry.setAttribute('aFace', new THREE.Float32BufferAttribute(face, 1));
+  geometry.setIndex(index);
+  return geometry;
+}
+
 // x runs along a segment (0..1), z up a wall (0..1).
 export function createWallTemplate() {
   const geometry = new THREE.BufferGeometry();

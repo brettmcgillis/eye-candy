@@ -109,7 +109,9 @@ export function createShading() {
     return mix(mix(a, b, f.x), mix(c, d, f.x), f.y);
   };
 
-  const fieldAt = (du, dv) => bilinear('field', du, dv).x;
+  // Clamped after interpolating: the grid may hold values past 0..1, whose
+  // crossings of the end levels the bilinear then places exactly.
+  const fieldAt = (du, dv) => clamp(bilinear('field', du, dv).x, 0, 1);
 
   // The level colour at field value t, linear: the reference's cosine
   // palette, a gradients.json palette or a ramp; then toward the source's

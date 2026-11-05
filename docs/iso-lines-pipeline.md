@@ -54,7 +54,17 @@ real.
 
 `createField` averages four drivers by weight; a weight of 1 with the rest at
 0 solos one. One domain warp runs over all of them, then `fieldContrast`
-stretches the result about 0.5 and it is clamped to 0..1.
+stretches the result about 0.5.
+
+**The field is not clipped; readers clamp.** The stored grid may stray past
+0..1 (contrast above 1, a driver alone, the image's outer 2%), and every reader
+clamps what it samples _after_ interpolating: the shaders' `fieldAt`, the plot
+mirror and `traceContours`, which only traces levels inside 0..1. A clipped
+plateau holds no sub-cell position, so a contour at its edge (the top level
+when `levelOffset` is 0) lands exactly on grid nodes and draws a pixel
+staircase at any resolution; an unclipped grid places it by the bilinear like
+every other level. A blend still clips each driver so its average stays in
+0..1. `iso-lines:check` fails any level whose contour sits on grid nodes.
 
 `symmetry` (`none`, `horizontal` 2-way left/right, `vertical` 2-way top/bottom,
 `quad` 4-way) folds the sample point about the frame centre before the warp, so
@@ -79,6 +89,20 @@ mix of each lattice corner, so a grid costs about 2 ms. Texture nodes are
 copied when sampled, so `createShading` registers each one and swaps its
 `value` when the grid changes size.
 
+## Pixelated
+
+`pixels` (0 = off) turns the field into a grid of flat blocks: that many per
+frame height, each `PIXEL_BLOCK` (8) sample cells wide, every vertex of a
+block reading the field at the block's centre (`sampleGrid`'s `block`; the
+source colour is snapped the same way). `resolution` is ignored while it is
+on; the grid is `pixels · 8` rows. Nothing else changes — the shaders, the
+tracer and the plot all read the same bilinear grid, whose only gradient is
+the one cell between two blocks — so the contours step along block edges, a
+terraced relief reads as voxel towers, and an edge's roundness is a twelfth
+of a block. The two looks are separate paths, not ends of one slider: smooth
+is resolution-independent (low `resolution` gives soft blobs, never stairs),
+and pixelated sets its own size on purpose.
+
 ## Contours
 
 Level k sits at `(k + levelOffset) / levels`; band k is the field between
@@ -97,9 +121,9 @@ needs them; the plan SVG and the relief do (`createIsoBuilder().build(config,
 One plane, orthographic, edge to edge (the field takes the frame's aspect),
 unlit. Colours: `cosine` (the reference), a gradients.json `palette`, or a
 `ramp`; `imageColor` pulls toward the source's own colour. Line widths are
-output px (`setPixelRatio` scales them to the render). A field clamped flat
-sits exactly on a level, so lines are only drawn where the field has a
-gradient. The scene's only motion is `flow` (the drivers' speeds, scaled by
+output px (`setPixelRatio` scales them to the render). A field held flat
+past the top or bottom level draws no line inside the plateau, only at its
+edge. The scene's only motion is `flow` (the drivers' speeds, scaled by
 `timeScale`); its worker builds one field at a time and newer requests
 coalesce into the next build.
 

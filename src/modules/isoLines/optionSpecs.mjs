@@ -29,6 +29,10 @@ export const SHAPE_KINDS = [
 export const SYMMETRIES = ['none', 'horizontal', 'vertical', 'quad'];
 export const COLOR_MODES = ['cosine', 'palette', 'ramp'];
 export const MAX_RESOLUTION = 480;
+// A pixelated field is a grid of flat blocks this many sample cells wide, so
+// each edge between blocks falls inside one cell.
+export const PIXEL_BLOCK = 8;
+export const MAX_PIXELS = MAX_RESOLUTION / PIXEL_BLOCK;
 
 const driverWeight = (label, value, help) =>
   inFacet(
@@ -206,7 +210,10 @@ export const CONTOURS = {
     })
   ),
   resolution: num('contours', null, 'Resolution', 200, 40, MAX_RESOLUTION, 4, {
-    help: 'Field samples per frame height; contours are linear across a sample cell',
+    help: 'Field samples per frame height; contours are linear across a sample cell, so the lines stay smooth at any value',
+  }),
+  pixels: num('contours', null, 'Pixels', 0, 0, MAX_PIXELS, 1, {
+    help: 'Pixel blocks per frame height: the field becomes a grid of flat blocks and its contours step along their edges. 0 keeps it smooth; Resolution is ignored while pixelated',
   }),
 };
 
@@ -419,4 +426,5 @@ export const fieldKeysOf = (keysWhere) => [
   'imageInvert',
   'imageBlur',
   'resolution',
+  'pixels',
 ];

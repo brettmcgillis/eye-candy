@@ -14,6 +14,7 @@ const TRAIL_KEYS = [
   'levels',
   'levelOffset',
   'resolution',
+  'pixels',
   'trailSlices',
   'trailSeconds',
 ];
@@ -140,8 +141,8 @@ export default function createIsoBuilder() {
       config,
       { aspect, image = null, mode = null, time = 0, withLines = false }
     ) {
-      const { nx, ny } = gridSize(config, aspect);
-      const grid = { aspect, nx, ny };
+      const { block, nx, ny } = gridSize(config, aspect);
+      const grid = { aspect, block, nx, ny };
       const field = createField(config, { aspect, image });
       const values = sampleGrid(field, { ...grid, time });
       const colors = config.imageColor > 0 ? sampleColors(field, grid) : null;

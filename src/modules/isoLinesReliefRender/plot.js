@@ -5,44 +5,18 @@ import {
   traceContours,
 } from '@modules/isoLines';
 
+import { tubePlot } from './tube';
+
 const SURFACE_SUBDIVISION = 3;
 // The sheet's steep risers would crease along every grid edge; its contours
 // are drawn as lines, so only its boundary and silhouette remain.
 const NO_CREASES = 180;
 // A wall bends a little at every contour vertex; only a real turn is a crease.
 const WALL_CREASE = 60;
-// Marching squares leaves each contour with a cell-sized wobble where the
-// field is nearly flat. The plot blurs the field a little (binomial passes,
-// the border held) and builds everything from the blur — contours, caps,
-// walls, sheet and skirts — so every line lies on the surface it is cut by.
-const BLUR_PASSES = 2;
 // The sheet is planar between its vertices, so across a convex riser it sits
 // a hair above the contour standing on it, which would hide the line in
 // dashes: the line is raised this share of the relief.
 const SHEET_LIFT = 0.006;
-
-function blurred({ nx, ny, values }) {
-  const row = nx + 1;
-  let current = Float64Array.from(values);
-  for (let pass = 0; pass < BLUR_PASSES; pass += 1) {
-    const across = Float64Array.from(current);
-    for (let j = 0; j <= ny; j += 1) {
-      for (let i = 1; i < nx; i += 1) {
-        const o = j * row + i;
-        across[o] = (current[o - 1] + 2 * current[o] + current[o + 1]) / 4;
-      }
-    }
-    const down = Float64Array.from(across);
-    for (let j = 1; j < ny; j += 1) {
-      for (let i = 0; i <= nx; i += 1) {
-        const o = j * row + i;
-        down[o] = (across[o - row] + 2 * across[o] + across[o + row]) / 4;
-      }
-    }
-    current = down;
-  }
-  return current;
-}
 
 const EDGE_SIDES = [
   [-1, -1, 1, -1],
@@ -68,9 +42,12 @@ export default function plotParts(config, build) {
   const smooth = config.style === 'smooth';
   const terraced = config.style === 'terraced';
   const solid = terraced && config.wallMode === 'solid';
-  const trail = config.style === 'lines' && config.lineExtrude === 'time';
-  const values = trail ? build.values : blurred(build);
-  const contours = trail ? build.lines : traceContours(values, build, config);
+  const lineStyle = ['lines', 'tubes', 'extrudedRibbons'].includes(
+    config.style
+  );
+  const trail = lineStyle && config.lineExtrude === 'time';
+  const { values } = build;
+  const contours = build.lines ?? traceContours(values, build, config);
 
   // The field at a map point, bilinear over the grid exactly as the shaders
   // sample it.
@@ -89,7 +66,8 @@ export default function plotParts(config, build) {
     const b = values[j * row + i + 1];
     const c = values[(j + 1) * row + i];
     const d = values[(j + 1) * row + i + 1];
-    return (a + (b - a) * fx) * (1 - fy) + (c + (d - c) * fx) * fy;
+    const n = (a + (b - a) * fx) * (1 - fy) + (c + (d - c) * fx) * fy;
+    return Math.min(Math.max(n, 0), 1);
   }
 
   // A band's floor, plus on the smooth surface its own rise eased by x^p.
@@ -113,40 +91,6 @@ export default function plotParts(config, build) {
       if (closed) line.push(line[0]);
       return line;
     });
-  }
-
-  // A trail's slices, each segment aged to its height; consecutive segments
-  // that meet are chained back into lines.
-  function trailLines() {
-    const span = Math.max(config.trailSeconds * (config.trailSlices - 1), 1e-5);
-    const packs = [
-      build.segments,
-      ...build.trail.slices.map((s) => s.segments),
-    ];
-    const lines = [];
-    packs.forEach(({ count, data }) => {
-      let line = null;
-      let end = null;
-      for (let s = 0; s < count; s += 1) {
-        const o = s * 12;
-        const age = (build.time - data[o + 8]) / span;
-        if (age >= -1e-3 && age <= 1) {
-          const height = Math.min(Math.max(1 - age, 0), 1) * scale + lift;
-          const a = place(data[o], height, data[o + 1]);
-          const b = place(data[o + 2], height, data[o + 3]);
-          if (line && end[0] === a[0] && end[2] === a[2] && end[1] === a[1]) {
-            line.push(b);
-          } else {
-            line = [a, b];
-            lines.push(line);
-          }
-          end = b;
-        } else {
-          line = null;
-        }
-      }
-    });
-    return lines;
   }
 
   // A vertical ribbon along a contour from `low` to `high`.
@@ -194,12 +138,109 @@ export default function plotParts(config, build) {
     });
   }
 
-  // The thin walls of the lines style, as tall as the contour stands.
-  function lineRibbons() {
-    return contours.map((line) => {
-      const base = at(bandHeight(line.k, config));
-      return ribbon(line, base, base + lift);
-    });
+  // The lines style's ribbons, each segment a box exactly as the rig draws
+  // it: top and both sides mitred into its neighbours, plus an end face
+  // where a ribbon ends. Its underside is never drawn, so its foot is an open
+  // edge. `baseOf` gives a segment's foot, or null where it is not shown.
+  function ribbonBoxes({ count, data }, baseOf) {
+    const half = config.lineThickness;
+    const position = [];
+    const index = [];
+    const ends = new Map();
+    const keyOf = (x, y) => `${x},${y}`;
+    const mark = (x, y) =>
+      ends.set(keyOf(x, y), (ends.get(keyOf(x, y)) ?? 0) + 1);
+    for (let s = 0; s < count; s += 1) {
+      const o = s * 12;
+      mark(data[o], data[o + 1]);
+      mark(data[o + 2], data[o + 3]);
+    }
+    const quad = (corners, out) => {
+      const [a, b, , d] = corners;
+      const u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+      const v = [d[0] - a[0], d[1] - a[1], d[2] - a[2]];
+      const facing =
+        (u[1] * v[2] - u[2] * v[1]) * out[0] +
+        (u[2] * v[0] - u[0] * v[2]) * out[1] +
+        (u[0] * v[1] - u[1] * v[0]) * out[2];
+      const first = position.length / 3;
+      (facing >= 0 ? corners : [...corners].reverse()).forEach((c) =>
+        position.push(...c)
+      );
+      index.push(first, first + 1, first + 2, first, first + 2, first + 3);
+    };
+    for (let s = 0; s < count; s += 1) {
+      const o = s * 12;
+      const base = baseOf(data, o);
+      if (base !== null) {
+        const bottom = config.style === 'extrudedRibbons' ? 0 : base;
+        const section = (x, y, mx, my) => [
+          place(x + mx * half, bottom, y + my * half),
+          place(x + mx * half, base + lift, y + my * half),
+          place(x - mx * half, base + lift, y - my * half),
+          place(x - mx * half, bottom, y - my * half),
+        ];
+        const A = section(data[o], data[o + 1], data[o + 4], data[o + 5]);
+        const B = section(data[o + 2], data[o + 3], data[o + 6], data[o + 7]);
+        const mid = place(
+          (data[o] + data[o + 2]) / 2,
+          base + lift / 2,
+          (data[o + 1] + data[o + 3]) / 2
+        );
+        const outOf = (face) => {
+          const c = [0, 1, 2].map(
+            (k) => (face[0][k] + face[1][k] + face[2][k] + face[3][k]) / 4
+          );
+          return [c[0] - mid[0], c[1] - mid[1], c[2] - mid[2]];
+        };
+        [
+          [A[1], B[1], B[2], A[2]],
+          [A[0], B[0], B[1], A[1]],
+          [A[2], B[2], B[3], A[3]],
+        ].forEach((face) => quad(face, outOf(face)));
+        const along = place(
+          data[o + 2] - data[o],
+          0,
+          data[o + 3] - data[o + 1]
+        );
+        if (ends.get(keyOf(data[o], data[o + 1])) === 1) {
+          quad(
+            A,
+            along.map((v) => -v)
+          );
+        }
+        if (ends.get(keyOf(data[o + 2], data[o + 3])) === 1) quad(B, along);
+      }
+    }
+    const placed = Float64Array.from(position);
+    return {
+      boundaries: true,
+      creaseAngle: WALL_CREASE,
+      index: Uint32Array.from(index),
+      position: placed,
+      rest: placed,
+    };
+  }
+
+  const standing = (data, o) => at(data[o + 9]);
+  const contourMesh = (pack, baseOf) =>
+    config.style === 'tubes'
+      ? tubePlot(pack, config.lineThickness, baseOf)
+      : ribbonBoxes(pack, baseOf);
+
+  // A trail's boxes: each slice aged to its height, as `trailLines` does.
+  function trailBoxes() {
+    const span = Math.max(config.trailSeconds * (config.trailSlices - 1), 1e-5);
+    const aged = (data, o) => {
+      const age = (build.time - data[o + 8]) / span;
+      return age >= -1e-3 && age <= 1
+        ? Math.min(Math.max(1 - age, 0), 1) * scale
+        : null;
+    };
+    return [
+      build.segments,
+      ...build.trail.slices.map((slice) => slice.segments),
+    ].map((pack) => contourMesh(pack, aged));
   }
 
   // The outer walls round the domain, as tall as the band standing at their
@@ -284,8 +325,8 @@ export default function plotParts(config, build) {
     let lo = Infinity;
     let hi = -Infinity;
     values.forEach((v) => {
-      lo = Math.min(lo, v);
-      hi = Math.max(hi, v);
+      lo = Math.min(lo, Math.max(v, 0));
+      hi = Math.max(hi, Math.min(v, 1));
     });
     const position = [];
     const index = [];
@@ -329,9 +370,9 @@ export default function plotParts(config, build) {
             values[j * row + i + 1],
             values[(j + 1) * row + i + 1],
             values[(j + 1) * row + i],
-          ];
+          ].map((v) => Math.max(v, 0));
           const inside = f.filter((v) => v >= t).length;
-          if (inside === 4 && (!solid || Math.min(...f) < above)) {
+          if (inside === 4 && (!solid || Math.min(1, ...f) < above)) {
             if (run < 0) run = i;
           } else {
             close(i);
@@ -369,9 +410,15 @@ export default function plotParts(config, build) {
     };
   }
 
-  const lines = trail ? trailLines() : contourLines();
-  const meshes = [];
-  const occluders = [];
+  function lineRibbons() {
+    if (!lineStyle || !build.segments) return null;
+    return trail ? trailBoxes() : [contourMesh(build.segments, standing)];
+  }
+
+  const ribbons = lineRibbons();
+  const lines = ribbons ? [] : contourLines();
+  const meshes = ribbons ?? [];
+  const occluders = ribbons ? [...ribbons] : [];
   if (terraced) occluders.push(caps());
   if (solid) {
     const walls = wallMeshes();
@@ -390,6 +437,5 @@ export default function plotParts(config, build) {
     meshes.push(sheet);
     occluders.push(sheet);
   }
-  if (config.style === 'lines' && !trail) occluders.push(...lineRibbons());
   return { lines, meshes, occluders: occluders.length ? occluders : null };
 }

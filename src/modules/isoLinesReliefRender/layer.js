@@ -21,6 +21,19 @@ export default function createLayer({
   let material = null;
   let mesh = null;
 
+  let currentTemplate = template;
+
+  function buildGeometry() {
+    const next = currentTemplate.clone();
+    attributes.forEach((name, slot) => {
+      next.setAttribute(
+        name,
+        new THREE.InterleavedBufferAttribute(buffer, 4, slot * 4)
+      );
+    });
+    return next;
+  }
+
   function allocate(needed) {
     let next = Math.max(capacity, MIN_CAPACITY);
     while (next < needed) next *= 2;
@@ -31,18 +44,12 @@ export default function createLayer({
       geometry.dispose();
     }
     capacity = next;
-    geometry = template.clone();
     buffer = new THREE.InstancedInterleavedBuffer(
       new Float32Array(capacity * stride),
       stride
     );
     buffer.setUsage(THREE.DynamicDrawUsage);
-    attributes.forEach((name, slot) => {
-      geometry.setAttribute(
-        name,
-        new THREE.InterleavedBufferAttribute(buffer, 4, slot * 4)
-      );
-    });
+    geometry = buildGeometry();
     material = material ?? shared ?? buildMaterial();
     mesh = new THREE.Mesh(geometry, material);
     mesh.frustumCulled = false;
@@ -67,6 +74,21 @@ export default function createLayer({
       buffer.needsUpdate = true;
       buffer.clearUpdateRanges();
       buffer.addUpdateRange(0, Math.max(count, 1) * stride);
+      mesh.count = count;
+      mesh.visible = count > 0;
+    },
+
+    setTemplate(next) {
+      if (next === currentTemplate) return;
+      // Geometry disposal also releases its instance buffer.
+      const data = buffer.array;
+      const { count } = mesh;
+      currentTemplate = next;
+      group.remove(mesh);
+      geometry.dispose();
+      mesh = null;
+      allocate(count);
+      buffer.array.set(data);
       mesh.count = count;
       mesh.visible = count > 0;
     },

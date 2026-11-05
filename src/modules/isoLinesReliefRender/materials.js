@@ -174,7 +174,7 @@ export function createWallMaterial(s, roughness) {
 
 // A contour as a solid wall: a box along each segment, mitred into its
 // neighbours, standing at its level (or, in a trail, at its age).
-export function createBoxMaterial(s, roughness, { trail = false } = {}) {
+export function createBoxMaterial(s, form, roughness, { trail = false } = {}) {
   const { info, miter, seg } = segmentAttributes();
   const along = positionGeometry.x;
   const side = positionGeometry.y;
@@ -204,18 +204,24 @@ export function createBoxMaterial(s, roughness, { trail = false } = {}) {
   }
   const width = s.u.lineThickness.mul(0.5).mul(shown);
   const p = mix(a, b, along).add(m.mul(side).mul(width));
-  const z = base.add(up.mul(s.u.lineHeight).mul(s.u.rise).mul(shown));
+  const height = mix(s.u.lineHeight, s.u.lineThickness, form.tube);
+  const top = base.add(height.mul(s.u.rise).mul(shown));
+  const z = mix(base.mul(float(1).sub(form.grounded)), top, up);
 
-  const normal = select(
-    face.equal(0),
-    vec3(0, 0, 1),
+  const roundNormal = vec3(left.mul(side), up.mul(2).sub(1));
+  // Fragment-stage face selection with a varying changes the ribbon lighting.
+  const normal = varying(
     select(
-      face.equal(1),
-      vec3(left, 0),
+      face.equal(0),
+      mix(vec3(0, 0, 1), roundNormal, form.tube),
       select(
-        face.equal(2),
-        vec3(left.negate(), 0),
-        select(face.equal(3), vec3(dir.negate(), 0), vec3(dir, 0))
+        face.equal(1),
+        vec3(left, 0),
+        select(
+          face.equal(2),
+          vec3(left.negate(), 0),
+          select(face.equal(3), vec3(dir.negate(), 0), vec3(dir, 0))
+        )
       )
     )
   );

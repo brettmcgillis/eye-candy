@@ -18,6 +18,7 @@ import {
 } from '../src/modules/isoLines/renderOptions.mjs';
 import { createHeadlessRenderer, loadThree } from './lib/headlessWebgpu.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import presetKeys from './lib/presetKeys.mjs';
 import schemaControlCoverage from './lib/schemaControlCoverage.mjs';
 import checkWorkbenchPage from './lib/workbenchPage.mjs';
 
@@ -47,7 +48,7 @@ const ALLOWED_KERNEL_IMPORTS = new Set([
   '@utils/paletteStops',
 ]);
 // Keys the camera rig owns; a preset may carry them but the schema does not.
-const CAMERA_KEY = /^(camera|orbit|fixed|spline|operator)/u;
+const REGISTERED_PRESET_KEYS = await presetKeys('IsoLines');
 const DRIVERS = ['weightNoise', 'weightShape', 'weightImage', 'weightFocal'];
 
 const failures = [];
@@ -107,7 +108,7 @@ function checkPresets({ PRESETS: presets }) {
   const scene = new Set(SCENE_KEYS);
   Object.entries(presets).forEach(([name, preset]) => {
     Object.keys(preset)
-      .filter((key) => !scene.has(key) && !CAMERA_KEY.test(key))
+      .filter((key) => !scene.has(key) && !REGISTERED_PRESET_KEYS.has(key))
       .forEach((key) =>
         failures.push(
           `preset "${name}" sets "${key}", which renderOptions.mjs does not declare.`
@@ -189,6 +190,116 @@ function checkContours({ iso }) {
   check(
     again.values.every((v, i) => v === build.values[i]),
     'the same config built two different fields.'
+  );
+}
+
+// A contour on grid nodes is the field clipped flat at its level: the
+// crossing has no sub-cell position, so the line is a pixel staircase. Every
+// driver alone, at and above contrast 1, must trace every level off the nodes.
+function checkSmoothContours({ iso }) {
+  const aspect = 1.25;
+  const base = {
+    ...iso.sceneDefaults(),
+    levelOffset: 0,
+    levels: 12,
+    resolution: 120,
+  };
+  const solo = Object.fromEntries(DRIVERS.map((key) => [key, 0]));
+  const kinds = [
+    ['weightShape', { shapeKind: 'blobs' }],
+    ['weightShape', { shapeKind: 'radial' }],
+    ['weightFocal', { focalCount: 5, focalFalloff: 0.15 }],
+    ['weightNoise', {}],
+  ];
+  kinds.forEach(([key, extra]) => {
+    [1, 1.24, 2].forEach((fieldContrast) => {
+      const config = { ...base, ...solo, [key]: 1, ...extra, fieldContrast };
+      const label = `${key}${extra.shapeKind ? `:${extra.shapeKind}` : ''} at contrast ${fieldContrast}`;
+      const build = iso
+        .createIsoBuilder()
+        .build(config, { aspect, time: 1, withLines: true });
+      const perLevel = new Map();
+      build.lines.forEach(({ k, points }) => {
+        const entry = perLevel.get(k) ?? { on: 0, total: 0 };
+        for (let i = 0; i < points.length; i += 2) {
+          const gx = ((points[i] + aspect) / (2 * aspect)) * build.nx;
+          const gy = ((points[i + 1] + 1) / 2) * build.ny;
+          entry.total += 1;
+          if (
+            Math.abs(gx - Math.round(gx)) < 1e-4 &&
+            Math.abs(gy - Math.round(gy)) < 1e-4
+          ) {
+            entry.on += 1;
+          }
+        }
+        perLevel.set(k, entry);
+      });
+      perLevel.forEach(({ on, total }, k) => {
+        check(
+          total < 20 || on <= total * 0.02,
+          `${label}: level ${k} has ${on} of ${total} contour vertices on grid nodes, a clipped plateau edge.`
+        );
+      });
+    });
+  });
+}
+
+// A pixelated field is flat blocks: every vertex of a block reads one value,
+// and what contours there are run along block edges.
+function checkPixelated({ iso }) {
+  const aspect = 1.25;
+  const pixels = 12;
+  const config = {
+    ...iso.sceneDefaults(),
+    pixels,
+    weightNoise: 1,
+    weightShape: 0,
+  };
+  const build = iso
+    .createIsoBuilder()
+    .build(config, { aspect, time: 1, withLines: true });
+  const block = 8;
+  check(
+    build.ny === pixels * block && build.nx % block === 0,
+    `pixels ${pixels} made a ${build.nx} x ${build.ny} grid, not whole ${block}-cell blocks.`
+  );
+  const row = build.nx + 1;
+  let ragged = 0;
+  for (let by = 0; by < pixels; by += 1) {
+    for (let bx = 0; bx < build.nx / block; bx += 1) {
+      const first = build.values[by * block * row + bx * block];
+      for (let dj = 0; dj < block - 1; dj += 1) {
+        for (let di = 0; di < block - 1; di += 1) {
+          if (
+            build.values[(by * block + dj) * row + bx * block + di] !== first
+          ) {
+            ragged += 1;
+          }
+        }
+      }
+    }
+  }
+  check(ragged === 0, `${ragged} vertices differ from their pixel block.`);
+  let aligned = 0;
+  let total = 0;
+  build.lines.forEach(({ points }) => {
+    for (let i = 0; i + 3 < points.length; i += 2) {
+      const dx = Math.abs(points[i + 2] - points[i]);
+      const dy = Math.abs(points[i + 3] - points[i + 1]);
+      total += 1;
+      if (Math.min(dx, dy) < 1e-6) aligned += 1;
+    }
+  });
+  check(
+    total > 20 && aligned > total * 0.6,
+    `only ${aligned} of ${total} pixelated contour segments run along block edges.`
+  );
+  const smooth = iso
+    .createIsoBuilder()
+    .build({ ...config, pixels: 0 }, { aspect, time: 1 });
+  check(
+    smooth.nx !== build.nx || smooth.ny !== build.ny,
+    'pixels 0 did not return to the resolution grid.'
   );
 }
 
@@ -412,6 +523,8 @@ async function main() {
   checkRigDefaults(barrels);
   checkPresets(loaded[PRESETS]);
   checkContours(barrels);
+  checkSmoothContours(barrels);
+  checkPixelated(barrels);
   checkDrivers(barrels);
   checkRolls(barrels);
   checkSvg(barrels);

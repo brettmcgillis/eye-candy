@@ -3,11 +3,12 @@ import { fbm2 } from '@utils/noise2d';
 
 import { coverUv, prepareImage } from './image';
 import { referencePlane } from './noise';
+import { PIXEL_BLOCK } from './optionSpecs.mjs';
 
 const TAU = Math.PI * 2;
 const clamp01 = (v) => Math.max(0, Math.min(1, v));
 
-function shapeDriver(config, aspect) {
+function shapeDriver(config, aspect, edge) {
   const rng = createRng(`shape:${config.fieldSeed}`);
   const seed = Math.round(config.fieldSeed) + 1;
   const scale = config.shapeScale;
@@ -39,11 +40,11 @@ function shapeDriver(config, aspect) {
         const d = Math.hypot(u - x, v - y);
         sum += Math.exp(-((d / b.r) ** 2));
       });
-      return clamp01(sum);
+      return edge(sum);
     },
     fbm: (u, v, t) => noise(u + t, v),
     radial: (u, v, t) =>
-      clamp01(
+      edge(
         Math.hypot(u - center[0], v - center[1]) / reach +
           0.1 * Math.sin(t * TAU)
       ),
@@ -59,7 +60,7 @@ function shapeDriver(config, aspect) {
   return (u, v, t) => kind(u, v, t * config.shapeSpeed);
 }
 
-function focalDriver(config, aspect) {
+function focalDriver(config, aspect, edge) {
   const rng = createRng(`focal:${config.fieldSeed}`);
   const points = Array.from({ length: Math.round(config.focalCount) }, () => ({
     ax: 0.1 + rng() * 0.2,
@@ -80,7 +81,7 @@ function focalDriver(config, aspect) {
       const d = Math.hypot(u - x, v - y) / falloff;
       sum += Math.exp(-d * d);
     });
-    return clamp01(sum);
+    return edge(sum);
   };
 }
 
@@ -100,8 +101,10 @@ function noiseOffset(seed) {
   return [rng() * 997, rng() * 997, rng() * 997];
 }
 
-// The field as value(u, v, t) in 0..1, u across 0..aspect and v up 0..1 in
-// frame heights. Each driver gives 0..1 and they average by weight, so a
+// The field as value(u, v, t), u across 0..aspect and v up 0..1 in frame
+// heights, meant for 0..1 but not clipped to it: every reader clamps what it
+// samples (after interpolating), so a level at the very top or bottom still
+// finds its crossing. Each driver gives 0..1 and they average by weight, so a
 // weight of 1 with the rest at 0 solos it.
 export default function createField(config, { aspect, image = null }) {
   const [ox, oy, oz] = noiseOffset(config.fieldSeed);
@@ -111,8 +114,6 @@ export default function createField(config, { aspect, image = null }) {
       ? preparedOf(image, config.imageBlur)
       : null;
   const toImage = prepared ? coverUv(aspect, prepared.aspect) : null;
-  const shape = shapeDriver(config, aspect);
-  const focal = focalDriver(config, aspect);
   const weights = [
     config.weightNoise,
     config.weightShape,
@@ -120,6 +121,12 @@ export default function createField(config, { aspect, image = null }) {
     config.weightFocal,
   ];
   const total = weights.reduce((sum, w) => sum + w, 0);
+  // A blend clips each driver so the average stays in 0..1; a driver alone
+  // is let past it, since a clipped plateau holds no sub-cell position for a
+  // contour at its edge. Consumers clamp what they read, after interpolating.
+  const edge = weights.filter((w) => w > 0).length > 1 ? clamp01 : (v) => v;
+  const shape = shapeDriver(config, aspect, edge);
+  const focal = focalDriver(config, aspect, edge);
   const warp = config.warpAmount / config.warpScale;
   const ws = config.warpScale;
   const contrast = config.fieldContrast;
@@ -150,11 +157,11 @@ export default function createField(config, { aspect, image = null }) {
       if (weights[1] > 0) sum += weights[1] * shape(u, v, t);
       if (weights[2] > 0) {
         const luma = prepared.luma(...toImage(u, v));
-        sum += weights[2] * (config.imageInvert ? 1 - luma : luma);
+        sum += weights[2] * edge(config.imageInvert ? 1 - luma : luma);
       }
       if (weights[3] > 0) sum += weights[3] * focal(u, v, t);
       const f = total > 0 ? sum / total : 0.5;
-      return clamp01(0.5 + (f - 0.5) * contrast);
+      return 0.5 + (f - 0.5) * contrast;
     };
   }
 
@@ -167,33 +174,59 @@ export default function createField(config, { aspect, image = null }) {
   };
 }
 
+// The grid's vertices: `pixels` blocks per frame height when pixelated,
+// else `resolution` samples. `block` is the cells per block, 1 when smooth.
 export function gridSize(config, aspect) {
+  const pixels = Math.round(config.pixels ?? 0);
+  if (pixels > 0) {
+    return {
+      block: PIXEL_BLOCK,
+      nx: Math.max(1, Math.round(pixels * aspect)) * PIXEL_BLOCK,
+      ny: pixels * PIXEL_BLOCK,
+    };
+  }
   const ny = Math.max(2, Math.round(config.resolution));
-  return { nx: Math.max(2, Math.round(ny * aspect)), ny };
+  return { block: 1, nx: Math.max(2, Math.round(ny * aspect)), ny };
+}
+
+// The vertex a block is read at: the middle of its flat run, which is every
+// vertex of the block but the last block's extra one at the grid's end.
+function blockCentre(i, n, block) {
+  if (block <= 1) return i;
+  const last = n / block - 1;
+  const b = Math.min(Math.floor(i / block), last);
+  const first = b * block;
+  return (first + (b === last ? n : first + block - 1)) / 2;
 }
 
 // The field sampled at the grid's vertices, row-major from the bottom row;
 // vertex (i, j) sits at u = aspect·i/nx, v = j/ny.
-export function sampleGrid(field, { aspect, nx, ny, time }) {
+export function sampleGrid(field, { aspect, block = 1, nx, ny, time }) {
   const value = field.at(time);
   const values = new Float32Array((nx + 1) * (ny + 1));
   for (let j = 0; j <= ny; j += 1) {
-    const v = j / ny;
+    const v = blockCentre(j, ny, block) / ny;
     for (let i = 0; i <= nx; i += 1) {
-      values[j * (nx + 1) + i] = value((aspect * i) / nx, v);
+      values[j * (nx + 1) + i] = value(
+        (aspect * blockCentre(i, nx, block)) / nx,
+        v
+      );
     }
   }
   return values;
 }
 
 // The source's colour at each vertex, RGBA, or null without a source.
-export function sampleColors(field, { aspect, nx, ny }) {
+export function sampleColors(field, { aspect, block = 1, nx, ny }) {
   if (!field.color) return null;
   const rgba = new Float32Array((nx + 1) * (ny + 1) * 4);
   for (let j = 0; j <= ny; j += 1) {
     for (let i = 0; i <= nx; i += 1) {
       const o = (j * (nx + 1) + i) * 4;
-      const [r, g, b] = field.color((aspect * i) / nx, j / ny);
+      const [r, g, b] = field.color(
+        (aspect * blockCentre(i, nx, block)) / nx,
+        blockCentre(j, ny, block) / ny
+      );
       rgba[o] = r;
       rgba[o + 1] = g;
       rgba[o + 2] = b;

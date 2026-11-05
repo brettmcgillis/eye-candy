@@ -18,6 +18,7 @@ import {
 } from '../src/modules/isoLinesRelief/renderOptions.mjs';
 import { createHeadlessRenderer, loadThree } from './lib/headlessWebgpu.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
+import presetKeys from './lib/presetKeys.mjs';
 import schemaControlCoverage from './lib/schemaControlCoverage.mjs';
 import checkWorkbenchPage from './lib/workbenchPage.mjs';
 
@@ -44,7 +45,7 @@ const PAGE_FIELDS = path.join(
   'src/dev/tools/isoLinesRelief/IsoLinesReliefWorkbenchPage.jsx'
 );
 // Keys the camera rig owns; a preset may carry them but the schema does not.
-const CAMERA_KEY = /^(camera|orbit|fixed|spline|operator)/u;
+const REGISTERED_PRESET_KEYS = await presetKeys('IsoLinesRelief');
 const DRIVERS = ['weightNoise', 'weightShape', 'weightImage', 'weightFocal'];
 
 const failures = [];
@@ -87,7 +88,7 @@ function checkPresets({ PRESETS: presets }) {
   const scene = new Set(SCENE_KEYS);
   Object.entries(presets).forEach(([name, preset]) => {
     Object.keys(preset)
-      .filter((key) => !scene.has(key) && !CAMERA_KEY.test(key))
+      .filter((key) => !scene.has(key) && !REGISTERED_PRESET_KEYS.has(key))
       .forEach((key) =>
         failures.push(
           `preset "${name}" sets "${key}", which renderOptions.mjs does not declare.`
@@ -123,6 +124,10 @@ function checkGeometry({ iso, relief }) {
     [{ style: 'smooth' }, null],
     [{ lineExtrude: 'height', style: 'lines' }, 'lines'],
     [{ lineExtrude: 'time', style: 'lines' }, 'trail'],
+    ...['tubes', 'extrudedRibbons'].flatMap((style) => [
+      [{ lineExtrude: 'height', style }, 'lines'],
+      [{ lineExtrude: 'time', style }, 'trail'],
+    ]),
   ];
   modes.forEach(([extra, expected]) => {
     const config = { ...base, ...extra };
@@ -256,6 +261,11 @@ async function checkRender({ iso, look, relief }, THREE) {
     { style: 'smooth', terraceSharpness: 0.9 },
     { lineExtrude: 'height', style: 'lines' },
     { lineExtrude: 'time', style: 'lines' },
+    ...['tubes', 'extrudedRibbons'].flatMap((style) => [
+      { lineExtrude: 'height', lineThickness: 0.02, style },
+      { lineExtrude: 'time', lineThickness: 0.02, style },
+    ]),
+    { style: 'lines' },
   ];
   // eslint-disable-next-line no-restricted-syntax
   for (const extra of cases) {

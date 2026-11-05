@@ -17,11 +17,15 @@ import plotParts from './plot';
 import ISO_LINES_RELIEF_POST from './post';
 import createReliefRig from './rig';
 
+// A light render's inks are drawn no lighter than this on the white page.
+const PAPER_INK_LUMA = 0.45;
+
 // The sheet steps at grid resolution along a steep rim, so the plot spans
 // the steps (output px) and drops the mesh-edge debris where a chain meets
 // the outline.
 const PLOT_TUNING = {
   contourTolerance: 2,
+  inkLuma: PAPER_INK_LUMA,
   minLength: 14,
   outlineTolerance: 1.5,
 };
@@ -29,7 +33,11 @@ const PLOT_TUNING = {
 // With exact occlusion the outline is drawn from the meshes' own edges, and
 // the sheet's occluding contours (which follow its cells) are straightened
 // to the stroke they trace (output px).
-const EXACT_TUNING = { contourTolerance: 1.6, silhouette: false };
+const EXACT_TUNING = {
+  contourTolerance: 1.6,
+  inkLuma: PAPER_INK_LUMA,
+  silhouette: false,
+};
 
 export function rollArgs({ options, typed }) {
   const scene = new Set(SCENE_KEYS);

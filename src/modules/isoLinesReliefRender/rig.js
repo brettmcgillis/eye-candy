@@ -11,6 +11,7 @@ import {
   createBoxTemplate,
   createPlane,
   createSkirts,
+  createTubeTemplate,
   createWallTemplate,
 } from './geometry';
 import createLayer from './layer';
@@ -39,7 +40,12 @@ export default function createReliefRig() {
   const s = createShading();
   const roughness = uniform(0.85);
   const kMin = uniform(0);
-  const form = { sharpness: uniform(0), smooth: uniform(0) };
+  const form = {
+    grounded: uniform(0),
+    sharpness: uniform(0),
+    smooth: uniform(0),
+    tube: uniform(0),
+  };
   const groundColor = uniform(new THREE.Color('#101218'));
 
   const group = new THREE.Group();
@@ -87,13 +93,15 @@ export default function createReliefRig() {
     group: map,
   });
   const boxTemplate = createBoxTemplate();
+  const tubeTemplate = createTubeTemplate();
+  let lineTemplate = boxTemplate;
   const boxes = createLayer({
     attributes: SEGMENT_ATTRIBUTES,
-    buildMaterial: () => createBoxMaterial(s, roughness),
+    buildMaterial: () => createBoxMaterial(s, form, roughness),
     geometry: boxTemplate,
     group: map,
   });
-  const trailMaterial = createBoxMaterial(s, roughness, { trail: true });
+  const trailMaterial = createBoxMaterial(s, form, roughness, { trail: true });
   const head = createLayer({
     attributes: SEGMENT_ATTRIBUTES,
     geometry: boxTemplate,
@@ -156,9 +164,15 @@ export default function createReliefRig() {
     const smooth = config.style === 'smooth';
     const solid = terraced && config.wallMode === 'solid';
     form.smooth.value = smooth ? 1 : 0;
+    form.tube.value = config.style === 'tubes' ? 1 : 0;
+    form.grounded.value = config.style === 'extrudedRibbons' ? 1 : 0;
+    lineTemplate = form.tube.value ? tubeTemplate : boxTemplate;
+    [boxes, head, ...slices.values()].forEach((layer) =>
+      layer.setTemplate(lineTemplate)
+    );
     form.sharpness.value = config.terraceSharpness;
     surface.visible = smooth;
-    const trail = !terraced && config.lineExtrude === 'time';
+    const trail = !terraced && !smooth && config.lineExtrude === 'time';
     layers.visible = terraced;
     skirts.visible = solid || smooth;
     if (!solid) walls.clear();
@@ -223,7 +237,7 @@ export default function createReliefRig() {
           if (slices.has(tick)) return;
           const layer = createLayer({
             attributes: SEGMENT_ATTRIBUTES,
-            geometry: boxTemplate,
+            geometry: lineTemplate,
             group: map,
             material: trailMaterial,
           });
@@ -275,6 +289,7 @@ export default function createReliefRig() {
       clearSlices();
       [walls, boxes, head].forEach((layer) => layer.dispose());
       boxTemplate.dispose();
+      tubeTemplate.dispose();
       trailMaterial.dispose();
       [layers, skirts, ground, surface].forEach((mesh) => {
         mesh.geometry.dispose();

@@ -54,6 +54,12 @@ terraceSharpness)`: 0 is the field itself, and toward 1 each band flattens
   over `trailSlices`, fading toward the background. A slice is traced once at
   its own tick and handed over once; the rig ages it on the GPU from
   `setTime`, so a live webcam's trail is the history of what it saw.
+- **tubes**: the same mitred contours with a circular cross section.
+  `lineThickness` is their diameter; each tube rests at its contour level
+  (or its age in a time trail). `lineHeight` does not affect tubes.
+- **extrudedRibbons**: the lines style with its top at the same height,
+  extending all the way down to the ground instead of having a fixed-height
+  wall. Both height and time extrusion work as for lines.
 - One shadowed key light (`lightAzimuth`, `lightElevation`) and a hemisphere
   fill; a ground plane takes the shadows.
 
@@ -76,10 +82,19 @@ terraceSharpness)`: 0 is the field itself, and toward 1 each band flattens
   through that view's camera as hidden-line line work (`svgOcclusion`), inked
   from the render's colours. Each level's contour stands at its height; the
   style adds what the scene draws — terrace walls and outer skirts (solid),
-  the displaced sheet (smooth), the contours lifted by `lineHeight` (lines),
-  the aged slices (time). `plotParts` in `isoLinesReliefRender/plot.js` is the
-  CPU mirror of the shaders' heights, at rest (rise and build off). The flat
-  plan plot is IsoLinesCLI's.
+  the displaced sheet (smooth), real box ribbons for lines and extrudedRibbons, and round tubes for tubes (each segment's
+  top, both sides and end faces as the rig draws them, so a ribbon shows its
+  edges, its foot and its ends; a time trail's slices likewise, which is slow
+  — about a minute a piece). `plotParts` in `isoLinesReliefRender/plot.js` is the
+  CPU mirror of the shaders' heights, at rest (rise and build off), built from
+  the build's own field and contour lines with nothing smoothed, so the plot
+  is the same object as the still (the exact path cuts against the solid:
+  terrace caps, walls, skirts, the sheet). The sheet is planar between its
+  vertices and sits a hair above the contours standing on it, so smooth
+  contours and the rim are raised `SHEET_LIFT` (0.6% of the relief) to stay
+  unbroken. The flat plan plot is IsoLinesCLI's. `pixels` plots as the voxel
+  towers it renders as. A plot's inks are drawn no lighter than
+  `PAPER_INK_LUMA` (0.45) so a pale render still shows on white.
 - **Darkroom**: `techniques/isoLinesRelief`.
 
 ## Definition of done

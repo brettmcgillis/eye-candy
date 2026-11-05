@@ -1,7 +1,12 @@
 // The piece's extent in map units (x, y across the frame, z up; a frame
 // height is 2), for framing and the shadow camera.
 export default function boundsOf(config, aspect) {
-  const lift = config.style === 'lines' ? config.lineHeight : 0;
+  let lift = 0;
+  if (config.style === 'lines' || config.style === 'extrudedRibbons') {
+    lift = config.lineHeight;
+  } else if (config.style === 'tubes') {
+    lift = config.lineThickness;
+  }
   return {
     max: [aspect, 1, 2 * (config.relief + lift)],
     min: [-aspect, -1, 0],

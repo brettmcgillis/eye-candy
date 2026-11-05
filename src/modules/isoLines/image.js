@@ -32,8 +32,9 @@ function boxBlur(src, w, h, radius) {
 
 // The source as luma (over white, so a cut-out carried by alpha still reads)
 // stretched between its own 2nd and 98th percentiles, so a flat webcam frame
-// still spans the full range of levels; blurred, since contours of raw
-// pixels fray; and colour. Sampled bilinearly in image uv.
+// still spans the full range of levels (the outer 2% runs past 0..1, left to
+// the field to clip); blurred, since contours of raw pixels fray; and colour.
+// Sampled bilinearly in image uv.
 export function prepareImage({ channels = 4, data, height, width }, blur = 0) {
   const scale = Math.min(1, FIELD_MAX / Math.max(width, height));
   const w = Math.max(2, Math.round(width * scale));
@@ -60,7 +61,7 @@ export function prepareImage({ channels = 4, data, height, width }, blur = 0) {
   const high = sorted[Math.floor(sorted.length * 0.98)];
   const range = Math.max(high - low, 0.05);
   for (let i = 0; i < luma.length; i += 1) {
-    luma[i] = Math.min(Math.max((luma[i] - low) / range, 0), 1);
+    luma[i] = (luma[i] - low) / range;
   }
 
   const sample = (grid, stride, u, v, c = 0) => {

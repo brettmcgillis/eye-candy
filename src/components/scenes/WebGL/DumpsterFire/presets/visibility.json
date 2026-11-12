@@ -1,7 +1,4 @@
 {
-  "public": [
-    "Brick Blaster",
-    "Default"
-  ],
+  "public": ["Brick Blaster", "Default"],
   "private": []
 }

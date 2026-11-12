@@ -1,8 +1,4 @@
 {
-  "public": [
-    "Default",
-    "FourtyFive",
-    "Gradient Scan"
-  ],
+  "public": ["Default", "FourtyFive", "Gradient Scan"],
   "private": []
 }

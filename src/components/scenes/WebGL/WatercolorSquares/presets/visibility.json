@@ -1,7 +1,4 @@
 {
-  "public": [
-    "Blue",
-    "Red"
-  ],
+  "public": ["Blue", "Red"],
   "private": []
 }

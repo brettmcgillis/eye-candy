@@ -1,7 +1,4 @@
 {
-  "public": [
-    "Enlightened",
-    "Extinguished"
-  ],
+  "public": ["Enlightened", "Extinguished"],
   "private": []
 }

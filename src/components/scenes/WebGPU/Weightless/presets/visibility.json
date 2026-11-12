@@ -1,7 +1,4 @@
 {
-  "public": [
-    "Default",
-    "Sketchbook"
-  ],
+  "public": ["Default", "Sketchbook"],
   "private": []
 }

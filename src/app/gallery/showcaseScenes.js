@@ -83,7 +83,6 @@ function toShowcaseScenes() {
           byline: bylines[`${dir}/byline.md`]?.trim() || entry.byline || null,
           linkDisabled: entry.galleryLink === false,
           path: getScenePath('showcase', entry.route ?? entry.id),
-          publicPresets,
           screenshots: getScreenshots(dir, thumbnail, publicPresets),
           thumbnail,
         });

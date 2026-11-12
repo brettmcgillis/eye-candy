@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
 
 import useDocumentTitle from '../scaffold/hooks/useDocumentTitle';
-import { Loader22 } from '../scaffold/loader/loaders';
+import { getLoader } from '../scaffold/loader/loaders';
 import './Gallery.css';
 import GalleryModal from './GalleryModal';
 import SHOWCASE_SCENES from './showcaseScenes';
+
+const BrandLoader = getLoader('figureEight', 'solid');
 
 const HOMEPAGE_URL = 'https://brettmcgillis.github.io/';
 
@@ -17,7 +19,7 @@ export default function Gallery() {
       <header className="gallery__header">
         <div className="gallery__brand">
           <div className="gallery__loader" aria-hidden="true">
-            <Loader22 />
+            <BrandLoader />
           </div>
           <div>
             <h1>Eye Candy</h1>

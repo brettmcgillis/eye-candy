@@ -1,8 +1,4 @@
 {
-  "public": [
-    "Default",
-    "Mondrian",
-    "Trixelate"
-  ],
+  "public": ["Default", "Mondrian", "Trixelate"],
   "private": []
 }

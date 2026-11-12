@@ -1,8 +1,4 @@
 {
-  "public": [
-    "Autumn",
-    "Spring",
-    "Surrender"
-  ],
+  "public": ["Autumn", "Spring", "Surrender"],
   "private": []
 }

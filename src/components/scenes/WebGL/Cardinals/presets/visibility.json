@@ -1,8 +1,4 @@
 {
-  "public": [
-    "Bluejays",
-    "Cardinals",
-    "Magpies"
-  ],
+  "public": ["Bluejays", "Cardinals", "Magpies"],
   "private": []
 }

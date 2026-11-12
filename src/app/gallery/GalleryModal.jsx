@@ -14,11 +14,10 @@ function BylineLink({ href, title, children }) {
 
 const BYLINE_COMPONENTS = { a: BylineLink };
 
-function getPresetLink(scene, preset) {
-  return {
-    pathname: scene.path,
-    search: `?${new URLSearchParams({ preset })}`,
-  };
+function getSceneLink(scene, preset) {
+  return preset
+    ? { pathname: scene.path, search: `?${new URLSearchParams({ preset })}` }
+    : scene.path;
 }
 
 function Screenshots({ current, index, onSelect, scene }) {
@@ -28,45 +27,23 @@ function Screenshots({ current, index, onSelect, scene }) {
     return <div className="gallery-modal__placeholder">[ no thumbnail ]</div>;
   }
 
-  const image = current.video ? (
-    <video
-      key={current.src}
-      aria-label={current.caption || scene.label}
-      autoPlay
-      loop
-      muted
-      playsInline
-      src={current.src}
-    />
-  ) : (
-    <img src={current.src} alt={current.caption || scene.label} />
-  );
-  const linked = current.preset && !scene.linkDisabled;
-
   return (
     <>
       <figure className="gallery-modal__figure">
-        {linked ? (
-          <Link
-            className="gallery-modal__figure-link"
-            to={getPresetLink(scene, current.preset)}
-            title={`Open ${scene.label} at "${current.preset}"`}
-          >
-            {image}
-          </Link>
+        {current.video ? (
+          <video
+            key={current.src}
+            aria-label={current.caption || scene.label}
+            autoPlay
+            loop
+            muted
+            playsInline
+            src={current.src}
+          />
         ) : (
-          image
+          <img src={current.src} alt={current.caption || scene.label} />
         )}
-        {(current.caption || linked) && (
-          <figcaption>
-            {current.caption}
-            {linked && (
-              <span className="gallery-modal__preset-tag">
-                {current.preset}
-              </span>
-            )}
-          </figcaption>
-        )}
+        {current.caption && <figcaption>{current.caption}</figcaption>}
       </figure>
       {shots.length > 1 && (
         <ul className="gallery-modal__strip">
@@ -92,27 +69,9 @@ function Screenshots({ current, index, onSelect, scene }) {
   );
 }
 
-function PresetLinks({ scene }) {
-  if (scene.linkDisabled || !scene.publicPresets.length) return null;
-
-  return (
-    <div className="gallery-modal__presets">
-      <h3>Presets</h3>
-      <ul>
-        {scene.publicPresets.map((preset) => (
-          <li key={preset}>
-            <Link to={getPresetLink(scene, preset)}>{preset}</Link>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
 function ScenePanel({ close, scene }) {
   const [index, setIndex] = useState(0);
   const current = scene.screenshots[index] ?? scene.screenshots[0];
-  const currentPreset = scene.linkDisabled ? null : current?.preset;
 
   return (
     <div className="gallery-modal__panel">
@@ -149,28 +108,13 @@ function ScenePanel({ close, scene }) {
             </ReactMarkdown>
           </div>
         )}
-        <PresetLinks scene={scene} />
         {!scene.linkDisabled && (
-          <div className="gallery-modal__links">
-            {currentPreset && (
-              <Link
-                to={getPresetLink(scene, currentPreset)}
-                className="gallery-button"
-              >
-                Open {currentPreset} ↗
-              </Link>
-            )}
-            <Link
-              to={scene.path}
-              className={
-                currentPreset
-                  ? 'gallery-button gallery-button--quiet'
-                  : 'gallery-button'
-              }
-            >
-              Open the scene ↗
-            </Link>
-          </div>
+          <Link
+            to={getSceneLink(scene, current?.preset)}
+            className="gallery-button gallery-modal__open"
+          >
+            Open scene ↗
+          </Link>
         )}
       </div>
     </div>

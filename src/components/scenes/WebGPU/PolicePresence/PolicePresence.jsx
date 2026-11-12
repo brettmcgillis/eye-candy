@@ -1,20 +1,19 @@
-import React, { memo, useMemo } from 'react';
+import React, { memo } from 'react';
 
-import PoliceCruiser from '@elements/PoliceCruiser/PoliceCruiser';
-import SplineSimFire from '@elements/SimFire/SplineSimFire';
-import { fireConfig } from '@elements/SimFire/simFireControls';
 import useRenderScale from '@hooks/useRenderScale';
 import useSceneBackdrop from '@hooks/useSceneBackdrop';
 import { CameraRig } from '@modules/cameraRig';
 import { LightingRig } from '@modules/lightingRig';
-import Bloom from '@postprocessing/WebGPU/bloom/Bloom';
 
+import CharredCruiser from './components/CharredCruiser';
 import Cinderblocks from './components/Cinderblocks';
 import CruiserLights from './components/CruiserLights';
+import Embers from './components/Embers';
+import FireLights from './components/FireLights';
 import Ground from './components/Ground';
-import SmokePlume from './components/SmokePlume';
+import PostStack from './components/PostStack';
+import useFireVolume from './hooks/useFireVolume';
 import useSceneControls from './hooks/useSceneControls';
-import { FIRE_SPLINES, litSplines } from './utils/fire';
 
 function PolicePresence() {
   const config = useSceneControls();
@@ -26,46 +25,30 @@ function PolicePresence() {
     fogFar: config.fogEnabled ? config.fogFar : 1e6,
     fogNear: config.fogEnabled ? config.fogNear : 1e6,
   });
-
-  const lit = FIRE_SPLINES.map(({ key }) => config[key]).join();
-  const fireSplines = useMemo(() => litSplines(config), [lit]);
-  const fire = {
-    ...fireConfig(config),
-    cutoff: config.fireCutoff,
-    flameOpacity: config.fireFlameOpacity,
-    skipBelow: config.fireSkipBelow,
-    sootColor: config.fireSootColor,
-    stepLength: config.fireStepLength,
-  };
+  const volume = useFireVolume(config);
+  const burning = config.plumeVisible && volume.lit;
 
   return (
     <>
       <CameraRig camera={config.camera} />
       <LightingRig lighting={config.lighting} />
 
-      <PoliceCruiser showTires={config.showTires} />
+      <CharredCruiser config={config} />
       {config.showCinderblocks ? <Cinderblocks config={config} /> : null}
-      {config.floorVisible ? (
-        <Ground
-          color={config.floorColor}
-          roughness={config.floorRoughness}
-          size={config.floorSize}
-        />
-      ) : null}
+      {config.floorVisible ? <Ground config={config} /> : null}
       <CruiserLights config={config} />
+      {burning ? <FireLights config={config} /> : null}
+      {burning && config.emberVisible ? <Embers config={config} /> : null}
 
-      {config.fireVisible && fireSplines.length ? (
-        <SplineSimFire fire={fire} splines={fireSplines} />
-      ) : null}
-      {config.plumeVisible ? <SmokePlume config={config} /> : null}
-
-      {config.bloomEnabled ? (
-        <Bloom
-          radius={config.bloomRadius}
-          strength={config.bloomStrength}
-          threshold={config.bloomThreshold}
-        />
-      ) : null}
+      <PostStack
+        bloom={{
+          enabled: config.bloomEnabled,
+          radius: config.bloomRadius,
+          strength: config.bloomStrength,
+          threshold: config.bloomThreshold,
+        }}
+        volume={config.plumeVisible ? volume : null}
+      />
     </>
   );
 }

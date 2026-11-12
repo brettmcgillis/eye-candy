@@ -1,8 +1,4 @@
 {
-  "public": [
-    "Default",
-    "Heavy Rust",
-    "Polished Bronze"
-  ],
+  "public": ["Default", "Heavy Rust", "Polished Bronze"],
   "private": []
 }

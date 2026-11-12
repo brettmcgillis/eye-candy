@@ -250,10 +250,6 @@
       "text": "Cloud chamber"
     },
     {
-      "id": "idea-1793808758440-vh2dua",
-      "text": "Could we do a 3d, colorful version of this style of flow field?\nhttps://turtletoy.net/turtle/36d793188c"
-    },
-    {
       "id": "idea-1793907850684-bb7vtu",
       "text": "space packing with meshes. objects created from contrasting componets.\n- tree made of trash\n- animal made of trash"
     }
@@ -281,6 +277,7 @@
     "webgpu:birdsArentReal::Surveillance State": true,
     "webgpu:burningAtBothEnds::Enlightened": true,
     "webgpu:burningAtBothEnds::Extinguished": true,
+    "webgpu:controlPanel::Grand Tour": true,
     "webgpu:crossTalk::CloudConnected": true,
     "webgpu:crossTalk::Waterworks": true,
     "webgpu:exhibitA::Kleinian Walk": false,

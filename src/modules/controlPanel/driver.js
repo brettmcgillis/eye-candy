@@ -1,13 +1,8 @@
-import {
-  PANEL_KEYS,
-  PATCH_KEYS,
-  SEQUENCE_KEYS,
-  STILL_TIME,
-  buildPanel,
-  createPanelSession,
-  createPanelShow,
-  fitPanel,
-} from '@modules/controlPanel';
+import buildPanel from './panel';
+import { STILL_TIME } from './pose';
+import { PANEL_KEYS, PATCH_KEYS, SEQUENCE_KEYS } from './renderOptions.mjs';
+import createPanelSession from './session';
+import createPanelShow, { fitPanel } from './shows';
 
 const MAX_DELTA = 1 / 15;
 // A new fit waits until the view has held still this long, so orbiting
@@ -24,8 +19,10 @@ const fitKeyOf = (fit) => (fit ? `${fit.panelCols}x${fit.panelRows}` : '');
 // and a hand's settings hold until released or the panel itself changes;
 // patch edits re-make only the cables. A Sequence hands the panel to a
 // show (Swap, Scroll), which changes what is settled as the clock runs.
-// `statics` comes back only when the fixed parts changed.
-export default function createDriver() {
+// `statics` comes back only when the fixed parts changed. `eager` settles a
+// Scroll's cables in full as chunks mount rather than to a frame budget, so
+// an offline render is the same every time.
+export default function createPanelDriver({ eager = false } = {}) {
   let panel = null;
   let panelKey = null;
   let patchKey = null;
@@ -74,6 +71,10 @@ export default function createDriver() {
       return session;
     },
 
+    get show() {
+      return show;
+    },
+
     step(config, delta, { audio, release, replay, view }) {
       const dt = Math.min(delta, MAX_DELTA);
       const fitted = fitFor(config, view, dt);
@@ -84,7 +85,7 @@ export default function createDriver() {
       if (key !== panelKey) {
         rebuilt = true;
         session?.dispose();
-        show = createPanelShow(c);
+        show = createPanelShow(c, { eager });
         panel = show ? show.panel : buildPanel(c);
         panelKey = key;
         build = c.buildIn ? 0 : null;

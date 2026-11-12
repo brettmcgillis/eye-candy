@@ -4,10 +4,10 @@ import { useFrame, useThree } from '@react-three/fiber';
 
 import * as THREE from 'three/webgpu';
 
+import { createPanelDriver } from '@modules/controlPanel';
 import { createPanelRig } from '@modules/controlPanelRender';
 
 import useMicBands from '../hooks/useMicBands';
-import createDriver from '../utils/createDriver';
 import PanelTouch from './PanelTouch';
 
 const CORNERS = [
@@ -49,7 +49,7 @@ function Panel({ config }) {
   configRef.current = config;
 
   const rig = useMemo(createPanelRig, []);
-  const driver = useMemo(createDriver, []);
+  const driver = useMemo(() => createPanelDriver(), []);
   const mic = useMicBands(config.audioSource === 'mic', config.audioGain);
 
   useEffect(() => {

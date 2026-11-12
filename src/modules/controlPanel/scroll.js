@@ -160,7 +160,7 @@ const distance = (a, b) =>
     Math.max(a.y0 - b.y1, b.y0 - a.y1, 0)
   );
 
-export default function createScrollShow(config) {
+export default function createScrollShow(config, { eager = false } = {}) {
   const style = createStyle(config);
   const salt = Math.imul(config.seed + 3, 3266489917);
   const register = createControlRegister();
@@ -624,6 +624,10 @@ export default function createScrollShow(config) {
     route,
     // Every field leaf in a box (cells, x right, y up).
     leavesIn,
+    // Mounted chunks still showing without their cables.
+    get waiting() {
+      return pending.size;
+    },
     // The cables over what is mounted now: a new patch at every remount.
     get patch() {
       return patch;
@@ -659,7 +663,13 @@ export default function createScrollShow(config) {
       if (key !== regionKey || far) {
         regionKey = key;
         remount(region, t);
+        if (eager && due) {
+          compose(due, { wait: true });
+          due = null;
+        }
         changed = true;
+      } else if (eager) {
+        due = null;
       } else if (due) {
         compose(due);
         due = null;

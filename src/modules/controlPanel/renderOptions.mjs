@@ -13,6 +13,7 @@ import createOptionSchema, {
   rolled,
   sceneOnly,
   standard,
+  video,
 } from '../optionSchema/index.mjs';
 
 export const LAYOUT_MODES = ['subdivide', 'grid', 'pack', 'inventory'];
@@ -33,6 +34,7 @@ export const VIDEO_MODES = [
   'build',
   'drift',
   'turntable',
+  'sequence',
 ];
 
 // Camera bearings: azimuth round the panel's normal (+z) toward +x,
@@ -338,111 +340,79 @@ export const SEQUENCES = ['none', 'swap', 'scroll'];
 const isSequence = (...modes) => ({ sequence: modes });
 
 // How the panel itself changes over time, on top of its controls' motion.
-// Live-only for now: the CLIs render a fixed panel.
+// Stills show the fixed panel; the video CLI plays it in `sequence` mode.
 const SEQUENCE = {
-  sequence: sceneOnly(
-    choice('motion', 'Sequence', 'Mode', SEQUENCES, 'none', {
-      choiceLabels: { none: 'None', scroll: 'Scroll', swap: 'Swap' },
-      help: 'None: one panel; Swap: modules are replaced in waves of flips, rises and slides; Scroll: an endless panel slides past the view',
-    })
-  ),
+  sequence: choice('motion', 'Sequence', 'Mode', SEQUENCES, 'none', {
+    choiceLabels: { none: 'None', scroll: 'Scroll', swap: 'Swap' },
+    help: 'None: one panel; Swap: modules are replaced in waves of flips, rises and slides; Scroll: an endless panel slides past the view',
+  }),
   fitView: sceneOnly(
     flag('motion', 'Sequence', 'Fill View', false, {
       help: "Size the panel to cover the camera's view instead of Columns × Rows (Scroll always fills it)",
       when: isSequence('none', 'swap'),
     })
   ),
-  swapEvery: sceneOnly(
-    num('motion', 'Sequence', 'Swap Every', 6, 1, 60, 0.5, {
-      help: 'Seconds from one wave of swaps to the next (never less than a wave takes)',
-      when: isSequence('swap'),
-    })
-  ),
-  swapShare: sceneOnly(
-    num('motion', 'Sequence', 'Swap Share', 0.35, 0.02, 1, 0.01, {
-      help: 'Share of modules (or of bands, for a slide) a wave moves',
-      when: isSequence('swap'),
-    })
-  ),
-  swapSeconds: sceneOnly(
-    num('motion', 'Sequence', 'Swap Seconds', 1.4, 0.2, 6, 0.05, {
-      help: 'How long one module takes to swap',
-      when: isSequence('swap'),
-    })
-  ),
-  swapStagger: sceneOnly(
-    num('motion', 'Sequence', 'Swap Stagger', 1.2, 0, 8, 0.05, {
-      help: 'Seconds a wave takes to cross the panel',
-      when: isSequence('swap'),
-    })
-  ),
-  swapFlip: sceneOnly(
-    flag('motion', 'Sequence', 'Flip', true, {
-      help: 'Plates turn over on their axis with the new control on the far side',
-      when: isSequence('swap'),
-    })
-  ),
-  swapRise: sceneOnly(
-    flag('motion', 'Sequence', 'Rise', true, {
-      help: 'The old module sinks into the chassis and the new one pops up',
-      when: isSequence('swap'),
-    })
-  ),
-  swapSlide: sceneOnly(
-    flag('motion', 'Sequence', 'Slide', true, {
-      help: 'Bands of the panel run along like conveyors, new modules arriving at one edge',
-      when: isSequence('swap'),
-    })
-  ),
-  scrollSpeed: sceneOnly(
-    num('motion', 'Sequence', 'Scroll Speed', 1.2, 0, 8, 0.05, {
-      help: 'Cells a second the panel slides',
-      when: isSequence('scroll'),
-    })
-  ),
-  scrollHeading: sceneOnly(
-    num('motion', 'Sequence', 'Heading', 180, -180, 180, 1, {
-      help: 'Degrees the panel moves across the screen: 0 right, 90 up, 180 left',
-      when: isSequence('scroll'),
-    })
-  ),
-  scrollTurns: sceneOnly(
-    choice('motion', 'Sequence', 'Turns', SCROLL_TURNS, 'none', {
-      choiceLabels: { none: 'None', square: 'Square', wander: 'Wander' },
-      help: 'None: one way forever; Square: a right turn every leg, back to the start after four; Wander: a meander, swinging to alternate sides of a slowly drifting course, legs of uneven length',
-      when: isSequence('scroll'),
-    })
-  ),
-  scrollLeg: sceneOnly(
-    num('motion', 'Sequence', 'Leg Seconds', 8, 1, 60, 0.5, {
-      help: 'Seconds between turns',
-      when: { scrollTurns: ['square', 'wander'], sequence: ['scroll'] },
-    })
-  ),
-  scrollTurnSeconds: sceneOnly(
-    num('motion', 'Sequence', 'Turn Seconds', 2, 0, 10, 0.1, {
-      help: 'Seconds a turn eases over',
-      when: { scrollTurns: ['square', 'wander'], sequence: ['scroll'] },
-    })
-  ),
-  scrollPalettes: sceneOnly(
-    flag('motion', 'Sequence', 'Palettes', false, {
-      help: "The field is split into districts, each dressed in another preset's colour scheme, so the look keeps changing as the view travels",
-      when: isSequence('scroll'),
-    })
-  ),
-  scrollDistrict: sceneOnly(
-    num('motion', 'Sequence', 'District Cells', 36, 8, 200, 1, {
-      help: 'Rough width of one colour district, in cells',
-      when: { scrollPalettes: [true], sequence: ['scroll'] },
-    })
-  ),
-  scrollTiled: sceneOnly(
-    flag('motion', 'Sequence', 'Tiled', false, {
-      help: 'One tile of the whole Inventory repeating (a straight run loops after one tile); off, every stretch is packed afresh and never repeats',
-      when: isSequence('scroll'),
-    })
-  ),
+  swapEvery: num('motion', 'Sequence', 'Swap Every', 6, 1, 60, 0.5, {
+    help: 'Seconds from one wave of swaps to the next (never less than a wave takes)',
+    when: isSequence('swap'),
+  }),
+  swapShare: num('motion', 'Sequence', 'Swap Share', 0.35, 0.02, 1, 0.01, {
+    help: 'Share of modules (or of bands, for a slide) a wave moves',
+    when: isSequence('swap'),
+  }),
+  swapSeconds: num('motion', 'Sequence', 'Swap Seconds', 1.4, 0.2, 6, 0.05, {
+    help: 'How long one module takes to swap',
+    when: isSequence('swap'),
+  }),
+  swapStagger: num('motion', 'Sequence', 'Swap Stagger', 1.2, 0, 8, 0.05, {
+    help: 'Seconds a wave takes to cross the panel',
+    when: isSequence('swap'),
+  }),
+  swapFlip: flag('motion', 'Sequence', 'Flip', true, {
+    help: 'Plates turn over on their axis with the new control on the far side',
+    when: isSequence('swap'),
+  }),
+  swapRise: flag('motion', 'Sequence', 'Rise', true, {
+    help: 'The old module sinks into the chassis and the new one pops up',
+    when: isSequence('swap'),
+  }),
+  swapSlide: flag('motion', 'Sequence', 'Slide', true, {
+    help: 'Bands of the panel run along like conveyors, new modules arriving at one edge',
+    when: isSequence('swap'),
+  }),
+  scrollSpeed: num('motion', 'Sequence', 'Scroll Speed', 1.2, 0, 8, 0.05, {
+    help: 'Cells a second the panel slides',
+    when: isSequence('scroll'),
+  }),
+  scrollHeading: num('motion', 'Sequence', 'Heading', 180, -180, 180, 1, {
+    help: 'Degrees the panel moves across the screen: 0 right, 90 up, 180 left',
+    when: isSequence('scroll'),
+  }),
+  scrollTurns: choice('motion', 'Sequence', 'Turns', SCROLL_TURNS, 'none', {
+    choiceLabels: { none: 'None', square: 'Square', wander: 'Wander' },
+    help: 'None: one way forever; Square: a right turn every leg, back to the start after four; Wander: a meander, swinging to alternate sides of a slowly drifting course, legs of uneven length',
+    when: isSequence('scroll'),
+  }),
+  scrollLeg: num('motion', 'Sequence', 'Leg Seconds', 8, 1, 60, 0.5, {
+    help: 'Seconds between turns',
+    when: { scrollTurns: ['square', 'wander'], sequence: ['scroll'] },
+  }),
+  scrollTurnSeconds: num('motion', 'Sequence', 'Turn Seconds', 2, 0, 10, 0.1, {
+    help: 'Seconds a turn eases over',
+    when: { scrollTurns: ['square', 'wander'], sequence: ['scroll'] },
+  }),
+  scrollPalettes: flag('motion', 'Sequence', 'Palettes', false, {
+    help: "The field is split into districts, each dressed in another preset's colour scheme, so the look keeps changing as the view travels",
+    when: isSequence('scroll'),
+  }),
+  scrollDistrict: num('motion', 'Sequence', 'District Cells', 36, 8, 200, 1, {
+    help: 'Rough width of one colour district, in cells',
+    when: { scrollPalettes: [true], sequence: ['scroll'] },
+  }),
+  scrollTiled: flag('motion', 'Sequence', 'Tiled', false, {
+    help: 'One tile of the whole Inventory repeating (a straight run loops after one tile); off, every stretch is packed afresh and never repeats',
+    when: isSequence('scroll'),
+  }),
 };
 
 const rig = rigOf({ facet: 'look' });
@@ -592,11 +562,29 @@ const RENDER = {
   shadows: standard.shadows(),
   keep: standard.keep(['layout', 'look', 'patch']),
   base: standard.base('panel'),
+  preset: roll({
+    default: null,
+    help: "A ControlPanel scene preset the roll starts from, e.g. 'Grand Tour' (--base is laid over it)",
+    label: 'Scene preset',
+    nullable: true,
+    placeholder: 'NAME',
+    type: 'string',
+  }),
   mode: standard.mode(
     VIDEO_MODES,
     'operate',
-    'operate: each panel holds while its controls move; montage: frozen panels cut one after another; build: modules rise in, then operate; drift: the camera pans across the panel, close in; turntable: orbit a panel'
+    "operate: each panel holds while its controls move; montage: frozen panels cut one after another; build: modules rise in, then operate; drift: the camera pans across the panel, close in; turntable: orbit a panel; sequence: play the panel's Sequence (Swap, or Scroll as in Grand Tour) for Hold seconds"
   ),
+  sequenceSpan: video({
+    default: 10,
+    help: "Cells across the frame's shorter side over a Scroll (Grand Tour's camera shows about 10)",
+    label: 'Scroll span',
+    max: 60,
+    min: 2,
+    placeholder: 'N',
+    step: 0.5,
+    type: 'number',
+  }),
   view: standard.view(VIEWS, 'hero'),
   ...standard.videoFormats(),
   fps: standard.fps(),

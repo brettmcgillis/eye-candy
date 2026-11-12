@@ -20,7 +20,7 @@ export {
   UNITS,
   weightOf,
 } from './controls';
-export { default as frameView, panelBounds } from './framing';
+export { default as frameView, frameField, panelBounds } from './framing';
 export { dragHit, pickHit, pressHit, releaseHit } from './interaction';
 export { packCircles } from './layout';
 export {
@@ -67,6 +67,7 @@ export { compatibleSockets } from './sockets';
 export { patchBounds, patchBuildOffsets, patchPlugParts } from './patchPose';
 export { default as createPanelSession } from './session';
 export { default as createPanelShow, fitPanel } from './shows';
+export { default as createPanelDriver } from './driver';
 export { default as createRoute } from './route';
 export { PALETTES } from './palettes';
 export { SWAP_KINDS, swapKinds, swapTiming } from './swap';

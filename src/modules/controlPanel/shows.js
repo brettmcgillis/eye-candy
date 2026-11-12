@@ -17,13 +17,13 @@ export function fitPanel(view) {
 }
 
 // The show a config's Sequence asks for, or null for a fixed panel.
-export default function createPanelShow(config) {
+export default function createPanelShow(config, { eager = false } = {}) {
   if (config.panelDesign) return null;
   if (config.sequence === 'swap')
     return createSwapShow(config, {
       cols: config.panelCols,
       rows: config.panelRows,
     });
-  if (config.sequence === 'scroll') return createScrollShow(config);
+  if (config.sequence === 'scroll') return createScrollShow(config, { eager });
   return null;
 }

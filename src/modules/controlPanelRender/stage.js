@@ -8,6 +8,7 @@ import {
   STILL_TIME,
   buildPanel,
   configFrom,
+  createPanelDriver,
   createPanelSession,
   patchBounds,
   patchPlotParts,
@@ -85,6 +86,7 @@ export function createPanelStage({
   let patchKey = null;
   let physicsTime = STILL_TIME;
   let disconnectPointer = null;
+  let driver = null;
   const captureAlbedo = createAlbedoCapture(renderer);
 
   scene.add(rig.group);
@@ -143,7 +145,36 @@ export function createPanelStage({
     camera.updateMatrixWorld();
   }
 
+  function dress(config) {
+    rig.updateEnvironment(renderer, scene, config);
+    setBackdrop({ renderer, scene }, config.background, transparent);
+    lightGroup?.removeFromParent();
+    lightGroup = createSceneLights(
+      buildSceneLightingRuntimeConfig({
+        controls: config,
+        lighting: LIGHTING,
+      }),
+      { shadows }
+    );
+    scene.add(lightGroup);
+  }
+
+  function advance(delta, box = null) {
+    const out = driver.step(current.config, delta, {
+      audio: null,
+      release: 0,
+      replay: 0,
+      view: box,
+    });
+    session = driver.session;
+    rig.group.position.set(out.offset[0], out.offset[1], 0);
+    if (out.statics) rig.setStatics(out.statics);
+    rig.setMoving(out.moving);
+    rig.setCables(out.patch, out.offsets, out.reveals);
+  }
+
   function pose({ build = null, t = clock } = {}) {
+    if (driver) return;
     const { config, panel } = current;
     if (build != null) {
       rig.setStatics(panel.chassis);
@@ -176,6 +207,13 @@ export function createPanelStage({
         PATCH_KEYS.map((key) => drawn.config[key])
       );
       current = drawn;
+      if (driver) {
+        driver.session?.dispose();
+        driver = null;
+        session = null;
+        loadKey = null;
+        rig.group.position.set(0, 0, 0);
+      }
       if (nextKey !== loadKey) {
         clock = STILL_TIME;
         physicsTime = STILL_TIME;
@@ -189,21 +227,26 @@ export function createPanelStage({
       }
       session.step(0, { config: drawn.config, t: clock });
       staticsBuilt = false;
-      const { config } = drawn;
-      rig.updateEnvironment(renderer, scene, config);
-      setBackdrop({ renderer, scene }, config.background, transparent);
-      lightGroup?.removeFromParent();
-      lightGroup = createSceneLights(
-        buildSceneLightingRuntimeConfig({
-          controls: config,
-          lighting: LIGHTING,
-        }),
-        { shadows }
-      );
-      scene.add(lightGroup);
+      dress(drawn.config);
       pose();
       return patchBounds(drawn.panel, session.patch);
     },
+
+    // Plays the panel's Sequence (Swap or Scroll) from its start, settled
+    // in full each step so a render is the same every time; `advance`
+    // moves it on. Returns the bounds a Swap is framed on.
+    playSequence(drawn, box = null) {
+      if (!driver) session?.dispose();
+      driver?.session?.dispose();
+      current = { ...drawn, config: { ...drawn.config, buildIn: false } };
+      driver = createPanelDriver({ eager: true });
+      loadKey = null;
+      dress(current.config);
+      advance(0, box);
+      return patchBounds(driver.panel, driver.session.patch);
+    },
+
+    advance,
 
     getSession: () => session,
     exportConfig: () => session.exportConfig(),

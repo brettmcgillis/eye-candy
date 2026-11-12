@@ -60,3 +60,53 @@ export default function frameView({
   });
   return { ...camera, projection: 'perspective' };
 }
+
+const DEG = Math.PI / 180;
+
+// A fixed camera over a Scroll's endless field: `span` cells across the
+// frame's shorter side at the panel's plane, from a view's angles. `box` is
+// what its four corner rays hit on that plane (cells, x right, y up), the
+// view a Scroll mounts round; null when a corner misses the plane.
+export function frameField({ azimuthOffset = 0, options, span, view }) {
+  const aspect = options.width / options.height;
+  const [w, h] = aspect >= 1 ? [span * aspect, span] : [span, span / aspect];
+  const camera = frameView({
+    azimuthOffset,
+    bounds: { max: [w / 2, h / 2, 0.3], min: [-w / 2, -h / 2, 0] },
+    options: { ...options, margin: 0 },
+    view: view === 'detail' ? 'front' : view,
+  });
+  const sub = (a, b) => a.map((v, k) => v - b[k]);
+  const unit = (v) => v.map((c) => c / Math.hypot(...v));
+  const cross = (a, b) => [
+    a[1] * b[2] - a[2] * b[1],
+    a[2] * b[0] - a[0] * b[2],
+    a[0] * b[1] - a[1] * b[0],
+  ];
+  const forward = unit(sub(camera.target, camera.eye));
+  const right = unit(cross(forward, camera.up));
+  const up = cross(right, forward);
+  const tanY = Math.tan((camera.fov * DEG) / 2);
+  const tanX = tanY * aspect;
+  const box = { x0: Infinity, x1: -Infinity, y0: Infinity, y1: -Infinity };
+  const hits = [
+    [-1, -1],
+    [1, -1],
+    [-1, 1],
+    [1, 1],
+  ].every(([sx, sy]) => {
+    const ray = forward.map(
+      (f, k) => f + right[k] * sx * tanX + up[k] * sy * tanY
+    );
+    if (ray[2] >= 0) return false;
+    const k = -camera.eye[2] / ray[2];
+    const x = camera.eye[0] + ray[0] * k;
+    const y = camera.eye[1] + ray[1] * k;
+    box.x0 = Math.min(box.x0, x);
+    box.x1 = Math.max(box.x1, x);
+    box.y0 = Math.min(box.y0, y);
+    box.y1 = Math.max(box.y1, y);
+    return true;
+  });
+  return { box: hits ? box : null, camera };
+}

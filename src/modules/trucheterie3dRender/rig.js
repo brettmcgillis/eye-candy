@@ -30,9 +30,58 @@ function paintInto(mesh, sampleOf, colors) {
   attribute.needsUpdate = true;
 }
 
+function membraneComponents(membrane) {
+  const count = membrane.chains.length;
+  const parent = Uint32Array.from({ length: count }, (_, index) => index);
+  const root = (value) => {
+    let index = value;
+    while (parent[index] !== index) index = parent[index];
+    return index;
+  };
+  const chainOf = new Uint32Array(membrane.pinned.length);
+  for (let s = 0; s < membrane.strips.length / 4; s += 1) {
+    const [base, cols, rows] = membrane.strips.subarray(s * 4, s * 4 + 3);
+    chainOf.fill(s % count, base, base + cols * rows);
+  }
+  for (let g = 0; g < membrane.weldGroups.length; g += 2) {
+    const start = membrane.weldGroups[g];
+    const end = start + membrane.weldGroups[g + 1];
+    const first = chainOf[membrane.weldMembers[start]];
+    for (let i = start + 1; i < end; i += 1) {
+      parent[root(chainOf[membrane.weldMembers[i]])] = root(first);
+    }
+  }
+  return parent.map((_, index) => root(index));
+}
+
+function fillIdentities(
+  chains,
+  sampleOf,
+  namespace,
+  split = Infinity,
+  components = null
+) {
+  const count = chains.reduce((sum, chain) => sum + chain.points.length / 3, 0);
+  const sampleIdentities = new Uint32Array(count);
+  let offset = 0;
+  chains.forEach((chain, index) => {
+    const length = chain.points.length / 3;
+    sampleIdentities.fill(
+      (components?.[index] ?? index) + 1 + namespace,
+      offset,
+      offset + length
+    );
+    offset += length;
+  });
+  return Float32Array.from(
+    sampleOf,
+    (sample, index) => sampleIdentities[sample] + (index >= split ? 2000000 : 0)
+  );
+}
+
 // Positions come from the display grid on the GPU; the attribute only sizes
 // the draw.
-function membraneGeometry(display) {
+function membraneGeometry(display, membrane) {
   const geometry = new THREE.BufferGeometry();
   geometry.setAttribute(
     'position',
@@ -41,6 +90,19 @@ function membraneGeometry(display) {
   geometry.setAttribute(
     'color',
     new THREE.BufferAttribute(new Float32Array(display.count * 3), 3)
+  );
+  geometry.setAttribute(
+    'paintIdentity',
+    new THREE.BufferAttribute(
+      fillIdentities(
+        membrane.chains,
+        display.sampleOf,
+        1000000,
+        membrane.side.includes(1) ? display.count / 2 : Infinity,
+        membraneComponents(membrane)
+      ),
+      1
+    )
   );
   geometry.setIndex(new THREE.BufferAttribute(display.index, 1));
   return geometry;
@@ -115,6 +177,13 @@ export default function createTubeRig() {
       'color',
       new THREE.BufferAttribute(new Float32Array(mesh.position.length), 3)
     );
+    geometry.setAttribute(
+      'paintIdentity',
+      new THREE.BufferAttribute(
+        fillIdentities(current.tubes.chains, mesh.sampleOf, 0),
+        1
+      )
+    );
     geometry.setAttribute('aCenter', new THREE.BufferAttribute(mesh.center, 4));
     geometry.setIndex(new THREE.BufferAttribute(mesh.index, 1));
     geometry.computeBoundingSphere();
@@ -183,7 +252,10 @@ export default function createTubeRig() {
     }
     dropSkin();
     display = createMembraneDisplay(current.membrane, solver, level);
-    skin = new THREE.Mesh(membraneGeometry(display), finishMaterial(config));
+    skin = new THREE.Mesh(
+      membraneGeometry(display, current.membrane),
+      finishMaterial(config)
+    );
     skin.castShadow = shadows;
     skin.receiveShadow = shadows;
     skin.frustumCulled = false;
@@ -256,6 +328,8 @@ export default function createTubeRig() {
         paint(config);
         colorKey = keyOf(config, COLOR_KEYS);
       }
+      uniforms.painting.apply(config);
+      uniforms.gridSize.value = current.tubes.gridSize;
       dressSkin(config);
       const scale = config.blobCanvasSize / current.tubes.gridSize;
       meshes().forEach((mesh) => place(mesh, config));
@@ -371,6 +445,7 @@ export default function createTubeRig() {
     dispose() {
       clear();
       material.dispose();
+      uniforms.painting.dispose();
       floorMesh.geometry.dispose();
       floor.material.dispose();
       studio.dispose();

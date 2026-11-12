@@ -9,7 +9,7 @@ export default {
   id: 'flyingHigh',
   label: 'Flying High',
   channel: 'webgpu',
-  area: 'wip',
+  area: 'showcase',
   icon: SceneIcon,
   Component: lazy(() => import('./FlyingHigh')),
 };

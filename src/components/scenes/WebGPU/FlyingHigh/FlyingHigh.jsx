@@ -1,66 +1,36 @@
-import React, { memo } from 'react';
+import React, { memo, useRef } from 'react';
 
 import Boeing737 from '@elements/Boeing737/Boeing737';
-import Moon from '@elements/Moon/Moon';
-import useSceneBackdrop from '@hooks/useSceneBackdrop';
 import { CameraRig } from '@modules/cameraRig';
 import { LightingRig } from '@modules/lightingRig';
-import Bloom from '@postprocessing/WebGPU/bloom/Bloom';
 
-import EnginePlumes from './components/EnginePlumes';
-import PaintedClouds from './components/PaintedClouds';
-import PaperBackdrop from './components/PaperBackdrop';
-import SkyPanel from './components/SkyPanel';
+import CloudSky from './components/CloudSky';
+import FireLights from './components/FireLights';
+import SkyGrade from './components/SkyGrade';
+import Sparks from './components/Sparks';
+import useDayCycle from './hooks/useDayCycle';
 import useFlatToneMapping from './hooks/useFlatToneMapping';
+import usePlumeVolume from './hooks/usePlumeVolume';
 import useSceneControls from './hooks/useSceneControls';
+import { gradeFrom } from './utils/dayCycle';
 
 const DEG = Math.PI / 180;
 
 function FlyingHigh() {
   const config = useSceneControls();
-  useSceneBackdrop({ color: config.background });
   useFlatToneMapping();
+  const plane = useRef(null);
+  const { cycle, onLightChange } = useDayCycle(config);
+  const volume = usePlumeVolume(config, plane, cycle);
 
   return (
     <>
       <CameraRig camera={config.camera} />
-      <LightingRig lighting={config.lighting} />
-      <PaperBackdrop
-        color={config.background}
-        grain={config.paperGrain}
-        warmth={config.paperWarmth}
-      />
-
-      <SkyPanel
-        sky={{
-          bleedAmount: config.skyBleedAmount,
-          brushStrength: config.skyBrushStrength,
-          color: config.skyColor,
-          edgeDarkening: config.skyEdgeDarkening,
-          edgeSoftness: config.skyEdgeSoftness,
-          grainAmount: config.skyGrainAmount,
-          height: config.skyHeight,
-          poolingStrength: config.skyPoolingStrength,
-          position: [config.skyPosX, config.skyPosY, config.skyPosZ],
-          strength: config.skyStrength,
-          warpStrength: config.skyWarpStrength,
-          width: config.skyWidth,
-        }}
-      />
-      {config.moonVisible ? (
-        <Moon
-          color={config.moonColor}
-          emissive={config.moonEmissive}
-          emissiveIntensity={config.moonEmissiveIntensity}
-          metalness={config.moonMetalness}
-          position={[config.moonPosX, config.moonPosY, config.moonPosZ]}
-          roughness={config.moonRoughness}
-          scale={config.moonScale}
-        />
-      ) : null}
-      <PaintedClouds config={config} />
+      <LightingRig lighting={config.lighting} onLightChange={onLightChange} />
+      <CloudSky config={config} cycle={cycle} />
 
       <group
+        ref={plane}
         position={[config.planePosX, config.planePosY, config.planePosZ]}
         rotation={[
           config.planeRotXDeg * DEG,
@@ -70,16 +40,30 @@ function FlyingHigh() {
         scale={config.planeScale}
       >
         <Boeing737 />
-        {config.plumeVisible ? <EnginePlumes config={config} /> : null}
+        {config.plumeVisible ? <FireLights config={config} /> : null}
+        {config.plumeVisible && config.emberVisible ? (
+          <Sparks config={config} />
+        ) : null}
       </group>
 
-      {config.bloomEnabled ? (
-        <Bloom
-          radius={config.bloomRadius}
-          strength={config.bloomStrength}
-          threshold={config.bloomThreshold}
-        />
-      ) : null}
+      <SkyGrade
+        bloom={{
+          enabled: config.bloomEnabled,
+          radius: config.bloomRadius,
+          strength: config.bloomStrength,
+          threshold: config.bloomThreshold,
+        }}
+        volume={config.plumeVisible ? volume : null}
+        cycle={cycle}
+        flare={{
+          chroma: config.flareChroma,
+          enabled: config.flareEnabled,
+          intensity: config.flareIntensity,
+          moon: config.flareMoon,
+          size: config.flareSize,
+        }}
+        grade={gradeFrom(config)}
+      />
     </>
   );
 }

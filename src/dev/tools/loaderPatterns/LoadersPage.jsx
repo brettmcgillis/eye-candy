@@ -1,6 +1,11 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
-import { ALL_LOADERS } from '../../../app/scaffold/loader/loaders';
+import { drawLayers, restState } from '../../../app/scaffold/loader/drawFrame';
+import {
+  ALL_LOADERS,
+  MOTIONS,
+  STYLES,
+} from '../../../app/scaffold/loader/loaders';
 import {
   CX,
   CY,
@@ -8,7 +13,6 @@ import {
   INK,
   OrientationProvider,
   SQ,
-  drawPatternBase,
   useLoaderCanvas,
   useSquares,
 } from '../../../app/scaffold/loader/primitives';
@@ -16,14 +20,16 @@ import Overlay from '../../../app/scaffold/overlay/Overlay';
 import DevPageHeaderBar from '../../shell/DevPageHeaderBar';
 import './LoadersPage.css';
 
-// Static diagram showing each square's index number — for pattern design reference.
+const SOLID = STYLES.find((s) => s.id === 'solid');
+const BRUSH_STYLES = STYLES.filter((s) => s.engine === 'brush');
+
 function PatternIndex() {
   const squares = useSquares();
   const cos45 = Math.cos(Math.PI / 4);
   const sin45 = Math.sin(Math.PI / 4);
 
   const canvasRef = useLoaderCanvas((ctx) => {
-    drawPatternBase(ctx, squares);
+    drawLayers(ctx, [{ look: 'ink', squares: restState(squares) }], SOLID);
 
     squares.forEach((s) => {
       const x = CX + s.sx * SQ * cos45 - s.sy * SQ * sin45;
@@ -45,34 +51,88 @@ function PatternIndex() {
   return <CanvasFrame canvasRef={canvasRef} />;
 }
 
-function LoaderGrid({ orientation, onSelect }) {
+function LoaderMatrix({ orientation, onSelect }) {
   return (
     <OrientationProvider orientation={orientation}>
-      <div className="loaders-page__grid">
-        {ALL_LOADERS.map((LoaderComponent) => (
-          <div
-            className="loaders-page__cell"
-            key={LoaderComponent.name}
-            onClick={() => onSelect(LoaderComponent, orientation)}
-            title={`Preview ${LoaderComponent.name} fullscreen`}
-          >
-            <div className="loaders-page__canvas">
-              <LoaderComponent />
-            </div>
-            <span className="loaders-page__label">
-              {LoaderComponent.name} · {LoaderComponent.cycleDuration}s
+      <div
+        className="loaders-page__matrix"
+        style={{ '--loader-columns': STYLES.length }}
+      >
+        <span />
+        {STYLES.map((style) => (
+          <span className="loaders-page__heading" key={style.id}>
+            {style.label}
+            <small>{style.engine}</small>
+          </span>
+        ))}
+        {MOTIONS.map((motion) => (
+          <React.Fragment key={motion.id}>
+            <span className="loaders-page__heading loaders-page__heading--row">
+              {motion.label}
+              <small>{motion.cycleDuration}s</small>
             </span>
-          </div>
+            {ALL_LOADERS.filter((L) => L.motion === motion).map((L) => (
+              <button
+                type="button"
+                className="loaders-page__cell"
+                key={L.id}
+                onClick={() => onSelect(L, orientation)}
+                title={`Preview ${L.label} fullscreen`}
+              >
+                <L />
+              </button>
+            ))}
+          </React.Fragment>
         ))}
       </div>
     </OrientationProvider>
   );
 }
 
-// Full-screen preview — matches the Loader.jsx layout exactly so it looks
-// identical to a real scene load. Overlay is shown for sig / date / ig pills.
-// orientation is locked to whichever grid row was tapped — not recalculated
-// from viewport size — so clicking an H thumbnail always shows H on mobile.
+function BakeAtlas({ style }) {
+  const hostRef = useRef(null);
+  const [status, setStatus] = useState('baking…');
+
+  useEffect(() => {
+    let live = true;
+    const started = performance.now();
+    style.prepare().then(() => {
+      const ready = style.baked();
+      if (!live || !hostRef.current) return;
+      if (!ready) {
+        setStatus('bake failed — see console');
+        return;
+      }
+      const sheets = [ready.masks.sketch, ...ready.masks.ink];
+      hostRef.current.replaceChildren(
+        ...sheets.map((mask) => {
+          const canvas = document.createElement('canvas');
+          canvas.width = mask.width;
+          canvas.height = mask.height;
+          canvas.className = 'loaders-page__atlas';
+          canvas.getContext('2d').drawImage(mask, 0, 0);
+          return canvas;
+        })
+      );
+      setStatus(
+        `sketch + ${ready.masks.ink.length} stages · ${Math.round(performance.now() - started)}ms incl. queue`
+      );
+    });
+    return () => {
+      live = false;
+    };
+  }, [style]);
+
+  return (
+    <div className="loaders-page__bake">
+      <p className="loaders-page__reference-label">
+        {style.label} · {status}
+      </p>
+      <div className="loaders-page__atlases" ref={hostRef} />
+    </div>
+  );
+}
+
 function LoaderPreview({ LoaderComponent, orientation, onClose }) {
   useEffect(() => {
     const handler = (e) => {
@@ -85,69 +145,80 @@ function LoaderPreview({ LoaderComponent, orientation, onClose }) {
   return (
     <div
       className="loader-preview"
-      // Tap anywhere outside the overlay to close.
-      // Clicks on .overlay elements (pills, leva) are excluded so they
-      // remain interactive without accidentally dismissing the preview.
       onClick={(e) => {
         if (!e.target.closest('.overlay')) onClose();
       }}
       style={{ '--loader-preview-background': INK.paper }}
     >
-      {/* Loader — same sizing as the real Loader.jsx, orientation locked */}
       <OrientationProvider orientation={orientation}>
         <div className="loader-preview__loader">
           <LoaderComponent />
         </div>
       </OrientationProvider>
-
-      {/* App overlay — renders pills in corners exactly as in-app */}
+      <p className="loader-preview__label">{LoaderComponent.label}</p>
       <Overlay />
     </div>
   );
 }
 
 export default function LoadersPage() {
-  // { comp: LoaderComponent, orientation: 'h'|'v' } | null
-  // comp is wrapped in an arrow because React treats bare functions passed to
-  // setState as updater functions — wrapping stores the function itself.
+  const [orientation, setOrientation] = useState('h');
   const [preview, setPreview] = useState(null);
-  const selectPreview = (comp, orientation) =>
-    setPreview({ comp: () => comp, orientation });
+  const selectPreview = (comp, o) =>
+    setPreview({ comp: () => comp, orientation: o });
 
   return (
     <div className="dev-page loaders-page">
       <DevPageHeaderBar title="loaderPatterns" />
       <p className="dev-muted loaders-page__summary">
-        {ALL_LOADERS.length} animations · canvas-based · click to preview
+        {MOTIONS.length} motions × {STYLES.length} styles = {ALL_LOADERS.length}{' '}
+        loaders · click to preview
       </p>
 
-      <h2 className="dev-section-title dev-section-title--first">Horizontal</h2>
-      <LoaderGrid orientation="h" onSelect={selectPreview} />
+      <div className="loaders-page__toolbar">
+        {['h', 'v'].map((o) => (
+          <button
+            type="button"
+            key={o}
+            className={`dev-button${orientation === o ? ' dev-button--primary' : ''}`}
+            onClick={() => setOrientation(o)}
+          >
+            {o === 'h' ? 'Horizontal' : 'Vertical'}
+          </button>
+        ))}
+      </div>
 
-      <h2 className="dev-section-title">Vertical</h2>
-      <LoaderGrid orientation="v" onSelect={selectPreview} />
+      <LoaderMatrix
+        key={orientation}
+        orientation={orientation}
+        onSelect={selectPreview}
+      />
+
+      <h2 className="dev-section-title">Brush bakes</h2>
+      <p className="dev-muted loaders-page__summary">
+        One tile per square, black ink as alpha; tinted per colour at draw time.
+      </p>
+      {BRUSH_STYLES.map((style) => (
+        <BakeAtlas key={style.id} style={style} />
+      ))}
 
       <h2 className="dev-section-title">Square Index Reference</h2>
       <p className="dev-muted loaders-page__summary">
         Red = layer b · Black = layer t
       </p>
       <div className="loaders-page__references">
-        <div>
-          <p className="loaders-page__reference-label">horizontal</p>
-          <div className="loaders-page__canvas">
-            <OrientationProvider orientation="h">
-              <PatternIndex />
-            </OrientationProvider>
+        {['h', 'v'].map((o) => (
+          <div key={o}>
+            <p className="loaders-page__reference-label">
+              {o === 'h' ? 'horizontal' : 'vertical'}
+            </p>
+            <div className="loaders-page__canvas">
+              <OrientationProvider orientation={o}>
+                <PatternIndex />
+              </OrientationProvider>
+            </div>
           </div>
-        </div>
-        <div>
-          <p className="loaders-page__reference-label">vertical</p>
-          <div className="loaders-page__canvas">
-            <OrientationProvider orientation="v">
-              <PatternIndex />
-            </OrientationProvider>
-          </div>
-        </div>
+        ))}
       </div>
 
       {preview && (

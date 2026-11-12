@@ -14,6 +14,9 @@ import {
 const SAMPLE_PX = 1.5;
 const MIN_PX = 0.75;
 const FLAT = 0.004;
+const EXACT_BIAS = 0.0004;
+const FACETED_BIAS = 0.003;
+const EXACT = new Set(['box', 'rbox']);
 const BOX_EDGES = [
   [0, 1],
   [2, 3],
@@ -192,17 +195,17 @@ export default function renderPanelSvg({
   const project = createProjector(camera, width, height);
   const pens = new Map();
   const inFrame = (p) => p.x >= 0 && p.y >= 0 && p.x <= width && p.y <= height;
-  const shows = (p, cable = null) =>
+  const shows = (p, cable, bias) =>
     p.depth > 0 &&
     inFrame(p) &&
     (!visible ||
       (cable && visible.cable ? visible.cable : visible)(
         p.x,
         p.y,
-        p.depth - (cable ? cable.radius * 1.3 : p.depth * 0.003 + 1e-4)
+        p.depth - (cable ? cable.radius * 1.3 : p.depth * bias + 1e-4)
       ));
 
-  function trace(points, paths, cable = null) {
+  function trace(points, paths, cable = null, bias = FACETED_BIAS) {
     let run = [];
     const flush = () => {
       if (run.length > 1) paths.push(run);
@@ -220,7 +223,7 @@ export default function renderPanelSvg({
       for (let i = j === 1 ? 0 : 1; i <= count; i += 1) {
         const t = i / count;
         const p = project(...a.map((v, k) => v + (b[k] - v) * t));
-        if (shows(p, cable)) run.push(p);
+        if (shows(p, cable, bias)) run.push(p);
         else flush();
       }
     }
@@ -236,8 +239,9 @@ export default function renderPanelSvg({
     const hex = inkOf(item);
     if (!pens.has(hex)) pens.set(hex, []);
     const paths = pens.get(hex);
+    const bias = EXACT.has(item.g) ? EXACT_BIAS : FACETED_BIAS;
     segmentsOf(item, camera, steps).forEach(([a, b]) => {
-      trace([a, b], paths);
+      trace([a, b], paths, null, bias);
     });
   });
 

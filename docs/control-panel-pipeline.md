@@ -589,7 +589,11 @@ FORK_PER_ITER * iteration`) on 60° headings only. One or two through
 - **Plot SVG**: every part's outline through the still's camera (boxes'
   edges, frustum rims and silhouettes, sphere and torus circles; flat
   silkscreen as its top face), hidden lines dropped against the depth pass,
-  one layer per colour. Cables plot continuous silhouette edges without
+  one layer per colour. Boxes render exactly as plotted, so their edges take
+  a tight depth tolerance (0.04% of depth) that drops back edges of thin
+  plates, buttons and caps; faceted primitives (caps, spheres, tori, dishes)
+  keep 0.3% because their outlines sit on true circles the mesh only
+  approximates. Cables plot continuous silhouette edges without
   tessellation rings, with tighter depth probes at crossings. Whole-panel
   shading and optional base fill use shared `plotKit` vector pen strokes,
   the frozen lit render, albedo coverage and one palette for lines and shade.

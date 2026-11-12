@@ -22,6 +22,7 @@ export default function CumulusSubject({
 
         {c.skullVisible ? (
           <SceneSkull
+            paintConfig={c}
             position={c.skullPosition}
             rotation={c.skullRotation}
             scale={c.skullScale}
@@ -56,6 +57,7 @@ export default function CumulusSubject({
 
         {c.cloudVisible ? (
           <SceneCloud
+            paintConfig={c}
             position={c.cloudPosition}
             rotation={c.cloudRotation}
             scale={c.cloudScale}
@@ -76,6 +78,7 @@ export default function CumulusSubject({
 
         {c.femurVisible ? (
           <SceneFemur
+            paintConfig={c}
             position={c.femurPosition}
             rotation={c.femurRotation}
             scale={c.femurScale}

@@ -8,11 +8,13 @@ import {
   rollRabbitConfig,
 } from '@modules/rabbit';
 import createSchemaFolders from '@modules/schemaControls';
+import { PALETTE_NAMES } from '@utils/gradientPalette';
 
 export const SCENE_LABEL = 'Stay Hunted';
 
 const schemaFolders = createSchemaFolders({
   folders: {
+    painting: 'Painting',
     paper: 'Paper',
     fur: 'Fur',
     wound: 'Wound',
@@ -21,6 +23,7 @@ const schemaFolders = createSchemaFolders({
     grass: 'Grass',
   },
   keys: LEVA_KEYS,
+  controls: { paletteName: { options: ['None', ...PALETTE_NAMES] } },
   label: SCENE_LABEL,
   options: RENDER_OPTIONS,
 });

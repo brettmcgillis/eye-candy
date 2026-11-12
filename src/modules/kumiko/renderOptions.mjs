@@ -8,6 +8,7 @@ import createOptionSchema, {
   num,
   standard,
 } from '../optionSchema/index.mjs';
+import { paintOptions } from '../painted/index.mjs';
 
 export const TILING_NAMES = [
   'triangle',
@@ -425,6 +426,14 @@ const RENDER = {
 };
 
 export const RENDER_OPTIONS = {
+  ...paintOptions(),
+  paintLayout: choice(
+    'painting',
+    null,
+    'Construction',
+    ['wood', 'paper'],
+    'wood'
+  ),
   ...GENERATOR,
   ...IMAGE,
   ...BUILD,

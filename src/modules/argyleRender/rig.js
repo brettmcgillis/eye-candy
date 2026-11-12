@@ -51,7 +51,7 @@ export default function createRig() {
       dummy.updateMatrix();
       mesh.setMatrixAt(slot, dummy.matrix);
       tint.setRGB(data[k + 8], data[k + 9], data[k + 10]);
-      mesh.setColorAt(slot, tint);
+      layer.writeColor(slot, tint, index + 1);
       alpha.array[slot] = data[k + 7];
     }
     layers.forEach((layer) => layer.flush());

@@ -1,6 +1,4 @@
 {
-  "public": [
-    "Painting"
-  ],
+  "public": ["Painting"],
   "private": []
 }

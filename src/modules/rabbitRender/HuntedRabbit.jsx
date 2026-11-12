@@ -12,6 +12,7 @@ import * as THREE from 'three/webgpu';
 import Fur from '@elements/Fur/Fur';
 import { FUR_TECHNIQUES } from '@elements/Fur/furUtils';
 import RabbitModel from '@elements/Rabbit/Rabbit';
+import { createPaintState } from '@modules/paintedRender';
 
 import ensureSkinMasks from './furMask';
 import {
@@ -27,6 +28,7 @@ const FUR_ROOT_TINT = [0.8, 0.8, 0.8, 1];
 const FUR_TIP_TINT = [1, 1, 1, 0];
 
 export default function Rabbit({
+  paintConfig,
   furEnabled,
   furLength,
   onReady,
@@ -35,6 +37,11 @@ export default function Rabbit({
   wounds,
   ...props
 }) {
+  const painting = useMemo(createPaintState, []);
+  useEffect(() => {
+    painting.apply(paintConfig);
+  }, [painting, paintConfig]);
+  useEffect(() => () => painting.dispose(), [painting]);
   const ink = useMemo(() => uniform(new THREE.Color()), []);
   const width = useMemo(() => uniform(0), []);
   const [mesh, setMesh] = useState(null);
@@ -45,18 +52,18 @@ export default function Rabbit({
     (original, skinned) => {
       ensureSkinMasks(skinned.geometry, original.map);
       setSkinMap(original.map);
-      return createFurMaterial(original, wounds);
+      return createFurMaterial(original, wounds, painting);
     },
-    [wounds]
+    [wounds, painting]
   );
   const furColor = useMemo(
-    () => skinMap && createSkinColor(skinMap, wounds),
-    [skinMap, wounds]
+    () => skinMap && createSkinColor(skinMap, wounds, painting),
+    [skinMap, wounds, painting]
   );
   const furDensity = useMemo(createFurDensity, []);
   const outlineMaterial = useMemo(
-    () => createOutlineMaterial({ color: ink, width }),
-    [ink, width]
+    () => createOutlineMaterial({ color: ink, width, painting }),
+    [ink, width, painting]
   );
   useEffect(() => () => outlineMaterial.dispose(), [outlineMaterial]);
 

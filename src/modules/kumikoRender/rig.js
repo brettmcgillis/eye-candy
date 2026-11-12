@@ -10,6 +10,9 @@ import { MM } from './prism';
 // Keys that change a baked cell's geometry rather than its look.
 const GEOMETRY_KEYS = [
   'construction',
+  'paintLayout',
+  'paintStyle',
+  'paintStrokeRoughness',
   'infillDepth',
   'infillRecess',
   'jigumiDepth',
@@ -83,9 +86,16 @@ export default function createPanelRig() {
 
     setConfig(config, result = null) {
       const u = materials.uniforms;
-      u.woodColor.value.set(config.woodColor);
-      u.paperColor.value.set(config.paperColor);
-      u.backlight.value = config.backlight;
+      materials.painting.apply(config);
+      const paperLayout =
+        config.paintLayout === 'paper' && config.paintStyle !== 'original';
+      frames.visible = !paperLayout;
+      u.paperLayout.value = paperLayout ? 1 : 0;
+      u.woodColor.value.set(paperLayout ? config.paintInk : config.woodColor);
+      u.paperColor.value.set(
+        paperLayout ? config.paintPaper : config.paperColor
+      );
+      u.backlight.value = paperLayout ? 0.5 : config.backlight;
       u.grain.value = config.woodGrain;
       u.slab.value = config.construction === 'slab' ? 1 : 0;
       u.mode.value = modeFor(config.colorBy);

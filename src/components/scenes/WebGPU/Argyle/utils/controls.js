@@ -9,6 +9,7 @@ const folders = createSchemaFolders({
   keys: LEVA_KEYS,
   options: RENDER_OPTIONS,
   folders: {
+    painting: 'Painting',
     layout: 'Layout',
     field: 'Coverage',
     automaton: 'Automaton',

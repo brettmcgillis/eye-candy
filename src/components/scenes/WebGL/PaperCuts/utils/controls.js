@@ -21,6 +21,7 @@ const folders = createSchemaFolders({
   options: RENDER_OPTIONS,
   keys: LEVA_KEYS,
   folders: {
+    painting: 'Painting',
     data: 'Data',
     generation: 'Generation',
     paper: 'Paper',

@@ -1,5 +1,7 @@
 # IsoLinesRelief pipeline
 
+Painted presets and shared brush maps: [Painted variants](painted-variants.md).
+
 IsoLinesRelief is the relief half of the IsoLines pair: the same field and
 contours (`docs/iso-lines-pipeline.md`, read it first) built as real,
 lit, shadowed geometry — the depth the reference Shadertoys only fake.
@@ -22,12 +24,12 @@ run `npm run iso-lines:check` and `npm run iso-lines-relief:check`.
           src/dev/server/isoLinesRelief → src/dev/tools/isoLinesRelief (IsoLinesReliefCLI)
 ```
 
-| Piece                           | Rule                                                                                                                                                 |
-| ------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `@modules/isoLinesRelief`       | **Three-free.** May import only `@modules/isoLines` (its barrel) and, from `renderOptions.mjs`, `../isoLines/optionSpecs.mjs`.                       |
-| `@modules/isoLinesReliefRender` | The only home of the relief look. `createReliefRig()`: `apply(config)`, `setBuild(build)`, `setMotion`, `setTime`, `setPixelRatio`.                  |
-| `renderOptions.mjs`             | IsoLines' field, image, contour and colour specs plus `form`, the cycle and the cameras. Facets: `field`, `contours`, `color`, `form`, `atmosphere`. |
-| Builds                          | Every consumer asks the kernel for `segmentMode(config)`'s geometry: `walls`, `lines`, `trail` or none.                                              |
+| Piece                           | Rule                                                                                                                                                                                    |
+| ------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@modules/isoLinesRelief`       | **Three-free.** May import only `@modules/isoLines` (its barrel) and, from `renderOptions.mjs`, `../isoLines/optionSpecs.mjs` and the three-free `../painted/index.mjs` option factory. |
+| `@modules/isoLinesReliefRender` | The only home of the relief look. `createReliefRig()`: `apply(config)`, `setBuild(build)`, `setMotion`, `setTime`, `setPixelRatio`.                                                     |
+| `renderOptions.mjs`             | IsoLines' field, image, contour and colour specs plus `form`, the cycle and the cameras. Facets: `field`, `contours`, `color`, `form`, `atmosphere`.                                    |
+| Builds                          | Every consumer asks the kernel for `segmentMode(config)`'s geometry: `walls`, `lines`, `trail` or none.                                                                                 |
 
 ## Look
 

@@ -8,7 +8,7 @@ import WebSocket from 'ws';
 
 import { REPO_ROOT } from './loadModules.mjs';
 
-async function bundle() {
+async function bundle(entry) {
   const config = JSON.parse(
     await readFile(path.join(REPO_ROOT, 'jsconfig.json'), 'utf8')
   );
@@ -34,7 +34,7 @@ async function bundle() {
       write: false,
       minify: false,
       lib: {
-        entry: path.join(REPO_ROOT, 'src/dev/tools/cumulus/browserEntry.js'),
+        entry: path.join(REPO_ROOT, entry),
         formats: ['iife'],
         name: 'CumulusCapture',
       },
@@ -50,7 +50,10 @@ const delay = (ms) =>
     setTimeout(resolve, ms);
   });
 
-export default async function createBrowser(options) {
+export default async function createBrowser(
+  options,
+  { entry = 'src/dev/tools/cumulus/browserEntry.js', api = 'cumulus' } = {}
+) {
   const candidates = [
     process.env.CUMULUS_CHROME,
     '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
@@ -78,7 +81,7 @@ export default async function createBrowser(options) {
       process.stderr.write(`${values.join(' ')}\n`);
   };
   debug('bundling');
-  const code = await bundle();
+  const code = await bundle(entry);
   debug('bundle ready');
   const profile = await mkdtemp(path.join(os.tmpdir(), 'cumulus-chrome-'));
   const chrome = spawn(
@@ -101,7 +104,9 @@ export default async function createBrowser(options) {
   const pending = new Map();
   const errors = [];
   let sequence = 0;
+  let disposing = false;
   async function dispose() {
+    disposing = true;
     socket?.close();
     chrome.kill();
     await new Promise((resolve) => {
@@ -135,6 +140,7 @@ export default async function createBrowser(options) {
       socket.onerror = reject;
     });
     function send(method, params = {}) {
+      if (disposing) return Promise.resolve({});
       sequence += 1;
       const id = sequence;
       return new Promise((resolve, reject) => {
@@ -157,8 +163,15 @@ export default async function createBrowser(options) {
     }
     socket.onmessage = async (event) => {
       const message = JSON.parse(event.data);
-      if (message.method === 'Runtime.consoleAPICalled')
+      if (message.method === 'Runtime.consoleAPICalled') {
         debug('console', JSON.stringify(message.params.args));
+        if (message.params.type === 'error')
+          errors.push(
+            message.params.args
+              .map((arg) => arg.value ?? arg.description ?? '')
+              .join(' ')
+          );
+      }
       if (message.method === 'Runtime.exceptionThrown')
         errors.push(
           message.params.exceptionDetails.exception?.description ??
@@ -215,9 +228,10 @@ export default async function createBrowser(options) {
       }
     };
     socket.onclose = () => {
-      pending.forEach((task) =>
-        task.reject(new Error('Chrome closed during capture'))
-      );
+      pending.forEach((task) => {
+        if (disposing) task.resolve({});
+        else task.reject(new Error('Chrome closed during capture'));
+      });
       pending.clear();
     };
     await send('Runtime.enable');
@@ -245,7 +259,7 @@ export default async function createBrowser(options) {
     }
     let ready = false;
     for (let i = 0; i < 600 && !ready; i += 1) {
-      ready = await evaluate('Boolean(window.cumulus)');
+      ready = await evaluate(`Boolean(window[${JSON.stringify(api)}])`);
       if (!ready) await delay(50);
     }
     if (!ready) {
@@ -264,7 +278,7 @@ export default async function createBrowser(options) {
       );
     const call = (method, ...args) =>
       evaluate(
-        `window.cumulus[${JSON.stringify(method)}](...${JSON.stringify(args)})`
+        `window[${JSON.stringify(api)}][${JSON.stringify(method)}](...${JSON.stringify(args)})`
       );
     debug('bundle loaded', ...errors);
     await call('init', options);
@@ -273,6 +287,8 @@ export default async function createBrowser(options) {
       load: (drawn) => call('load', drawn),
       async capture(view, seconds) {
         const frame = await call('capture', view, seconds);
+        if (errors.length)
+          throw new Error(`Chrome capture failed: ${errors.join('\n')}`);
         return { ...frame, data: Buffer.from(frame.data, 'base64') };
       },
       svg: (view, plotOptions) => call('svg', view, plotOptions),

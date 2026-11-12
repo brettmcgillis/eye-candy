@@ -84,8 +84,11 @@ manage presets without `usePresetsFolder` are not filtered.
 
 Each Gallery screenshot (and the main thumbnail, `mainPreset`) can name the
 preset it shows in `screenshots/screenshots.json`; Capture fills it from the
-seeder's preset choice. The Gallery modal lists the public presets as links,
-and clicking a screenshot tagged with a public preset opens the scene at it.
+seeder's preset choice. The Gallery modal never shows preset names: its one
+**Open scene** button opens the scene at the preset of the screenshot on show
+when that preset is public, and at the scene's default otherwise. The image and
+the thumbnail strip only switch screenshots. A public preset with no tagged
+screenshot is reachable in prod only from the scene's own dropdown.
 
 A screenshot can also be a video: drop or pick an MP4, MOV, WebM or MKV in
 Cataloggr's screenshot panel and the dev server converts it with `ffmpeg` to a
@@ -96,7 +99,7 @@ frame.
 To audit, use Cataloggr's grid filters **Presets to review** (Showcase scenes
 with unreviewed or stale presets) and **Public preset, no screenshot**, then
 open a scene: each preset row shows its toggle and whether a screenshot covers
-it. Mark the default preset public explicitly if the Gallery should list it.
+it.
 
 ## Changing the contract
 

@@ -174,11 +174,13 @@ function TriangularTileMesh({ config }) {
   };
 
   const meshA = useTileMesh({
+    paintConfig: config,
     ...sharedParams,
     buildColorNode: buildColorNodeA,
     gridData: gridA,
   });
   const meshB = useTileMesh({
+    paintConfig: config,
     ...sharedParams,
     buildColorNode: buildColorNodeB,
     gridData: gridB,

@@ -61,7 +61,7 @@ export async function createPaperStage({
     new TextureLoader().loadAsync(textureFile('watercolor.png')),
   ]);
   const scene = new Scene();
-  const paper = createPaperRig();
+  const paper = createPaperRig({ webgpu: true });
   const frameGroup = new Group();
   scene.add(paper.group, frameGroup);
   const cameras = {

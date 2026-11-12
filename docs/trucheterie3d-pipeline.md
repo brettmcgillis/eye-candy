@@ -1,5 +1,7 @@
 # Trucheterie3D pipeline
 
+Painted presets and shared brush maps: [Painted variants](painted-variants.md).
+
 Trucheterie3D is the Trucheterie blob field built as real tubes: every lane a
 tube, every pen stroke a wire, or both — or the lanes as one inflated
 membrane, every stroke pinned as a seam (see Membrane below). It is a separate scene (not a 2D/3D
@@ -30,12 +32,12 @@ below; see `docs/trucheterie-designs.md`.
             src/dev/server/trucheterie3d → src/dev/tools/trucheterie3d (Trucheterie3DCLI)
 ```
 
-| Piece                          | Rule                                                                                                                                                                                                                                 |
-| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `@modules/trucheterie3d`       | **Three-free.** May import only `@modules/trucheterieBlob`. The check enforces it. The mesh lives here (plain typed arrays) so a worker can build it and an STL export can reuse it.                                                 |
-| `@modules/trucheterie3dRender` | The only home of the look. `createTubeRig()`: `setTubes({ config, field, tubes, mesh? })`, `apply`, `setGrowth`, `setPalettePhase`, `updateEnvironment`, `setShadows`.                                                               |
-| `renderOptions.mjs`            | The 2D field/palette specs re-foldered, plus form, stage, motion, lighting and render keys. Facets: `structure`, `palette`, `form`, `atmosphere`.                                                                                    |
-| Keys                           | `TUBE_KEYS` change the solve, `MESH_KEYS` the sweep, `MEMBRANE_KEYS` only move the membrane's simulation; anything else only re-dresses (colours repaint, transform moves). Scene keys match the 2D scene's, so a seed carries over. |
+| Piece                          | Rule                                                                                                                                                                                                                                                                      |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@modules/trucheterie3d`       | **Three-free.** May import only `@modules/trucheterieBlob`, plus the three-free option factories used by its schema (`optionSchema`, `painted`). The check enforces it. The mesh lives here (plain typed arrays) so a worker can build it and an STL export can reuse it. |
+| `@modules/trucheterie3dRender` | The only home of the look. `createTubeRig()`: `setTubes({ config, field, tubes, mesh? })`, `apply`, `setGrowth`, `setPalettePhase`, `updateEnvironment`, `setShadows`.                                                                                                    |
+| `renderOptions.mjs`            | The 2D field/palette specs re-foldered, plus form, stage, motion, lighting and render keys. Facets: `structure`, `palette`, `form`, `atmosphere`.                                                                                                                         |
+| Keys                           | `TUBE_KEYS` change the solve, `MESH_KEYS` the sweep, `MEMBRANE_KEYS` only move the membrane's simulation; anything else only re-dresses (colours repaint, transform moves). Scene keys match the 2D scene's, so a seed carries over.                                      |
 
 ## The solve (grid units: one micro-cell = 1, y down, z up)
 
@@ -122,23 +124,29 @@ seams. A membrane is always Cap and flat; Weave and Terrace do not apply.
 
 - **Strips, not a triangulation** (`membrane.js`). Each lane chain is a
   structured strip: columns are the chain's samples, `membraneRows + 1`
-  rows run across the lane. Lanes are concentric arcs, so each column's
+  rows run across a full-width lane. The row count rounds to an even
+  resolution; half-width caps use half as many intervals so their diameter
+  vertices line up with the adjoining full-width strip. The strip table carries
+  each strip's own row count. Lanes are concentric arcs, so each column's
   rows run radially from one seam to the other and the seams are the 2D
-  strokes exactly. Strips meet only on pinned seams, so no welding is
-  needed between them.
+  strokes exactly. True seams stay pinned; coincident interior cap centres
+  and released chain ends are welded instead of creating artificial seams.
+- **Cap links.** The membrane uses quarter-pitch endpoint keys. The tube
+  centreline's half-pitch keys round a cap's quarter-pitch midpoint onto the
+  neighbouring full-width lane, merging mismatched cross-sections and leaving
+  a tear during inflation. Caps remain separate strips, with their diameter
+  vertices welded to the full-width lane. Tube chain matching is unchanged.
 - **Its own lane pieces.** The tube solve clips a second family's lane at
   its mid radius. A rim that bites only partway into a lane would then
   split it into two overlapping strips. Here a lane is cut only where the
   occluding disc covers its whole width. Each column then takes the part
   of its ray outside the disc (`radialSpan`), so the rim becomes that side's
   seam and a cut end narrows to a point on it.
-- **Pins**: every strip-edge row that lies on a stroke, plus the end
-  columns of open chains. A row at radius 0 (a corner family's lane 0
-  wrapping a grid point) is pinned when only part of the wrap is there,
-  because a stroke ends on that point. A whole-disc wrap (a loop of nothing
-  but pivots, and beads) has a free centre split across its columns. Those
-  copies are a weld group, averaged after every relaxation pair, or the
-  dome tears open.
+- **Pins**: strip-edge rows on actual strokes and exterior open-chain ends
+  stay pinned. Filled central half-discs are real strips. A coincident centre
+  or end is released only when no radial seam touches it and a small ring of
+  samples lies inside the filled field. Its copies form a weld group averaged
+  after each relaxation pair, letting the cap inflate without a notch.
 - **Solve** (`membraneSolver.js`, TSL compute). Per substep, as in the
   reference: a uniform +Z lift `pressure · scale · (1 + crown · crownBias)`
   (not normal pressure), velocity damped by `exp(-damping·dt)`, spring
@@ -170,7 +178,12 @@ seams. A membrane is always Cap and flat; Weave and Terrace do not apply.
 - **Display** (`membraneDisplay.js`, `membraneLevels.js`). The reference
   draws through its render topology: Loop subdivision with the outline as a
   crease, then `level` Laplacian passes at 0.18 that skip creases, then
-  pinned sim vertices snapped back. Every strip edge is a crease here. The
+  pinned sim vertices snapped back. Strip edges retain the crease stencil,
+  but released interior welds survive every subdivision and smoothing pass.
+  `membraneLevels` maps their flat rest positions to each display boundary;
+  compact GPU reductions rejoin the copies and average their final normals.
+  Solver welding alone is insufficient because subdivision moves each open
+  strip corner independently and reopens a triangular tear at a cap tip. The
   strips stay regular triangulated grids at every level, so each level is a
   fixed-stencil GPU pass over a 2× finer grid instead of per-vertex stencil
   tables (~150 MB at level 1 for this mesh). Normals come off the finest

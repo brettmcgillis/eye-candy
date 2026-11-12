@@ -1,6 +1,7 @@
 import {
   Fn,
   If,
+  Loop,
   instanceIndex,
   instancedArray,
   int,
@@ -46,6 +47,39 @@ export default function createMembraneDisplay(membrane, solver, level) {
   const top = levels[level];
   const finalGrid = level > 0 ? grids[level][level % 2] : solver.positions;
   const normals = instancedArray(top.count, 'vec4').setName('membraneNormal');
+
+  const weldBuffers = levels.map(({ welds }, l) =>
+    welds
+      ? {
+          groups: instancedArray(welds.groups, 'vec2').setName(
+            `membraneDisplayWelds${l}`
+          ),
+          members: instancedArray(welds.members, 'uint').setName(
+            `membraneDisplayMembers${l}`
+          ),
+          count: welds.groups.length / 2,
+        }
+      : null
+  );
+  const weld = (l, buffer, normalize = false) => {
+    const metadata = weldBuffers[l];
+    if (!metadata) return null;
+    return Fn(() => {
+      const group = metadata.groups.element(instanceIndex);
+      const start = int(group.x);
+      const end = start.add(int(group.y));
+      const sum = vec3(0).toVar();
+      Loop({ start, end, type: 'int' }, ({ i }) => {
+        sum.addAssign(buffer.element(metadata.members.element(i)).xyz);
+      });
+      const mean = normalize ? sum.normalize() : sum.div(group.y);
+      Loop({ start, end, type: 'int' }, ({ i }) => {
+        buffer.element(metadata.members.element(i)).assign(vec4(mean, 0));
+      });
+    })()
+      .compute(metadata.count)
+      .setName(`membraneDisplayWeld${l}`);
+  };
 
   const subdivide = (l) => {
     const parent = l === 1 ? solver.positions : grids[l - 1][(l - 1) % 2];
@@ -221,10 +255,16 @@ export default function createMembraneDisplay(membrane, solver, level) {
   const passes = [];
   for (let l = 1; l <= level; l += 1) {
     passes.push(subdivide(l));
+    const subdivisionWeld = weld(l, grids[l][0]);
+    if (subdivisionWeld) passes.push(subdivisionWeld);
     for (let p = 0; p < l; p += 1) {
       passes.push(smooth(l, grids[l][p % 2], grids[l][(p + 1) % 2]));
+      const smoothingWeld = weld(l, grids[l][(p + 1) % 2]);
+      if (smoothingWeld) passes.push(smoothingWeld);
     }
   }
+
+  const weldNormals = weld(level, normals, true);
 
   return {
     count: top.count,
@@ -239,10 +279,19 @@ export default function createMembraneDisplay(membrane, solver, level) {
       passes.forEach((pass) => renderer.compute(pass));
       if (snap) renderer.compute(snap);
       renderer.compute(shade);
+      if (weldNormals) renderer.compute(weldNormals);
     },
 
     dispose() {
-      [...tables, ...layouts, ...grids.flat(), normals]
+      [
+        ...tables,
+        ...layouts,
+        ...grids.flat(),
+        ...weldBuffers.flatMap((buffers) =>
+          buffers ? [buffers.groups, buffers.members] : []
+        ),
+        normals,
+      ]
         .filter(Boolean)
         .forEach((buffer) => buffer.value.dispose?.());
     },

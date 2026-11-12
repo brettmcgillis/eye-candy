@@ -24,8 +24,8 @@ export default function createSpecimenRig() {
     [slots.cards, createCardMaterial],
     ...slots.solids.map((slot) => [slot, createSolidMaterial]),
   ];
-  const materials = pairs.map(([slot, createMaterial]) => {
-    const material = createMaterial(uniforms);
+  const materials = pairs.map(([slot, createMaterial], index) => {
+    const material = createMaterial(uniforms, index);
     const mesh = new THREE.Mesh(slot.geometry, material);
 
     mesh.castShadow = true;
@@ -41,6 +41,20 @@ export default function createSpecimenRig() {
 
   function applyLook() {
     syncUniforms(uniforms, config, palette);
+    const translucent = config.paintStyle && config.paintStyle !== 'original';
+    const stem = materials[0];
+    const strokes = config.paintStyle === 'pencil';
+    if (stem.transparent !== strokes) {
+      stem.transparent = strokes;
+      stem.depthWrite = !strokes;
+      stem.needsUpdate = true;
+    }
+    const card = materials[1];
+    if (card.transparent !== Boolean(translucent)) {
+      card.transparent = Boolean(translucent);
+      card.depthWrite = !translucent;
+      card.needsUpdate = true;
+    }
     applyPalette(
       uniforms,
       palettes,
@@ -75,6 +89,8 @@ export default function createSpecimenRig() {
     dispose() {
       materials.forEach((material) => material.dispose());
       fields.dispose();
+      uniforms.painting.dispose();
+      uniforms.botanical.dispose();
       palettes.dispose();
       group.removeFromParent();
     },

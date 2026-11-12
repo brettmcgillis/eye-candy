@@ -127,6 +127,7 @@ function bake(entryKey, config, widths) {
     solids: faces.filter((f) => !f.opening).map((f) => f.outline),
     tiles: faces.map((f, i) => ({
       poly: f.outline,
+      opening: f.opening,
       random: hash01(`${entryKey}:face:${i}`),
       size: signedArea(f.outline) / area,
       center: centroid(f.outline),

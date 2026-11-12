@@ -407,9 +407,14 @@ sceneKey: 'showOverlay' })`, as Flora and Fungi do). The workbench page
   bespoke renderer calls `overlayLayer` itself, with the same `sceneIconFile`.
 - **The icon.** The overlay draws the icon the scene shows in Scenemoji, never
   a hand-drawn copy. `scripts/lib/sceneIcons.mjs` reads the scene's
-  `scene.config.jsx` — the react-icons component and the colour it is drawn in,
-  or the `iconFile()` image a scene ships — and `npm run scene-icons` writes
-  `public/icons/<scene id>.svg` from it. Change a scene's icon, rerun it, and
+  `scene.config.jsx` — every react-icons glyph its `SceneIcon` draws, with
+  its colour and size (an explicit `size`, else 1em times an inline
+  `fontSize`), or the `iconFile()` image a scene ships — and
+  `npm run scene-icons` writes `public/icons/<scene id>.svg` from it. Several
+  glyphs sit side by side, centred on one line as Scenemoji draws them
+  (ControlPanel's two knobs, Cumulus's skull and cloud, PaperCuts' three
+  squares), and the overlay draws the icon 26 CSS px tall at its own aspect,
+  widening the pill. Change a scene's icon, rerun it, and
   commit the SVG. The overlay deliberately leaves out the area icon (the
   wrench on WIP scenes), so a posted image never reads as unfinished work.
 - **The check.** `npm run overlay:check` fails when a render workbench is not

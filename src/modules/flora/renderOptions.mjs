@@ -14,6 +14,7 @@ import createOptionSchema, {
   standard,
   still,
 } from '../optionSchema/index.mjs';
+import { paintOptions } from '../painted/index.mjs';
 
 export const PALETTE_NONE = 'None';
 export const VIEWS = ['front', 'right', 'back', 'left'];
@@ -597,7 +598,13 @@ const RENDER = {
   ),
 };
 
-export const RENDER_OPTIONS = { ...GENERATOR, ...LOOK, ...MOTION, ...RENDER };
+export const RENDER_OPTIONS = {
+  ...paintOptions(),
+  ...GENERATOR,
+  ...LOOK,
+  ...MOTION,
+  ...RENDER,
+};
 
 const SECTION_LABELS = {
   generator: 'generator limits',

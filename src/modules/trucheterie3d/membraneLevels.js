@@ -54,6 +54,75 @@ function gridIndex({ count, table }) {
   return { count, index };
 }
 
+function displayWelds(membrane, table, step) {
+  const key = (x, y, side) =>
+    `${Math.round(x * 1e6)},${Math.round(y * 1e6)},${side}`;
+  if (!membrane.weldMembers.length) return null;
+  const released = new Set(membrane.weldMembers);
+  const groups = new Map();
+  for (let s = 0; s < table.length / 4; s += 1) {
+    const [base, cols, rows] = table.subarray(s * 4, s * 4 + 3);
+    const [simBase, simCols, simRows, loop] = membrane.strips.subarray(
+      s * 4,
+      s * 4 + 4
+    );
+    const at = (c, k, axis) => {
+      const column = loop ? c % simCols : Math.min(c, simCols - 1);
+      return membrane.rest[
+        (simBase + column * simRows + Math.min(k, simRows - 1)) * 2 + axis
+      ];
+    };
+    for (let c = 0; c < cols; c += 1) {
+      const ci = Math.floor(c / step);
+      const u = c / step - ci;
+      const rowIndices =
+        c === 0 || c === cols - 1
+          ? Array.from({ length: rows }, (_, k) => k)
+          : [0, rows - 1];
+      rowIndices.forEach((k) => {
+        const ki = Math.floor(k / step);
+        const v = k / step - ki;
+        const coordinates = [0, 1].map(
+          (axis) =>
+            (at(ci, ki, axis) * (1 - u) + at(ci + 1, ki, axis) * u) * (1 - v) +
+            (at(ci, ki + 1, axis) * (1 - u) + at(ci + 1, ki + 1, axis) * u) * v
+        );
+        const groupKey = key(...coordinates, membrane.side[simBase]);
+        if (!groups.has(groupKey))
+          groups.set(groupKey, { vertices: [], released: false });
+        const group = groups.get(groupKey);
+        group.vertices.push(base + c * rows + k);
+        [
+          [0, 0, (1 - u) * (1 - v)],
+          [1, 0, u * (1 - v)],
+          [0, 1, (1 - u) * v],
+          [1, 1, u * v],
+        ].forEach(([dc, dk, weight]) => {
+          const column = loop
+            ? (ci + dc) % simCols
+            : Math.min(ci + dc, simCols - 1);
+          const vertex =
+            simBase + column * simRows + Math.min(ki + dk, simRows - 1);
+          if (weight > 1e-6 && released.has(vertex)) group.released = true;
+        });
+      });
+    }
+  }
+  const members = [];
+  const ranges = [];
+  groups.forEach(({ vertices, released: isReleased }) => {
+    if (!isReleased || vertices.length < 2) return;
+    ranges.push(members.length, vertices.length);
+    members.push(...vertices);
+  });
+  return ranges.length
+    ? {
+        groups: new Float32Array(ranges),
+        members: new Uint32Array(members),
+      }
+    : null;
+}
+
 export default function membraneLevels(membrane, level) {
   const levels = [{ count: membrane.pinned.length, table: membrane.strips }];
   for (let l = 1; l <= level; l += 1)
@@ -73,11 +142,16 @@ export default function membraneLevels(membrane, level) {
       sampleOf.fill(sample, base + c * rows, base + (c + 1) * rows);
     }
   }
+  const simulationWelds = membrane.weldGroups.length
+    ? { groups: membrane.weldGroups, members: membrane.weldMembers }
+    : null;
   return {
     index: gridIndex(top).index,
     levels: levels.map((entry, l) => ({
       ...entry,
       layout: l > 0 ? layoutOf(entry) : null,
+      welds:
+        l > 0 ? displayWelds(membrane, entry.table, 2 ** l) : simulationWelds,
     })),
     sampleOf,
   };

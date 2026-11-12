@@ -1,16 +1,22 @@
 import { folder } from 'leva';
 
-import { CONSTRUCTIONS } from '@modules/kumiko';
+import { CONSTRUCTIONS, RENDER_OPTIONS } from '@modules/kumiko';
+import { createPaintingFolders } from '@modules/paintedRender';
 
 import { choice, presetReader, range, shownWhen } from './controlHelpers';
 
 // Slab reads as one board (one grain, tight joints); strips as separate
 // pieces, each with its own grain and a gap at the joint.
+const paintingFolders = createPaintingFolders('Kumiko', {
+  paintLayout: RENDER_OPTIONS.paintLayout,
+});
+
 export default function getBuildControls(preset = {}) {
   const p = presetReader(preset);
 
   return folder(
     {
+      ...paintingFolders(preset),
       construction: choice('Construction', p('construction'), CONSTRUCTIONS),
       jigumiDepth: range('Jigumi Depth', p('jigumiDepth'), 2, 60, 0.5),
       infillDepth: range('Infill Depth', p('infillDepth'), 1, 60, 0.5),

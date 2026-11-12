@@ -1,6 +1,8 @@
 import { uniform } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
+import { createPaintState } from '@modules/paintedRender';
+
 import buildBlobColorNode from './blobShader';
 
 // TurtleToy's pen is a fixed 0.25 units on its 200-unit canvas. Expressed in
@@ -46,6 +48,7 @@ export function penGeometry(gridSize, pathDiv = 1, reference = false) {
 // with the literal same shader graph — see docs/flora-pipeline.md's rule 2.
 export function createBlobUniforms(strokeColor) {
   return {
+    painting: createPaintState(),
     cellSizeU: uniform(1),
     maxLanesU: uniform(1),
     debugCellsU: uniform(0),
@@ -69,6 +72,7 @@ export function createBlobUniforms(strokeColor) {
 
 export function createBlobMaterial(uniforms, laneTextures) {
   const material = new THREE.MeshBasicNodeMaterial();
+  material.addEventListener('dispose', () => uniforms.painting.dispose());
   material.transparent = true;
   material.depthWrite = false;
   material.colorNode = buildBlobColorNode({ ...uniforms, laneTextures });
@@ -87,6 +91,7 @@ export function syncBlobUniforms(
     config.blobPathsPerUnit,
     field.layout === 'subdivide'
   );
+  uniforms.painting.apply(config);
   uniforms.strokeColorU.value.set(config.strokeColor);
   uniforms.maxLanesU.value = laneInfo.maxLanes;
   uniforms.spectrumU.value = laneInfo.spectrum ? 1 : 0;

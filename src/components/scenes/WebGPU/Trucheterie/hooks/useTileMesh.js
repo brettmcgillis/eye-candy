@@ -1,7 +1,9 @@
 import { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 
-import { uniform } from 'three/tsl';
+import { float, instanceIndex, uniform, uv, vec4 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
+
+import { createPaintState } from '@modules/paintedRender';
 
 import { CLIP_SHAPE } from '../utils/clipMask';
 import useRetileScheduler from './useRetileScheduler';
@@ -19,6 +21,7 @@ function clipShapeCode(clipShape) {
 // (two calls, one per triangle type) — only `geometry`, `buildColorNode`,
 // `gridData` and `pickMotif` differ between grid modes.
 export default function useTileMesh({
+  paintConfig,
   animMode,
   animSpeed,
   animStagger,
@@ -52,6 +55,11 @@ export default function useTileMesh({
   weaveGapWidth,
 }) {
   const meshRef = useRef(null);
+  const painting = useMemo(createPaintState, []);
+  useEffect(() => {
+    painting.apply(paintConfig);
+  }, [painting, paintConfig]);
+  useEffect(() => () => painting.dispose(), [painting]);
 
   const uniformsRef = useRef(null);
   if (!uniformsRef.current) {
@@ -127,9 +135,17 @@ export default function useTileMesh({
     // the flip the camera is looking at what was the back face. The color
     // node corrects the UV by frontFacing so that face reads un-mirrored.
     mat.side = THREE.DoubleSide;
-    mat.colorNode = buildColorNode(uniformsRef.current);
+    const original = buildColorNode(uniformsRef.current);
+    mat.colorNode = vec4(
+      painting.treat(original.rgb, uv(), {
+        seed: instanceIndex.toVarying().add(1),
+        edge: float(0),
+        stamp: true,
+      }),
+      original.a
+    );
     return mat;
-  }, [buildColorNode]);
+  }, [buildColorNode, painting]);
   useEffect(() => () => material.dispose(), [material]);
 
   // useLayoutEffect, not useEffect: this must run before R3F's next render

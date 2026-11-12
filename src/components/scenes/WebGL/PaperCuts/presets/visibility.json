@@ -1,8 +1,4 @@
 {
-  "public": [
-    "Default",
-    "Layer Fade",
-    "Morse Code"
-  ],
+  "public": ["Default", "Layer Fade", "Morse Code"],
   "private": []
 }

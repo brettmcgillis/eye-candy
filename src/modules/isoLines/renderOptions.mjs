@@ -11,6 +11,7 @@ import createOptionSchema, {
   sceneOnly,
   standard,
 } from '../optionSchema/index.mjs';
+import { paintOptions } from '../painted/index.mjs';
 import {
   COLOR,
   CONTOURS,
@@ -55,6 +56,7 @@ const MOTION = {
 };
 
 export const RENDER_OPTIONS = {
+  ...paintOptions(),
   ...CONTOURS,
   ...FIELD,
   ...IMAGE,

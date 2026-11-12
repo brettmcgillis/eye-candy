@@ -4,6 +4,7 @@ import { useFrame } from '@react-three/fiber';
 
 import * as THREE from 'three/webgpu';
 
+import { createPaintState } from '@modules/paintedRender';
 import {
   RIBBON_LENGTH,
   RIBBON_WIDTH,
@@ -78,6 +79,7 @@ function midpoint(position, row, axis) {
 // The hanging tail of the hunter's marker: the scene's own ribbon solver,
 // drawn as a three-column strip whose last row is cut into a swallowtail.
 export default function Ribbon({
+  paintConfig,
   bend,
   drag,
   floorY,
@@ -95,7 +97,12 @@ export default function Ribbon({
     []
   );
   const geometry = useMemo(stripGeometry, []);
-  const material = useMemo(createRibbonMaterial, []);
+  const painting = useMemo(createPaintState, []);
+  useEffect(() => {
+    painting.apply(paintConfig);
+  }, [painting, paintConfig]);
+  useEffect(() => () => painting.dispose(), [painting]);
+  const material = useMemo(() => createRibbonMaterial(painting), [painting]);
   useEffect(
     () => () => {
       geometry.dispose();

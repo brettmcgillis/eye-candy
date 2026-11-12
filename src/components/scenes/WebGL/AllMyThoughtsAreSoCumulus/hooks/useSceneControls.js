@@ -34,11 +34,14 @@ export default function useSceneControls() {
       presets: PRESETS,
     });
 
-  const { Animations, Environment, Lighting, Post } = sceneRigFolders();
+  const { Animations, Environment, Lighting, Post, Painting } = sceneRigFolders(
+    controlsSnapshotRef.current
+  );
   const [controls, setControls] = useControls(
     'All My Thoughts Are So Cumulus',
     () => ({
       Presets: presetsFolder,
+      Painting,
 
       Scene: folder(
         {

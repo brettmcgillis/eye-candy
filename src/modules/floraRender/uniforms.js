@@ -2,6 +2,11 @@
 import { uniform } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
+import {
+  createBotanicalTexture,
+  createPaintState,
+} from '@modules/paintedRender';
+
 const SCALARS = [
   'stemPhase',
   'burst',
@@ -42,6 +47,8 @@ const COLORS = [
 
 export function createUniforms() {
   const u = {
+    painting: createPaintState(),
+    botanical: createBotanicalTexture(),
     bloom: uniform(0),
     center: uniform(new THREE.Vector3(0, 8, 0)),
     exit: uniform(0),
@@ -116,6 +123,7 @@ function applyScheme(u, palette) {
 
 export function syncUniforms(u, config, palette = null) {
   syncScatterDirection(u, config);
+  u.painting.apply(config);
 
   SCALARS.forEach((key) => {
     if (config[key] !== undefined) {

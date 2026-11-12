@@ -17,7 +17,10 @@ import {
   rotate,
   sin,
   smoothstep,
+  texture,
+  uint,
   varyingProperty,
+  vec2,
   vec3,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
@@ -54,7 +57,7 @@ function sizeFor(base, center, u, clampToPixels) {
     : size;
 }
 
-export function createSolidMaterial(u) {
+export function createSolidMaterial(u, group = 2) {
   const material = new THREE.MeshStandardNodeMaterial();
   const position = attribute('sPos', 'vec4');
   const info = attribute('sInfo', 'vec4');
@@ -78,7 +81,17 @@ export function createSolidMaterial(u) {
   material.positionNode = place(true);
   material.castShadowPositionNode = place(false);
   material.normalNode = toViewNormal(rotate(normalGeometry, tumble));
-  material.colorNode = ornamentColor(info, u);
+  material.colorNode = u.painting.treat(
+    ornamentColor(info, u),
+    positionGeometry.xy.mul(0.5).add(0.5),
+    {
+      seed: instanceIndex.toVarying().toUint().bitOr(uint(group).shiftLeft(28)),
+      edge: float(0),
+    }
+  );
+  material.emissiveNode = material.colorNode.mul(
+    u.painting.u.style.greaterThan(0.5).select(0.3, 0)
+  );
   material.roughnessNode = u.roughness.mul(0.7);
   material.metalnessNode = float(0);
 
@@ -135,15 +148,97 @@ export function createCardMaterial(u) {
 
   material.positionNode = place(true);
   material.castShadowPositionNode = place(false);
-  material.colorNode = ornamentColor(info, u).mul(
+  const seed = instanceIndex.toVarying().toUint().bitOr(uint(1).shiftLeft(28));
+  const at = positionGeometry.xy.mul(0.5).add(0.5);
+  const drift = u.painting.field(at.mul(2), seed).rg.sub(0.5).mul(0.05);
+  const shapeUV = vec2(
+    info.z.greaterThan(0.5).select(at.x, float(1).sub(at.x)),
+    at.y
+  ).add(drift);
+  const penWobble = u.painting
+    .field(at.mul(5), seed.add(317))
+    .rg.sub(0.5)
+    .mul(u.painting.u.strokeRoughness)
+    .mul(0.04);
+  const botanical = texture(u.botanical, shapeUV.add(penWobble));
+  const base = ornamentColor(info, u).mul(
     positionGeometry.y.add(1).mul(0.2).add(0.6)
+  );
+  const wash = u.painting.treat(base, at.mul(3), {
+    seed,
+    edge: float(0),
+  });
+  const graphite = mix(
+    base,
+    u.painting.inkFor(base),
+    botanical.b.mul(9).clamp(0, 1)
+  );
+  const hatch = u.painting.hatch(
+    at.x.add(at.y.mul(0.6)).mul(24),
+    at.y.mul(9),
+    seed
+  );
+  const hatched = mix(
+    botanical.g.mul(9).clamp(0, 1),
+    hatch.mul(0.65),
+    u.painting.u.hatchRoughness
+  );
+  const legacyDrawing = mix(
+    u.painting.u.paper,
+    graphite,
+    botanical.g.mul(9).add(botanical.b.mul(12)).clamp(0, 1)
+  );
+  const looseDrawing = mix(
+    u.painting.u.paper,
+    mix(base, u.painting.inkFor(base), hatched),
+    hatched.add(botanical.b.mul(12)).clamp(0, 1)
+  );
+  const drawing = mix(legacyDrawing, looseDrawing, u.painting.u.hatchRoughness);
+  material.colorNode = u.painting.u.style
+    .lessThan(0.5)
+    .select(
+      base,
+      u.painting.u.style.greaterThan(1.5).select(drawing, mix(base, wash, 0.5))
+    );
+  const nativeLeaf = u.painting.washMark(at, seed);
+  const washAlpha = botanical.r
+    .mul(2.4)
+    .clamp(0, 1)
+    .mul(u.painting.field(at.mul(5), seed.add(91)).r.mul(0.8).add(0.45))
+    .clamp(0, 1);
+  const pencilAlpha = mix(
+    botanical.b.mul(12).add(botanical.g.mul(7)).clamp(0, 1),
+    botanical.b.mul(12).add(hatched).clamp(0, 1),
+    u.painting.u.hatchRoughness
+  );
+  const alpha = u.painting.u.style
+    .greaterThan(1.5)
+    .select(
+      pencilAlpha,
+      mix(
+        washAlpha,
+        washAlpha
+          .mul(nativeLeaf.r.mul(2).clamp(0, 1))
+          .add(nativeLeaf.b.mul(u.painting.u.pooling).mul(0.2))
+          .clamp(0, 1),
+        u.painting.u.bleed
+      )
+    );
+  material.opacityNode = u.painting.u.style.greaterThan(0.5).select(alpha, 1);
+  material.emissiveNode = material.colorNode.mul(
+    u.painting.u.style.greaterThan(0.5).select(0.6, 0)
   );
   material.normalNode = toViewNormal(vNormal).mul(faceDirection);
   material.roughnessNode = u.roughness;
   material.metalnessNode = float(0);
-  material.maskNode = info.x
-    .lessThan(0.5)
-    .select(heartMask(positionGeometry.xy), petalMask(positionGeometry.xy));
+  material.maskNode = u.painting.u.style
+    .greaterThan(0.5)
+    .select(
+      alpha.greaterThan(0.005),
+      info.x
+        .lessThan(0.5)
+        .select(heartMask(positionGeometry.xy), petalMask(positionGeometry.xy))
+    );
 
   return material;
 }

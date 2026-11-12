@@ -39,6 +39,10 @@ export default function createCellLayer(group, materials) {
       new Float32Array(capacity * 4),
       4
     );
+    const identity = new THREE.InstancedBufferAttribute(
+      new Float32Array(capacity),
+      1
+    );
     const source = new THREE.InstancedBufferAttribute(
       new Float32Array(capacity * 3),
       3
@@ -49,10 +53,13 @@ export default function createCellLayer(group, materials) {
     );
     const make = (geometry, material) => {
       geometry.setAttribute('cellData', data);
+      geometry.setAttribute('paintIdentity', identity);
       geometry.setAttribute('cellSource', source);
       const mesh = new THREE.InstancedMesh(geometry, material, capacity);
       Object.assign(mesh, {
-        castShadow: material === materials.wood,
+        castShadow:
+          material === materials.wood &&
+          !(config.paintLayout === 'paper' && config.paintStyle === 'pencil'),
         frustumCulled: false,
         instanceMatrix: matrices,
         receiveShadow: true,
@@ -63,6 +70,7 @@ export default function createCellLayer(group, materials) {
     const layer = {
       capacity,
       data,
+      identity,
       matrices,
       paper: make(paper, materials.paper),
       source,
@@ -113,14 +121,19 @@ export default function createCellLayer(group, materials) {
           ],
           i * 16
         );
+        layer.identity.setX(i, rec.paintIdentity);
         layer.data.array.set([rec.tone, rec.random, rec.fade, rec.luma], i * 4);
         layer.source.array.set(rec.rgb ?? [1, 1, 1], i * 3);
       });
       layer.matrices.needsUpdate = true;
       layer.data.needsUpdate = true;
+      layer.identity.needsUpdate = true;
       layer.source.needsUpdate = true;
       [layer.wood, layer.paper].forEach((mesh) => {
-        Object.assign(mesh, { count: recs.length, visible: true });
+        Object.assign(mesh, {
+          count: recs.length,
+          visible: mesh.geometry.getAttribute('position').count > 0,
+        });
       });
     });
     dirty = false;
@@ -137,12 +150,13 @@ export default function createCellLayer(group, materials) {
         geometryKey = geometry;
       }
       const next = new Map();
-      result.leaves.forEach((leaf) => {
+      result.leaves.forEach((leaf, index) => {
         const prev = records.get(leaf.id);
         const same = prev && prev.entry === leaf.entry;
         if (prev && !same) leaving.push({ ...prev, target: 0 });
         next.set(leaf.id, {
           ...leaf,
+          paintIdentity: index + 1,
           fade: immediate || same ? (prev?.fade ?? 1) : 0,
           random: hash01(leaf.id),
           target: 1,

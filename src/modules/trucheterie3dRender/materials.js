@@ -8,6 +8,7 @@ import {
   modelWorldMatrix,
   positionGeometry,
   positionWorld,
+  select,
   smoothstep,
   transformNormalToView,
   uniform,
@@ -16,6 +17,8 @@ import {
   vertexIndex,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
+
+import { createPaintState } from '@modules/paintedRender';
 
 import eggIridescence from './iridescence';
 
@@ -26,9 +29,24 @@ export function createTubeUniforms() {
   return {
     clearcoat: uniform(0.3),
     growth: uniform(2),
+    gridSize: uniform(25),
+    painting: createPaintState(),
     metalness: uniform(0),
     roughness: uniform(0.42),
   };
+}
+
+function paintedLanes(uniforms, base, point) {
+  const wash = uniforms.painting.treat(
+    base,
+    point.div(uniforms.gridSize).add(0.5).mul(3),
+    { seed: attribute('paintIdentity', 'float'), edge: float(0) }
+  );
+  return select(
+    uniforms.painting.u.style.lessThan(0.5),
+    base,
+    mix(base, wash, mix(float(0.65), float(1), uniforms.painting.u.bleed))
+  );
 }
 
 // Vertex colours from the lane palette. Growth collapses every vertex not
@@ -39,7 +57,11 @@ export function createTubeMaterial(uniforms) {
   const reveal = smoothstep(center.w, center.w.add(TIP), uniforms.growth);
   const material = new THREE.MeshPhysicalNodeMaterial();
   material.positionNode = mix(center.xyz, positionGeometry, reveal);
-  material.colorNode = attribute('color', 'vec3');
+  material.colorNode = paintedLanes(
+    uniforms,
+    attribute('color', 'vec3'),
+    positionGeometry.xz
+  );
   material.roughnessNode = uniforms.roughness;
   material.metalnessNode = uniforms.metalness;
   material.clearcoatNode = uniforms.clearcoat;
@@ -109,7 +131,11 @@ export function createMembraneMaterial(uniforms, display, gridSize, finish) {
   const lanes = attribute('color', 'vec3');
   const style = FINISH_STYLES[finish];
   if (!style) {
-    material.colorNode = lanes;
+    material.colorNode = paintedLanes(
+      uniforms,
+      lanes,
+      material.positionNode.xz.toVarying()
+    );
     material.roughnessNode = uniforms.roughness;
     material.metalnessNode = uniforms.metalness;
     material.clearcoatNode = uniforms.clearcoat;
@@ -137,7 +163,7 @@ export function createMembraneMaterial(uniforms, display, gridSize, finish) {
     .mul(vec4(local, 0))
     .xyz.normalize()
     .toVarying();
-  material.colorNode = eggIridescence({
+  const iridescent = eggIridescence({
     base,
     eye: cameraPosition,
     frequency: float(style.eggIridescenceFrequency),
@@ -145,6 +171,11 @@ export function createMembraneMaterial(uniforms, display, gridSize, finish) {
     position: positionWorld,
     strength: float(style.eggIridescence),
   });
+  material.colorNode = paintedLanes(
+    uniforms,
+    iridescent,
+    material.positionNode.xz.toVarying()
+  );
   return material;
 }
 

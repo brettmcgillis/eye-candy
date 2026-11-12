@@ -75,6 +75,17 @@ function createArrowGeometries(length, seed) {
     true
   );
   tie.translate(0, length - RIBBON_TIE_INSET, 0);
+  [nock, shaft, tie, ...vanes].forEach((geometry, index) => {
+    geometry.setAttribute(
+      'arrowIdentity',
+      new THREE.Float32BufferAttribute(
+        new Float32Array(geometry.attributes.position.count).fill(
+          seed * 64 + index
+        ),
+        1
+      )
+    );
+  });
   return { nock, shaft, tie, vanes };
 }
 

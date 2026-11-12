@@ -1,7 +1,4 @@
 {
-  "public": [
-    "Default Rings",
-    "Static"
-  ],
+  "public": ["Default Rings", "Static"],
   "private": []
 }

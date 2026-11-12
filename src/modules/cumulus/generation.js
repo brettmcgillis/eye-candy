@@ -174,8 +174,10 @@ export function presetPins(name) {
 }
 
 export function rollArgs({ options, typed }) {
+  const base =
+    options.base?.config ?? options.base?.preset ?? options.base ?? {};
   return {
-    base: options.base?.config ?? options.base?.preset ?? options.base ?? {},
+    base,
     halos: options.halos,
     keep: String(options.keep ?? '')
       .split(',')
@@ -188,7 +190,10 @@ export function rollArgs({ options, typed }) {
       SCENE_KEYS.filter(
         (key) =>
           options[key] != null && (typed.has(key) || !RENDER_OPTIONS[key].facet)
-      ).map((key) => [key, options[key]])
+      ).map((key) => [
+        key,
+        typed.has(key) ? options[key] : (base[key] ?? options[key]),
+      ])
     ),
   };
 }

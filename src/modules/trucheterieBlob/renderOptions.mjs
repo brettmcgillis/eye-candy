@@ -11,6 +11,7 @@ import createOptionSchema, {
   num,
   standard,
 } from '../optionSchema/index.mjs';
+import { paintOptions } from '../painted/index.mjs';
 
 export const PALETTE_NONE = 'None';
 export const LANE_MODES = ['Cycle', 'Depth', 'Random', 'Spectrum'];
@@ -357,7 +358,12 @@ const RENDER = {
   },
 };
 
-export const RENDER_OPTIONS = { ...GENERATOR, ...LOOK, ...RENDER };
+export const RENDER_OPTIONS = {
+  ...paintOptions(),
+  ...GENERATOR,
+  ...LOOK,
+  ...RENDER,
+};
 
 const SECTION_LABELS = {
   field: 'blob field',

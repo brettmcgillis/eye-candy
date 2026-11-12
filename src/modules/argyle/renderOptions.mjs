@@ -3,11 +3,13 @@ import createOptionSchema, {
   standard,
   still,
 } from '../optionSchema/index.mjs';
+import { paintOptions } from '../painted/index.mjs';
 import { VIEWS } from './choices.mjs';
 import LOOK_OPTIONS from './lookOptions.mjs';
 
 export { MOTIONS, VIEWS } from './choices.mjs';
 export const RENDER_OPTIONS = {
+  ...paintOptions(),
   ...LOOK_OPTIONS,
   cameraFrame: render({
     type: 'json',

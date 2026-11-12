@@ -49,6 +49,12 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   `npm run cellular-automata:check` and `npm run argyle:check` after changing
   it.
 
+## Required reading before touching the loader
+
+- **`docs/loader-patterns.md`** — the app-shell loader as motion × style:
+  motion layers, canvas and p5.brush styles, the baked brush atlases, and the
+  `/dev/loaderpattern` matrix.
+
 ## Required reading before touching src/dev
 
 - **`docs/dev-tooling.md`** — the local-only dev-tooling boundary, tool
@@ -181,14 +187,17 @@ the current scene folder go through path aliases (`@elements`, `@modules`,
   CandleCLI with its Live tab. Run `npm run candle:check` after changing any
   of them.
 
-## Required reading before touching the fire sim or curl smoke
+## Required reading before touching the fire sim, curl smoke or plume volume
 
 - **`docs/fire-sim.md`** — `@modules/fireSim` (the fluid fire: capsule
   emitters, baked spline guide, depth or analytic occluder) and
   `@modules/curlSmoke` (sorted curl smoke along paths), their consumers
-  (`@modules/candleRender`, `@elements/SimFire` and the Police Presence,
-  Flying High and Still Pulling For You scenes) and the shared `fire*` / `smoke*` Leva keys. Run
-  `npm run candle:check -- --render` after changing either module.
+  (`@modules/candleRender`, `@elements/SimFire` and the Still Pulling For
+  You and Wild Horses scenes) and the shared `fire*` / `smoke*` Leva keys;
+  and `@modules/plumeVolume` (fire and smoke as one raymarched volume along
+  trails, with spot lights in the smoke), used by Flying High and Police
+  Presence. Run `npm run candle:check -- --render` after changing fireSim or
+  curlSmoke.
 
 ## Required reading before touching Cables
 

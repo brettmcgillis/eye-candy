@@ -34,11 +34,11 @@ export default function createMembraneSolver(membrane) {
   const { pitch } = membrane;
   const rest = new Float32Array(count * 4);
   const meta = new Float32Array(count * 4);
-  const { rows } = membrane;
   const strips = membrane.strips.length / 4;
   for (let s = 0; s < strips; s += 1) {
     const base = membrane.strips[s * 4];
     const cols = membrane.strips[s * 4 + 1];
+    const rows = membrane.strips[s * 4 + 2];
     const loop = membrane.strips[s * 4 + 3];
     for (let v = base; v < base + cols * rows; v += 1) {
       meta.set([base, cols, rows, loop], v * 4);

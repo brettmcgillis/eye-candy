@@ -83,26 +83,51 @@ function readScene(slug) {
   return { file, source: readFileSync(file, 'utf8') };
 }
 
-// Where a scene's icon comes from: an image it ships, or a react-icons
-// component with the props the scene draws it at.
+// The CSS size a react-icons glyph takes when the scene sets none: the
+// overlay's --overlay-icon-size, which an explicit `size` is measured against.
+const ICON_CSS = 17.5;
+
+// The glyphs a scene's SceneIcon draws, in order: each react-icons
+// component with the colour and relative size it is drawn at (an explicit
+// `size`, else 1em scaled by an inline `fontSize`).
+function glyphsOf(source) {
+  const packs = new Map(
+    [
+      ...source.matchAll(/import \{([^}]+)\} from 'react-icons\/(\w+)'/gu),
+    ].flatMap(([, names, pack]) =>
+      names
+        .split(',')
+        .map((name) => name.trim())
+        .filter(Boolean)
+        .map((name) => [name, pack])
+    )
+  );
+  const body = /function SceneIcon\(\)[\s\S]*?\n\}/u.exec(source)?.[0] ?? '';
+  return [...body.matchAll(/<(\w+)\b([^>]*)\/>/gu)]
+    .filter(([, component]) => packs.has(component))
+    .map(([, component, props]) => {
+      const size = /size=\{?"?([\d.]+)/u.exec(props)?.[1];
+      const em = /fontSize: '([\d.]+)em'/u.exec(props)?.[1];
+      return {
+        color: /color="([^"]+)"/u.exec(props)?.[1] ?? FALLBACK_COLOR,
+        component,
+        pack: packs.get(component),
+        scale: size ? Number(size) / ICON_CSS : Number(em ?? 1),
+      };
+    });
+}
+
+// Where a scene's icon comes from: an image it ships, or the react-icons
+// glyphs its SceneIcon draws.
 function iconOf(slug) {
   const { file, source } = readScene(slug);
   const id = /^\s+id: '([^']+)'/mu.exec(source)?.[1];
   const image = /iconFile\('([^']+)'\)/u.exec(source)?.[1];
-  const imported = /import \{ (\w+) \} from 'react-icons\/(\w+)'/u.exec(source);
-  const props = imported
-    ? new RegExp(`<${imported[1]}\\b([^>]*)/>`, 'u').exec(source)?.[1]
-    : null;
-  if (!id || (!image && !imported)) {
+  const glyphs = image ? [] : glyphsOf(source);
+  if (!id || (!image && glyphs.length === 0)) {
     throw new Error(`${file} has no id or no recognisable icon.`);
   }
-  return {
-    color: /color="([^"]+)"/u.exec(props ?? '')?.[1] ?? FALLBACK_COLOR,
-    component: imported?.[1],
-    id,
-    image,
-    pack: imported?.[2],
-  };
+  return { glyphs, id, image };
 }
 
 // The file in public/icons a tool's overlay draws.
@@ -111,19 +136,39 @@ export function sceneIconFile(slug) {
   return image ?? `${id}.svg`;
 }
 
-// The SVG for a scene whose icon is a react-icons component, with every
-// `currentColor` resolved to the colour the scene draws it in; null for a
-// scene that ships its own image.
-export async function sceneIconSvg(slug) {
-  const { color, component, image, pack } = iconOf(slug);
-  if (image) return null;
+async function glyphSvg({ color, component, pack }, size) {
   const icons = await import(`react-icons/${pack}`);
-  const markup = renderToStaticMarkup(
-    createElement(icons[component], { color, size: RASTER_SIZE })
-  );
-  return `${markup
+  return renderToStaticMarkup(createElement(icons[component], { color, size }))
     .replace(/ style="[^"]*"/u, '')
-    .replaceAll('currentColor', color)}\n`;
+    .replaceAll('currentColor', color);
+}
+
+// The SVG for a scene whose icon is react-icons glyphs, with every
+// `currentColor` resolved to the colour the scene draws it in; null for a
+// scene that ships its own image. Several glyphs sit side by side, centred
+// on one line as the app's Scenemoji draws them, the tallest RASTER_SIZE.
+export async function sceneIconSvg(slug) {
+  const { glyphs, image } = iconOf(slug);
+  if (image) return null;
+  if (glyphs.length === 1) return `${await glyphSvg(glyphs[0], RASTER_SIZE)}\n`;
+  const tallest = Math.max(...glyphs.map((glyph) => glyph.scale));
+  let x = 0;
+  const placed = await Promise.all(
+    glyphs.map(async (glyph) => {
+      const size = Math.round((RASTER_SIZE * glyph.scale) / tallest);
+      const at = x;
+      x += size;
+      const y = (RASTER_SIZE - size) / 2;
+      return (await glyphSvg(glyph, size)).replace(
+        /^<svg /u,
+        `<svg x="${at}" y="${y}" `
+      );
+    })
+  );
+  return (
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${x}" height="${RASTER_SIZE}" ` +
+    `viewBox="0 0 ${x} ${RASTER_SIZE}">${placed.join('')}</svg>\n`
+  );
 }
 
 export const sceneIconPath = (file) => path.join(ICONS_DIR, file);

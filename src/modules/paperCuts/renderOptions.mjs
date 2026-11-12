@@ -9,12 +9,14 @@ import createOptionSchema, {
   spec,
   standard,
 } from '../optionSchema/index.mjs';
+import { paintOptions } from '../painted/index.mjs';
 
 export const FAMILIES = ['diagonal', 'radial', 'constellation'];
 export const VIEWS = ['front', 'angle'];
 const structure = (item) => inFacet('structure', item);
 const look = (item) => inFacet('color', item);
 export const RENDER_OPTIONS = {
+  ...paintOptions(),
   frame: sceneOnly(
     choice('data', null, 'Select frame', ['1', '2', '3', 'generated'], '1', {
       choiceLabels: { generated: 'Generated' },

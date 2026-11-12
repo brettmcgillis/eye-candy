@@ -1304,6 +1304,56 @@ function checkSequences({ panel: kernel }, { PRESETS: presets }) {
       `scroll: ${missing.map((e) => `${e.id}:${e.variant}`).join(', ')} never appear in ${config.scrollTiled ? 'the tile' : 'a 120 × 80 stretch'}.`
     );
   });
+
+  // The video CLI's sequence mode: an eager driver is a pure function of
+  // its steps however slow the machine (the second run's clock jumps 50 ms
+  // at every read, starving a frame-budgeted bake), and every chunk it
+  // mounts has its cables from the first frame.
+  const tourConfig = { ...presets['Grand Tour'], buildIn: false };
+  const playTour = (slow) => {
+    const { now } = performance;
+    let fake = 0;
+    if (slow)
+      performance.now = () => {
+        fake += 50;
+        return fake;
+      };
+    const driver = kernel.createPanelDriver({ eager: true });
+    const frames = [];
+    let bare = 0;
+    for (let f = 0; f < 600; f += 1) {
+      const out = driver.step(tourConfig, f === 0 ? 0 : 1 / 30, {
+        release: 0,
+        replay: 0,
+        view,
+      });
+      if (!out.patch.cables.length || driver.show.waiting) bare += 1;
+      if (f % 60 === 59) {
+        const { positions } = out.patch.world.snapshot();
+        frames.push({
+          parts: world(out.moving, out.offset),
+          rope: Array.from(positions, (v) => v.toFixed(5)).join(),
+        });
+      }
+    }
+    driver.session.dispose();
+    performance.now = now;
+    return { bare, frames };
+  };
+  const once = playTour(false);
+  const twice = playTour(true);
+  check(
+    once.bare === 0 && twice.bare === 0,
+    `sequence: the eager Grand Tour showed chunks without their cables in ${Math.max(once.bare, twice.bare)} of 600 frames.`
+  );
+  check(
+    once.frames.every(
+      (mark, i) =>
+        same(mark.parts, twice.frames[i].parts) &&
+        mark.rope === twice.frames[i].rope
+    ),
+    'sequence: an eager Grand Tour differs on a slow machine.'
+  );
 }
 
 async function main() {

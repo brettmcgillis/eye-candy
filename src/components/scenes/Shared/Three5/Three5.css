@@ -1,0 +1,198 @@
+.three5-guide {
+  position: absolute;
+  left: 28px;
+  top: 130px;
+  width: 260px;
+  box-sizing: border-box;
+  max-height: calc(100vh - 250px);
+  overflow: auto;
+  pointer-events: auto;
+  scrollbar-width: thin;
+  color: #48443c;
+  font:
+    12px/1.5 system-ui,
+    sans-serif;
+  padding: 16px;
+  background: #fbf7edeb;
+  border: 1px solid #83786a2b;
+  border-radius: 3px;
+  box-shadow: 0 8px 35px #4c403808;
+}
+.three5-eyebrow {
+  font: 10px/1.4 monospace;
+  letter-spacing: 0.15em;
+  color: #9b625b;
+}
+.three5-guide h2 {
+  font:
+    25px/1.15 Georgia,
+    serif;
+  margin: 10px 0;
+  font-weight: normal;
+}
+.three5-guide p {
+  margin: 10px 0;
+}
+.three5-use {
+  border-top: 1px solid #83786a2b;
+  padding-top: 12px;
+}
+.three5-instruction {
+  color: #777167;
+  font-size: 11px;
+}
+.three5-status {
+  font: 10px/1.5 monospace;
+  color: #84796c;
+  margin-top: 15px;
+}
+.three5-error {
+  color: #a23832;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 900px) {
+  .three5-guide {
+    left: 12px;
+    top: auto;
+    bottom: 70px;
+    width: min(290px, 76vw);
+    padding: 12px 16px;
+    font-size: 11px;
+  }
+  .three5-guide h2 {
+    font-size: 20px;
+    margin: 6px 0;
+  }
+  .three5-use,
+  .three5-instruction {
+    display: none;
+  }
+}
+
+.three5-projection-compare {
+  position: absolute;
+  inset: 120px 340px 90px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  align-items: center;
+}
+.three5-projection-single {
+  height: 100%;
+  display: grid;
+  place-items: center;
+}
+.three5-source-caption {
+  align-self: start;
+  text-align: center;
+}
+.three5-drawing {
+  margin: 0;
+  width: 100%;
+  text-align: center;
+}
+.three5-projection-single .three5-drawing {
+  width: min(64vh, 64vw);
+}
+.three5-drawing img {
+  display: block;
+  width: 100%;
+  box-shadow: 0 15px 55px #39302318;
+}
+.three5-source-caption,
+.three5-drawing {
+  color: #48443c;
+  font:
+    11px/1.5 system-ui,
+    sans-serif;
+}
+.three5-source-caption h3,
+.three5-drawing h3 {
+  font: 11px/1.5 monospace;
+  letter-spacing: 0.08em;
+  font-weight: normal;
+}
+.three5-drawing figcaption {
+  min-height: 3em;
+  margin: 12px 0;
+}
+.three5-drawing button {
+  pointer-events: auto;
+  border: 1px solid #83786a50;
+  border-radius: 3px;
+  background: #fbf7ed;
+  padding: 8px 12px;
+  color: #48443c;
+  cursor: pointer;
+}
+@media (max-width: 900px) {
+  .three5-projection-compare {
+    inset: 120px 20px 200px;
+    gap: 12px;
+  }
+}
+
+.three5-paint-feedback {
+  color: #6c6358;
+  font: 11px/1.5 monospace;
+}
+
+.three5-start {
+  border-top: 1px solid #83786a2b;
+  padding-top: 12px;
+  margin-top: 14px;
+}
+.three5-details {
+  border-top: 1px solid #83786a2b;
+  padding-top: 12px;
+  margin-top: 14px;
+}
+.three5-details summary {
+  cursor: pointer;
+  color: #84796c;
+}
+
+.three5-stroke-sample {
+  margin: 12px 0;
+  background: #fbf4e5;
+  padding: 8px;
+}
+.three5-stroke-sample img {
+  display: block;
+  width: 100%;
+  height: 32px;
+  object-fit: fill;
+}
+
+.three5-comparison-label {
+  display: block;
+  white-space: nowrap;
+  padding: 7px 12px;
+  background: #fbf7eddd;
+  border: 1px solid #83786a2b;
+  color: #62584d;
+  font: 11px/1.5 monospace;
+}
+.three5-screen-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.three5-paper-overlay {
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.three5-animation-status {
+  position: absolute;
+  bottom: 25px;
+  left: 50%;
+  transform: translateX(-50%);
+  max-width: 70vw;
+  padding: 8px 12px;
+  background: #fbf7edeb;
+  border: 1px solid #83786a2b;
+  color: #62584d;
+  text-align: center;
+  font: 10px/1.5 monospace;
+}

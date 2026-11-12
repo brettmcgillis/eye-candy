@@ -3,6 +3,7 @@ import {
   clamp,
   float,
   floor,
+  fract,
   fwidth,
   instanceIndex,
   max,
@@ -26,6 +27,27 @@ const EPS = 1e-5;
 // Domain uv (0..1 both ways) of a map-space point.
 const domainOf = (s, p) =>
   vec2(p.x.add(s.u.aspect).div(s.u.aspect.mul(2)), p.y.add(1).mul(0.5));
+
+function paintedColor(
+  s,
+  base,
+  du,
+  dv,
+  edge = float(0),
+  height = float(0),
+  reserve = false
+) {
+  const level = s.fieldAt(du, dv).mul(s.u.levels).sub(s.u.levelOffset);
+  return s.painting.treat(
+    base,
+    vec2(du.mul(s.u.aspect).mul(3), dv.mul(3).add(height.mul(0.4))),
+    {
+      seed: floor(level).add(65536),
+      edge,
+      boundary: reserve ? fract(level).min(float(1).sub(fract(level))) : null,
+    }
+  );
+}
 
 // Lit, with a rise that fades the lighting in: at 0 the colour is all
 // emissive, so the flat start of a rise reads like a flat IsoLines piece.
@@ -61,7 +83,24 @@ export function createLayerMaterial(s, kMin, roughness) {
     float(1),
     smoothstep(0, 1, into.div(pxs).sub(s.u.outlineWidth.mul(s.u.pixelRatio)))
   );
-  const color = mix(s.u.outlineColor, s.colorAt(level, du, dv), outline);
+  const pigmentEdge = float(1).sub(smoothstep(0, 0.18, into));
+  const color = mix(
+    mix(
+      s.u.outlineColor,
+      s.painting.inkFor(s.colorAt(level, du, dv)),
+      s.painting.u.followPalette
+    ),
+    paintedColor(
+      s,
+      s.colorAt(level, du, dv),
+      du,
+      dv,
+      pigmentEdge,
+      float(0),
+      true
+    ),
+    outline
+  );
 
   const material = litMaterial(s, color, vec3(0, 0, 1));
   material.positionNode = vec3(p.x, p.y, z);
@@ -112,8 +151,22 @@ export function createSurfaceMaterial(s, form, roughness) {
     smoothstep(0, 1, toLevel.sub(s.u.outlineWidth.mul(s.u.pixelRatio).mul(0.5)))
   );
   const color = mix(
-    s.u.outlineColor,
-    s.colorAt(band.add(s.u.levelOffset).div(s.u.levels), at.x, at.y),
+    mix(
+      s.u.outlineColor,
+      s.painting.inkFor(
+        s.colorAt(band.add(s.u.levelOffset).div(s.u.levels), at.x, at.y)
+      ),
+      s.painting.u.followPalette
+    ),
+    paintedColor(
+      s,
+      s.colorAt(band.add(s.u.levelOffset).div(s.u.levels), at.x, at.y),
+      at.x,
+      at.y,
+      float(1).sub(smoothstep(0, 0.18, k.sub(band))),
+      float(0),
+      true
+    ),
     outline
   );
 
@@ -136,7 +189,12 @@ export function createSkirtMaterial(s, form, roughness) {
   const level = surfaceLevel(s, n, form);
   const material = litMaterial(
     s,
-    s.colorAt(band.add(s.u.levelOffset).div(s.u.levels), du, dv),
+    paintedColor(
+      s,
+      s.colorAt(band.add(s.u.levelOffset).div(s.u.levels), du, dv),
+      du,
+      dv
+    ),
     vec3(attribute('aOut', 'vec2'), 0)
   );
   material.positionNode = vec3(p.x, p.y, z);
@@ -164,7 +222,16 @@ export function createWallMaterial(s, roughness) {
   const dir = normalize(b.sub(a).add(vec2(EPS, 0)));
   const z = mix(s.heightOf(info.x), s.heightOf(info.y), up);
   const d = domainOf(s, p);
-  const color = s.colorAt(info.z, varying(d.x), varying(d.y));
+  const du = varying(d.x);
+  const dv = varying(d.y);
+  const color = paintedColor(
+    s,
+    s.colorAt(info.z, du, dv),
+    du,
+    dv,
+    float(0),
+    varying(z)
+  );
   const material = litMaterial(s, color, vec3(dir.y, dir.x.negate(), 0));
   material.positionNode = vec3(p, z);
   material.roughnessNode = roughness;
@@ -225,9 +292,24 @@ export function createBoxMaterial(s, form, roughness, { trail = false } = {}) {
       )
     )
   );
-  const d = domainOf(s, mix(a, b, 0.5));
+  const d = domainOf(s, p);
   const color = mix(
-    s.lineColorAt(info.z, varying(d.x), varying(d.y)),
+    paintedColor(
+      s,
+      select(
+        s.painting.u.style.greaterThan(0.5),
+        mix(
+          s.colorAt(info.z, varying(d.x), varying(d.y)),
+          s.painting.inkFor(s.colorAt(info.z, varying(d.x), varying(d.y))),
+          0.15
+        ),
+        s.lineColorAt(info.z, varying(d.x), varying(d.y))
+      ),
+      varying(d.x),
+      varying(d.y),
+      float(0),
+      varying(z)
+    ),
     s.u.background,
     varying(fade)
   );

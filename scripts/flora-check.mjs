@@ -67,7 +67,12 @@ async function checkKernelPurity() {
   );
   [...schema.matchAll(/^import .* from '([^']+)';$/gmu)]
     .map(([, specifier]) => specifier)
-    .filter((specifier) => specifier !== '../optionSchema/index.mjs')
+    .filter(
+      (specifier) =>
+        !['../optionSchema/index.mjs', '../painted/index.mjs'].includes(
+          specifier
+        )
+    )
     .forEach((specifier) =>
       failures.push(
         `renderOptions.mjs imports "${specifier}" — it must stay dependency-free.`

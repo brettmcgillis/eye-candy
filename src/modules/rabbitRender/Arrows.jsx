@@ -2,9 +2,18 @@ import React, { useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-import { uniform } from 'three/tsl';
+import {
+  attribute,
+  float,
+  materialColor,
+  positionGeometry,
+  uniform,
+  uv,
+  vec2,
+} from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
+import { createPaintState } from '@modules/paintedRender';
 import {
   POSE_TIME,
   RIBBON_TIE_INSET,
@@ -92,6 +101,7 @@ function woundArrows(probe, wounds, capsules, volley) {
 
 export default function Arrows({
   capsules,
+  paintConfig,
   damping,
   floorY,
   handles,
@@ -124,8 +134,13 @@ export default function Arrows({
     [capsules, model]
   );
 
-  const materials = useMemo(
-    () => ({
+  const painting = useMemo(createPaintState, []);
+  useEffect(() => {
+    painting.apply(paintConfig);
+  }, [painting, paintConfig]);
+  useEffect(() => () => painting.dispose(), [painting]);
+  const materials = useMemo(() => {
+    const result = {
       fletching: new THREE.MeshStandardNodeMaterial({
         color: '#3e3a37',
         roughness: 0.95,
@@ -139,15 +154,28 @@ export default function Arrows({
         color: '#ddd6cb',
         roughness: 0.85,
       }),
-      tie: createRibbonMaterial(),
-    }),
-    []
-  );
+      tie: createRibbonMaterial(painting),
+    };
+    [result.shaft, result.nock, result.fletching].forEach((material) => {
+      const colorNode = painting.treat(
+        painting.colorFor(materialColor, 1),
+        vec2(positionGeometry.y.mul(19), uv().x),
+        { seed: attribute('arrowIdentity', 'float'), edge: float(0) }
+      );
+      Object.assign(material, {
+        colorNode,
+        emissiveNode: colorNode.mul(
+          painting.u.style.greaterThan(0.5).select(0.5, 0)
+        ),
+      });
+    });
+    return result;
+  }, [painting]);
   const ink = useMemo(() => uniform(new THREE.Color()), []);
   const inkWidth = useMemo(() => uniform(0), []);
   const outlineMaterial = useMemo(
-    () => createOutlineMaterial({ color: ink, width: inkWidth }),
-    [ink, inkWidth]
+    () => createOutlineMaterial({ color: ink, width: inkWidth, painting }),
+    [ink, inkWidth, painting]
   );
   useEffect(
     () => () =>

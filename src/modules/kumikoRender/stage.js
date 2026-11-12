@@ -28,6 +28,7 @@ const DEG = Math.PI / 180;
 export const VIEW_ANGLES = {
   angle: [-24, 12],
   front: [0, 0],
+  flat: [0, 0],
   raking: [-58, 6],
 };
 

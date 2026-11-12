@@ -2,7 +2,15 @@ import React, { memo, useCallback, useEffect, useMemo } from 'react';
 
 import { useFrame } from '@react-three/fiber';
 
-import { uniformArray } from 'three/tsl';
+import {
+  color,
+  float,
+  instanceIndex,
+  mix,
+  uniformArray,
+  uv,
+  vec2,
+} from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
 import {
@@ -11,6 +19,7 @@ import {
   scatterRejection,
   setGrassUniforms,
 } from '@elements/Grass';
+import { createPaintState } from '@modules/paintedRender';
 
 import grazeSites from './grazeSites';
 
@@ -44,6 +53,7 @@ function createMuzzlePress(probe, capsules) {
 
 function GrazeGrass({
   capsules,
+  paintConfig,
   floorY,
   handles = null,
   height,
@@ -70,7 +80,56 @@ function GrazeGrass({
     () => createMuzzlePress(probe, capsules),
     [capsules, probe]
   );
-  const material = useMemo(() => ({ blade: 'straight', pressers }), [pressers]);
+  const painting = useMemo(createPaintState, []);
+  useEffect(() => {
+    painting.apply(paintConfig);
+  }, [painting, paintConfig]);
+  useEffect(() => () => painting.dispose(), [painting]);
+  const material = useMemo(
+    () => ({
+      blade: 'straight',
+      pressers,
+      materialTransform(nodeMaterial, frame) {
+        const active = painting.u.style.greaterThan(0.5);
+        const seed = frame.data.x.mul(19.1).sin().mul(743).fract();
+        const point = vec2(
+          frame.worldX.mul(8).add(uv().x),
+          frame.t.mul(2).add(frame.worldZ.mul(8))
+        );
+        const wash = painting.treat(
+          painting.colorFor(nodeMaterial.colorNode, 0),
+          point,
+          {
+            seed: instanceIndex.toVarying().add(2000000),
+            edge: float(0),
+          }
+        );
+        const line = seed.greaterThan(0.55);
+        const ink = mix(
+          mix(
+            color('#385044'),
+            painting.inkFor(painting.colorFor(nodeMaterial.colorNode, 0)),
+            painting.u.followPalette
+          ),
+          wash,
+          0.3
+        );
+        const colorNode = active.select(
+          line.select(ink, wash),
+          nodeMaterial.colorNode
+        );
+        Object.assign(nodeMaterial, {
+          colorNode,
+          emissiveNode: colorNode.mul(active.select(0.6, 0)),
+          maskNode: active
+            .and(line)
+            .select(uv().x.sub(0.5).abs().lessThan(0.16), true),
+        });
+        return nodeMaterial;
+      },
+    }),
+    [painting, pressers]
+  );
 
   useFrame(() => {
     const { bone, points, radius, tip } = pressers;

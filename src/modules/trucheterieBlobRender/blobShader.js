@@ -22,6 +22,7 @@ import { growthMask, revealDepth } from './growth';
 import { isReturn, triangleDistance } from './triangleArcs';
 
 export default function buildBlobColorNode({
+  painting,
   cellSizeU,
   debugCellsU,
   debugConnectorsU,
@@ -99,9 +100,26 @@ export default function buildBlobColorNode({
         1,
         0
       );
+      const penPoint = attribute('instanceCenter', 'vec2').add(
+        q.mul(cellSizeU)
+      );
+      const penWave = painting
+        .grainAt(penPoint.mul(1.7), float(976))
+        .sub(0.5)
+        .mul(painting.u.strokeRoughness)
+        .mul(painting.u.style.greaterThan(0.5).select(1, 0));
+      const penWidth = penHalfWidthU.mul(penWave.mul(0.9).add(1));
       const ink = max(
-        strokeMask(first.aaField, first.dBand, penHalfWidthU).mul(firstGrown),
-        strokeMask(second.aaField, second.dBand, penHalfWidthU)
+        strokeMask(
+          first.aaField,
+          first.dBand.add(penWave.mul(penHalfWidthU)),
+          penWidth
+        ).mul(firstGrown),
+        strokeMask(
+          second.aaField,
+          second.dBand.add(penWave.mul(penHalfWidthU)),
+          penWidth
+        )
           .mul(outsideFirst)
           .mul(hasSecond)
           .mul(secondGrown)
@@ -191,7 +209,32 @@ export default function buildBlobColorNode({
       const inkOnly = isTriangle
         .and(inCell.lessThan(0.5))
         .and(marks.greaterThan(0.001));
-      const tone = mix(fill, strokeColorU, select(inkOnly, 1, marks));
+      const legacyIdentity = instanceIndex
+        .toVarying()
+        .toUint()
+        .shiftLeft(16)
+        .bitOr(laneSlot.toUint());
+      const nativeIdentity = textureLoad(
+        laneTextures.paint,
+        slotCoord
+      ).r.toUint();
+      const fillIdentity = select(
+        painting.u.bleed.add(painting.u.pooling).greaterThan(0.001),
+        nativeIdentity,
+        legacyIdentity
+      );
+      const paintedFill = painting.treat(fill, canvasPoint.mul(0.017), {
+        seed: fillIdentity,
+        edge: ink,
+      });
+      const drawnInk = painting.u.style
+        .greaterThan(0.5)
+        .select(painting.inkFor(fill), strokeColorU);
+      const tooth = painting.sample(canvasPoint.mul(0.06)).g.mul(0.5).add(0.5);
+      const drawnMarks = select(inkOnly, 1, marks).mul(
+        painting.u.style.greaterThan(0.5).select(tooth, 1)
+      );
+      const tone = mix(paintedFill, drawnInk, drawnMarks);
       result.assign(vec4(tone, max(inBlob, marks)));
     });
     return result;

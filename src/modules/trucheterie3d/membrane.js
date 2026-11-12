@@ -1,11 +1,7 @@
 import { familySector, laneRadii } from '@modules/trucheterieBlob';
 
 import buildChains from './chains';
-import buildStrands, {
-  familyWedge,
-  hiddenArcs,
-  visibleIntervals,
-} from './strands';
+import { familyWedge, hiddenArcs, visibleIntervals } from './strands';
 
 const TAU = Math.PI * 2;
 const BEAD_COLUMNS = 24;
@@ -35,7 +31,6 @@ function lanePieces(field, pathDiv) {
       const center = [sector.x, sector.y];
       const { span, start } = familyWedge(cell, type, edge);
       laneRadii(type, cell.size, pathDiv).forEach(([r0, r1], index) => {
-        if (r0 < 1e-9 && r1 - r0 < 0.75 / pathDiv && type !== 2) return;
         const hidden = covers.flatMap((occluder) =>
           narrower(
             hiddenArcs(center, r0, occluder),
@@ -110,9 +105,9 @@ function walkDirections(chain) {
   return dir;
 }
 
-function smoothPass(current, pinned, strips, rows, lambda) {
+function smoothPass(current, pinned, strips, lambda) {
   const next = Float32Array.from(current);
-  strips.forEach(({ base, cols, loop }) => {
+  strips.forEach(({ base, cols, loop, rows }) => {
     const at = (c, k) => {
       const col = loop ? (c + cols) % cols : c;
       if (col < 0 || col >= cols || k < 0 || k >= rows) return null;
@@ -196,11 +191,12 @@ function sewBelow(skin) {
 export default function buildMembrane(field, config) {
   const pathDiv = config.blobPathsPerUnit;
   const pitch = 1 / pathDiv;
-  const across = Math.max(2, Math.round(config.membraneRows));
-  const rows = across + 1;
+  const across = Math.max(2, Math.round(config.membraneRows / 2) * 2);
   const pieces = lanePieces(field, pathDiv);
-  const { dots } = buildStrands(field, { junction: 'cap', pathDiv });
-  const chained = buildChains({ dots, pieces }, { pathDiv });
+  const chained = buildChains(
+    { dots: [], pieces },
+    { pathDiv, endpointDivisions: 4 }
+  );
 
   const layouts = [
     ...chained.chains
@@ -209,11 +205,22 @@ export default function buildMembrane(field, config) {
         chain,
         cols: chain.samples.length,
         loop: chain.loop,
+        rows: chain.samples.every((sample) => {
+          const piece = pieces[sample.piece];
+          return piece.r1 - piece.r0 <= pitch / 2 + 1e-9;
+        })
+          ? across / 2 + 1
+          : across + 1,
       })),
-    ...chained.beads.map((bead) => ({ bead, cols: BEAD_COLUMNS, loop: true })),
+    ...chained.beads.map((bead) => ({
+      bead,
+      cols: BEAD_COLUMNS,
+      loop: true,
+      rows: across / 2 + 1,
+    })),
   ];
 
-  const total = layouts.reduce((sum, { cols }) => sum + cols * rows, 0);
+  const total = layouts.reduce((sum, { cols, rows }) => sum + cols * rows, 0);
   const rest = new Float32Array(total * 2);
   const pinned = new Uint8Array(total);
   const along = new Float32Array(total);
@@ -222,10 +229,13 @@ export default function buildMembrane(field, config) {
   const strips = [];
   const chains = [];
   const welds = [];
+  const centerVertices = [];
+  const endVertices = [];
+  const seams = new Uint8Array(total);
   let base = 0;
   let samples = 0;
 
-  layouts.forEach(({ bead, chain, cols, loop }) => {
+  layouts.forEach(({ bead, chain, cols, loop, rows }) => {
     const cell = new Int32Array(cols);
     const slot = new Int8Array(cols);
     const lane = new Int16Array(cols);
@@ -234,12 +244,13 @@ export default function buildMembrane(field, config) {
     const pivots = [];
     const column = (c, center, angle, [lo, hi], sign, s) => {
       for (let k = 0; k < rows; k += 1) {
-        const t = k / across;
+        const t = k / (rows - 1);
         const r = sign > 0 ? lo + (hi - lo) * t : hi - (hi - lo) * t;
         const v = base + c * rows + k;
         rest[v * 2] = center[0] + r * Math.cos(angle);
         rest[v * 2 + 1] = center[1] + r * Math.sin(angle);
-        pinned[v] = r > 1e-9 && (k === 0 || k === across) ? 1 : 0;
+        pinned[v] = r > 1e-9 && (k === 0 || k === rows - 1) ? 1 : 0;
+        seams[v] = pinned[v];
         if (r <= 1e-9) pivots.push(v);
         seamDistance[v] = Math.min(lo > 1e-9 ? r - lo : Infinity, hi - r);
         along[v] = s;
@@ -248,7 +259,6 @@ export default function buildMembrane(field, config) {
     };
 
     let length = 0;
-    let pivotOnly = true;
     if (bead) {
       for (let c = 0; c < cols; c += 1) {
         cell[c] = bead.cell;
@@ -266,7 +276,6 @@ export default function buildMembrane(field, config) {
           length += Math.hypot(sample.x - prev.x, sample.y - prev.y);
         }
         const piece = pieces[sample.piece];
-        pivotOnly = pivotOnly && piece.r0 < 1e-9;
         cell[c] = piece.cell;
         slot[c] = piece.slot;
         lane[c] = piece.index;
@@ -284,21 +293,18 @@ export default function buildMembrane(field, config) {
       if (!loop) {
         for (let k = 0; k < rows; k += 1) {
           pinned[base + k] = 1;
+          endVertices.push(base + k, base + (cols - 1) * rows + k);
           pinned[base + (cols - 1) * rows + k] = 1;
         }
       }
     }
 
-    // A lane wrapping a grid corner pivots on a point. Unless the wrap is a
-    // whole disc, a stroke ends on that point, so it is a seam; a whole
-    // disc's centre is one free vertex split across the columns, welded.
-    if (loop && pivotOnly) welds.push(pivots);
-    else
-      pivots.forEach((v) => {
-        pinned[v] = 1;
-      });
+    centerVertices.push(...pivots);
+    pivots.forEach((vertex) => {
+      pinned[vertex] = 1;
+    });
 
-    strips.push({ base, cols, length, loop });
+    strips.push({ base, cols, length, loop, rows });
     chains.push({
       cell,
       kind: 'lane',
@@ -313,10 +319,55 @@ export default function buildMembrane(field, config) {
     samples += cols;
   });
 
+  const occupied = new Map();
+  field.cells.forEach((entry) => {
+    const { cell } = entry;
+    for (let y = cell.row; y < cell.row + cell.size; y += 1)
+      for (let x = cell.column; x < cell.column + cell.size; x += 1)
+        occupied.set(`${x},${y}`, entry);
+  });
+  const filledAt = (x, y) => {
+    const entry = occupied.get(`${Math.floor(x)},${Math.floor(y)}`);
+    return Boolean(
+      entry &&
+      entry.connections.some(([type, edge]) => {
+        const sector = familySector(entry.cell, type, edge);
+        return Math.hypot(x - sector.x, y - sector.y) < sector.rMax;
+      })
+    );
+  };
+  const positionKey = (vertex) =>
+    `${Math.round(rest[vertex * 2] * 1e6)},${Math.round(rest[vertex * 2 + 1] * 1e6)}`;
+  const candidates = new Map(
+    [...centerVertices, ...endVertices].map((vertex) => [
+      positionKey(vertex),
+      [],
+    ])
+  );
+  for (let vertex = 0; vertex < total; vertex += 1)
+    candidates.get(positionKey(vertex))?.push(vertex);
+  candidates.forEach((vertices) => {
+    if (vertices.length < 2 || vertices.some((vertex) => seams[vertex])) return;
+    const x = rest[vertices[0] * 2];
+    const y = rest[vertices[0] * 2 + 1];
+    const interior = Array.from({ length: 8 }, (_, i) => {
+      const angle = (i / 8) * TAU;
+      return filledAt(
+        x + Math.cos(angle) * pitch * 0.001,
+        y + Math.sin(angle) * pitch * 0.001
+      );
+    }).every(Boolean);
+    if (!interior) return;
+    vertices.forEach((vertex) => {
+      pinned[vertex] = 0;
+    });
+    welds.push(vertices);
+  });
+
   const crownRaw = new Float32Array(total);
   let farthest = 1e-9;
   strips.forEach((strip) => {
-    for (let v = strip.base; v < strip.base + strip.cols * rows; v += 1) {
+    for (let v = strip.base; v < strip.base + strip.cols * strip.rows; v += 1) {
       if (!pinned[v]) {
         const s = along[v];
         const d = strip.loop
@@ -332,11 +383,11 @@ export default function buildMembrane(field, config) {
   }
   let crown = crownRaw;
   for (let pass = 0; pass < CROWN_SMOOTHING.passes; pass += 1) {
-    crown = smoothPass(crown, pinned, strips, rows, CROWN_SMOOTHING.lambda);
+    crown = smoothPass(crown, pinned, strips, CROWN_SMOOTHING.lambda);
   }
 
   const quads = strips.reduce(
-    (sum, { cols, loop }) => sum + (loop ? cols : cols - 1) * across,
+    (sum, { cols, loop, rows }) => sum + (loop ? cols : cols - 1) * (rows - 1),
     0
   );
   const index = new Uint32Array(quads * 6);
@@ -345,9 +396,9 @@ export default function buildMembrane(field, config) {
     const last = strip.loop ? strip.cols : strip.cols - 1;
     for (let c = 0; c < last; c += 1) {
       const next = (c + 1) % strip.cols;
-      for (let k = 0; k < across; k += 1) {
-        const a = strip.base + c * rows + k;
-        const b = strip.base + next * rows + k;
+      for (let k = 0; k < strip.rows - 1; k += 1) {
+        const a = strip.base + c * strip.rows + k;
+        const b = strip.base + next * strip.rows + k;
         index.set([a, a + 1, b + 1, a, b + 1, b], t);
         t += 6;
       }
@@ -356,7 +407,7 @@ export default function buildMembrane(field, config) {
 
   const table = new Float32Array(strips.length * 4);
   strips.forEach((strip, s) => {
-    table.set([strip.base, strip.cols, rows, strip.loop ? 1 : 0], s * 4);
+    table.set([strip.base, strip.cols, strip.rows, strip.loop ? 1 : 0], s * 4);
   });
 
   const weldMembers = new Uint32Array(welds.flat());
@@ -375,7 +426,7 @@ export default function buildMembrane(field, config) {
     pinned,
     pitch,
     rest,
-    rows,
+    rows: across + 1,
     sampleOf,
     samples,
     strips: table,

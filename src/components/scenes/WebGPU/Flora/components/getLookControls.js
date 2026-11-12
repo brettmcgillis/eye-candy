@@ -1,5 +1,6 @@
 import { folder } from 'leva';
 
+import { createPaintingFolders } from '@modules/paintedRender';
 import { PALETTE_NAMES, PALETTE_NONE } from '@utils/gradientPalette';
 
 import { presetReader, range } from './controlHelpers';
@@ -8,11 +9,14 @@ function color(label, value) {
   return { label, value };
 }
 
+const paintingFolders = createPaintingFolders('Flora');
+
 export default function getLookControls(preset = {}) {
   const p = presetReader(preset);
 
   return folder(
     {
+      ...paintingFolders(preset),
       Palette: folder(
         {
           paletteName: {

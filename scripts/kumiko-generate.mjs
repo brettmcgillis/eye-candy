@@ -15,12 +15,21 @@ import {
 } from './lib/kumikoRender.mjs';
 import { sceneIconFile } from './lib/sceneIcons.mjs';
 
-const solidOf = (views) => views.filter((view) => view !== 'flat');
+const solidOf = (views, options) =>
+  views.filter(
+    (view) =>
+      view !== 'flat' ||
+      options.paintStyle !== 'original' ||
+      (options.base?.paintStyle && options.base.paintStyle !== 'original') ||
+      (options.base?.preset?.paintStyle &&
+        options.base.preset.paintStyle !== 'original')
+  );
 
 runStills({
   doneLabel: 'rendered panels',
   // `flat` is the 2D art; only the 3D views need the GPU.
-  gpu: ({ formats, views }) => solidOf(views).length > 0 && formats.length > 0,
+  gpu: ({ formats, options, views }) =>
+    solidOf(views, options).length > 0 && formats.length > 0,
   async item({ capturer, index, kernel, options, roll, save, step, views }) {
     const drawn = await step(`building panel ${index + 1}`, async () =>
       panelAt(kernel, { index, options, roll })
@@ -35,7 +44,7 @@ runStills({
         renderFlatSvg(kernel, { ...drawn, options }, options.svgStyle)
       );
     }
-    if (views.includes('flat')) {
+    if (views.includes('flat') && drawn.config.paintStyle === 'original') {
       await out.image('flat', () =>
         Buffer.from(renderFlatSvg(kernel, { ...drawn, options }, 'fill'))
       );
@@ -44,7 +53,7 @@ runStills({
       const bounds = await step(`placing ${drawn.seed}`, async () =>
         capturer.load(drawn)
       );
-      const solid = solidOf(views);
+      const solid = solidOf(views, drawn.config);
       for (let v = 0; v < solid.length; v += 1) {
         const view = solid[v];
         // eslint-disable-next-line no-await-in-loop

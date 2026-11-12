@@ -1,5 +1,7 @@
 # Rabbit pipeline
 
+Painted presets and shared brush maps: [Painted variants](painted-variants.md).
+
 RabbitCLI renders and pen-plots the Stay Hunted rabbit — the hare in the
 painting, his volley of arrows, the ribbon tied to one of them and the
 graze grass — from rolled generations, and its Live tab captures a frame

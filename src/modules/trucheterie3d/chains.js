@@ -8,10 +8,10 @@ const endAngle = (piece, end) => (end === 0 ? piece.a0 : piece.a1);
 // along the edge and the arc crosses it square. Keyed on the crossing point
 // plus the crossing direction, so two strands that meet at a cell corner
 // heading different ways are never mistaken for one.
-function endKey(kind, point, angle, pathDiv) {
+function endKey(kind, point, angle, pathDiv, endpointDivisions) {
   const axis = Math.abs(Math.cos(angle)) > 0.5 ? 'v' : 'h';
-  const qx = Math.round(point[0] * 2 * pathDiv);
-  const qy = Math.round(point[1] * 2 * pathDiv);
+  const qx = Math.round(point[0] * endpointDivisions * pathDiv);
+  const qy = Math.round(point[1] * endpointDivisions * pathDiv);
   return `${kind}:${axis}:${qx}:${qy}`;
 }
 
@@ -20,7 +20,7 @@ function wedgeU(piece, angle) {
   return Math.min(1, Math.max(0, (angle - piece.start) / piece.span));
 }
 
-function linkPieces(pieces, pathDiv) {
+function linkPieces(pieces, pathDiv, endpointDivisions) {
   const buckets = new Map();
   pieces.forEach((piece, id) => {
     if (piece.loop) return;
@@ -31,7 +31,8 @@ function linkPieces(pieces, pathDiv) {
         piece.kind,
         pointAt(piece.center, piece.radius, angle),
         angle,
-        pathDiv
+        pathDiv,
+        endpointDivisions
       );
       if (!buckets.has(key)) buckets.set(key, []);
       buckets.get(key).push(id * 2 + end);
@@ -58,8 +59,15 @@ const sampleSpacing = (pathDiv) => 0.375 / pathDiv;
 
 // Walks every strand piece to piece and lays samples along it: chains that
 // end (at a 2D termination, or a stub's dead end) and loops that close.
-export default function buildChains({ dots, pieces }, { pathDiv }) {
-  const { ambiguous, buckets, links } = linkPieces(pieces, pathDiv);
+export default function buildChains(
+  { dots, pieces },
+  { pathDiv, endpointDivisions = 2 }
+) {
+  const { ambiguous, buckets, links } = linkPieces(
+    pieces,
+    pathDiv,
+    endpointDivisions
+  );
   const spacing = sampleSpacing(pathDiv);
   const visited = new Uint8Array(pieces.length);
   const chains = [];
@@ -147,7 +155,7 @@ export default function buildChains({ dots, pieces }, { pathDiv }) {
       return;
     }
     const angle = dot.start;
-    const key = endKey('lane', dot.at, angle, pathDiv);
+    const key = endKey('lane', dot.at, angle, pathDiv, endpointDivisions);
     if (buckets.has(key)) return;
     if (!edgeDots.has(key)) edgeDots.set(key, dot);
   });

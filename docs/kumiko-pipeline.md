@@ -1,5 +1,7 @@
 # Kumiko pipeline
 
+Painted presets and shared brush maps: [Painted variants](painted-variants.md).
+
 Kumiko follows Fungi's arrangement (`docs/fungi-pipeline.md`): one kernel,
 two renderers, and a dev tool that is a UI over one of them. Change the
 kernel first, land every consumer in the same commit, and run

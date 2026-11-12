@@ -6,6 +6,7 @@ import {
   createShading,
   uploadBuild,
 } from '@modules/isoLinesRender';
+import { createPaintState } from '@modules/paintedRender';
 
 import {
   createBoxTemplate,
@@ -38,6 +39,7 @@ const SURFACE_SUBDIVISION = 3;
 // The piece lies on the ground: map up is world -z, height is world +y.
 export default function createReliefRig() {
   const s = createShading();
+  s.painting = createPaintState();
   const roughness = uniform(0.85);
   const kMin = uniform(0);
   const form = {
@@ -193,6 +195,7 @@ export default function createReliefRig() {
     apply(config) {
       current = config;
       applyShading(s, config);
+      s.painting.apply(config);
       const { u } = s;
       u.relief.value = config.relief * 2;
       u.lineHeight.value = config.lineHeight * 2;
@@ -297,6 +300,7 @@ export default function createReliefRig() {
       [layers, skirts, ground, surface].forEach((mesh) =>
         mesh.material.dispose()
       );
+      s.painting.dispose();
       s.dispose();
       key.dispose();
     },

@@ -17,7 +17,7 @@ Change the kernel first, land every consumer in the same commit, and run
   WebGPU/ControlPanel scene     scripts/lib/controlPanelRender.mjs
   (R3F, Leva generated,           ├─ control-panel-generate.mjs   stills + plot SVG
    optional mic input)            └─ control-panel-video.mjs      operate / montage / build /
-                                                                  drift / turntable
+                                                                  drift / turntable / sequence
                                         │
            src/dev/server/controlPanel → src/dev/tools/controlPanel (ControlPanelCLI)
 ```
@@ -163,8 +163,16 @@ seconds)` draws each cable in turn (`CABLE_STAGGER`) out of its first
 
 ## Sequences
 
-`sequence` (Motion › Sequence, live-only: the CLIs still render one fixed
-panel) changes the panel itself over time, on top of its controls' motion.
+`sequence` (Motion › Sequence) changes the panel itself over time, on top
+of its controls' motion. Stills show the fixed panel; the video CLI plays
+it in `sequence` mode. The scene and that mode share one clock,
+`createPanelDriver` (`driver.js`): the scene steps it each frame with its
+camera's view box, the stage's `playSequence` / `advance` step it at
+`1 / fps`. `{ eager: true }` (the CLI) settles a Scroll chunk's cables in
+full when it mounts instead of to `BAKE_BUDGET` ms a frame, so a render is
+the same on any machine; the check plays Grand Tour for 20 s with a clock
+that jumps 50 ms a read and wants no chunk ever `waiting` for its cables
+and the same frames as at full speed.
 Both shows (`shows.js` → `swap.js`, `scroll.js`) are pure in `t` and the
 config: `control-panel:check` plays each and compares it with a fresh show
 started at the same moment (in world space, to a thousandth of a cell).
@@ -584,8 +592,18 @@ FORK_PER_ITER * iteration`) on 60° headings only. One or two through
 - **Stills**: views `front`, `hero`, `raking`, `detail` (the largest module),
   perspective through `framePoints`.
 - **Video**: `operate` (controls move), `montage` (frozen cuts), `build`
-  (rise in, then operate), `drift` (a close-in camera slides over the face)
-  and `turntable`.
+  (rise in, then operate), `drift` (a close-in camera slides over the face),
+  `turntable`, and `sequence`, which plays the panel's Sequence for `hold`
+  seconds without a build-in. A Scroll is filmed by a fixed camera
+  (`frameField`) whose frame's shorter side spans `sequenceSpan` cells at
+  the panel's plane, from the clip's `view` (`detail` films `front`), its
+  corner rays giving the view box the field mounts round; a Swap is framed
+  on its panel like `operate`. `--preset NAME` starts the roll from a scene
+  preset with every facet held (unless `--keep` lists some) and `--base`
+  laid over it; a pin equal to its schema default gives way to the preset,
+  since the workbench forwards every option. A one-minute Grand Tour is
+  `--mode sequence --preset 'Grand Tour' --count 1 --hold 60`. `--overlay`
+  burns into every frame as in the other modes.
 - **Plot SVG**: every part's outline through the still's camera (boxes'
   edges, frustum rims and silhouettes, sphere and torus circles; flat
   silkscreen as its top face), hidden lines dropped against the depth pass,

@@ -93,6 +93,7 @@ export function buildField(kernel, config) {
 
 function laneOptions(config, phase = 0) {
   return {
+    painting: config.paintStyle !== 'original',
     exact: config.blobPaletteExact,
     fallback: config.bgColor,
     mode: config.blobLaneMode,

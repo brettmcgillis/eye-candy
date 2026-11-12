@@ -15,6 +15,7 @@ import createOptionSchema, {
   sceneOnly,
   standard,
 } from '../optionSchema/index.mjs';
+import { paintOptions } from '../painted/index.mjs';
 import {
   RENDER_OPTIONS as BLOB,
   LANE_MODES,
@@ -513,6 +514,7 @@ const RENDER = {
 };
 
 export const RENDER_OPTIONS = {
+  ...paintOptions(),
   ...FIELD,
   ...DESIGN,
   ...PALETTE,

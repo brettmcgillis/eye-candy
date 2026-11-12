@@ -14,6 +14,7 @@ import {
   smoothstep,
   tanh,
   uv,
+  vec2,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
@@ -52,7 +53,19 @@ export default function createFlatMaterial(s, style) {
       0,
       abs(v).div(max(fwidth(v).mul(width), EPS))
     ).mul(select(fwidth(k).greaterThan(FLAT), float(1), float(0)));
-    material.colorNode = mix(s.u.background, s.lineColorAt(n, du, dv), line);
+    const ink = select(
+      s.painting.u.style.greaterThan(0.5),
+      s.colorAt(n, du, dv),
+      s.lineColorAt(n, du, dv)
+    );
+    material.colorNode = mix(
+      s.u.background,
+      s.painting.treat(ink, vec2(du.mul(s.u.aspect).mul(3), dv.mul(3)), {
+        seed: floor(k).add(65536),
+        edge: float(0),
+      }),
+      line
+    );
     return material;
   }
 
@@ -66,8 +79,12 @@ export default function createFlatMaterial(s, style) {
   const edge = clamp(fract(k).div(max(fwidth(k), EPS)), 0, 1);
   const color = mix(below, here, edge);
   material.colorNode = mix(
-    s.u.outlineColor,
-    color,
+    mix(s.u.outlineColor, s.painting.inkFor(color), s.painting.u.followPalette),
+    s.painting.treat(color, vec2(du.mul(s.u.aspect).mul(3), dv.mul(3)), {
+      seed: floor(k).add(65536),
+      edge: float(1).sub(levelLine(k, px.mul(3))),
+      boundary: fract(k).min(float(1).sub(fract(k))),
+    }),
     levelLine(k, s.u.outlineWidth.mul(px))
   );
   return material;

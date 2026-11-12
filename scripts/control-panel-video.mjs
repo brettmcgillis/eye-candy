@@ -12,7 +12,7 @@ import { sceneIconFile } from './lib/sceneIcons.mjs';
 
 // The seconds of a panel's shot and the moment each frame shows: operate
 // runs the controls' clock, montage holds a still, build rises in first,
-// drift slides a close-in camera over the face.
+// drift slides a close-in camera over the face. Sequence is its own shot.
 function shotOf(kernel, drawn, options) {
   const { STILL_TIME } = kernel.panel;
   const { buildSeconds } = drawn.config;
@@ -29,6 +29,50 @@ function shotOf(kernel, drawn, options) {
     return { seconds: options.hold, moment: () => ({ t: STILL_TIME }) };
   }
   return { seconds: options.hold, moment: (s) => ({ t: STILL_TIME + s }) };
+}
+
+// A panel's Sequence played from its start, one step a frame: a Scroll
+// under a fixed camera spanning `sequenceSpan` cells, a Swap framed on its
+// panel as operate frames one.
+function sequenceShot(kernel, drawn, options) {
+  const frames = Math.max(1, Math.round(options.hold * options.fps));
+  const scroll = drawn.config.sequence === 'scroll';
+  const fieldAt = (clock) =>
+    kernel.panel.frameField({
+      azimuthOffset: azimuthOffset(options, clock),
+      options,
+      span: options.sequenceSpan,
+      view: options.view,
+    });
+  let bounds = null;
+  return {
+    enter(capturer) {
+      const first = scroll
+        ? fieldAt({ frame: 0, frames, total: 1, written: 0 })
+        : null;
+      if (scroll && !first.box) {
+        throw new Error(
+          `The ${options.view} view does not look down on the panel's plane; use front, hero or raking.`
+        );
+      }
+      bounds = capturer.playSequence(drawn, first?.box);
+    },
+    async frame(capturer, clock) {
+      const field = scroll ? fieldAt(clock) : null;
+      if (clock.frame > 0) capturer.advance(1 / options.fps, field?.box);
+      const view =
+        field?.camera ??
+        kernel.panel.frameView({
+          azimuthOffset: azimuthOffset(options, clock),
+          bounds,
+          detail: null,
+          options,
+          view: options.view,
+        });
+      return capturer.capture(view);
+    },
+    frames,
+  };
 }
 
 const driftPan = (u) => [
@@ -48,9 +92,19 @@ runVideo({
     const items = Array.from({ length: options.count }, (_, index) =>
       panelAt(kernel, { batch, index, roll })
     );
+    if (options.mode === 'sequence') {
+      const still = items.find(({ config }) => config.sequence === 'none');
+      if (still) {
+        throw new Error(
+          `${still.name} has no Sequence to play: pass --sequence scroll (or swap), or a --preset that has one, such as 'Grand Tour'.`
+        );
+      }
+    }
     return {
       presets: () => items.map(({ config }) => config),
       shots: items.map((drawn) => {
+        if (options.mode === 'sequence')
+          return sequenceShot(kernel, drawn, options);
         const { moment, seconds } = shotOf(kernel, drawn, options);
         const frames = Math.max(1, Math.round(seconds * options.fps));
         let bounds = null;

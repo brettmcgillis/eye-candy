@@ -381,12 +381,13 @@ function checkMembrane({ blob, tubes: kernel }) {
         share <= MAX_FLIPPED_SHARE,
         `${label}: ${flipped} triangles fold back (${(share * 100).toFixed(2)}%).`
       );
-      const { rows, strips } = membrane;
+      const { strips } = membrane;
       const welded = new Set(membrane.weldMembers);
       let looseEdges = 0;
       for (let s = 0; s < strips.length / 4; s += 1) {
         const base = strips[s * 4];
         const cols = strips[s * 4 + 1];
+        const rows = strips[s * 4 + 2];
         for (let c = 0; c < cols; c += 1) {
           for (let k = 0; k < rows; k += rows - 1) {
             const v = base + c * rows + k;

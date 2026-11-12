@@ -19,6 +19,7 @@ const FOLDERS = {
   form: 'Form',
   stage: 'Stage',
   motion: 'Motion',
+  painting: 'Painting',
 };
 
 const MEATBALL_LABELS = { 0: 'Hide Loose', 1: 'Prune Loose', 2: 'Keep All' };

@@ -10,6 +10,7 @@ import createOptionSchema, {
   standard,
   still,
 } from '../optionSchema/index.mjs';
+import { paintOptions } from '../painted/index.mjs';
 
 export const HALOS = [
   'rings',
@@ -89,6 +90,7 @@ const bones = (flags, group) =>
     ])
   );
 export const RENDER_OPTIONS = {
+  ...paintOptions(),
   ringsPosition: halo(
     vec('halo', 'rings.Appearance', 'Position', {
       x: 0,
@@ -1155,7 +1157,36 @@ Object.entries(RENDER_OPTIONS).forEach(([key, item]) => {
     key.startsWith(name)
   );
   if (prefix)
-    Object.assign(item, { when: { haloType: [HALO_PREFIXES[prefix]] } });
+    Object.assign(item, {
+      when: { haloType: [HALO_PREFIXES[prefix]], ...item.when },
+    });
+  if (
+    [
+      'ringsPalette',
+      'ringsPaletteExact',
+      'ringsStart',
+      'ringsEnd',
+      'ringsSteps',
+    ].includes(key)
+  ) {
+    Object.assign(item.when, { ringsStyle: ['gradient'] });
+    if (['ringsStart', 'ringsEnd'].includes(key))
+      Object.assign(item.when, { ringsPalette: ['None'] });
+  }
+  if (
+    [
+      'ringsSilver',
+      'ringsWhite',
+      'ringsBlack',
+      'ringsBlue',
+      'ringsLightblue',
+      'ringsSm',
+      'ringsMed',
+      'ringsLg',
+      'ringsXl',
+    ].includes(key)
+  )
+    Object.assign(item.when, { ringsStyle: ['default'] });
   if (key.startsWith('record')) Object.assign(item, { group: 'Record' });
   if (key.startsWith('plate')) Object.assign(item, { group: 'Plate' });
 });

@@ -21,6 +21,7 @@ import createOptionSchema, {
   sceneOnly,
   standard,
 } from '../optionSchema/index.mjs';
+import { paintOptions } from '../painted/index.mjs';
 
 export {
   COLOR_MODES,
@@ -198,6 +199,7 @@ const SVG = {
 };
 
 export const RENDER_OPTIONS = {
+  ...paintOptions(),
   ...CONTOURS,
   ...STYLE,
   ...FIELD,

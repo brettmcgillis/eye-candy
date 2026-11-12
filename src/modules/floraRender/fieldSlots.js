@@ -1,6 +1,7 @@
 /* eslint-disable no-param-reassign */
 import { SOLID_SHAPES } from '@modules/flora';
 
+import brushPaths from './brushPaths';
 import {
   CARD_FIELD,
   SOLID_FIELDS,
@@ -52,7 +53,10 @@ export default function createFieldSlots() {
     solids: SOLID_SHAPES.map((shape) =>
       createSlot(shape, SOLID_FIELDS[shape], (s) => s.solids[shape])
     ),
-    tube: createSlot('tube', TUBE_FIELD, (s) => s.segments),
+    tube: createSlot('tube', TUBE_FIELD, (s) => ({
+      ...s.segments,
+      brush: brushPaths(s.segments),
+    })),
   };
   const all = [slots.tube, slots.cards, ...slots.solids];
 

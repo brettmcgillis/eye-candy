@@ -2,19 +2,26 @@ import {
   Discard,
   Fn,
   attribute,
+  cos,
   float,
   fract,
+  hash,
+  mix,
   or,
   positionLocal,
   positionWorld,
   select,
+  sin,
+  smoothstep,
   texture,
   uniform,
+  uv,
   vec2,
   vec3,
 } from 'three/tsl';
 import * as THREE from 'three/webgpu';
 
+import { createPaintState } from '@modules/paintedRender';
 import { createNeutralPaletteTexture } from '@utils/gradientPalette';
 
 import grainShade from './grain';
@@ -30,8 +37,10 @@ const mirror = (t) => float(1).sub(fract(t.mul(0.5)).mul(2).sub(1).abs());
 // grain edits never touch geometry: `cellData` is (tone, random, fade,
 // luma) and `cellSource` the image's colour under the cell.
 export default function createPanelMaterials() {
+  const painting = createPaintState();
   const u = {
     backlight: uniform(1),
+    paperLayout: uniform(0),
     grain: uniform(0.6),
     halfH: uniform(4.5),
     halfW: uniform(3),
@@ -87,7 +96,20 @@ export default function createPanelMaterials() {
       paint(),
       vec3(u.woodColor)
     );
-    return base.mul(grainShade(u.grain, u.slab));
+    const pencil = painting.field(
+      uv().mul(vec2(7, 1)),
+      cell.y.mul(151).add(own.y.mul(79))
+    ).g;
+    const sketch = mix(
+      vec3(u.paperColor),
+      painting.inkFor(paint()),
+      pencil.mul(1.6).add(0.45).clamp(0, 0.95)
+    );
+    return select(
+      u.paperLayout.greaterThan(0.5).and(painting.u.style.greaterThan(1.5)),
+      sketch,
+      base.mul(grainShade(u.grain, u.slab))
+    );
   })();
   wood.positionNode = positionLocal.sub(
     vec3(0, 0, float(1).sub(cell.z).mul(u.sink))
@@ -96,11 +118,53 @@ export default function createPanelMaterials() {
   const paper = new THREE.MeshStandardNodeMaterial({ roughness: 0.95 });
   const paperTint = () =>
     select(u.paintOpenings.greaterThan(0.5), paint(), vec3(u.paperColor));
+  const fillIdentity = attribute('paintIdentity', 'float')
+    .toUint()
+    .shiftLeft(16)
+    .bitOr(attribute('paintOpening', 'vec4').x.toUint());
+  const washedPaper = painting.treat(paperTint(), uv().mul(0.8).add(0.1), {
+    seed: fillIdentity,
+    stamp: true,
+    boundary: attribute('paintOpening', 'vec4')
+      .x.fract()
+      .greaterThan(0.125)
+      .and(attribute('paintOpening', 'vec4').x.fract().lessThan(0.625))
+      .select(float(1), attribute('paintOpening', 'vec4').y),
+    washUV: attribute('paintOpening', 'vec4').zw,
+    triangle: attribute('paintOpening', 'vec4')
+      .x.fract()
+      .greaterThan(0.125)
+      .and(attribute('paintOpening', 'vec4').x.fract().lessThan(0.375))
+      .select(float(1), float(0)),
+  });
+  const hatchSeed = hash(fillIdentity);
+  const angle = hatchSeed.mul(0.25).add(0.55);
+  const position = attribute('position', 'vec3');
+  const projection = position.x
+    .mul(cos(angle))
+    .add(position.y.mul(sin(angle)))
+    .mul(22)
+    .add(hatchSeed);
+  const hatch = painting.hatch(projection, position.y.mul(22), fillIdentity);
+  const margin = uv().min(float(1).sub(uv()));
+  const inset = smoothstep(0.01, 0.06, margin.x.min(margin.y));
+  const drawing = mix(
+    vec3(u.paperColor),
+    painting.inkFor(paperTint()),
+    hatch.mul(inset).mul(hatchSeed.mul(0.2).add(0.45))
+  );
+  const paperWash = select(
+    painting.u.style.greaterThan(1.5),
+    drawing,
+    washedPaper
+  );
   paper.colorNode = Fn(() => {
     clip();
-    return paperTint();
+    return select(u.paperLayout.greaterThan(0.5), vec3(0), paperWash);
   })();
-  paper.emissiveNode = paperTint().mul(u.backlight);
+  paper.emissiveNode = paperWash.mul(
+    select(u.paperLayout.greaterThan(0.5), 1, u.backlight)
+  );
   paper.positionNode = positionLocal.sub(
     vec3(0, 0, float(1).sub(cell.z).mul(u.paperSink))
   );
@@ -109,10 +173,13 @@ export default function createPanelMaterials() {
   frame.colorNode = vec3(u.woodColor).mul(0.82).mul(grainShade(u.grain));
 
   const basePaper = new THREE.MeshStandardNodeMaterial({ roughness: 0.95 });
-  basePaper.colorNode = vec3(u.paperColor);
-  basePaper.emissiveNode = vec3(u.paperColor).mul(u.backlight);
+  basePaper.colorNode = vec3(u.paperColor).mul(u.paperLayout.oneMinus());
+  basePaper.emissiveNode = vec3(u.paperColor).mul(
+    select(u.paperLayout.greaterThan(0.5), 1, u.backlight)
+  );
 
   return {
+    painting,
     basePaper,
     frame,
     lut,
@@ -122,6 +189,7 @@ export default function createPanelMaterials() {
     dispose() {
       [wood, paper, frame, basePaper].forEach((m) => m.dispose());
       lut.value.dispose();
+      painting.dispose();
     },
   };
 }

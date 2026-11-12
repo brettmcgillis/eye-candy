@@ -5,12 +5,16 @@ import { useFrame } from '@react-three/fiber';
 import useImageBytes from '@hooks/useImageBytes';
 import { SCENE_NAMES } from '@modules/kumiko';
 import { createPanelRig } from '@modules/kumikoRender';
+import { PAINT_KEYS } from '@modules/painted';
 import { useWebcamFrame } from '@modules/webcam';
 
 import useLeavesBuilder from '../hooks/useLeavesBuilder';
 
 // Only uniforms: a palette, colour or light edit never re-plans a cell.
 const LOOK_KEYS = [
+  ...PAINT_KEYS.filter(
+    (key) => !['paintStyle', 'paintStrokeRoughness'].includes(key)
+  ),
   'backgroundColor',
   'backlight',
   'colorTarget',
@@ -26,6 +30,9 @@ const LOOK_KEYS = [
 ];
 // Re-bake the cells' geometry but keep the plan.
 const BAKE_KEYS = [
+  'paintLayout',
+  'paintStyle',
+  'paintStrokeRoughness',
   'construction',
   'infillDepth',
   'infillRecess',

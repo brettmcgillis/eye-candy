@@ -6,6 +6,7 @@ import { ShadowFloor } from '@modules/renderStage';
 import Arrows, { createTie } from './Arrows';
 import GrazeGrass from './GrazeGrass';
 import HuntedRabbit from './HuntedRabbit';
+import PaintedGround from './PaintedGround';
 import Ribbon from './Ribbon';
 import { fitBodyCapsules } from './bodyCapsules';
 import { createWoundUniforms } from './materials';
@@ -88,8 +89,12 @@ export default function HuntedSubject({
         size={6}
         y={FLOOR_Y}
       />
+      {config.paintStyle && config.paintStyle !== 'original' && (
+        <PaintedGround config={config} floorY={FLOOR_Y} />
+      )}
       <group ref={subjectRef} userData={SUBJECT}>
         <HuntedRabbit
+          paintConfig={config}
           furEnabled={config.furEnabled}
           furLength={config.furLength}
           onReady={handleReady}
@@ -105,6 +110,7 @@ export default function HuntedSubject({
         {probe && (
           <>
             <Arrows
+              paintConfig={config}
               capsules={capsules}
               damping={config.arrowDamping}
               floorY={FLOOR_Y}
@@ -121,6 +127,7 @@ export default function HuntedSubject({
               wounds={wounds}
             />
             <GrazeGrass
+              paintConfig={config}
               capsules={capsules}
               floorY={FLOOR_Y}
               handles={handles}
@@ -136,6 +143,7 @@ export default function HuntedSubject({
 
         {tieReady && (
           <Ribbon
+            paintConfig={config}
             bend={config.ribbonBend}
             drag={config.ribbonDrag}
             floorY={FLOOR_Y}

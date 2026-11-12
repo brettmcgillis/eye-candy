@@ -101,6 +101,7 @@ async function scenemojiPanel({
   font,
   layout,
   logoDataUri,
+  sceneIconAspect,
   sceneIconDataUri,
   x,
   y,
@@ -108,10 +109,11 @@ async function scenemojiPanel({
   const logoHeight = ICON_SIZE * 1.4;
   const logoWidth = logoHeight * LOGO_ASPECT;
   const sceneSize = 26;
+  const sceneWidth = sceneSize * sceneIconAspect;
   const gap = font * 0.45;
   const dashWidth = await measureText('—', font);
 
-  const width = layout.padX * 2 + logoWidth + sceneSize + dashWidth + gap * 2;
+  const width = layout.padX * 2 + logoWidth + sceneWidth + dashWidth + gap * 2;
   const height = Math.max(sceneSize, logoHeight) + layout.padY * 2;
   const midY = y + height / 2;
 
@@ -135,7 +137,7 @@ async function scenemojiPanel({
 
     parts.push(
       `<image x="${cursor.toFixed(2)}" y="${(midY - sceneSize / 2).toFixed(2)}" ` +
-        `width="${sceneSize}" height="${sceneSize}" href="${sceneIconDataUri}"/>`
+        `width="${sceneWidth.toFixed(2)}" height="${sceneSize}" href="${sceneIconDataUri}"/>`
     );
 
     return parts.join('');
@@ -191,6 +193,9 @@ export default async function overlaySvg({
   ]);
   const logoDataUri = `data:image/png;base64,${logo.toString('base64')}`;
   const sceneIconPng = await sharp(sceneIcon).png().toBuffer();
+  const { height: iconHeight, width: iconWidth } =
+    await sharp(sceneIconPng).metadata();
+  const sceneIconAspect = iconWidth / iconHeight;
   const sceneIconDataUri = `data:image/png;base64,${sceneIconPng.toString('base64')}`;
 
   const offsets = preset ? IG_OFFSETS[preset] : { bottom: 0, top: 0 };
@@ -216,6 +221,7 @@ export default async function overlaySvg({
     font,
     layout,
     logoDataUri,
+    sceneIconAspect,
     sceneIconDataUri,
     x: layout.inset,
     y: topInset,

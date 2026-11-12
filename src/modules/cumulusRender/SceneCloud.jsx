@@ -4,7 +4,10 @@ import { Cloud, Clouds } from '@react-three/drei';
 
 import { radians } from '@utils/math';
 
+import PaintedCloud from './PaintedCloud';
+
 const SceneCloud = memo(function SceneCloud({
+  paintConfig,
   position,
   rotation,
   scale,
@@ -35,6 +38,10 @@ const SceneCloud = memo(function SceneCloud({
     () => [boundsX, boundsY, boundsZ],
     [boundsX, boundsY, boundsZ]
   );
+
+  if (paintConfig?.paintStyle && paintConfig.paintStyle !== 'original') {
+    return <PaintedCloud controls={paintConfig} />;
+  }
 
   return (
     <Clouds visible={visible} userData={{ plotCloud: true }}>

@@ -6,11 +6,15 @@ import {
   Object3D,
 } from 'three';
 
+import {
+  createPaintMaterial,
+  createPaintNodeMaterial,
+} from '@modules/paintedRender';
 import { layerColor } from '@modules/paperCuts';
 
 import createAnimation from './animation';
 
-export default function createPaperRig() {
+export default function createPaperRig({ webgpu = false } = {}) {
   const group = new Group();
   const geometry = new BoxGeometry(1, 1, 1);
   const transform = new Object3D();
@@ -62,14 +66,27 @@ export default function createPaperRig() {
           config.animationMode === 'morseCode'
             ? layer.map((s) => [s])
             : [layer];
-        return batches.map((squares) => {
-          const material = new MeshStandardMaterial({
+        return batches.map((squares, batchIndex) => {
+          const baseMaterial = new MeshStandardMaterial({
             color: layerColor(config, i, frame.layers.length),
             roughness: config.squareRoughness,
             metalness: config.squareMetalness,
             roughnessMap: config.squareWatercolor ? texture : null,
             flatShading: config.squareFlatShading ?? false,
           });
+          const painted = config.paintStyle && config.paintStyle !== 'original';
+          const paintMaterial = webgpu
+            ? createPaintNodeMaterial
+            : createPaintMaterial;
+          const material = painted
+            ? paintMaterial(baseMaterial, config, {
+                uvMapping: true,
+                bounded: true,
+                instanced: true,
+                seed: i * 2048 + batchIndex,
+              })
+            : baseMaterial;
+          if (painted) baseMaterial.dispose();
           const mesh = new InstancedMesh(geometry, material, squares.length);
           mesh.userData = { layer: i, squares };
           mesh.castShadow = true;

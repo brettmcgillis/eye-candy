@@ -50,6 +50,7 @@ function solidTemplate(shape) {
 export const TUBE_FIELD = {
   attributes: {
     aEnd: 'end',
+    aBrush: 'brush',
     aFrameEnd: 'frameEnd',
     aFrameStart: 'frameStart',
     aStart: 'start',

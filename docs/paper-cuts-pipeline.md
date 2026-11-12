@@ -1,5 +1,7 @@
 # Paper Cuts pipeline
 
+Painted presets and shared brush maps: [Painted variants](painted-variants.md).
+
 PaperCuts keeps its three authored `frameData` designs and adds **Generated**
 to the same scene's Data selector. PaperCutsCLI (`/dev/paper-cuts`) rolls the
 same generator and draws the same relief and folded-frame geometry.

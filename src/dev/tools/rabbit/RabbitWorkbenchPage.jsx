@@ -5,6 +5,7 @@ import { Stat } from '@dev/renderWorkbench/AssetGallery';
 import RollWorkbench from '@dev/renderWorkbench/RollWorkbench';
 
 import * as kernel from '@modules/rabbit';
+import { PALETTE_NAMES } from '@utils/gradientPalette';
 
 import LiveRabbit from './LiveRabbit';
 import './RabbitWorkbenchPage.css';
@@ -56,6 +57,14 @@ export default function RabbitWorkbenchPage() {
       noun={{ many: 'rabbits', one: 'rabbit' }}
       preview={preview}
       schema={kernel}
+      sections={{
+        choices: {
+          paletteName: [
+            ['None', 'None'],
+            ...PALETTE_NAMES.map((name) => [name, name]),
+          ],
+        },
+      }}
       title="RabbitCLI"
       tool="rabbit"
     />

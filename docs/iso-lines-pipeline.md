@@ -1,5 +1,7 @@
 # IsoLines pipeline
 
+Painted presets and shared brush maps: [Painted variants](painted-variants.md).
+
 IsoLines is the flat half of a pair: the field drawn as a contour map, with
 no fake depth. Its relief twin, IsoLinesRelief
 (`docs/iso-lines-relief-pipeline.md`), builds the same field into real

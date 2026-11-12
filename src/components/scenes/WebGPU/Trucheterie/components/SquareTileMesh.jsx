@@ -103,6 +103,7 @@ function SquareTileMesh({ config }) {
   const patternExtent = Math.min(gridCols, gridRows) * cellSize * 0.5;
 
   const { material, meshRef } = useTileMesh({
+    paintConfig: config,
     animMode,
     animSpeed,
     animStagger,

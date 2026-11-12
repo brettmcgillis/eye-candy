@@ -1,5 +1,7 @@
 # Flora pipeline
 
+Painted presets and shared brush maps: [Painted variants](painted-variants.md).
+
 Flora follows the Rorschach arrangement (`docs/rorschach-pipeline.md`): one
 kernel, two renderers, and a dev tool that is a UI over one of them. Its rules
 apply here unchanged — change the kernel first, land every consumer in the same

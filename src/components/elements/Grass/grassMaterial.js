@@ -8,6 +8,7 @@ const BLADES = { bezier: bezierBlade, straight: straightBlade };
 
 export default function createGrassMaterial({
   blade = 'bezier',
+  materialTransform = null,
   chunkOffsetX,
   chunkOffsetZ,
   roughness = 0.85,
@@ -29,5 +30,5 @@ export default function createGrassMaterial({
   material.positionNode = positionNode;
   material.normalNode = normalNode;
   material.colorNode = colorNode;
-  return material;
+  return materialTransform ? materialTransform(material, frame) : material;
 }

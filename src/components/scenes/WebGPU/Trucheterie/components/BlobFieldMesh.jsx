@@ -55,6 +55,7 @@ function BlobFieldMesh({ config }) {
     blobStraights,
     blobSymmetry,
     strokeColor,
+    paintStyle,
   } = config;
 
   const meshRef = useRef(null);
@@ -115,6 +116,7 @@ function BlobFieldMesh({ config }) {
   const laneInfo = useMemo(
     () =>
       fillLaneTextures(laneTextures, field.cells, {
+        painting: paintStyle !== 'original',
         exact: blobPaletteExact,
         fallback: bgColor,
         mode: blobLaneMode,
@@ -127,6 +129,7 @@ function BlobFieldMesh({ config }) {
       }),
     [
       bgColor,
+      paintStyle,
       blobLaneMode,
       blobMonoColor,
       blobMonochrome,

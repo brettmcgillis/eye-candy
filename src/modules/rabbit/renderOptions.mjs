@@ -10,8 +10,10 @@ import createOptionSchema, {
   inFacet,
   num,
   rolled,
+  spec,
   standard,
 } from '../optionSchema/index.mjs';
+import { paintOptions } from '../painted/index.mjs';
 
 export const VOLLEYS = ['painting', 'rolled'];
 export const VIEWS = [
@@ -373,6 +375,9 @@ const RENDER = {
 };
 
 export const RENDER_OPTIONS = {
+  ...paintOptions(),
+  paletteName: spec('string', 'painting', null, 'Palette', 'None'),
+  paletteExact: flag('painting', null, 'Exact palette colours', false),
   ...PAPER,
   ...FUR,
   ...WOUND,

@@ -1,5 +1,7 @@
 # Argyle
 
+Painted presets and shared brush maps: [Painted variants](painted-variants.md).
+
 Argyle turns LoaderPatterns' two offset square lattices into a flat plane,
 shallow relief or deep extrusion. It also draws the original eleven-square
 mark directly from `@utils/argylePattern`; it does not import the dev page or

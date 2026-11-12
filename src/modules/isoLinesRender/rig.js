@@ -1,6 +1,7 @@
 /* eslint-disable no-param-reassign */
 import * as THREE from 'three/webgpu';
 
+import { createPaintState } from '@modules/paintedRender';
 import { createPaletteTexture } from '@utils/gradientPalette';
 
 import createFlatMaterial from './materials';
@@ -59,6 +60,7 @@ export function uploadBuild(s, build) {
 // takes what @modules/isoLines' builder made.
 export default function createIsoRig() {
   const s = createShading();
+  s.painting = createPaintState();
   const group = new THREE.Group();
   const materials = {
     lines: createFlatMaterial(s, 'lines'),
@@ -76,6 +78,7 @@ export default function createIsoRig() {
 
     apply(config) {
       applyShading(s, config);
+      s.painting.apply(config);
       mesh.material = materials[config.style] ?? materials.terraced;
     },
 
@@ -93,6 +96,7 @@ export default function createIsoRig() {
       mesh.geometry.dispose();
       Object.values(materials).forEach((m) => m.dispose());
       s.dispose();
+      s.painting.dispose();
     },
   };
 }

@@ -14,10 +14,14 @@ every scene that burns something. WebGPU only (compute).
         └─ @elements/SimFire       SplineSimFire / SplineCurlSmoke over authored
                                      Fire / Smoke splines, simFireControls (Leva),
                                      applySmokeConfig
-             ├─ WebGPU/PolicePresence     SplineSimFire only; its smoke is its own
-             │                              SmokePlume (below)
-             ├─ WebGPU/FlyingHigh
-             └─ WebGPU/StillPullingForYou   StackSmoke: live paths + cursor
+             ├─ WebGPU/StillPullingForYou   StackSmoke: live paths + cursor
+             └─ WebGPU/WildHorses
+
+@modules/plumeVolume  fire and smoke as one raymarched volume along trails, cloud-lit,
+        │               marched at reduced resolution and depth-composited
+        ├─ WebGPU/FlyingHigh       engine and wing-root trails in the plane's space
+        └─ WebGPU/PolicePresence   one trail per vent, wound into a leaning column,
+                                     siren and headlamp beams as spot lights
 ```
 
 Run `npm run candle:check -- --render` after changing either module: the
@@ -121,17 +125,84 @@ uniforms, and `flameTop` sits on the stack anchor for the `smokeGlow` warm
 light. The smoke splines draw no smoke of their own; Edit Splines shows
 them for authoring.
 
+## `@modules/plumeVolume`
+
+Fire and smoke for a scene where both read as one mass rather than a sim
+and a particle layer: Flying High's volume, promoted when Police Presence
+became its second consumer. WebGPU only; no compute.
+
+- **Trails.** Each trail is `{ path, salt, scale, span }`: a polyline of
+  exactly `pathSamples` points in the volume's space, a billow offset, a
+  width against `shape`, and how far along it stops (`span`, default 1). A
+  short trail with `span` < 1 that ends inside a long one shares its width
+  and heat where they meet: that is how tongues join a body of fire. Give
+  trails that make one fire the same `salt`; a per-trail salt seams where
+  the volume's choice of nearest trails changes. `plumeBounds` sizes
+  the box (`cell`, `margin`), `plumePointsTexture` packs the trails,
+  `bakePlumeGuide(trails, enabled, bounds)` bakes, per voxel, the distance
+  to the nearest enabled trail, how far along it, and the nearest two
+  segments. The bake walks every voxel and segment on the CPU, so rebuild it
+  when the trails or a toggle change, not per frame.
+- **Blend.** Only two trails are known per voxel. They melt into each other
+  over `blend` trail widths (default 0.6, Flying High's). Where a third comes
+  within that band the pair changes voxel to voxel and the volume shows
+  squares on the guide's grid, so trails packed together want a narrow band
+  (Police Presence uses 0.2).
+- **March.** `createPlumeVolume({ bounds, guide, noise, pathSamples, points,
+u })` returns `(scenePass) => { frame, smoke }`: `smoke` is an RTT node to
+  `setResolutionScale` each frame, `frame` the scene with the volume laid
+  over it. Smoke is Beer-Lambert soot with a two-lobe Henyey-Greenstein
+  phase, three self-shadow taps toward `lightDir` and an ambient that darkens
+  toward each trail's core. Fire is emission over the first `fire.x` of every
+  trail. Skips and strides are whole steps, so each ray keeps its jitter;
+  a free-length skip lands neighbouring rays on the same depths and the
+  slices show as rings. The composite drops a smoke texel wherever the scene
+  is nearer than where that texel's smoke starts, so thin geometry in front
+  stays crisp.
+- **Tongues.** `lick.x` > 0 carves the flames with a rising, upright-stretched
+  noise (`lick.y` speed, `lick.z` scale, `lick.w` vertical squash): the base
+  stays nearly whole and only the peaks survive toward the flame tips, so the
+  fire licks instead of filling a smooth tube. Off by default.
+- **Uniforms.** `createPlumeUniforms()`; the consumer writes the look from
+  its controls, and calls `updatePlumeCamera(u, camera, gl)` and sets
+  `u.toLocal` (world to the volume's space, identity for a world-space
+  volume) each frame.
+- **Spots.** With `spots: n` and `spotTexture` from `createSpotTexture(n)`,
+  `n` cone lights (written with `writeSpot`, already in the volume's space)
+  light the smoke (`haze.z`) and a thin haze in clear air (`haze.x` per unit
+  length, thinning with height over `haze.w`), so their beams show. While
+  haze is on, empty-space skips are capped at `haze.y`. The haze only adds
+  light. With no spots the WGSL is the Flying High march unchanged.
+- `noise` is `sharedNoise()` from `@utils/tileableNoise3d`, the same texture
+  Flying High's sky reads.
+
 ## Police Presence
 
-The car burns in daylight on white paper, so its fire turns on
-`flameOpacity` and `sootColor`, and each `@presets/fire/policePresenceFire`
-spline is a short emitter lying along one opening (windshield, four side
-windows, rear glass, roof, hood) with no guide pull: buoyancy and wind make
-the tongues. The smoke is not curl smoke, which builds candle wisps from
-tens of thousands of tiny sprites (a wig at car scale, and ~1 G blended
-fragments a frame). `components/SmokePlume` draws ~1k lit cauliflower puffs
-from `utils/smokePlume.js`: rising, slowing and swelling as they cool,
-sheared by wind that grows with height, near-black and fire-lit at the base,
-grey up top. Each bitonic sort pass owns its (k, j) uniforms so the update,
-keys and the whole network share one compute submit. Smoke draws before the
-fire (renderOrder 1 vs 2), so flames always read over it.
+The car burns in daylight on white paper. Its fire and smoke are one
+`@modules/plumeVolume` (`hooks/useFireVolume`, composited by
+`components/PostStack` ahead of bloom). The blaze is the cabin: two wide
+`core` sources inside it (`utils/cruiser.js` `OPENINGS`, Cabin) rise through
+the roof and carry on up one column that leans downwind, each keeping part of
+its offset and turning round the axis so the column reads as billows wound
+together. Every opening (windshield, the four side windows, rear glass, hood)
+is a short trail that lips out, climbs the body beside it, and ends inside
+the cabin's fire over the roof (`span`), so the car burns as one fire with
+tongues. An earlier layout ran every opening out and up its own way into the
+column; orbiting showed a ring of jets round an empty cabin
+(`utils/trails.js`; Column controls rebake). With Cabin off there is no
+column, only the tongues. The light bar's
+four rotating beams and the alarm-flashed headlamps are written as spots each
+frame from `utils/beams.js`, the same math the scene's lamps use, so red and
+blue sweep through the smoke in step with the bulbs.
+
+Alongside the volume: flickering fire point lights (the cabin one casts the
+car's shadow), GPU embers (`@modules/embers`, motion-streaked sprites that
+write depth so the composite keeps the ones in front of the smoke), the
+cruiser's materials swapped for charred copies (`utils/charMaterial.js`: soot
+round each vent and over the roof, streaks run down the doors, glowing
+blisters, a burning cabin, smoked glass that no longer writes depth so the
+fire inside shows through), lamp flares that wink as a beam faces the lens,
+and a scorched floor.
+
+TSL gotcha met here: `a.mix(b, t)` is `mix(b, t, a)`, the node is the
+factor. Write `mix(a, b, t)`.

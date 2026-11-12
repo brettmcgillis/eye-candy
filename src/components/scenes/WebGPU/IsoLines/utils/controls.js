@@ -14,6 +14,7 @@ import createSchemaFolders from '@modules/schemaControls';
 export const SCENE_LABEL = 'Iso Lines';
 
 const FOLDERS = {
+  painting: 'Painting',
   contours: 'Contours',
   field: 'Field',
   image: 'Image',

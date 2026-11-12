@@ -9,6 +9,7 @@ import NeuralNetwork from '@elements/Network/NeuralNetwork';
 import Record from '@elements/Record/Record';
 import SolarSystem from '@elements/SolarSystem/SolarSystem';
 import { HALO_PRESET_ORDER } from '@modules/cumulus';
+import { usePaintMaterialTransform } from '@modules/paintedRender';
 import { radians } from '@utils/math';
 
 import CRTStaticRing from './CRTStaticRing';
@@ -27,6 +28,7 @@ const HALO_MODEL_ROTATION_BY_TYPE = {
  */
 const HaloDisplay = memo(function HaloDisplay({ controls, setControls }) {
   const { haloType } = controls;
+  const materialTransform = usePaintMaterialTransform(controls);
   const presetIndexRef = useRef(HALO_PRESET_ORDER.indexOf(controls.preset));
   const lastScrollTimeRef = useRef(0);
 
@@ -181,7 +183,9 @@ const HaloDisplay = memo(function HaloDisplay({ controls, setControls }) {
       visible={activeAppearance.visible}
     >
       <group rotation={modelRotation}>
-        {haloType === 'rings' && <Halo {...ringsConfig} />}
+        {haloType === 'rings' && (
+          <Halo {...ringsConfig} materialTransform={materialTransform} />
+        )}
         {haloType === 'record' && <Record sideA={controls.recordSideA} />}
         {haloType === 'network' && (
           <NeuralNetwork seed={controls.haloSeed} {...networkConfig} />

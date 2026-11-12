@@ -20,6 +20,7 @@ const FOLDERS = {
   color: 'Colour',
   form: 'Form',
   motion: 'Motion',
+  painting: 'Painting',
 };
 
 const PALETTE_OPTIONS = ['None', ...PALETTE_NAMES.filter((n) => n !== 'None')];

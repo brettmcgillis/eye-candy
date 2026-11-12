@@ -36,6 +36,11 @@ function lookupTexture(data, type, colorSpace) {
 export function createLaneTextures() {
   return {
     caps: createCapTexture(),
+    paint: lookupTexture(
+      new Float32Array(4),
+      THREE.FloatType,
+      THREE.NoColorSpace
+    ),
     along: lookupTexture(
       new Float32Array(4),
       THREE.FloatType,
@@ -125,6 +130,7 @@ export function resolveLaneColors(
   return {
     channelCount: channels.length,
     data,
+    channelOf,
     maxLanes,
     slotStride,
     spectrum:
@@ -184,9 +190,41 @@ function setImage(texture, image) {
 // into the material's node graph, so replacing one would force a shader
 // rebuild — and rebuilding the material recreates the InstancedMesh (it is
 // one of its `args`), dropping the instance matrices with it.
+const paintChannels = new WeakMap();
+function channelsForPaint(drawn, options) {
+  const key = `${options.pathDiv}:${Boolean(options.weave)}`;
+  const cached = paintChannels.get(drawn);
+  if (cached?.key === key) return cached.solved;
+  const solved =
+    options.solved ??
+    buildLaneChannels(drawn, options.pathDiv, { weave: options.weave });
+  paintChannels.set(drawn, { key, solved });
+  return solved;
+}
+
 export default function fillLaneTextures(textures, drawn, options) {
   fillCapTexture(textures, drawn);
-  const lanes = resolveLaneColors(drawn, options);
+  const solved = options.painting
+    ? channelsForPaint(drawn, options)
+    : options.solved;
+  const lanes = resolveLaneColors(drawn, { ...options, solved });
+  if (
+    options.painting &&
+    textures.paint.userData.channels !== solved.channelOf
+  ) {
+    const identities = new Float32Array(
+      Math.max(1, drawn.length) * solved.slotStride * 4
+    );
+    solved.channelOf.forEach((channel, index) => {
+      identities[index * 4] = channel + 1;
+    });
+    setImage(textures.paint, {
+      data: identities,
+      height: Math.max(1, drawn.length),
+      width: solved.slotStride,
+    });
+    textures.paint.userData.channels = solved.channelOf;
+  }
   if (lanes.flat) {
     setImage(textures.colors, {
       data: (() => {

@@ -1,5 +1,7 @@
 # Cumulus pipeline
 
+Painted presets and shared brush maps: [Painted variants](painted-variants.md).
+
 All My Thoughts Are So Cumulus and CumulusCLI share `@modules/cumulus`
 (the option schema, preset library, seeded rolls, framing and plot) and
 `@modules/cumulusRender` (the actual R3F subject and WebGL capture stage).

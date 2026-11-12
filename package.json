@@ -184,6 +184,8 @@
     "leva": "^0.10.1",
     "maath": "^0.10.8",
     "manifold-3d": "^3.5.4",
+    "p5": "2.3.4",
+    "p5.brush": "3.0.0",
     "partysocket": "1.1.18",
     "postprocessing": "^6.38.2",
     "react": "^19.0.0",

@@ -1,5 +1,23 @@
 // Literal artwork values; new controls require an explicit migration.
 const SAVED_BASE = {
+  liquidEngine: 'legacy',
+  meltAO: 0,
+  meltBloom: 0,
+  meltGrain: 0,
+  meltVignette: 0,
+  showMandible: true,
+  showTeeth: true,
+  meltAmount: 0.4,
+  meltSize: 0.5,
+  meltLength: 0.5,
+  meltSeed: 'skull-melt-3',
+  meltQuality: 'high',
+  meltDryRoughness: 0.06,
+  meltMotion: 'Rock',
+  meltSpin: 0.12,
+  meltSet: 'Light',
+  meltExposure: 1.55,
+  meltPuddle: true,
   bgColor: '#0d0b08',
   keyColor: '#ffc890',
   rimColor: '#7db7ff',
@@ -145,7 +163,62 @@ const SAVED_BASE = {
   operatorMaxFov: 80,
 };
 
+const MELT_BASE = {
+  ...SAVED_BASE,
+  liquidEngine: 'surface',
+  meltQuality: 'auto',
+  meltAO: 0.7,
+  meltBloom: 0.015,
+  meltGrain: 0.025,
+  meltVignette: 0.2,
+  showMandible: false,
+  showTeeth: false,
+  bgColor: '#d8d5cf',
+  keyColor: '#fffaf3',
+  rimColor: '#fffaf3',
+  keyIntensity: 3.2,
+  rimIntensity: 1.2,
+  envIntensity: 1,
+  liquidColor: '#0b0b0c',
+  roughness: 0.03,
+  metalness: 0,
+  clearcoat: 0,
+  iridescence: 0,
+  viscosity: 0.5,
+  cameraAutoFit: false,
+  orbitDesktopPosition: { x: 1.8, y: 1.65, z: 5.1 },
+  orbitDesktopTarget: { x: 0, y: -0.15, z: 0 },
+  orbitDesktopPivot: { x: 0, y: 0.4, z: 0 },
+  orbitDesktopFov: 42,
+  orbitMobilePosition: { x: 1.3, y: 1.7, z: 6.7 },
+  orbitMobileTarget: { x: 0, y: -0.15, z: 0 },
+  orbitMobilePivot: { x: 0, y: 0.4, z: 0 },
+  orbitMobileFov: 48,
+};
+
 const PRESETS = {
+  'Melt — Lacquer': { ...MELT_BASE },
+  'Melt — Full Skull': { ...MELT_BASE, showMandible: true, showTeeth: true },
+  'Melt — Mercury': {
+    ...MELT_BASE,
+    liquidColor: '#d4d4d6',
+    metalness: 1,
+    meltDryRoughness: 0.05,
+    roughness: 0.035,
+  },
+  'Melt — Candy': {
+    ...MELT_BASE,
+    liquidColor: '#7a0a12',
+    meltDryRoughness: 0.08,
+  },
+  'Melt — Dark': {
+    ...MELT_BASE,
+    meltSet: 'Dark',
+    bgColor: '#0e0e0f',
+    meltExposure: 1.1,
+    keyIntensity: 4.5,
+    rimIntensity: 2.5,
+  },
   'Used Engine Oil': { ...SAVED_BASE },
   'Clean Water': {
     ...SAVED_BASE,
@@ -237,6 +310,6 @@ const PRESETS = {
   },
 };
 
-export const DEFAULT_PRESET = 'Used Engine Oil';
+export const DEFAULT_PRESET = 'Melt — Lacquer';
 
 export default PRESETS;

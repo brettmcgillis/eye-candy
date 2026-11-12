@@ -1,17 +1,36 @@
-import React from 'react';
+import React, { memo } from 'react';
 
 import { Environment } from '@react-three/drei';
 
 import { CameraRig } from '@modules/cameraRig';
+import StudioFinish from '@postprocessing/WebGPU/studio';
 
 import Lighting from './components/Lighting';
 import LiquidSkull from './components/LiquidSkull';
+import Studio from './components/Studio';
+import SurfaceSkull from './components/SurfaceSkull';
 import useSceneControls from './hooks/useSceneControls';
 
 const FLOOR_Y = -2;
 
-export default function DrippingSkull() {
+function DrippingSkull() {
   const config = useSceneControls();
+
+  if (config.liquidEngine === 'surface')
+    return (
+      <>
+        <CameraRig camera={config.camera} />
+        <Studio config={config} floorY={FLOOR_Y} />
+        <SurfaceSkull config={config} floorY={FLOOR_Y} />
+        <StudioFinish
+          occlusion={config.meltAO}
+          bloomStrength={config.meltBloom}
+          grain={config.meltGrain}
+          vignette={config.meltVignette}
+          lite={config.meltQuality !== 'high'}
+        />
+      </>
+    );
 
   return (
     <>
@@ -44,3 +63,5 @@ export default function DrippingSkull() {
     </>
   );
 }
+
+export default memo(DrippingSkull);

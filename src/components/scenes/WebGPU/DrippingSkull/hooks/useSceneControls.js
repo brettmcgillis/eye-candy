@@ -1,9 +1,12 @@
-import { useMemo } from 'react';
+import { useMemo, useRef } from 'react';
 
-import { folder, useControls } from 'leva';
+import { button, folder, useControls } from 'leva';
 
 import usePresetsFolder from '@hooks/usePresetsFolder';
-import { useSceneCameraControls } from '@modules/cameraRig';
+import {
+  getCameraControlsKey,
+  useSceneCameraControls,
+} from '@modules/cameraRig';
 
 import PRESETS, {
   DEFAULT_PRESET as DEFAULT_PRESET_KEY,
@@ -18,6 +21,8 @@ function getPresetControls({ presetSnapshot }) {
 }
 
 export default function useSceneControls() {
+  const meltResetRef = useRef(0);
+  const meltFlipRef = useRef(0);
   const {
     attachSetControls,
     controlsSnapshotRef,
@@ -40,6 +45,126 @@ export default function useSceneControls() {
   const [controls, setControls] = useControls(SCENE_LABEL, () => ({
     Presets: presetsFolder,
     Camera: folder(cameraControls, { collapsed: true }),
+    Melt: folder(
+      {
+        liquidEngine: {
+          value: preset.liquidEngine,
+          options: { 'Surface melt': 'surface', 'Original coating': 'legacy' },
+          label: 'Engine',
+        },
+        showMandible: {
+          value: preset.showMandible,
+          label: 'Lower Mandible',
+          hint: 'Removes the lower jaw, its teeth and their liquid.',
+        },
+        showTeeth: {
+          value: preset.showTeeth,
+          label: 'Teeth',
+          hint: 'Removes teeth and their liquid from both jaws.',
+        },
+        meltAmount: {
+          value: preset.meltAmount,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          label: 'Amount',
+        },
+        viscosity: {
+          value: preset.viscosity,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          label: 'Viscosity',
+        },
+        meltSize: {
+          value: preset.meltSize,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          label: 'Blob Size',
+        },
+        meltLength: {
+          value: preset.meltLength,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          label: 'Drip Length',
+        },
+        meltDryRoughness: {
+          value: preset.meltDryRoughness,
+          min: 0.03,
+          max: 1,
+          step: 0.01,
+          label: 'Dry Roughness',
+        },
+        meltMotion: {
+          value: preset.meltMotion,
+          options: ['Still', 'Rock', 'Tumble'],
+          label: 'Motion',
+        },
+        meltSpin: {
+          value: preset.meltSpin,
+          min: 0,
+          max: 0.6,
+          step: 0.01,
+          label: 'Spin',
+        },
+        meltSeed: { value: preset.meltSeed, label: 'Seed' },
+        meltQuality: {
+          value: preset.meltQuality,
+          options: { Auto: 'auto', Full: 'high', Mobile: 'low' },
+          label: 'Quality',
+        },
+        meltSet: {
+          value: preset.meltSet,
+          options: ['Light', 'Dark'],
+          label: 'Studio',
+        },
+        meltExposure: {
+          value: preset.meltExposure,
+          min: 0.1,
+          max: 3,
+          step: 0.01,
+          label: 'Exposure',
+        },
+        meltAO: {
+          value: preset.meltAO,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          label: 'Occlusion',
+        },
+        meltBloom: {
+          value: preset.meltBloom,
+          min: 0,
+          max: 0.2,
+          step: 0.005,
+          label: 'Bloom',
+        },
+        meltGrain: {
+          value: preset.meltGrain,
+          min: 0,
+          max: 0.1,
+          step: 0.005,
+          label: 'Grain',
+        },
+        meltVignette: {
+          value: preset.meltVignette,
+          min: 0,
+          max: 1,
+          step: 0.01,
+          label: 'Vignette',
+        },
+        meltPuddle: { value: preset.meltPuddle, label: 'Floor Puddle' },
+        'Flip Skull': button(() => {
+          meltFlipRef.current += 1;
+        }),
+        'Reset Melt': button(() => {
+          meltResetRef.current += 1;
+        }),
+      },
+      { collapsed: true }
+    ),
     Liquid: folder(
       {
         liquidColor: { value: preset.liquidColor, label: 'Color' },
@@ -169,7 +294,10 @@ export default function useSceneControls() {
           label: 'Ripple',
         },
       },
-      { collapsed: true }
+      {
+        collapsed: true,
+        render: (get) => get(`${SCENE_LABEL}.Melt.liquidEngine`) === 'legacy',
+      }
     ),
     Drips: folder(
       {
@@ -186,13 +314,6 @@ export default function useSceneControls() {
           max: 3,
           step: 0.05,
           label: 'Drip Rate',
-        },
-        viscosity: {
-          value: preset.viscosity,
-          min: 0,
-          max: 1,
-          step: 0.01,
-          label: 'Viscosity',
         },
         dropSize: {
           value: preset.dropSize,
@@ -221,7 +342,10 @@ export default function useSceneControls() {
           label: 'Liquid Quality',
         },
       },
-      { collapsed: true }
+      {
+        collapsed: true,
+        render: (get) => get(`${SCENE_LABEL}.Melt.liquidEngine`) === 'legacy',
+      }
     ),
     Bone: folder(
       {
@@ -234,7 +358,10 @@ export default function useSceneControls() {
           label: 'Wetness',
         },
       },
-      { collapsed: true }
+      {
+        collapsed: true,
+        render: (get) => get(`${SCENE_LABEL}.Melt.liquidEngine`) === 'legacy',
+      }
     ),
     Color: folder(
       {
@@ -281,7 +408,8 @@ export default function useSceneControls() {
 
   attachSetControls(setControls);
 
-  const camera = useMemo(() => buildCamera(controls), [buildCamera, controls]);
+  const cameraKey = getCameraControlsKey(controls);
+  const camera = useMemo(() => buildCamera(controls), [buildCamera, cameraKey]);
 
-  return { ...controls, camera };
+  return { ...controls, camera, meltResetRef, meltFlipRef };
 }

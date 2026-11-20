@@ -114,6 +114,8 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     segmentsY = 28,
     clothWidth = 1.0,
     clothHeight = 1.0,
+    clothThickness = 0,
+    clothDetail = 1,
     debugColliders = false,
     debugColor = '#ff4444',
     debugAnchors = false,
@@ -425,7 +427,7 @@ const GhostCharacter = forwardRef(function GhostCharacter(
     <>
       <group ref={groupRef}>
         <ClothMesh
-          key={`cloth-${segmentsX}-${segmentsY}-${clothWidth}-${clothHeight}-${
+          key={`cloth-${segmentsX}-${segmentsY}-${clothWidth}-${clothHeight}-${clothDetail}-${
             fabric ? 'woven' : 'plain'
           }-${burn?.burnEnabled ? 'burning' : 'intact'}`}
           ref={clothRef}
@@ -448,6 +450,8 @@ const GhostCharacter = forwardRef(function GhostCharacter(
           cursorCollider={cursorCollider}
           cursorRadius={cursorRadius}
           collisionMargin={collisionMargin}
+          thickness={clothThickness}
+          detail={clothDetail}
           colliders={colliders}
           anchors={anchors}
           debugColliders={debugColliders}

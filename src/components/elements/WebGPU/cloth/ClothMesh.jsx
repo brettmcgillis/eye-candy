@@ -61,6 +61,16 @@ const FABRIC_DEFAULTS = {
   wearAmount: 0.35,
 };
 
+// A thick cloth is drawn as copies of the sheet this far apart (world units),
+// within [2, MAX_LAYERS]: closer reads as a solid wall at the hem and eye
+// holes, fewer is cheaper.
+const LAYER_PITCH = 0.004;
+const MAX_LAYERS = 16;
+// The self-collision barrier is O(vertices²), so it runs every other sim step
+// (three times a frame): measured against every step, the layers still never
+// cross and the cost halves.
+const SELF_STEP_STRIDE = 2;
+
 // Color-type properties on MeshPhysicalNodeMaterial that need .set()
 const COLOR_KEYS = new Set([
   'color',
@@ -107,6 +117,14 @@ const ClothMesh = forwardRef(function ClothMesh(
     colliders = [],
     // Collision margin — enlarges detection volume for small spheres
     collisionMargin = 0.02,
+    // Thick cloth (world units, 0 = the plain sheet): layered copies fanned
+    // along the normal, the outer side at +n. Vertices more than a few grid
+    // cells apart keep `thickness` between them (selfCollision) and the
+    // colliders are padded by half of it.
+    thickness = 0,
+    selfCollision = true,
+    // Smooth render surface: samples per sim cell each way (1 = faceted).
+    detail = 1,
     // Dynamic anchors — vertices pinned to moving positions
     // [{worldX, worldZ, restX, restY, restZ, gridRadius, position: THREE.Vector3}]
     anchors = [],
@@ -180,6 +198,7 @@ const ClothMesh = forwardRef(function ClothMesh(
 ) {
   const simState = useRef({
     timeSinceLastStep: 0,
+    stepCount: 0,
     lastPointerX: 0,
     lastPointerY: 0,
   });
@@ -289,6 +308,7 @@ const ClothMesh = forwardRef(function ClothMesh(
         cutouts,
       },
       material: mat,
+      detail,
     });
     const cx = centered ? origin[0] : origin[0] + width / 2;
     const isHoriz = orientation === 'horizontal';
@@ -504,6 +524,28 @@ const ClothMesh = forwardRef(function ClothMesh(
   // so frontFacing=1 → inner side, frontFacing=0 → outer side.
   // Cutout rim darkening is applied only to the outer surface before the final
   // inner/outer split so the eye-hole edge stays readable.
+  // The inner colour belongs to the inward face of the innermost layer; any
+  // other face (a middle layer, or a wall seen through a hole) is outer cloth.
+  const { innerSide, wallSide } = useMemo(() => {
+    const innermost = sim.layerNode.lessThan(0.5);
+    const outermost = sim.layerNode.greaterThan(sim.layerCountU.sub(1.5));
+    return {
+      innerSide: select(frontFacing.and(innermost), float(1), float(0)).mul(
+        float(1).sub(sim.wallFlag)
+      ),
+      // A wall ribbon, a face turned into the slab, or any face of a middle
+      // layer: only seen along a hem or hole wall.
+      wallSide: max(
+        sim.wallFlag,
+        select(
+          select(frontFacing, innermost.not(), outermost.not()),
+          float(1),
+          float(0)
+        )
+      ),
+    };
+  }, [sim]);
+
   useEffect(() => {
     const baseOuterNode = texUniforms.baseColorU;
     const outerNode = outerTextureNodeRef.current || baseOuterNode;
@@ -512,12 +554,13 @@ const ClothMesh = forwardRef(function ClothMesh(
     const innerNode = innerTextureNodeRef.current || innerBaseNode;
 
     const rimmedOuter = mix(outerNode, sim.cutoutRimColorU, sim.cutoutRimNode);
+    const wallOuter = mix(outerNode, sim.cutoutRimColorU, sim.cutoutWallNode);
 
     if (innerColor) texUniforms.innerColorU.value.set(innerColor);
     const faceColor = mix(
       mix(
         mix(
-          mix(rimmedOuter, innerNode, frontFacing),
+          mix(mix(rimmedOuter, innerNode, innerSide), wallOuter, wallSide),
           texUniforms.holeRimColorU,
           sim.decayNode.x.mul(0.85)
         ),
@@ -541,6 +584,8 @@ const ClothMesh = forwardRef(function ClothMesh(
     burnNodes,
     weaveNodes,
     innerColor,
+    innerSide,
+    wallSide,
     textureUrl,
     texture,
     textureReady,
@@ -596,7 +641,7 @@ const ClothMesh = forwardRef(function ClothMesh(
       const outerEmissive = texUniforms.outerEmissiveColorU.mul(outerI);
       const innerEmissive = texUniforms.innerEmissiveColorU.mul(innerI);
 
-      sim.material.emissiveNode = mix(outerEmissive, innerEmissive, frontFacing)
+      sim.material.emissiveNode = mix(outerEmissive, innerEmissive, innerSide)
         .add(decayGlow)
         .add(burnNodes?.emission ?? 0);
     } else {
@@ -608,6 +653,7 @@ const ClothMesh = forwardRef(function ClothMesh(
   }, [
     sim,
     burnNodes,
+    innerSide,
     outerEmissiveColor,
     outerEmissiveIntensity,
     innerEmissiveColor,
@@ -625,7 +671,7 @@ const ClothMesh = forwardRef(function ClothMesh(
     const faceRoughness = mix(
       texUniforms.outerRoughnessU,
       texUniforms.innerRoughnessU,
-      frontFacing
+      innerSide
     );
     // Thread crowns catch a cleaner highlight than the valleys between them,
     // and a weathered panel is duller still.
@@ -641,10 +687,10 @@ const ClothMesh = forwardRef(function ClothMesh(
     sim.material.metalnessNode = mix(
       texUniforms.outerMetalnessU,
       texUniforms.innerMetalnessU,
-      frontFacing
+      innerSide
     );
     // sim, texUniforms and weaveNodes are all stable (empty-deps useMemo)
-  }, [sim, texUniforms, weaveNodes]);
+  }, [sim, texUniforms, weaveNodes, innerSide]);
 
   // Rebuild alpha mask when params change
   useEffect(() => {
@@ -682,6 +728,28 @@ const ClothMesh = forwardRef(function ClothMesh(
     texUniforms.dripGlowU.value = d.dripGlow;
     texUniforms.dripTintU.value = d.dripTint;
   }, [sim, texUniforms, decayKey, alphaSeed]);
+
+  // Ribbon walls close the slab when every cut edge is a plain circle; any
+  // other cut (noise holes, tatters, drips, a brow, a burn) needs stacked
+  // layers to read as thick.
+  const walled =
+    Boolean(sim.wallGeometry) &&
+    holeAmount === 0 &&
+    tatterEdge === 0 &&
+    !(decay?.dripAmount > 0) &&
+    !(decay?.cutoutBrow > 0) &&
+    !burn?.burnEnabled;
+  let layers = 1;
+  if (thickness > 0) {
+    layers = walled
+      ? 2
+      : Math.min(MAX_LAYERS, Math.max(2, Math.ceil(thickness / LAYER_PITCH)));
+  }
+  const thick = thickness > 0 && selfCollision;
+  useEffect(() => {
+    sim.setThickness(thickness, layers);
+    if (meshRef.current) meshRef.current.count = layers;
+  }, [sim, thickness, layers]);
 
   const timePerStep = 1 / stepsPerSecond;
 
@@ -721,7 +789,7 @@ const ClothMesh = forwardRef(function ClothMesh(
     sim.colliderRadiusU[0].value = cursorRadius;
     sim.maxVelocityU.value = maxVelocity;
     if (!gravityManaged) sim.gravityU.value = gravity;
-    sim.collisionMarginU.value = collisionMargin;
+    sim.collisionMarginU.value = collisionMargin + thickness * 0.5;
 
     // Push scene-driven colliders into external slots after the cursor slot
     for (let c = 1; c < sim.NUM_COLLIDERS; c += 1) {
@@ -852,6 +920,11 @@ const ClothMesh = forwardRef(function ClothMesh(
         steps += 1;
         gl.compute(sim.computeSprings);
         gl.compute(sim.computeVertices);
+        s.stepCount += 1;
+        if (thick && s.stepCount % SELF_STEP_STRIDE === 0) {
+          gl.compute(sim.computeSelfCollision);
+          gl.compute(sim.computeSelfApply);
+        }
       }
     }
 
@@ -880,8 +953,22 @@ const ClothMesh = forwardRef(function ClothMesh(
         castShadow
         receiveShadow
       />
+      {sim.wallGeometry && (
+        <mesh
+          geometry={sim.wallGeometry}
+          material={sim.material}
+          visible={walled && thickness > 0}
+          frustumCulled={false}
+          castShadow
+          receiveShadow
+        />
+      )}
       {outlineEnabled && (
-        <mesh geometry={sim.geometry} frustumCulled={false} renderOrder={2}>
+        <mesh
+          geometry={sim.outlineGeometry}
+          frustumCulled={false}
+          renderOrder={2}
+        >
           <primitive attach="material" object={outlineMaterial} />
         </mesh>
       )}

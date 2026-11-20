@@ -26,12 +26,14 @@ src/dev/tools/printShop/
     writers/         STL, 3MF (stored zip), GLB
   printables/
     index.js         glob registry: ./*/printable.js
-    ghost/           Gh0st: settle.js (CPU cloth), surface.js (cut + colour)
+    ghost/           Gh0st: settle.js (CPU cloth), surface.js (cut + colour),
+                     storm.js + cloud-mesh.json (Sad's cloud and bolts)
   printShop.worker.js  the page's builder (same kernel as the CLI)
 scripts/print-shop-export.mjs   CLI; batches variants × sizes; --job for the tool
 scripts/print-shop-check.mjs    drift checks
 scripts/print-shop-marks.mjs    re-bake the mark outlines from public/models
 scripts/print-shop-models.mjs   re-bake scene GLBs a printable poses (pigeon + camera head)
+scripts/print-shop-cloud.mjs    re-bake stylized_cloud_2.glb's top-surface heights (storm cloud)
 src/dev/server/printShop/       job runner: spawns the CLI per batch
 ```
 
@@ -48,6 +50,13 @@ One folder, `printables/<id>/printable.js`, default-exporting:
 | `defaults`      | overrides for shared option defaults (`{ mount: 'base', size: 80 }`)                                                                                             |
 | `sectionLabels` | labels for its own sections                                                                                                                                      |
 | `build(o, env)` | async; returns a **piece** in the scene's own units, Y-up. `env.loadImage(url)` → `{ width, height, data }` RGBA (sharp in the CLI, OffscreenCanvas in the page) |
+
+A sheet may also carry `attach(ctx)`: called once the scale and the sheet are
+final, with `{ axis, manifold, scale, topAt(x, z), wall }` (millimetres; `topAt`
+casts down onto the sheet), it returns `{ solids: [{ manifold, part }], parts,
+warnings }`. Those manifolds are unioned into the piece body, and `parts`
+(ids `cloud`, `bolt`) become 3MF/GLB materials with flat colour. The sheet's
+`size` is still the sheet's own: attachments stand beyond it.
 
 A printable may also declare `mounts` (the mount choices it offers) and
 `signatureSpots` (`baseTop`, `baseUnder`, `inside`, `back`); options that only
@@ -196,6 +205,43 @@ GLB stays Y-up in metres with COLOR_0 linear.
   result is sRGB-encoded — what a viewer of the scene sees, minus lighting.
 - The cloth has no self-collision, so some presets (Nebula, Tinfoil, Starfield)
   pass their hem through itself; expect many fold spots there.
+
+## Gh0st storm (Sad)
+
+A variant with `cloudVisible` or `lightningVisible` (**Sad**), or **Storm →
+Cloud and bolts: On** for any other, hangs the scene's cloud over the head
+and props it up on bolts (`ghost/storm.js`, through `attach`). Rain is not
+printed.
+
+- **Cloud**: it is `stylized_cloud_2.glb` itself. The model is 461k triangles
+  of unwelded, interpenetrating spheres on a flat base, which no boolean can
+  take, so `npm run print-shop:cloud` rebuilds its outer surface as a
+  watertight mesh (`cloud-mesh.json`, about 67k triangles) and the print
+  scales and stands that. The bake voxelizes the triangles (0.8 model units),
+  measures each near voxel's exact distance to the nearest triangle, floods the
+  outside from the grid's edge through everything farther than a voxel and a
+  quarter from a triangle (so hidden interior surfaces and cracks do not
+  matter, and nothing depends on triangle winding), takes the sign of the
+  voxels too close to flood from which side of the nearest triangle they are
+  on, opens the outside to drop crack-sized tunnels, blurs the field one
+  [1 2 1] pass, and meshes it with Manifold's level set (trilinear between
+  voxels, so the surface sits on the triangles, not on voxel steps) cut flat
+  at the base. The library meshes at 1.3 units at best over this box; tiling it
+  finer leaves seams. Every surface point of the baked mesh is within about a
+  unit (0.4 mm at the default size) of the model. Size and height above the
+  crown are the skin's `cloudSize`/`cloudHeight` scaled by **Cloud size** and
+  **Gap to the head**; colour is `cloudColor`. It is solid, not hollow
+  (≈100 cm³ at the default size).
+- **Bolts**: the scene's own seeded strike (`boltPaths`, level 0) thinned to
+  four rows, each a flat zigzag slab in a vertical plane (all bolts share one
+  plane and stand side by side): wide at the cloud, tapering to where it
+  lands, kinked by the seed's own sideways kicks. The slab runs straight into
+  the cloud and the head; there are no cones or pads at the ends.
+  **Bolts holding the cloud up** (0–3), **Bolt thickness (mm)** and **Bolt
+  shape (strike seed)** are the look. Colour `lightningColor`. With 0 bolts
+  the cloud is a loose piece (warned).
+- The cloud rises beyond `size`, so the build volume is hit sooner: Cloud
+  size and Gap to the head are the knobs (the warning names them).
 
 ## Surveillance pigeon
 

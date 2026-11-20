@@ -22,6 +22,7 @@ import {
   loadKernel,
   rollArgs,
 } from './lib/ghostBusterRender.mjs';
+import { createHeadlessRenderer, loadThree } from './lib/headlessWebgpu.mjs';
 import loadModules, { REPO_ROOT } from './lib/loadModules.mjs';
 import schemaControlCoverage from './lib/schemaControlCoverage.mjs';
 import checkWorkbenchPage from './lib/workbenchPage.mjs';
@@ -687,7 +688,19 @@ async function checkStormRender(kernel) {
     const { lattice, storm } = await capturer.readback();
     check(storm?.shadow, 'the Sad skin mounted no rain cloud.');
     if (storm?.shadow) {
-      const rain = (await loadModules([RAIN]))[RAIN];
+      const RIG = '/src/components/elements/WebGPU/ghost/ghostRig.js';
+      const loaded = await loadModules([RAIN, RIG]);
+      const rain = loaded[RAIN];
+      // The eye holes are cut by the shader, so the shadow has no cloth there.
+      const rows = Math.round(Math.sqrt(lattice.shapeDist.length));
+      const inEye = (i) => {
+        const u = Math.floor(i / rows) / (rows - 1);
+        // The shader's v runs opposite the lattice's.
+        const v = 1 - (i % rows) / (rows - 1);
+        return loaded[RIG].CUTOUTS.some(
+          (eye) => Math.hypot(u - eye.u, v - eye.v) < eye.radius * 1.5
+        );
+      };
       const { centerX, centerZ, half, size } = storm.shadow;
       const texel = (2 * half) / size;
       const nearest = (x, z) =>
@@ -705,6 +718,7 @@ async function checkStormRender(kernel) {
         if (
           lattice.shapeDist[i] >= 0 &&
           lattice.alpha[i] >= 0.5 &&
+          !inEye(i) &&
           Math.abs(x - centerX) < half * 0.95 &&
           Math.abs(z - centerZ) < half * 0.95
         ) {
@@ -761,6 +775,75 @@ async function checkRender(kernel) {
     );
   } finally {
     capturer.dispose();
+  }
+}
+
+// Smoothing draws a surface over the sim vertices, so it must not be rougher
+// than the one-vertex-per-cell mesh it replaces: an interpolating patch would
+// reproduce every vertex of jitter the sphere projection leaves. Same pose,
+// same view, detail 1 against 3: the mean luma second difference over the
+// ghost's pixels is the roughness.
+async function checkSmoothing(kernel) {
+  const width = 400;
+  const height = 500;
+  const rough = async (clothDetail) => {
+    const capturer = await createGhostCapturer(kernel, {
+      height,
+      pixelRatio: 1,
+      width,
+    });
+    try {
+      const config = {
+        ...kernel.ghost.sceneDefaults(),
+        backgroundColor: '#000000',
+        clothDetail,
+        settle: 3,
+        skin: 'Hero',
+      };
+      const { bounds } = await capturer.load(config);
+      const { data } = await capturer.capture(
+        kernel.ghost.frameGhost({
+          bounds,
+          config,
+          options: { fov: 30, height, margin: 0.08, width },
+          view: 'high',
+        })
+      );
+      const luma = (x, y) => {
+        const at = (y * width + x) * 4;
+        return data[at] + data[at + 1] + data[at + 2];
+      };
+      let sum = 0;
+      let count = 0;
+      for (let y = 2; y < height - 2; y += 1) {
+        for (let x = 2; x < width - 2; x += 1) {
+          if (luma(x, y) > 60 && luma(x - 2, y) > 60 && luma(x + 2, y) > 60) {
+            sum +=
+              Math.abs(luma(x - 1, y) - 2 * luma(x, y) + luma(x + 1, y)) +
+              Math.abs(luma(x, y - 1) - 2 * luma(x, y) + luma(x, y + 1));
+            count += 1;
+          }
+        }
+      }
+      return count > 1000 ? sum / count : null;
+    } finally {
+      capturer.dispose();
+    }
+  };
+  const flat = await rough(1);
+  const smooth = await rough(3);
+  check(
+    flat != null && smooth != null,
+    'the smoothing check drew no ghost to measure.'
+  );
+  if (flat != null && smooth != null) {
+    console.log(
+      `smoothing roughness: detail 1 ${flat.toFixed(3)}, detail 3 ${smooth.toFixed(3)}`
+    );
+    check(
+      smooth <= flat * 1.3,
+      `Smoothing is rougher than the unsmoothed mesh (${smooth.toFixed(2)} against ${flat.toFixed(2)} mean luma second difference): the patch is reproducing sim jitter.`
+    );
   }
 }
 
@@ -831,6 +914,149 @@ async function checkBurnRender(kernel) {
   }
 }
 
+// A thick cloth's layers may not cross: settle the real GPU sim through a
+// clap with the self-collision barrier off, then on, and count vertex pairs
+// (more than a few grid cells apart) closer than 0.6 of the thickness. The
+// barrier-off run must trip the count, or the check could not see a failure.
+async function checkThickCloth() {
+  const CLOTH =
+    '/src/components/elements/WebGPU/cloth/createClothSimulation.js';
+  const RIG = '/src/components/elements/WebGPU/ghost/ghostRig.js';
+  const { THREE } = await loadThree();
+  const SKINS = '/src/presets/ghost/ghostSkins.js';
+  const m = await loadModules([CLOTH, TOPOLOGY, RIG, SKINS]);
+  const rig = m[RIG];
+  const p = { ...m[SKINS].GHOST_SKIN_BASE, ...m[SKINS].default.Hero };
+  const { renderer } = await createHeadlessRenderer({ height: 16, width: 16 });
+  const thickness = 0.06;
+  const segments = p.clothSegments;
+  const cell = 1 / segments;
+  const skip = Math.ceil(thickness / cell);
+  const run = async (barrier) => {
+    const vec = ({ x, y, z }) => new THREE.Vector3(x, y, z);
+    const hands = rig.handRest(p);
+    const handL = vec(hands.left);
+    const handR = vec(hands.right);
+    const ears = rig.earAnchorPositions(p);
+    const parts = {
+      earLeft: vec(ears.left),
+      earRight: vec(ears.right),
+      handLeft: handL,
+      handRight: handR,
+      head: vec(rig.headCentre()),
+    };
+    const anchors = rig.ghostAnchors(p, parts);
+    const colliders = rig.ghostColliders(p, parts);
+    const config = {
+      centered: true,
+      height: 1,
+      orientation: 'horizontal',
+      pins: rig.ghostPins(segments, segments),
+      segmentsX: segments,
+      segmentsY: segments,
+      shape: 'circle',
+      width: 1,
+    };
+    const sim = m[CLOTH].default({
+      ...config,
+      alpha: { edgeFade: p.edgeFade, scale: p.alphaScale, seed: p.alphaSeed },
+      anchors,
+      gravity: p.gravity,
+      material: new THREE.MeshPhysicalNodeMaterial(),
+      windAmplitude: p.windAmplitude,
+    });
+    const topology = m[TOPOLOGY].buildClothTopology({ ...config, anchors });
+    const live = [];
+    for (let v = 0; v < topology.vCount; v += 1) {
+      if (topology.shapeDistArr[v] >= 0) live.push(v);
+    }
+    sim.setThickness(thickness, 8);
+    sim.stiffnessU.value = p.stiffness;
+    sim.dampeningU.value = p.dampening;
+    sim.maxVelocityU.value = p.maxVelocity;
+    sim.collisionMarginU.value = p.collisionMargin + thickness / 2;
+    sim.colliderEnabledU[0].value = 0;
+    colliders.forEach((collider, c) => {
+      sim.colliderEnabledU[c + 1].value = 1;
+      sim.colliderPosU[c + 1].value.copy(collider.position);
+      sim.colliderRadiusU[c + 1].value = collider.radius;
+    });
+    const state = rig.createGhostRigState();
+    const count = async () => {
+      const raw = new Float32Array(
+        await renderer.getArrayBufferAsync(sim.posBuf.value)
+      );
+      const stride = raw.length / topology.vCount;
+      let pairs = 0;
+      for (let a = 0; a < live.length; a += 1) {
+        for (let b = a + 1; b < live.length; b += 1) {
+          const i = live[a];
+          const j = live[b];
+          const near =
+            Math.abs(
+              Math.floor(i / (segments + 1)) - Math.floor(j / (segments + 1))
+            ) <= skip &&
+            Math.abs((i % (segments + 1)) - (j % (segments + 1))) <= skip;
+          // Two vertices a hand carries cannot be pushed apart by the sim.
+          const carried =
+            topology.paramsArr[i * 3] !== 0 && topology.paramsArr[j * 3] !== 0;
+          if (!near && !carried) {
+            const d = Math.hypot(
+              raw[i * stride] - raw[j * stride],
+              raw[i * stride + 1] - raw[j * stride + 1],
+              raw[i * stride + 2] - raw[j * stride + 2]
+            );
+            if (d < thickness * 0.6) pairs += 1;
+          }
+        }
+      }
+      return pairs;
+    };
+    let worst = 0;
+    for (let f = 0; f < 240; f += 1) {
+      const frame = rig.stepGhostRig(
+        state,
+        1 / 60,
+        { animation: f > 60 ? 'clap' : null },
+        p,
+        { left: handL, right: handR }
+      );
+      sim.gravityU.value = p.gravity * frame.gravityScale;
+      sim.windU.value = frame.windStrength;
+      anchors.forEach((anchor, a) =>
+        sim.anchorPosU[a].value.copy(anchor.position)
+      );
+      for (let s = 0; s < 6; s += 1) {
+        // eslint-disable-next-line no-await-in-loop
+        await renderer.computeAsync(sim.computeSprings);
+        // eslint-disable-next-line no-await-in-loop
+        await renderer.computeAsync(sim.computeVertices);
+        if (barrier && s % 2 === 1) {
+          // eslint-disable-next-line no-await-in-loop
+          await renderer.computeAsync(sim.computeSelfCollision);
+          // eslint-disable-next-line no-await-in-loop
+          await renderer.computeAsync(sim.computeSelfApply);
+        }
+      }
+      if (f % 60 === 59) {
+        // eslint-disable-next-line no-await-in-loop
+        worst = Math.max(worst, await count());
+      }
+    }
+    return worst;
+  };
+  const free = await run(false);
+  const held = await run(true);
+  check(
+    free > 20,
+    `The thick cloth check cannot see a failure: with no barrier only ${free} vertex pairs closed under 0.6 of the thickness.`
+  );
+  check(
+    held === 0,
+    `Thick cloth layers crossed: ${held} vertex pairs closed under 0.6 of the thickness with the self-collision barrier on.`
+  );
+}
+
 async function main() {
   await checkKernelPurity();
   await checkWorkbenchPage(PAGE, RENDER_OPTIONS, check);
@@ -843,6 +1069,8 @@ async function main() {
   await checkRender(kernel);
   await checkStormRender(kernel);
   await checkBurnRender(kernel);
+  await checkSmoothing(kernel);
+  await checkThickCloth();
 
   failures.push(...(await schemaControlCoverage(CONTROLS)));
   if (failures.length > 0) {

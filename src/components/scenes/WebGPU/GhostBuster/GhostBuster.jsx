@@ -274,6 +274,8 @@ export default function GhostBuster() {
         segmentsY={controls.clothSegments}
         clothWidth={controls.clothWidth}
         clothHeight={controls.clothHeight}
+        clothThickness={controls.clothThickness}
+        clothDetail={controls.clothDetail}
         gravity={controls.gravity}
         windAmplitude={controls.windAmplitude}
         maxVelocity={controls.maxVelocity}

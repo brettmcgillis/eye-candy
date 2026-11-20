@@ -211,6 +211,21 @@ const CASES = [
 // Cases only some printables have: the pigeon's poses, each with and
 // without its base.
 const EXTRA_CASES = {
+  ghost: [
+    // Sad's cloud hangs from its bolts: every count, a fat bolt, the stand
+    // that fills the head and the signature that lies on the platform the
+    // bolts land over must all stay one watertight shell.
+    {
+      ...PLAIN,
+      mount: 'rest',
+      signature: 'bret',
+      signatureInside: true,
+      variant: 'Sad',
+    },
+    { ...PLAIN, bolts: 1, boltWidth: 6, mount: 'rest', variant: 'Sad' },
+    { ...PLAIN, bolts: 3, mount: 'base', variant: 'Sad' },
+    { ...PLAIN, mount: 'loop', storm: 'on', variant: 'Original' },
+  ],
   pigeon: [
     { ...PLAIN, mount: 'plinth', signature: 'bret', signatureBaseTop: true },
     {

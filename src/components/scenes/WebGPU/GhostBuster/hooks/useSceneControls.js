@@ -578,6 +578,20 @@ export default function useSceneControls(ghostRef, setAnimation, triggerJump) {
               max: 3.0,
               step: 0.05,
             },
+            clothDetail: {
+              label: 'Smoothing',
+              value: ini.clothDetail ?? 1,
+              min: 1,
+              max: 4,
+              step: 1,
+            },
+            clothThickness: {
+              label: 'Thickness',
+              value: ini.clothThickness ?? 0,
+              min: 0,
+              max: 0.08,
+              step: 0.005,
+            },
           },
           { collapsed: true }
         ),

@@ -75,6 +75,8 @@ export function ghostProps(skin) {
     clearcoat: skin.clearcoat,
     clearcoatRoughness: skin.clearcoatRoughness,
     clothHeight: skin.clothHeight,
+    clothThickness: skin.clothThickness,
+    clothDetail: skin.clothDetail,
     clothWidth: skin.clothWidth,
     collisionMargin: skin.collisionMargin,
     color: skin.color,

@@ -3,6 +3,7 @@ import GHOST_SKINS from '@presets/ghost/ghostSkins';
 
 import { meanHex } from '../../kernel';
 import settleGhost, { rotateXZ } from './settle';
+import { buildStorm, stormWanted } from './storm';
 import buildGhostSurface, { buildGhostLattice } from './surface';
 
 const VARIANTS = Object.keys(GHOST_SKINS);
@@ -48,7 +49,12 @@ export default {
     size: 80,
   },
   mounts: ['none', 'base', 'socket', 'rest', 'hem', 'loop'],
-  sectionLabels: { piece: 'Ghost', pose: 'Pose', surface: 'Surface' },
+  sectionLabels: {
+    piece: 'Ghost',
+    pose: 'Pose',
+    storm: 'Storm',
+    surface: 'Surface',
+  },
   variants: VARIANTS,
   options: {
     variant: choice('piece', null, 'Variant', VARIANTS, 'Original', {
@@ -88,6 +94,37 @@ export default {
       }
     ),
     strutRadius: num('surface', null, 'Wire radius (mm)', 0.45, 0.2, 3, 0.05),
+    storm: choice(
+      'storm',
+      null,
+      'Cloud and bolts',
+      ['auto', 'on', 'off'],
+      'auto',
+      {
+        choiceLabels: { auto: 'As the variant (Sad)', off: 'Off', on: 'On' },
+      }
+    ),
+    bolts: num('storm', null, 'Bolts holding the cloud up', 2, 0, 3, 1),
+    boltWidth: num('storm', null, 'Bolt thickness (mm)', 4, 1, 12, 0.5),
+    boltSeed: num('storm', null, 'Bolt shape (strike seed)', 1, 0, 99, 1),
+    cloudSize: num(
+      'storm',
+      null,
+      'Cloud size (× the scene)',
+      1,
+      0.3,
+      1.5,
+      0.05
+    ),
+    cloudGap: num(
+      'storm',
+      null,
+      'Gap to the head (× the scene)',
+      1,
+      0.3,
+      2,
+      0.05
+    ),
   },
 
   async build(options, env) {
@@ -138,7 +175,9 @@ export default {
       head.y * transform.squash,
       head.z
     );
+    const storm = !wire && stormWanted(options, p);
     return {
+      attach: storm ? (ctx) => buildStorm(p, options, ctx) : undefined,
       mountAxis: [hx, hz],
       lattice,
       // As the scene shows each side (glow and texture included), for a
@@ -151,6 +190,7 @@ export default {
       },
       stats: {
         segments: p.clothSegments,
+        storm,
         textured: Boolean(images.outer || images.inner),
         variant: options.variant,
         wireframe: wire,

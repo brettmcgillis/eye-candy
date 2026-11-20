@@ -300,6 +300,60 @@ whose cracks leave pinholes in a pass, so `readStormPlot` closes small
 enclosed holes before anything is traced. Framing (`withStorm`) grows the
 ghost's sphere to take in the cloud.
 
+## Thick cloth
+
+`clothThickness` (world units, 0 = the plain sheet; the `shape` facet, never
+rolled; GhostBuster's **Cloth → Thickness**; the `Thick Hero` scene preset)
+makes any skin a padded cloth. It works at three levels in
+`@elements/WebGPU/cloth`:
+
+- **Render.** `ClothMesh` draws the one sheet as `layers` copies
+  (`thickness / 0.006`, 2–12) through `mesh.count` instancing, each fanned
+  along the quad normal by `positionNode` (outer side at +n). Colour follows
+  the layer (`layerNode`): the inner colour only on the inward face of the
+  innermost layer, the skin's outer colour on the outer face of the outermost,
+  and every other face is wall — the hem, or round an eye hole the eyeliner
+  colour (`cutoutWallNode`), so a wall reads as one band, not a stack of rings.
+  Thickness 0 is bit-identical to before (one layer, zero offset).
+- **Colliders.** `ClothMesh` pads `collisionMargin` by half the thickness, so
+  the inner layer clears the head and hands.
+- **Self-collision.** Two extra compute passes, `computeSelfCollision` and
+  `computeSelfApply`, run every other sim step. They are a vertex-sphere
+  barrier: free vertices more than `ceil(thickness / cell)` grid cells apart
+  may not be closer than the thickness (live vertices only; two vertices a
+  hand carries cannot be pushed apart). Pass 1 reads positions only and writes
+  the averaged push; pass 2 applies it and removes the approaching velocity,
+  so the result does not depend on thread order. They are separate dispatches
+  because `computeVertices` already uses all eight storage buffers. Cost is
+  O(vertices²) per pass, only paid while thickness is above 0.
+
+- **Smooth surface and walls (`clothDetail`, GhostBuster's **Smoothing**, 1–4;
+  the `Thick Hero` preset uses 3).** Above 1 the sheet is drawn as a uniform
+  cubic B-spline patch over the sim vertices, sampled `detail` times per cell,
+  instead of one flat-shaded vertex per cell: folds, hands and silhouettes lose
+  their facets. It approximates rather than interpolates: a patch _through_ the
+  vertices (Catmull-Rom was tried) reproduces every vertex of jitter the sphere
+  projection leaves and drapes over colliders look sharp and crinkled, while
+  the B-spline low-pass filters it the way the old four-corner mean did.
+  `ghost-buster:check` renders detail 1 and 3 and fails if 3 is rougher. The positions and normals come from the patch in the vertex
+  shader (control points outside the circle fall back to the cell's own
+  corners). The circular hem is cut per pixel just inside the cells that
+  survive (so it is round, 6% smaller in radius than the staircase), and alpha
+  is bilinear through the four sim vertices. With thickness above 0 the hem
+  and each eye hole also get a ribbon (`wallGeometry`) from the inner layer to
+  the outer one, so the slab is closed and the cloth needs only two layers.
+  Cuts that are not plain circles (noise holes, tatters, drips, a brow, a
+  burn) have no ribbon: `ClothMesh` falls back to stacked layers, which show
+  as fine stripes on those edges. Detail 1 is the old path, unchanged.
+
+Thicknesses under about 1.4 grid cells (0.03 at 46 segments) leak at fast
+contacts: vertices can slip between the spheres. The plot, the lattice
+readbacks and PrintShop all see the **mid-surface** — PrintShop thickens its own
+settled sheet — and the CPU cloth mirror has no barrier. `ghost-buster:check`
+settles the real GPU sim through a clap with the barrier off, then on, and
+fails if the barrier-off run could not trip the count or the barrier-on run
+lets any pair close under 0.6 of the thickness.
+
 ## Animated stills (flip books)
 
 `animation` (`none`, `wave`, `clap`; pose facet, never rolled) starts that

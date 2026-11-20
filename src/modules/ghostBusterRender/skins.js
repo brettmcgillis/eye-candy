@@ -7,6 +7,8 @@ export const SKIN_NAMES = Object.keys(GHOST_SKINS);
 const LEVA_FALLBACKS = {
   clothWidth: 1,
   clothHeight: 1,
+  clothThickness: 0,
+  clothDetail: 1,
   textureBlend: 1,
   textureProjection: 'uv',
   textureRotation: 0,

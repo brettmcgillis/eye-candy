@@ -113,6 +113,8 @@ const FIXED = new Set([
   'outlineHiddenStrength',
   'collisionMargin',
   'cursorRadius',
+  'clothThickness',
+  'clothDetail',
 ]);
 const pick = (rng, list) => list[Math.floor(rng() * list.length)];
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value));

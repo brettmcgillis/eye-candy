@@ -7,9 +7,11 @@ import {
   atan,
   attribute,
   cross,
+  dot,
   exp,
   faceDirection,
   float,
+  floor,
   instanceIndex,
   instancedArray,
   int,
@@ -98,6 +100,9 @@ export default function createClothSimulation({
   // itself knows nothing about. It has to live here because the geometric
   // normal is only assembled inside positionNode, at shader build time.
   normalDetail = null,
+  // Render the sheet as a smooth surface through the sim vertices, `detail`
+  // samples per cell each way (1 = the original one vertex per cell).
+  detail = 1,
 }) {
   const topology = buildClothTopology({
     width,
@@ -424,6 +429,106 @@ export default function createClothSimulation({
     .compute(vCount)
     .setName('Cloth Vertex Forces');
 
+  // ── Thickness and self-collision ──
+  // A thick cloth is drawn as `layers` copies of the sheet fanned along its
+  // normal (outer side at +n), and kept honest by a vertex-sphere barrier:
+  // two vertices more than a few cells apart on the grid may never come
+  // closer than `thickness`, so the fanned layers of one fold cannot cross
+  // the next. Both passes stay off until a caller sets a thickness.
+  const SELF_MAX_PUSH = 0.5;
+  const rowStride = segmentsY + 1;
+  const cellSize = Math.min(width / segmentsX, height / segmentsY);
+  const thicknessU = uniform(0);
+  const layerCountU = uniform(1);
+  const selfSkipU = uniform(1);
+  const selfPushU = uniform(1);
+  const shapeBuf = instancedArray(shapeDistArr, 'float');
+  const corrBuf = instancedArray(vCount, 'vec3');
+
+  const livePresence = (id) =>
+    shapeBuf
+      .element(id)
+      .greaterThanEqual(0)
+      .and(alphaBuf.element(id).greaterThan(0.01));
+
+  // Pass 1 — for each free vertex, the average push out of every vertex that
+  // is closer than `thickness` but not a grid neighbour. Reads positions
+  // only, so the result does not depend on thread order.
+  const computeSelfCollision = Fn(() => {
+    If(instanceIndex.greaterThanEqual(uint(vCount)), () => Return());
+    const corr = vec3(0, 0, 0).toVar('selfCorr');
+    const mine = paramsBuf.element(instanceIndex).x;
+    If(mine.equal(uint(0)).and(livePresence(instanceIndex)), () => {
+      const p = posBuf.element(instanceIndex).toVar('selfPos');
+      const gx = float(instanceIndex.div(uint(rowStride))).toVar();
+      const gy = float(instanceIndex.mod(uint(rowStride))).toVar();
+      const minDist = thicknessU;
+      const minDist2 = minDist.mul(minDist);
+      const hits = float(0).toVar('selfHits');
+      Loop(vCount, ({ i }) => {
+        const other = uint(i);
+        const d = p.sub(posBuf.element(other)).toVar();
+        const d2 = dot(d, d).toVar();
+        If(d2.lessThan(minDist2).and(d2.greaterThan(1e-10)), () => {
+          const ox = float(other.div(uint(rowStride)));
+          const oy = float(other.mod(uint(rowStride)));
+          const near = abs(ox.sub(gx))
+            .lessThanEqual(selfSkipU)
+            .and(abs(oy.sub(gy)).lessThanEqual(selfSkipU));
+          If(near.not().and(livePresence(other)), () => {
+            const dist = d2.sqrt();
+            const share = select(
+              paramsBuf.element(other).x.equal(uint(0)),
+              float(0.5),
+              float(1)
+            );
+            corr.addAssign(d.div(dist).mul(minDist.sub(dist)).mul(share));
+            hits.addAssign(1);
+          });
+        });
+      });
+      corr.divAssign(max(hits, 1));
+      corr.mulAssign(selfPushU);
+      const push = corr.length().toVar();
+      If(push.greaterThan(minDist.mul(SELF_MAX_PUSH)), () => {
+        corr.mulAssign(minDist.mul(SELF_MAX_PUSH).div(push));
+      });
+    });
+    corrBuf.element(instanceIndex).assign(corr);
+  })()
+    .compute(vCount)
+    .setName('Cloth Self Collision');
+
+  // Pass 2 — apply the pushes and take out the velocity that was driving the
+  // vertex into the contact, so it does not walk straight back in.
+  const computeSelfApply = Fn(() => {
+    If(instanceIndex.greaterThanEqual(uint(vCount)), () => Return());
+    const corr = corrBuf.element(instanceIndex).toVar('selfApplyCorr');
+    const push = corr.length().toVar();
+    If(push.greaterThan(0), () => {
+      posBuf.element(instanceIndex).addAssign(corr);
+      const normal = corr.div(push);
+      const vel = forceBuf.element(instanceIndex);
+      const into = vel.dot(normal);
+      If(into.lessThan(0), () => {
+        vel.subAssign(normal.mul(into));
+      });
+    });
+  })()
+    .compute(vCount)
+    .setName('Cloth Self Apply');
+
+  // Fan `layers` copies of the sheet across `thickness`; 0 is the plain sheet.
+  const setThickness = (thickness, layers = 2) => {
+    thicknessU.value = thickness;
+    layerCountU.value = thickness > 0 ? layers : 1;
+    selfSkipU.value = Math.max(1, Math.ceil(thickness / cellSize));
+  };
+
+  // Which copy this fragment belongs to: 0 is the inner layer, the last the
+  // outer one. A plain sheet is the single layer 0.
+  const layerNode = float(instanceIndex).toVarying('clothLayer');
+
   // ── Renderable cloth geometry ──
   const geometry = new THREE.BufferGeometry();
   const { uvArr, vtxIdArr } = topology;
@@ -550,8 +655,252 @@ export default function createClothSimulation({
     // eslint-disable-next-line no-param-reassign
     mat.normalNode = normalDetail ? normalDetail(viewNormal) : viewNormal;
 
-    return v0.add(v1).add(v2).add(v3).mul(0.25);
+    const fan = float(instanceIndex)
+      .div(layerCountU.sub(1).max(1))
+      .sub(0.5)
+      .mul(thicknessU);
+    return v0
+      .add(v1)
+      .add(v2)
+      .add(v3)
+      .mul(0.25)
+      .add(normal.normalize().mul(fan));
   })();
+
+  // ── Smooth render surface ──
+  // A uniform cubic B-spline patch over the sim vertices, sampled `detail`
+  // times per cell, so folds, hands and silhouettes are not faceted. Cells
+  // with a corner outside the shape are not drawn; a circle is then cut
+  // per pixel just inside the cells that survive, so the hem is round rather
+  // than a staircase. Control points outside the shape fall back to the
+  // cell's own corners.
+  const refined = detail > 1;
+  const rimCut =
+    shape === 'circle' ? 0.5 - Math.hypot(1 / segmentsX, 1 / segmentsY) : null;
+  let renderGeometry = geometry;
+  let wallGeometry = null;
+  // 1 on a wall ribbon's fragments, 0 on the sheet.
+  const wallFlag = refined ? attribute('wallInfo', 'vec4').x : float(0);
+  if (refined) {
+    renderGeometry = new THREE.BufferGeometry();
+    const nx = segmentsX * detail + 1;
+    const ny = segmentsY * detail + 1;
+    const simCoordArr = new Float32Array(nx * ny * 2);
+    const refinedUv = new Float32Array(nx * ny * 2);
+    for (let b = 0; b < ny; b += 1) {
+      for (let a = 0; a < nx; a += 1) {
+        const k = b * nx + a;
+        simCoordArr[k * 2] = a / detail;
+        simCoordArr[k * 2 + 1] = b / detail;
+        refinedUv[k * 2] = a / detail / segmentsX;
+        refinedUv[k * 2 + 1] = 1 - b / detail / segmentsY;
+      }
+    }
+    const cellLive = (cx, cy) =>
+      shapeDistArr[topology.idAt(cx, cy)] >= 0 &&
+      shapeDistArr[topology.idAt(cx + 1, cy)] >= 0 &&
+      shapeDistArr[topology.idAt(cx, cy + 1)] >= 0 &&
+      shapeDistArr[topology.idAt(cx + 1, cy + 1)] >= 0;
+    const refinedIndex = [];
+    for (let b = 1; b < ny; b += 1) {
+      for (let a = 1; a < nx; a += 1) {
+        if (
+          cellLive(
+            Math.min(Math.floor((a - 1) / detail), segmentsX - 1),
+            Math.min(Math.floor((b - 1) / detail), segmentsY - 1)
+          )
+        ) {
+          const q00 = b * nx + a;
+          const q10 = b * nx + a - 1;
+          const q11 = (b - 1) * nx + a - 1;
+          const q01 = (b - 1) * nx + a;
+          refinedIndex.push(q00, q10, q11, q00, q11, q01);
+        }
+      }
+    }
+    renderGeometry.setAttribute(
+      'position',
+      new THREE.BufferAttribute(new Float32Array(nx * ny * 3), 3)
+    );
+    const refinedNormals = new Float32Array(nx * ny * 3);
+    for (let i = 2; i < refinedNormals.length; i += 3) refinedNormals[i] = 1;
+    renderGeometry.setAttribute(
+      'normal',
+      new THREE.BufferAttribute(refinedNormals, 3)
+    );
+    renderGeometry.setAttribute('uv', new THREE.BufferAttribute(refinedUv, 2));
+    renderGeometry.setAttribute(
+      'simCoord',
+      new THREE.BufferAttribute(simCoordArr, 2)
+    );
+    // (wall flag, fixed fan, radial x, radial y) — all zero on the sheet.
+    renderGeometry.setAttribute(
+      'wallInfo',
+      new THREE.BufferAttribute(new Float32Array(nx * ny * 4), 4)
+    );
+
+    // The cut edges that are plain circles in UV — the hem and each eye —
+    // get a ribbon from the inner layer to the outer one, so a thick cloth is
+    // a closed slab rather than stacked sheets. Skins whose cuts are not
+    // circles (noise holes, drips, a brow) fall back to stacked layers.
+    const rings = [];
+    if (rimCut !== null) rings.push({ cu: 0.5, cv: 0.5, r: rimCut, out: 1 });
+    (alpha.cutouts ?? []).forEach((c) => {
+      const fade = c.fade ?? c.radius * 0.4;
+      rings.push({ cu: c.u, cv: c.v, r: c.radius - fade * 0.99, out: -1 });
+    });
+    if (rings.length > 0) {
+      const wallUv = [];
+      const wallCoord = [];
+      const wallInfoArr = [];
+      const wallIndex = [];
+      rings.forEach((ring) => {
+        const samples = Math.max(
+          24,
+          Math.ceil(2 * Math.PI * ring.r * segmentsX * detail * 2)
+        );
+        const first = wallUv.length / 2;
+        for (let k = 0; k < samples; k += 1) {
+          const th = (k / samples) * 2 * Math.PI;
+          const ux = Math.cos(th);
+          const uy = Math.sin(th);
+          const u = ring.cu + ring.r * ux;
+          const v = ring.cv + ring.r * uy;
+          [-0.5, 0.5].forEach((fan) => {
+            wallUv.push(u, v);
+            wallCoord.push(u * segmentsX, (1 - v) * segmentsY);
+            // uv.y is the lattice's v flipped, so the radial y flips with it.
+            wallInfoArr.push(1, fan, ring.out * ux, -ring.out * uy);
+          });
+        }
+        for (let k = 0; k < samples; k += 1) {
+          const k2 = (k + 1) % samples;
+          const a = first + k * 2;
+          const b = first + k2 * 2;
+          wallIndex.push(a, a + 1, b, a + 1, b + 1, b);
+        }
+      });
+      wallGeometry = new THREE.BufferGeometry();
+      wallGeometry.setAttribute(
+        'position',
+        new THREE.BufferAttribute(new Float32Array((wallUv.length / 2) * 3), 3)
+      );
+      const wallNormals = new Float32Array((wallUv.length / 2) * 3);
+      for (let i = 2; i < wallNormals.length; i += 3) wallNormals[i] = 1;
+      wallGeometry.setAttribute(
+        'normal',
+        new THREE.BufferAttribute(wallNormals, 3)
+      );
+      wallGeometry.setAttribute(
+        'uv',
+        new THREE.BufferAttribute(new Float32Array(wallUv), 2)
+      );
+      wallGeometry.setAttribute(
+        'simCoord',
+        new THREE.BufferAttribute(new Float32Array(wallCoord), 2)
+      );
+      wallGeometry.setAttribute(
+        'wallInfo',
+        new THREE.BufferAttribute(new Float32Array(wallInfoArr), 4)
+      );
+      wallGeometry.setIndex(
+        new THREE.BufferAttribute(new Uint32Array(wallIndex), 1)
+      );
+    }
+    renderGeometry.setIndex(
+      new THREE.BufferAttribute(new Uint32Array(refinedIndex), 1)
+    );
+
+    const rowStrideF = segmentsY + 1;
+    const weights = (t) => {
+      const t2 = t.mul(t);
+      const t3 = t2.mul(t);
+      const u = float(1).sub(t);
+      return {
+        d: [
+          u.mul(u).mul(-0.5),
+          t2.mul(1.5).sub(t.mul(2)),
+          t2.mul(-1.5).add(t).add(0.5),
+          t2.mul(0.5),
+        ],
+        w: [
+          u.mul(u).mul(u).div(6),
+          t3.mul(0.5).sub(t2).add(2 / 3),
+          t3.mul(-0.5).add(t2.mul(0.5)).add(t.mul(0.5)).add(1 / 6),
+          t3.div(6),
+        ],
+      };
+    };
+    const sum = (list, factors) =>
+      list.reduce((acc, item, i) => acc.add(item.mul(factors[i])), vec3(0));
+
+    // eslint-disable-next-line no-param-reassign
+    material.positionNode = Fn(({ material: mat }) => {
+      const sc = attribute('simCoord', 'vec2');
+      const bx = floor(sc.x).clamp(0, segmentsX - 1);
+      const by = floor(sc.y).clamp(0, segmentsY - 1);
+      const wx = weights(sc.x.sub(bx));
+      const wy = weights(sc.y.sub(by));
+
+      const rows = [-1, 0, 1, 2].map((b) => {
+        const points = [-1, 0, 1, 2].map((a) => {
+          const cx = bx.add(a);
+          const cy = by.add(b);
+          const inRange = cx
+            .greaterThanEqual(0)
+            .and(cx.lessThanEqual(segmentsX))
+            .and(cy.greaterThanEqual(0))
+            .and(cy.lessThanEqual(segmentsY));
+          const rawId = uint(cx.clamp(0, segmentsX))
+            .mul(uint(rowStrideF))
+            .add(uint(cy.clamp(0, segmentsY)));
+          const cornerId = uint(bx.add(Math.min(Math.max(a, 0), 1)))
+            .mul(uint(rowStrideF))
+            .add(uint(by.add(Math.min(Math.max(b, 0), 1))));
+          const ok = inRange.and(shapeBuf.element(rawId).greaterThanEqual(0));
+          return posBuf.element(select(ok, rawId, cornerId));
+        });
+        return { d: sum(points, wx.d), p: sum(points, wx.w) };
+      });
+      const pos = sum(
+        rows.map((r) => r.p),
+        wy.w
+      );
+      const dx = sum(
+        rows.map((r) => r.d),
+        wy.w
+      );
+      const dy = sum(
+        rows.map((r) => r.p),
+        wy.d
+      );
+      const safe = (v) => v.div(v.length().max(1e-8));
+      const normal = safe(cross(safe(dy), safe(dx)));
+
+      // A wall ribbon faces along the sheet, away from the cut's centre (into
+      // a hole): the radial direction with the sheet normal taken out.
+      const info = attribute('wallInfo', 'vec4');
+      const radial = dx.mul(info.z).add(dy.mul(info.w));
+      const wallNormal = safe(radial.sub(normal.mul(radial.dot(normal))));
+
+      // Same facing rule as the one-vertex-per-cell path above.
+      const sheetView = transformNormalToView(normal)
+        .toVarying()
+        .mul(faceDirection.negate());
+      const wallView = transformNormalToView(wallNormal).toVarying();
+      // eslint-disable-next-line no-param-reassign
+      mat.normalNode = select(
+        info.x.greaterThan(0.5),
+        wallView,
+        normalDetail ? normalDetail(sheetView) : sheetView
+      );
+
+      const layerFan = float(instanceIndex)
+        .div(layerCountU.sub(1).max(1))
+        .sub(0.5);
+      return pos.add(normal.mul(mix(layerFan, info.y, info.x).mul(thicknessU)));
+    })();
+  }
 
   // ── Per-pixel cutout uniforms (up to 4 circular cutouts) ──
   const MAX_CUTOUTS = 4;
@@ -762,15 +1111,58 @@ export default function createClothSimulation({
     return factor;
   })();
 
+  // 1 within WALL_REACH (UV) of a cutout's edge when the skin has an eyeliner
+  // rim. A thick cloth's hole wall is the middle layers seen edge-on, and it
+  // takes the rim colour so the wall reads as one band, not a stack of rings.
+  const WALL_REACH = 0.06;
+  const cutoutWallNode = Fn(() => {
+    const factor = float(0).toVar();
+    If(cutoutRimWidthU.greaterThan(0.0001), () => {
+      const texUV = uv();
+      for (let ci = 0; ci < MAX_CUTOUTS; ci += 1) {
+        If(cutoutEnabledU[ci].greaterThan(0.5), () => {
+          const edgeDist = eyeHoleDistance(texUV, ci).add(cutoutFadeU[ci]);
+          factor.assign(factor.max(edgeDist.lessThan(WALL_REACH).select(1, 0)));
+        });
+      }
+    });
+    return factor;
+  })();
+
   // Per-vertex alpha + per-pixel hole/tatter (smoothEdges) + cutouts.
   // eslint-disable-next-line no-param-reassign
   material.opacityNode = Fn(() => {
-    const ids = attribute('vertexIds');
-    const a0 = renderAlphaBuf.element(ids.x);
-    const a1 = renderAlphaBuf.element(ids.y);
-    const a2 = renderAlphaBuf.element(ids.z);
-    const a3 = renderAlphaBuf.element(ids.w);
-    const vtxAlpha = a0.add(a1).add(a2).add(a3).mul(0.25).toVar();
+    let vtxAlpha;
+    if (refined) {
+      // Bilinear through the four sim vertices round this pixel.
+      const sc = attribute('simCoord', 'vec2');
+      const bx = floor(sc.x).clamp(0, segmentsX - 1);
+      const by = floor(sc.y).clamp(0, segmentsY - 1);
+      const fx = sc.x.sub(bx);
+      const fy = sc.y.sub(by);
+      const at = (ox, oy) =>
+        renderAlphaBuf.element(
+          uint(bx.add(ox))
+            .mul(uint(segmentsY + 1))
+            .add(uint(by.add(oy)))
+        );
+      vtxAlpha = mix(
+        mix(at(0, 0), at(1, 0), fx),
+        mix(at(0, 1), at(1, 1), fx),
+        fy
+      ).toVar();
+      if (rimCut !== null) {
+        const r = length(uv().sub(0.5));
+        vtxAlpha.mulAssign(select(r.lessThan(rimCut), float(1), float(0)));
+      }
+    } else {
+      const ids = attribute('vertexIds');
+      const a0 = renderAlphaBuf.element(ids.x);
+      const a1 = renderAlphaBuf.element(ids.y);
+      const a2 = renderAlphaBuf.element(ids.z);
+      const a3 = renderAlphaBuf.element(ids.w);
+      vtxAlpha = a0.add(a1).add(a2).add(a3).mul(0.25).toVar();
+    }
 
     const texUV = uv();
 
@@ -815,7 +1207,8 @@ export default function createClothSimulation({
       });
     }
 
-    return vtxAlpha;
+    // A wall ribbon sits exactly on the cut that ends the sheet.
+    return refined ? max(vtxAlpha, wallFlag) : vtxAlpha;
   })();
   // eslint-disable-next-line no-param-reassign
   material.transparent = true;
@@ -850,11 +1243,19 @@ export default function createClothSimulation({
   return {
     computeSprings,
     computeVertices,
+    computeSelfCollision,
+    computeSelfApply,
+    setThickness,
+    layerNode,
+    selfPushU,
     rebuildAlpha,
     applyCutouts,
     reset,
     updatePins,
-    geometry,
+    geometry: renderGeometry,
+    wallGeometry,
+    wallFlag,
+    outlineGeometry: geometry,
     material,
     posBuf,
     windU,
@@ -875,6 +1276,8 @@ export default function createClothSimulation({
     cutoutRimWidthU,
     cutoutRimOffsetU,
     cutoutRimNode,
+    cutoutWallNode,
+    layerCountU,
     applyDecay,
     decayNode,
     dripNode,

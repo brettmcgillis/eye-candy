@@ -17,6 +17,7 @@ import { levelHem, tiltPositions } from './stance';
 import { findFolds, removeSmallIslands } from './surface';
 
 const AXES = { depth: 2, height: 1, width: 0 };
+const SLIVER_MM3 = 0.5;
 
 function fitScale(positions, { size, sizeAxis }) {
   const box = bounds(positions);
@@ -47,7 +48,15 @@ function mountTop(surface, axis) {
   return { hits: hits.map((d) => below + d), x, z };
 }
 
-const PART = { back: 1, edge: 2, front: 0, mark: 4, mount: 3 };
+const PART = {
+  back: 1,
+  bolt: 6,
+  cloud: 5,
+  edge: 2,
+  front: 0,
+  mark: 4,
+  mount: 3,
+};
 
 // Where a stem meets the piece: the axis's last hit, lowered to the lowest
 // of a ring of hits around it so a pad that wide sits in the wall all round.
@@ -440,7 +449,7 @@ function planSignature(wasm, shell, plan, options, warnings, { lattice }) {
 // Colour per triangle corner: textured parts keep their baked colours, flat
 // ones (the base, the signature) their part colour, so a base never picks up
 // streaks from the foot whose vertices it shares.
-const FLAT_PARTS = new Set(['mark', 'mount']);
+const FLAT_PARTS = new Set(['bolt', 'cloud', 'mark', 'mount']);
 const hexRgb = (hex) =>
   [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255);
 
@@ -546,7 +555,7 @@ function finishPrint({
     }
     if (Math.max(...a.bounds.size) > profile.maxSide) {
       warnings.push(
-        `${body.label}: longest side ${Math.max(...a.bounds.size).toFixed(0)} mm exceeds ${profile.label}'s ~${profile.maxSide} mm build volume. Fix: Print → Size (mm) down, or a Material with a bigger build (Nylon / Full colour).`
+        `${body.label}: longest side ${Math.max(...a.bounds.size).toFixed(0)} mm exceeds ${profile.label}'s ~${profile.maxSide} mm build volume. Fix: Print → Size (mm) down${piece.attach ? ', Storm → Cloud size or Gap to the head down' : ''}, or a Material with a bigger build (Nylon / Full colour).`
       );
     }
   });
@@ -847,9 +856,29 @@ export default async function assemblePrint(printable, options, env = {}) {
     options,
     warnings
   );
+  // Whatever the piece hangs off itself (a storm cloud on bolts): built in
+  // millimetres once the scale and the sheet are final, and unioned in.
+  let attached = null;
+  if (piece.attach && axis) {
+    if (!env.manifold) {
+      throw new Error('An attached storm needs env.manifold (manifold-3d).');
+    }
+    attached = piece.attach({
+      axis,
+      manifold: env.manifold,
+      scale,
+      topAt: (x, z) => mountTop(surface, [x, z]).hits.at(-1),
+      wall: options.wall,
+    });
+    warnings.push(...attached.warnings);
+    Object.entries(attached.parts ?? {}).forEach(([id, part]) => {
+      parts[PART[id]] = { ...part, id };
+    });
+  }
   const mergeStruts = Boolean(lattice) && !env.previewLattice;
   const csgNeeded =
     mergeStruts ||
+    Boolean(attached?.solids.length) ||
     plan.pieceAdd.length > 0 ||
     plan.standAdd.length > 0 ||
     options.signature !== 'none';
@@ -881,11 +910,13 @@ export default async function assemblePrint(printable, options, env = {}) {
     const build = (adds, cuts) => {
       let body = env.manifold.Manifold.union(adds);
       if (cuts.length) body = body.subtract(env.manifold.Manifold.union(cuts));
-      // Faces that only graze each other leave zero-volume slivers behind.
+      // Faces that only graze each other leave slivers behind (a bolt's
+      // foot against a signature cut); under a cubic millimetre is no
+      // feature a printer can make.
       const pieces = body.decompose();
       if (pieces.length > 1) {
         body = env.manifold.Manifold.compose(
-          pieces.filter((part) => Math.abs(part.volume()) > 1e-3)
+          pieces.filter((part) => Math.abs(part.volume()) > SLIVER_MM3)
         );
       }
       return csg.toModel(body);
@@ -902,6 +933,9 @@ export default async function assemblePrint(printable, options, env = {}) {
               )
             : csg.solidOf(shell),
           ...plan.pieceAdd.map(csg.solidOf),
+          ...(attached?.solids ?? []).map((entry) =>
+            csg.solidOfManifold(entry.manifold, PART[entry.part])
+          ),
           ...markOf(signature.piece, 'add'),
         ],
         [...plan.pieceCut.map(csg.solidOf), ...markOf(signature.piece, 'cut')]

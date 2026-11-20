@@ -90,6 +90,7 @@
     "rabbit:generate": "node scripts/rabbit-generate.mjs",
     "rabbit:video": "node scripts/rabbit-video.mjs",
     "print-shop:check": "node scripts/print-shop-check.mjs",
+    "print-shop:cloud": "node scripts/print-shop-cloud.mjs",
     "print-shop:export": "node scripts/print-shop-export.mjs",
     "print-shop:marks": "node scripts/print-shop-marks.mjs",
     "print-shop:models": "node scripts/print-shop-models.mjs",

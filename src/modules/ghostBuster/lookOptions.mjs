@@ -419,6 +419,16 @@ export const LOOK_OPTIONS = {
     'shape',
     num('shape', null, 'Cloth Height', null, 0.2, 3.0, 0.05, { nullable: true })
   ),
+  clothDetail: inFacet(
+    'shape',
+    num('shape', null, 'Cloth Smoothing', null, 1, 4, 1, { nullable: true })
+  ),
+  clothThickness: inFacet(
+    'shape',
+    num('shape', null, 'Cloth Thickness', null, 0, 0.08, 0.005, {
+      nullable: true,
+    })
+  ),
   holeAmount: inFacet(
     'wear',
     num('wear', null, 'Hole Amount', null, 0, 1, 0.01, { nullable: true })

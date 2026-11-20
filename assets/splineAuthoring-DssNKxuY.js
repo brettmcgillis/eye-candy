@@ -1,1 +1,0 @@
-import{V as t,E as m}from"./index-ClsBeNqB.js";const s=[0,0,0],i=[1,1,1];function a(r,e=s,n=i){return{position:new t(...r),rotation:new m(...e),scale:new t(...n)}}function p({points:r=[],pos:e=[0,0,0],rot:n=s,scale:c=i,...l}){return{...l,pos:[...e],rot:[...n],scale:[...c],points:r.map(o=>Array.isArray(o)?a(o):a(o.position,o.rotation,o.scale))}}export{p as m};

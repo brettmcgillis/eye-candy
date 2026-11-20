@@ -1,1 +1,59 @@
-<svg stroke="#111827" fill="none" stroke-width="2" viewBox="0 0 24 24" stroke-linecap="round" stroke-linejoin="round" color="#111827" height="256" width="256" xmlns="http://www.w3.org/2000/svg"><path d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14"></path></svg>
+<svg
+  xmlns="http://www.w3.org/2000/svg"
+  width="550"
+  height="256"
+  viewBox="0 0 550 256"
+>
+  <svg
+    x="0"
+    y="0"
+    stroke="#111827"
+    fill="none"
+    stroke-width="2"
+    viewBox="0 0 24 24"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    color="#111827"
+    height="256"
+    width="256"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14"
+    ></path></svg
+  ><svg
+    x="256"
+    y="38.5"
+    stroke="#374151"
+    fill="none"
+    stroke-width="2"
+    viewBox="0 0 24 24"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    color="#374151"
+    height="179"
+    width="179"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14"
+    ></path></svg
+  ><svg
+    x="435"
+    y="70.5"
+    stroke="#6b7280"
+    fill="none"
+    stroke-width="2"
+    viewBox="0 0 24 24"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    color="#6b7280"
+    height="115"
+    width="115"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path
+      d="M3 5a2 2 0 0 1 2 -2h14a2 2 0 0 1 2 2v14a2 2 0 0 1 -2 2h-14a2 2 0 0 1 -2 -2v-14"
+    ></path>
+  </svg>
+</svg>

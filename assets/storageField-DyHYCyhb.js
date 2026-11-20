@@ -1,1 +1,0 @@
-import{W as s,X as o}from"./three.tsl-sI5JnhRj.js";import{ay as c,Y as i,a3 as r,ax as t}from"./index-ClsBeNqB.js";function m(a,n){const e=new c(a,n);return e.type=i,e.generateMipmaps=!1,e.minFilter=r,e.magFilter=r,e.wrapS=t,e.wrapT=t,e}const T=a=>s(a).setAccess(o.READ_ONLY),g=a=>s(a).setAccess(o.WRITE_ONLY);export{m as c,T as r,g as w};

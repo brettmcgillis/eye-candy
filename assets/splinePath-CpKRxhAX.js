@@ -1,0 +1,1 @@
+import{ab as c,V as l}from"./index-DQZ6GwWS.js";function o(a,{closed:r=!1,origin:t=[0,0,0],samples:m=48,tension:u=.5}={}){return a.length<2?[]:new c(a.map(e=>new l(e.x,e.y,e.z)),r,"catmullrom",u).getSpacedPoints(m-1).map(e=>[e.x-t[0],e.y-t[1],e.z-t[2]])}export{o as s};

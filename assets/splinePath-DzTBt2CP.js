@@ -1,1 +1,0 @@
-import{aa as c,V as l}from"./index-ClsBeNqB.js";function o(t,{closed:r=!1,origin:a=[0,0,0],samples:m=48,tension:u=.5}={}){return t.length<2?[]:new c(t.map(e=>new l(e.x,e.y,e.z)),r,"catmullrom",u).getSpacedPoints(m-1).map(e=>[e.x-a[0],e.y-a[1],e.z-a[2]])}export{o as s};

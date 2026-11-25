@@ -1,1 +1,0 @@
-import{p as i,P as n}from"./index-Dk4RqujZ.js";import{c as o}from"./index-BAsOIF0z.js";function s(e,t={}){return o({label:e,keys:[...n,...Object.keys(t)],options:{...i(),...t},folders:{painting:"Painting"}})}export{s as c};
